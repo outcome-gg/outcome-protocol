@@ -155,7 +155,7 @@ local function positionSplitNotice(stakeholder, collateralToken, parentCollectio
 end
 
 -- @dev Emitted when positions are successfully merged.
-local function positionsMergeNotice(stakeholder, collateralToken, parentCollectionId, conditionId, partition, amount)
+local function positionsMergeNotice(stakeholder, collateralToken, parentCollectionId, conditionId, partition, quantity)
   ao.send({
     Target = _DATA_INDEX,
     Action = "Positions-Merge-Notice",
@@ -165,7 +165,7 @@ local function positionsMergeNotice(stakeholder, collateralToken, parentCollecti
     ParentCollectionId = parentCollectionId,
     ConditionId = conditionId,
     Partition = partition,
-    Amount = amount
+    Quantity = quantity
   })
 end
 
@@ -223,43 +223,6 @@ local function getConditionId(resolutionAgent, questionId, outcomeSlotCount)
   return crypto.digest.keccak256(resolutionAgent .. questionId .. outcomeSlotCount).asHex()
 end
 
--- local function getCollectionId2(parentCollectionId, conditionId, indexSet)
---   -- Hash parentCollectionId & (conditionId, indexSet) separately
---   local h1 = parentCollectionId
---   local h2 = crypto.digest.keccak256(conditionId .. indexSet).asHex()
-
---   if h1 == "" then
---     return h1, h2, h2
---   end
-
---   -- Convert to arrays
---   local x1 = crypto.utils.array.fromHex(h1)
---   local x2 = crypto.utils.array.fromHex(h2)
-
---   -- Variable to store the concatenated hex string
---   local result = ""
-
---   -- Iterate over the elements of both arrays
---   local maxLength = math.max(#x1, #x2)
---   for i = 1, maxLength do
---       -- Get elements from arrays, default to 0 if index exceeds array length
---       local elem1 = x1[i] or 0
---       local elem2 = x2[i] or 0
-
---       -- Convert elements to bint
---       local bint1 = bint(elem1)
---       local bint2 = bint(elem2)
-
---       -- Perform addition
---       local sum = bint1 + bint2
-
---       -- Convert the result to a hex string and concatenate
---       result = result .. sum:tobase(16)
---   end
-
---   return h1, h2, result
--- end
-
 -- @dev Constructs an outcome collection ID from a parent collection and an outcome collection.
 -- Performs elementwise addtion for communicative ids.
 -- @param parentCollectionId Collection ID of the parent outcome collection, or bytes32(0) if there's no parent.
@@ -267,7 +230,6 @@ end
 -- @param indexSet Index set of the outcome collection to combine with the parent outcome collection.
 local function getCollectionId(parentCollectionId, conditionId, indexSet)
   -- Hash parentCollectionId & (conditionId, indexSet) separately
-  -- local h1 = crypto.digest.keccak256(parentCollectionId).asHex()
   local h1 = parentCollectionId
   local h2 = crypto.digest.keccak256(conditionId .. indexSet).asHex()
 
@@ -321,7 +283,7 @@ end
 -- @param id ID of the token to be minted
 -- @param quantity Quantity of the token to be minted
 local function mint(to, id, quantity)
-  assert(type(quantity) == 'string', 'Quantity is required!')
+  assert(quantity, 'Quantity is required!')
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
   if not BalancesOf[id] then BalancesOf[id] = {} end
   if not BalancesOf[id][to] then BalancesOf[id][to] = "0" end
@@ -353,7 +315,7 @@ end
 local function burn(from, id, quantity)
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
   assert(BalancesOf[id], 'Id must exist! ' ..  id)
-  assert(BalancesOf[id][from], 'User must hold token!')
+  assert(BalancesOf[id][from], 'User must hold token! :: ' .. id)
   assert(bint.__le(quantity, BalancesOf[id][from]), 'User must have sufficient tokens! ' .. id)
   -- Burn tokens
   BalancesOf[id][from] = tostring(bint.__sub(BalancesOf[id][from], quantity))
@@ -371,7 +333,7 @@ local function batchBurn(from, ids, quantities)
   for i = 1, #ids do
     assert(bint.__lt(0, quantities[i]), 'Quantity must be greater than zero!')
     assert( BalancesOf[ids[i]], 'Id must exist!')
-    assert(BalancesOf[ids[i]][from], 'User must hold token!')
+    assert(BalancesOf[ids[i]][from], 'User must hold token! ' .. i .. " ".. ids[i])
     assert(bint.__le(quantities[i], BalancesOf[ids[i]][from]), 'User must have sufficient tokens!')
   end
   -- Burn batch
@@ -494,94 +456,113 @@ local function splitPosition(from, collateralToken, parentCollectionId, conditio
     -- burn(from, getPositionId(collateralToken, getCollectionId(parentCollectionId, conditionId, fullIndexSet ~ freeIndexSet)), quantity)
   end
 
-  -- if parentCollectionId == "19ce26723d91b943bb1649d11810919a1648f1711509f15d134171171dcc9cd1e31857711d9d13cbc" then
-  --   assert(false, "crypto.digest.keccak256(conditionId .. tostring(7)).asHex() " .. crypto.digest.keccak256(conditionId .. tostring(7)).asHex() .. " crypto.digest.keccak256(parentCollectionId).asHex() " .. crypto.digest.keccak256(parentCollectionId).asHex() .. " collateralToken " .. collateralToken)
-  -- elseif parentCollectionId == "15212bfeb9fd1649479dbf0a51a3eeed9517e1bcb19c1141c8111112cbac1de1145514ff819dbf" then
-  --   assert(false, "crypto.digest.keccak256(conditionId .. tostring(1)).asHex() " .. crypto.digest.keccak256(conditionId .. tostring(1)).asHex() .. " crypto.digest.keccak256(parentCollectionId).asHex() " .. crypto.digest.keccak256(parentCollectionId).asHex() .. " collateralToken " .. collateralToken)
-  -- end
-
   batchMint(from, positionIds, quantities)
 
   positionSplitNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
 end
 
--- /// @dev This function splits a position. If splitting from the collateral, this contract will attempt to transfer `amount` collateral from the message sender to itself. Otherwise, this contract will burn `amount` stake held by the message sender in the position being split worth of EIP 1155 tokens. Regardless, if successful, `amount` stake will be minted in the split target positions. If any of the transfers, mints, or burns fail, the transaction will revert. The transaction will also revert if the given partition is trivial, invalid, or refers to more slots than the condition is prepared with.
---   /// @param collateralToken The address of the positions' backing collateral token.
---   /// @param parentCollectionId The ID of the outcome collections common to the position being split and the split target positions. May be null, in which only the collateral is shared.
---   /// @param conditionId The ID of the condition to split on.
---   /// @param partition An array of disjoint index sets representing a nontrivial partition of the outcome slots of the given condition. E.g. A|B and C but not A|B and B|C (is not disjoint). Each element's a number which, together with the condition, represents the outcome collection. E.g. 0b110 is A|B, 0b010 is B, etc.
---   /// @param amount The amount of collateral or stake to split.
---   function splitPosition(
---       IERC20 collateralToken,
---       bytes32 parentCollectionId,
---       bytes32 conditionId,
---       uint[] calldata partition,
---       uint amount
---   ) external {
---       require(partition.length > 1, "got empty or singleton partition");
---       uint outcomeSlotCount = payoutNumerators[conditionId].length;
---       require(outcomeSlotCount > 0, "condition not prepared yet");
+local function mergePositions(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
+  assert(#partition > 1, "got empty or singleton partition")
+  assert(PayoutNumerators[conditionId] and #PayoutNumerators[conditionId] > 0, "condition not prepared yet")
 
---       // For a condition with 4 outcomes fullIndexSet's 0b1111; for 5 it's 0b11111...
---       uint fullIndexSet = (1 << outcomeSlotCount) - 1;
---       // freeIndexSet starts as the full collection
---       uint freeIndexSet = fullIndexSet;
---       // This loop checks that all condition sets are disjoint (the same outcome is not part of more than 1 set)
---       uint[] memory positionIds = new uint[](partition.length);
---       uint[] memory amounts = new uint[](partition.length);
---       for (uint i = 0; i < partition.length; i++) {
---           uint indexSet = partition[i];
---           require(indexSet > 0 && indexSet < fullIndexSet, "got invalid index set");
---           require((indexSet & freeIndexSet) == indexSet, "partition not disjoint");
---           freeIndexSet ^= indexSet;
---           positionIds[i] = CTHelpers.getPositionId(collateralToken, CTHelpers.getCollectionId(parentCollectionId, conditionId, indexSet));
---           amounts[i] = amount;
---       }
+  local outcomeSlotCount = #PayoutNumerators[conditionId]
 
---       if (freeIndexSet == 0) {
---           // Partitioning the full set of outcomes for the condition in this branch
---           if (parentCollectionId == bytes32(0)) {
---               require(collateralToken.transferFrom(msg.sender, address(this), amount), "could not receive collateral tokens");
---           } else {
---               _burn(
---                   msg.sender,
---                   CTHelpers.getPositionId(collateralToken, parentCollectionId),
---                   amount
---               );
---           }
+  -- For a condition with 4 outcomes fullIndexSet's 0b1111; for 5 it's 0b11111...
+  local fullIndexSet = (1 << outcomeSlotCount) - 1
+
+  -- freeIndexSet starts as the full collection
+  local freeIndexSet = fullIndexSet
+
+  -- This loop checks that all condition sets are disjoint (the same outcome is not part of more than 1 set)
+  local positionIds = {}
+  local quantities = {}
+  for i = 1, #partition do
+    local indexSet = partition[i]
+    assert(indexSet > 0 and indexSet < fullIndexSet, "got invalid index set partition: " .. json.encode(partition) .. tostring(indexSet) .. " " .. tostring(fullIndexSet))
+    assert((indexSet & freeIndexSet) == indexSet, "partition not disjoint")
+    freeIndexSet = freeIndexSet ~ indexSet
+    positionIds[i] = getPositionId(collateralToken, getCollectionId(parentCollectionId, conditionId, indexSet))
+    quantities[i] = quantity
+  end
+
+  -- if quantity == 30 then
+  --   assert(false, "batchBurn input: " .. json.encode(positionIds) .. " " .. json.encode(quantities))
+  -- end
+
+  batchBurn(from, positionIds, quantities)
+
+  if freeIndexSet == 0 then
+    if parentCollectionId == "" then
+      -- TODO: assert that this passes before sending merge notice
+      ao.send({
+        Target = collateralToken,
+        Action = "Transfer",
+        Recipient = from,
+        Quantity = tostring(quantity)
+      })
+    else
+      mint(from, getPositionId(collateralToken, parentCollectionId), quantity)
+    end
+  else
+    mint(from, getPositionId(collateralToken, getCollectionId(parentCollectionId, conditionId, fullIndexSet ~ freeIndexSet)), quantity, "")
+  end
+
+  positionsMergeNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
+end
+
+-- function mergePositions(
+--   IERC20 collateralToken,
+--   bytes32 parentCollectionId,
+--   bytes32 conditionId,
+--   uint[] calldata partition,
+--   uint amount
+-- ) external {
+--   require(partition.length > 1, "got empty or singleton partition");
+--   uint outcomeSlotCount = payoutNumerators[conditionId].length;
+--   require(outcomeSlotCount > 0, "condition not prepared yet");
+
+--   uint fullIndexSet = (1 << outcomeSlotCount) - 1;
+--   uint freeIndexSet = fullIndexSet;
+--   uint[] memory positionIds = new uint[](partition.length);
+--   uint[] memory amounts = new uint[](partition.length);
+--   for (uint i = 0; i < partition.length; i++) {
+--       uint indexSet = partition[i];
+--       require(indexSet > 0 && indexSet < fullIndexSet, "got invalid index set");
+--       require((indexSet & freeIndexSet) == indexSet, "partition not disjoint");
+--       freeIndexSet ^= indexSet;
+--       positionIds[i] = CTHelpers.getPositionId(collateralToken, CTHelpers.getCollectionId(parentCollectionId, conditionId, indexSet));
+--       amounts[i] = amount;
+--   }
+--   _batchBurn(
+--       msg.sender,
+--       positionIds,
+--       amounts
+--   );
+
+--   if (freeIndexSet == 0) {
+--       if (parentCollectionId == bytes32(0)) {
+--           require(collateralToken.transfer(msg.sender, amount), "could not send collateral tokens");
 --       } else {
---           // Partitioning a subset of outcomes for the condition in this branch.
---           // For example, for a condition with three outcomes A, B, and C, this branch
---           // allows the splitting of a position $:(A|C) to positions $:(A) and $:(C).
---           _burn(
+--           _mint(
 --               msg.sender,
---               CTHelpers.getPositionId(collateralToken,
---                   CTHelpers.getCollectionId(parentCollectionId, conditionId, fullIndexSet ^ freeIndexSet)),
---               amount
+--               CTHelpers.getPositionId(collateralToken, parentCollectionId),
+--               amount,
+--               ""
 --           );
 --       }
-
---       _batchMint(
+--   } else {
+--       _mint(
 --           msg.sender,
---           // position ID is the ERC 1155 token ID
---           positionIds,
---           amounts,
+--           CTHelpers.getPositionId(collateralToken,
+--               CTHelpers.getCollectionId(parentCollectionId, conditionId, fullIndexSet ^ freeIndexSet)),
+--           amount,
 --           ""
 --       );
---       emit PositionSplit(msg.sender, collateralToken, parentCollectionId, conditionId, partition, amount);
 --   }
 
+--   emit PositionsMerge(msg.sender, collateralToken, parentCollectionId, conditionId, partition, amount);
+-- }
 
-local function mergePositions(msg)
-  assert(msg.CollateralToken, "CollateralToken is required!")
-  assert(msg.ParentCollectionId, "ParentCollectionId is required!")
-  assert(msg.ConditionId, "ConditionId is required!")
-  assert(msg.Partition, "Partition is required!")
-  assert(msg.Amount, "Amount is required!")
-
-  -- TODO
-  positionsMergeNotice(msg.From, msg.CollateralToken, msg.ParentCollectionId, msg.ConditionId, msg.Partition, msg.Amount)
-end
 
 local function redeemPositions(msg)
   assert(msg.CollateralToken, "CollateralToken is required!")
@@ -645,7 +626,13 @@ Handlers.add("Split-Position", Handlers.utils.hasMatchingTag("Action", "Split-Po
 end)
 
 Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-Positions"), function(msg)
-  mergePositions(msg)
+  local data = json.decode(msg.Data)
+  assert(data.collateralToken, "CollateralToken is required!")
+  assert(data.parentCollectionId, "ParentCollectionId is required!")
+  assert(data.conditionId, "ConditionId is required!")
+  assert(data.partition, "Partition is required!")
+  assert(data.quantity, "Quantity is required!")
+  mergePositions(msg.From, data.collateralToken, data.parentCollectionId, data.conditionId, data.partition, data.quantity)
 end)
 
 Handlers.add("Redeem-Positions", Handlers.utils.hasMatchingTag("Action", "Redeem-Positions"), function(msg)
@@ -671,14 +658,6 @@ Handlers.add("Get-Collection-Id", Handlers.utils.hasMatchingTag("Action", "Get-C
   local collectionId = getCollectionId(msg.Tags.ParentCollectionId, msg.Tags.ConditionId, msg.Tags.IndexSet)
   ao.send({ Target = msg.From, Action = "Collection-Id", ParentCollectionId = msg.Tags.ParentCollectionId, ConditionId = msg.Tags.ConditionId, IndexSet = msg.Tags.IndexSet, CollectionId = collectionId })
 end)
-
--- Handlers.add("Get-Collection-H12", Handlers.utils.hasMatchingTag("Action", "Get-Collection-H12"), function(msg)
---   assert(msg.Tags.ParentCollectionId, "ParentCollectionId is required!")
---   assert(msg.Tags.ConditionId, "ConditionId is required!")
---   assert(msg.Tags.IndexSet, "IndexSet is required!")
---   local h1, h2, result = getCollectionId2(msg.Tags.ParentCollectionId, msg.Tags.ConditionId, msg.Tags.IndexSet)
---   ao.send({ Target = msg.From, Action = "Collection-Id", ParentCollectionId = msg.Tags.ParentCollectionId, ConditionId = msg.Tags.ConditionId, IndexSet = msg.Tags.IndexSet, H1 = h1, H2 = h2, Result = result })
--- end)
 
 Handlers.add("Get-Position-Id", Handlers.utils.hasMatchingTag("Action", "Get-Position-Id"), function(msg)
   assert(msg.Tags.CollateralToken, "CollateralToken is required!")
@@ -732,7 +711,7 @@ Handlers.add('Balances-Of', Handlers.utils.hasMatchingTag('Action', 'Balances-Of
   ao.send({ Target = msg.From, Data = json.encode(BalancesOf[msg.Tags.TokenId]) })
 end)
 
-Handlers.add('Balances', Handlers.utils.hasMatchingTag('Action', 'Balances'), function(msg)
+Handlers.add('Balances-All', Handlers.utils.hasMatchingTag('Action', 'Balances-All'), function(msg)
   ao.send({ Target = msg.From, Data = json.encode(BalancesOf) })
 end)
 

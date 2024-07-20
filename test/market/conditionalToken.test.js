@@ -44,18 +44,17 @@ test('load mock collateral token module', async () => {
   assert.equal(result.Output.data.output, "ok")
 })
 
-// NOTE: This test passes but makes unit tests hang.. 
-// test('mock collateral token balance', async () => {
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Balances',
-//     Data: ''
-//   })
+test('mock collateral token balance', async () => {
+  const result = await Send({
+    From: "1234",
+    Action: 'Balances',
+    Data: ''
+  })
 
-//   const balances = JSON.parse(result.Messages[0].Data)
+  const balances = JSON.parse(result.Messages[0].Data)
 
-//   assert.equal(balances["9876"], '10000000000000000')
-// })
+  assert.equal(balances["9876"], '10000000000000000')
+})
 
 /* 
  * TEST MODULE
@@ -449,7 +448,7 @@ test('Split-Position: should mint amounts in positions associated with partition
 test('Split-Position: should mint amounts in positions associated with partition verified with Balances', async () => {
   const result = await Send({
     From: "1234",
-    Action: 'Balances',
+    Action: 'Balances-All',
     Data: ''
   })
 
@@ -460,6 +459,17 @@ test('Split-Position: should mint amounts in positions associated with partition
   assert.equal(balances["7d8a76cac061acdb983bb2e43c93aa0b2cf959378e6e25a43cbadcb1afd0e863"]["9876"], '100')
 })
 
+test('Split-Position: collateralToken should have been transferred from trader', async () => {
+  const result = await Send({
+    From: "1234",
+    Action: 'Balances',
+    Data: ''
+  })
+
+  const balances = JSON.parse(result.Messages[0].Data)
+
+  assert.equal(balances["9876"], '10000000000000000')
+})
 
 test('Split-Position: New Prepare-Condition: should send a Condition-Preparation-Notice', async () => {
   // non-randomized questionId
@@ -559,7 +569,7 @@ test('Split-Position: should split from a parentCollection from the same conditi
 test('Split-Position: should return updated balances', async () => {
   const result = await Send({
     From: "1234",
-    Action: 'Balances',
+    Action: 'Balances-All',
     Data: ''
   })
 
@@ -620,12 +630,11 @@ test('Split-Position: should transfer LO/HI split collateral from trader with a 
 test('Split-Position: should return updated balances', async () => {
   const result = await Send({
     From: "1234",
-    Action: 'Balances',
+    Action: 'Balances-All',
     Data: ''
   })
 
   const balances = JSON.parse(result.Messages[0].Data)
-  // console.log("balances", balances)
   // original
   assert.equal(balances["4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532"]["9876"], '80')
   assert.equal(balances["0a23b6f55f1ffa06bb9b6bb824dbcd672b6fcd06cc031b91d58f1acf34cf345d"]["9876"], '100')
@@ -701,11 +710,6 @@ test('Split-Position: should split from a parentCollection from a different cond
     })
   })
 
-  // console.log("result", result)
-  // console.log("Tags0", result.Messages[0].Tags)
-  // console.log("Tags1", result.Messages[1].Tags)
-  // console.log("Tags2", result.Messages[2].Tags)
-
   // burn notice
   const action_0 = result.Messages[0].Tags.find(t => t.name === 'Action').value
   const quantity_0 = result.Messages[0].Tags.find(t => t.name === 'Quantity').value
@@ -745,7 +749,7 @@ test('Split-Position: should split from a parentCollection from a different cond
 test('Split-Position: should return updated balances', async () => {
   const result = await Send({
     From: "1234",
-    Action: 'Balances',
+    Action: 'Balances-All',
     Data: ''
   })
 
@@ -844,7 +848,7 @@ test('Split-Position: the chaining of conditionals should be communicative', asy
 test('Split-Position: should return updated balances to prove commuicativity', async () => {
   const result = await Send({
     From: "1234",
-    Action: 'Balances',
+    Action: 'Balances-All',
     Data: ''
   })
 
@@ -869,283 +873,237 @@ test('Split-Position: should return updated balances to prove commuicativity', a
   assert.equal(balances["0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1"]["9876"], '60')
 })
 
-
-// test('Split-Position: DEBUGING: should Get-Collection-Id for all options', async () => {
-//   // non-random questionId
-//   const questionId1 = 'NON-RANDOM';
-//   const outcomeSlotCount1 = 9;
-//   const resolutionAgent1 = "123";
-//   const conditionId1 = keccak256(resolutionAgent1 + questionId1 + outcomeSlotCount1.toString()).toString('hex')
-//   console.log("conditionId1: ", conditionId1)
-
-//   const questionId2 = 'NEW-NON-RANDOM';
-//   const outcomeSlotCount2 = 2;
-//   const resolutionAgent2 = '456';
-//   const conditionId2 = keccak256(resolutionAgent2 + questionId2 + outcomeSlotCount2.toString()).toString('hex')
-//   console.log("conditionId2: ", conditionId2)
-
-//   const result1A = await Send({
-//     From: "1234",
-//     Action: 'Get-Collection-Id',
-//     ParentCollectionId: "",
-//     ConditionId: conditionId1,
-//     IndexSet: 0b111000000,
-//     Data: ''
-//   })
-
-//   const result1B = await Send({
-//     From: "1234",
-//     Action: 'Get-Collection-Id',
-//     ParentCollectionId: "",
-//     ConditionId: conditionId1,
-//     IndexSet: 0b000111000,
-//     Data: ''
-//   })
-
-//   const result1C = await Send({
-//     From: "1234",
-//     Action: 'Get-Collection-Id',
-//     ParentCollectionId: "",
-//     ConditionId: conditionId1,
-//     IndexSet: 0b000000111,
-//     Data: ''
-//   })
-
-//   const result2LO = await Send({
-//     From: "1234",
-//     Action: 'Get-Collection-Id',
-//     ParentCollectionId: "",
-//     ConditionId: conditionId2,
-//     IndexSet: 0b01,
-//     Data: ''
-//   })
-
-//   const result2HI = await Send({
-//     From: "1234",
-//     Action: 'Get-Collection-Id',
-//     ParentCollectionId: "",
-//     ConditionId: conditionId2,
-//     IndexSet: 0b10,
-//     Data: ''
-//   })
-
-
-//   const result3ALO = await Send({
-//     From: "1234",
-//     Action: 'Get-Collection-Id',
-//     ParentCollectionId: "e59bbfca7f21558e32ea865ecad1af2db6b756e950c832698d19aadd4e8613",
-//     ConditionId: conditionId2,
-//     IndexSet: 0b01,
-//     Data: ''
-//   })
-
-//   const result3LOA = await Send({
-//     From: "1234",
-//     Action: 'Get-Collection-Id',
-//     ParentCollectionId: "d710212253c2207fd21f9b57be9d8cb16b9fa7e1a7efb58e52e9ad73c018984c",
-//     ConditionId: conditionId1,
-//     IndexSet: 0b111000000,
-//     Data: ''
-//   })
-
-//   const collectionId_1A = result1A.Messages[0].Tags.find(t => t.name === 'CollectionId').value
-//   const collectionId_1B = result1B.Messages[0].Tags.find(t => t.name === 'CollectionId').value
-//   const collectionId_1C = result1C.Messages[0].Tags.find(t => t.name === 'CollectionId').value
-
-//   const collectionId_2LO = result2LO.Messages[0].Tags.find(t => t.name === 'CollectionId').value
-//   const collectionId_2HI = result2HI.Messages[0].Tags.find(t => t.name === 'CollectionId').value
-
-//   const collectionId_3ALO = result3ALO.Messages[0].Tags.find(t => t.name === 'CollectionId').value
-//   const collectionId_3LOA = result3LOA.Messages[0].Tags.find(t => t.name === 'CollectionId').value
-
-//   console.log("collectionId_1A:", collectionId_1A)
-//   console.log("collectionId_1B:", collectionId_1B)
-//   console.log("collectionId_1C:", collectionId_1C)
-
-//   console.log("collectionId_2LO:", collectionId_2LO)
-//   console.log("collectionId_2HI:", collectionId_2HI)
-
-//   console.log("collectionId_3ALO:", collectionId_3ALO)
-//   console.log("collectionId_3LOA:", collectionId_3LOA)
-//   assert.equal(1,1)
-
-//   // conditionId1:  c4973b6190194a30089838ed3cdd5db1867c5137c9178223c923163ff381936e
-//   // conditionId2:  39d12384576676750865a5858a66e2b6ca1fcdfd2654edda2df449d13a766668
-
-//   // collectionId_1A: e59bbfca7f21558e32ea865ecad1af2db6b756e950c832698d19aadd4e8613
-//   // collectionId_1B: b41336408b94c2733a4eddd742f4d10c41527420736cd89a886e3019fc3c26
-//   // collectionId_1C: 8d59b8b8776d713d497228f1122692bed70be6c1fe8feb9031e43c51f273f94f
-
-//   // collectionId_2LO: d710212253c2207fd21f9b57be9d8cb16b9fa7e1a7efb58e52e9ad73c018984c
-//   // collectionId_2HI: 4afcad2359f4198771e4e984d91b9634cacc0ec652961257bb7fd37654870ef
-
-//   // collectionId_3ALO: f1b18e32af1732517810ab3b2b117fc29d122133b6e81b215910bbb13f7d142c8b0ee10e1768d87f1ae13ad312a83
-//   // collectionId_3LOA: fe169e513cbc93ce9b19e44f1136104bdab18cf1b316677fe591b98f7cce8ac1fa11a122e4e31857711d9d13cb
-
-//   // Params:
-//   // A -> LO
-//   // parent: e59bbfca7f21558e32ea865ecad1af2db6b756e950c832698d19aadd4e8613
-//   // conditionId: 39d12384576676750865a5858a66e2b6ca1fcdfd2654edda2df449d13a766668
-//   // indexSet: 0b01
-
-//   // LO -> A
-//   // parent: d710212253c2207fd21f9b57be9d8cb16b9fa7e1a7efb58e52e9ad73c018984c
-//   // conditionId: c4973b6190194a30089838ed3cdd5db1867c5137c9178223c923163ff381936e
-//   // indexSet: 0b111000000
-
-//   const resultTestALO = await Send({
-//     From: "1234",
-//     Action: 'Get-Collection-Id',
-//     ParentCollectionId: "e59bbfca7f21558e32ea865ecad1af2db6b756e950c832698d19aadd4e8613",
-//     ConditionId: "39d12384576676750865a5858a66e2b6ca1fcdfd2654edda2df449d13a766668",
-//     IndexSet: 0b01,
-//     Data: ''
-//   })
-
-//   const resultTestLOA = await Send({
-//     From: "1234",
-//     Action: 'Get-Collection-Id',
-//     ParentCollectionId: "d710212253c2207fd21f9b57be9d8cb16b9fa7e1a7efb58e52e9ad73c018984c",
-//     ConditionId: "c4973b6190194a30089838ed3cdd5db1867c5137c9178223c923163ff381936e",
-//     IndexSet: 0b111000000,
-//     Data: ''
-//   })
-
-//   const collectionId_TestALO = resultTestALO.Messages[0].Tags.find(t => t.name === 'CollectionId').value
-//   const collectionId_TestLOA = resultTestLOA.Messages[0].Tags.find(t => t.name === 'CollectionId').value
-
-//   console.log("collectionId_TestALO:", collectionId_TestALO)
-//   console.log("collectionId_TestLOA:", collectionId_TestLOA)
-//   assert.equal(1,1)
-
-//   const collectionIdA1 = keccak256("c4973b6190194a30089838ed3cdd5db1867c5137c9178223c923163ff381936e" + 0b111000000).toString('hex')
-//   console.log("collectionIdA1:", collectionIdA1)
-
-//   const collectionIdA2 = keccak256("c4973b6190194a30089838ed3cdd5db1867c5137c9178223c923163ff381936e" + 7).toString('hex')
-//   console.log("collectionIdA2:", collectionIdA2)
-
-//   const resultTest2ALO = await Send({
-//     From: "1234",
-//     Action: 'Get-Collection-H12',
-//     ParentCollectionId: "e59bbfca7f021558e32ea865ecad1af2db6b7506e950c832698d19aadd4e8613",
-//     ConditionId: "39d12384576676750865a5858a66e2b6ca1fcdfd2654edda2df449d13a766668",
-//     IndexSet: 0b01,
-//     Data: ''
-//   })
-
-//   const resultTest2LOA = await Send({
-//     From: "1234",
-//     Action: 'Get-Collection-H12',
-//     ParentCollectionId: "d710212253c2207fd21f9b57be9d8cb16b9fa7e1a7efb58e52e9ad73c018984c",
-//     ConditionId: "c4973b6190194a30089838ed3cdd5db1867c5137c9178223c923163ff381936e",
-//     IndexSet: 0b111000000,
-//     Data: ''
-//   })
-
-//   // console.log("resultTest2ALO", resultTest2ALO)
-
-//   const alo_h1 = resultTest2ALO.Messages[0].Tags.find(t => t.name === 'H1').value
-//   const alo_h2 = resultTest2ALO.Messages[0].Tags.find(t => t.name === 'H2').value
+/* 
+ * Merge Position
+ */
+//@dev inputs to marge split from previous unit test
+test('Merge-Position: should not merge if amount exceeds balances in to-be-merged positions', async () => {
+  // non-randomized questionId
+  const questionId = 'NEW-NON-RANDOM';
+  const outcomeSlotCount = 2;
+  const resolutionAgent = '456';
   
-//   const loa_h1 = resultTest2LOA.Messages[0].Tags.find(t => t.name === 'H1').value
-//   const loa_h2 = resultTest2LOA.Messages[0].Tags.find(t => t.name === 'H2').value
-
-//   const alo_res = resultTest2ALO.Messages[0].Tags.find(t => t.name === 'Result').value
-//   const loa_res = resultTest2LOA.Messages[0].Tags.find(t => t.name === 'Result').value
+  const conditionId = keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex')
   
-//   console.log("alo_h1>e", alo_h1)
-//   console.log("loa_h1", loa_h1)
+  // collateralToken supplied even though splitting from parent
+  const collateralToken = "9876"
 
-//   console.log("alo_h2", alo_h2)
-//   console.log("loa_h2", loa_h2)
+  // collectionId for indexSet: NON-RANDOM 0b000000111
+  const parentCollectionId = "8d59b8b8776d713d497228f1122692bed70be6c1fe8feb9031e43c51f273f94f"
 
-//   console.log("alo_res", alo_res)
-//   console.log("loa_res", loa_res)
-// })
+  // partition to be only available disjoint set LO|HI
+  const partition = [0b01, 0b10]
 
+  const result = await Send({
+    From: "9876",
+    Action: 'Merge-Positions',
+    Data: JSON.stringify({
+      collateralToken: collateralToken,
+      parentCollectionId: parentCollectionId,
+      conditionId: conditionId,
+      partition: partition,
+      quantity: 100  // balance 90
+    })
+  })
 
-// /* 
-//  * Merge Position
-//  */
-// test('Merge-Position: should not merge if amount exceeds balances in to-be-merged positions', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+  assert.match(result, /User must have sufficient tokens!/)
+})
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+//@dev inputs to marge split from previous "split" unit test
+test('Merge-Position: should merge deeper-level positions and send a Positions-Merge-Notice', async () => {
+  // non-randomized questionId
+  const questionId = 'NEW-NON-RANDOM';
+  const outcomeSlotCount = 2;
+  const resolutionAgent = '456';
+  
+  const conditionId = keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex')
+  
+  // collateralToken supplied even though splitting from parent
+  const collateralToken = "9876"
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+  // collectionId for indexSet: NON-RANDOM 0b000000111
+  const parentCollectionId = "8d59b8b8776d713d497228f1122692bed70be6c1fe8feb9031e43c51f273f94f"
 
-// test('Merge-Position: should send a Positions-Merge-Notice', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+  // partition to be only available disjoint set LO|HI
+  const partition = [0b01, 0b10]
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+  // within balance (90)
+  const quantity = 30
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+  const result = await Send({
+    From: "9876",
+    Action: 'Merge-Positions',
+    Data: JSON.stringify({
+      collateralToken: collateralToken,
+      parentCollectionId: parentCollectionId,
+      conditionId: conditionId,
+      partition: partition,
+      quantity: quantity 
+    })
+  })
+  
+  // burn notice
+  const action_0 = result.Messages[0].Tags.find(t => t.name === 'Action').value
+  const quantities_0 = result.Messages[0].Tags.find(t => t.name === 'Quantities').value
+  const tokenIds_0 = result.Messages[0].Tags.find(t => t.name === 'TokenIds').value
+  assert.equal(action_0, "Burn-Batch-Notice")
+  assert.equal(JSON.parse(quantities_0)[0], "30")
+  assert.equal(JSON.parse(quantities_0)[1], "30")
+  assert.equal(JSON.parse(tokenIds_0)[0], "1a5202803de9ab4467ea8d52abfa9da36ac433bdce3afd97930b11553ec53a0b")
+  assert.equal(JSON.parse(tokenIds_0)[1], "0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1")
 
-// test('Merge-Position: should transfer split collateral back to trader', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+  // mint notice
+  const action_1 = result.Messages[1].Tags.find(t => t.name === 'Action').value
+  const quantity_1 = result.Messages[1].Tags.find(t => t.name === 'Quantity').value
+  const tokenId_1 = result.Messages[1].Tags.find(t => t.name === 'TokenId').value
+  assert.equal(action_1, "Mint-Single-Notice")
+  assert.equal(quantity_1, "30")
+  assert.equal(tokenId_1, "4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532")
+  
+  //position-merge notice
+  const action_2 = result.Messages[2].Tags.find(t => t.name === 'Action').value
+  const stakeholder_2 = result.Messages[2].Tags.find(t => t.name === 'Stakeholder').value
+  const collateralToken_2 = result.Messages[2].Tags.find(t => t.name === 'CollateralToken').value
+  const parentCollectionId_2 = result.Messages[2].Tags.find(t => t.name === 'ParentCollectionId').value
+  const conditionId_2 = result.Messages[2].Tags.find(t => t.name === 'ConditionId').value
+  const partition_2 = result.Messages[2].Tags.find(t => t.name === 'Partition').value
+  const quantity_2 = result.Messages[2].Tags.find(t => t.name === 'Quantity').value
+  assert.equal(action_2, "Positions-Merge-Notice")
+  assert.equal(stakeholder_2, "9876")
+  assert.equal(collateralToken_2, collateralToken)
+  assert.equal(parentCollectionId_2, parentCollectionId)
+  assert.equal(conditionId_2, conditionId)
+  assert.equal(JSON.stringify(partition_2), JSON.stringify(partition))
+  assert.equal(quantity_2, quantity)
+})
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+test('Merge-Position: should return lower-level position tokens to the trader', async () => {
+  const result = await Send({
+    From: "1234",
+    Action: 'Balances-All',
+    Data: ''
+  })
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+  const balances = JSON.parse(result.Messages[0].Data)
+  // console.log("balances", balances)
+  // original: $ -> (A,B,C|D) ?
+  assert.equal(balances["4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532"]["9876"], '50')
+  assert.equal(balances["0a23b6f55f1ffa06bb9b6bb824dbcd672b6fcd06cc031b91d58f1acf34cf345d"]["9876"], '100')
+  assert.equal(balances["7d8a76cac061acdb983bb2e43c93aa0b2cf959378e6e25a43cbadcb1afd0e863"]["9876"], '100')
+  // split: C|D -> (C,D) 
+  assert.equal(balances["b61eeb7f086dfe73683a4f5a9040adf112fa8bda1cf41bf995d3b890e9f15335"]["9876"], '20')
+  assert.equal(balances["35d5963221eb06230aaeaa7085f67a8e9354855c4042e7785b22cd52eb2fae01"]["9876"], '20')
+  // new HI|LO ?
+  assert.equal(balances["9bab3ffd280420050d5a8be761ec828442de91d3a481dd5a938715331f87c4f5"]["9876"], '70')
+  assert.equal(balances["4c879561ced61976c1cab946b26ab08b04e58a9d0d24b895829dd79180cccbf0"]["9876"], '100')
+  // new split: LO -> (LO&A, LO&B, LO&C|D)
+  assert.equal(balances["9104d8bf3d7facc2d4addecdf2f91dcaebe34882bad3c8f4ba097099cbe10c80"]["9876"], '30')
+  assert.equal(balances["6c1be55b038998072fa6e6a98a1028ea66fe172cdd93010c0d21eca6c287d81c"]["9876"], '30') 
+  // Updated communicative position: A&LO (90-30 = 60)
+  assert.equal(balances["1a5202803de9ab4467ea8d52abfa9da36ac433bdce3afd97930b11553ec53a0b"]["9876"], '60') 
+  // new split position: A&HI (60-30 = 30)
+  assert.equal(balances["0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1"]["9876"], '30')
+})
 
-// test('Merge-Position: should burn amounts in positions associated with partition', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+//@dev inputs to marge split from first "split" unit test
+test('Merge-Position: should merge first-level positions and send a Positions-Merge-Notice', async () => {
+  // non-randomized questionId
+  const questionId = 'NON-RANDOM';
+  const outcomeSlotCount = 9;
+  const resolutionAgent = '123';
+  const conditionId = keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex')
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+  // collateralToken supplied even though splitting from parent
+  const collateralToken = "9876"
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+  // parent is collateral token
+  const parentCollectionId = ""
+
+  // full partition
+  const partition = [0b111000000, 0b000111000, 0b000000111]
+
+  // within balance 
+  const quantity = 10
+
+  const result = await Send({
+    From: "9876",
+    Action: 'Merge-Positions',
+    Data: JSON.stringify({
+      collateralToken: collateralToken,
+      parentCollectionId: parentCollectionId,
+      conditionId: conditionId,
+      partition: partition,
+      quantity: quantity 
+    })
+  })
+  
+  // burn notice
+  const action_0 = result.Messages[0].Tags.find(t => t.name === 'Action').value
+  const quantities_0 = result.Messages[0].Tags.find(t => t.name === 'Quantities').value
+  const tokenIds_0 = result.Messages[0].Tags.find(t => t.name === 'TokenIds').value
+  assert.equal(action_0, "Burn-Batch-Notice")
+  assert.equal(JSON.parse(quantities_0)[0], quantity.toString())
+  assert.equal(JSON.parse(quantities_0)[1], quantity.toString())
+  assert.equal(JSON.parse(quantities_0)[2], quantity.toString())
+  assert.equal(JSON.parse(tokenIds_0)[0], "0a23b6f55f1ffa06bb9b6bb824dbcd672b6fcd06cc031b91d58f1acf34cf345d")
+  assert.equal(JSON.parse(tokenIds_0)[1], "7d8a76cac061acdb983bb2e43c93aa0b2cf959378e6e25a43cbadcb1afd0e863")
+  assert.equal(JSON.parse(tokenIds_0)[2], "4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532")
+  
+  // transfer notice
+  const action_1 = result.Messages[1].Tags.find(t => t.name === 'Action').value
+  const quantity_1 = result.Messages[1].Tags.find(t => t.name === 'Quantity').value
+  const recipient_1 = result.Messages[1].Tags.find(t => t.name === 'Recipient').value
+  const fromProcess_1 = result.Messages[1].Tags.find(t => t.name === 'From-Process').value
+  assert.equal(action_1, "Transfer")
+  assert.equal(quantity_1, quantity.toString())
+  assert.equal(recipient_1, "9876")
+  assert.equal(fromProcess_1, "9876")
+  
+  //position-merge notice
+  const action_2 = result.Messages[2].Tags.find(t => t.name === 'Action').value
+  const stakeholder_2 = result.Messages[2].Tags.find(t => t.name === 'Stakeholder').value
+  const collateralToken_2 = result.Messages[2].Tags.find(t => t.name === 'CollateralToken').value
+  const parentCollectionId_2 = result.Messages[2].Tags.find(t => t.name === 'ParentCollectionId').value
+  const conditionId_2 = result.Messages[2].Tags.find(t => t.name === 'ConditionId').value
+  const partition_2 = result.Messages[2].Tags.find(t => t.name === 'Partition').value
+  const quantity_2 = result.Messages[2].Tags.find(t => t.name === 'Quantity').value
+  assert.equal(action_2, "Positions-Merge-Notice")
+  assert.equal(stakeholder_2, "9876")
+  assert.equal(collateralToken_2, collateralToken)
+  assert.equal(parentCollectionId_2, parentCollectionId)
+  assert.equal(conditionId_2, conditionId)
+  assert.equal(JSON.stringify(partition_2), JSON.stringify(partition))
+  assert.equal(quantity_2, quantity)
+})
+
+//@dev TODO: check that collateralTokens have been returned to trader in integration tests
+test('Merge-Position: should burn positions tokens from the trader', async () => {
+  const result = await Send({
+    From: "1234",
+    Action: 'Balances-All',
+    Data: ''
+  })
+
+  const balances = JSON.parse(result.Messages[0].Data)
+  // original: $ -> (A,B,C|D) !sub 10 from each!
+  assert.equal(balances["4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532"]["9876"], '40')
+  assert.equal(balances["0a23b6f55f1ffa06bb9b6bb824dbcd672b6fcd06cc031b91d58f1acf34cf345d"]["9876"], '90')
+  assert.equal(balances["7d8a76cac061acdb983bb2e43c93aa0b2cf959378e6e25a43cbadcb1afd0e863"]["9876"], '90')
+  // split: C|D -> (C,D) 
+  assert.equal(balances["b61eeb7f086dfe73683a4f5a9040adf112fa8bda1cf41bf995d3b890e9f15335"]["9876"], '20')
+  assert.equal(balances["35d5963221eb06230aaeaa7085f67a8e9354855c4042e7785b22cd52eb2fae01"]["9876"], '20')
+  // new HI|LO ?
+  assert.equal(balances["9bab3ffd280420050d5a8be761ec828442de91d3a481dd5a938715331f87c4f5"]["9876"], '70')
+  assert.equal(balances["4c879561ced61976c1cab946b26ab08b04e58a9d0d24b895829dd79180cccbf0"]["9876"], '100')
+  // new split: LO -> (LO&A, LO&B, LO&C|D)
+  assert.equal(balances["9104d8bf3d7facc2d4addecdf2f91dcaebe34882bad3c8f4ba097099cbe10c80"]["9876"], '30')
+  assert.equal(balances["6c1be55b038998072fa6e6a98a1028ea66fe172cdd93010c0d21eca6c287d81c"]["9876"], '30') 
+  // Updated communicative position: A&LO 
+  assert.equal(balances["1a5202803de9ab4467ea8d52abfa9da36ac433bdce3afd97930b11553ec53a0b"]["9876"], '60') 
+  // new split position: A&HI 
+  assert.equal(balances["0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1"]["9876"], '30')
+  // collateral balances
+})
 
 // test('Transferring: should not allow transferring more than split balance', async () => {
 //   const resolutionAgent = '123';
