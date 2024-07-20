@@ -1,0 +1,2 @@
+local outcomeToken = {}
+return outcomeToken

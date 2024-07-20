@@ -1,0 +1,2 @@
+local cronManager = {}
+return cronManager

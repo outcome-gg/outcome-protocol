@@ -1,0 +1,20 @@
+{
+  "name": "outcome-protocol",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Outcome Protocol",
+  "scripts": {
+    "test": "node --test test/**/*.test.js",
+    "test:market": "node --test test/market/*.test.js",
+    "test:sqlite": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test test/**/*.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "dependencies": {
+    "@permaweb/ao-loader": "^0.0.26",
+    "keccak256": "^1.0.6"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

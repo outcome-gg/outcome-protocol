@@ -1,0 +1,2 @@
+local configurator = {}
+return configurator

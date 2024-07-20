@@ -1,0 +1,2 @@
+local resolutionAgent = {}
+return resolutionAgent
