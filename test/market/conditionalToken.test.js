@@ -1213,165 +1213,181 @@ test('Transferring: should batch transfer and send notices', async () => {
   assert.equal(sender_1, '9876')
 })
 
-// test('Reporting: should not allow reporting by incorrect resolution agent', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+test('Reporting: should not allow reporting by incorrect resolution agent', async () => {
+  // const resolutionAgent = '123';
+  const resolutionAgent = 'WRONG-RESOLUTION-AGENT';
+  // non-randomized questionId
+  const questionId = 'NON-RANDOM';
+  // const outcomeSlotCount = 9;
+  const payouts = [1,0,0,0,0,0,0,0,0]
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+  const result = await Send({
+    From: resolutionAgent,
+    Action: 'Report-Payouts',
+    Data: JSON.stringify({
+      questionId: questionId,
+      payouts: payouts
+    })
+  })
+  
+  assert.match(result, /condition not prepared or found/)
+})
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+test('Reporting: should not allow report with wrong questionId', async () => {
+  const resolutionAgent = '123';
+  // non-randomized questionId
+  // const questionId = 'NON-RANDOM';
+  const questionId = 'INCORRECT-ID';
+  // const outcomeSlotCount = 9;
+  const payouts = [1,0,0,0,0,0,0,0,0]
 
-// test('Reporting: should not allow report with wrong questionId', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+  const result = await Send({
+    From: resolutionAgent,
+    Action: 'Report-Payouts',
+    Data: JSON.stringify({
+      questionId: questionId,
+      payouts: payouts
+    })
+  })
+  
+  assert.match(result, /condition not prepared or found/)
+})
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+test('Reporting: should not allow report with no slots', async () => {
+  const resolutionAgent = '123';
+  // non-randomized questionId
+  const questionId = 'NON-RANDOM';
+  // const outcomeSlotCount = 9;
+  const payouts = []
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+  const result = await Send({
+    From: resolutionAgent,
+    Action: 'Report-Payouts',
+    Data: JSON.stringify({
+      questionId: questionId,
+      payouts: payouts
+    })
+  })
+  
+  assert.match(result, /there should be more than one outcome slot/)
+})
 
-// test('Reporting: should not allow report with no slots', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+test('Reporting: should not allow report with wrong number of slots', async () => {
+  const resolutionAgent = '123';
+  // non-randomized questionId
+  const questionId = 'NON-RANDOM';
+  // const outcomeSlotCount = 9;
+  const payouts = [1,0,0]
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+  const result = await Send({
+    From: resolutionAgent,
+    Action: 'Report-Payouts',
+    Data: JSON.stringify({
+      questionId: questionId,
+      payouts: payouts
+    })
+  })
+  
+  assert.match(result, /condition not prepared or found/)
+})
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+test('Reporting: should not allow report with zero payouts in all slots', async () => {
+  const resolutionAgent = '123';
+  // non-randomized questionId
+  const questionId = 'NON-RANDOM';
+  // const outcomeSlotCount = 9;
+  const payouts = [0,0,0,0,0,0,0,0,0]
 
-// test('Reporting: should not allow report with wrong number of slots', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+  const result = await Send({
+    From: resolutionAgent,
+    Action: 'Report-Payouts',
+    Data: JSON.stringify({
+      questionId: questionId,
+      payouts: payouts
+    })
+  })
+  
+  assert.match(result, /payout is all zeroes/)
+})
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+test('Reporting: should send Condition-Resolution-Notice', async () => {
+  const resolutionAgent = '123';
+  // non-randomized questionId
+  const questionId = 'NON-RANDOM';
+  // const outcomeSlotCount = 9;
+  const payouts = [1,0,0,0,0,0,0,0,0]
+  const conditionId = keccak256(resolutionAgent + questionId + payouts.length.toString()).toString('hex')
+  
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+  const result = await Send({
+    From: resolutionAgent,
+    Action: 'Report-Payouts',
+    Data: JSON.stringify({
+      questionId: questionId,
+      payouts: payouts
+    })
+  })
 
-// test('Reporting: should not allow report with zero payouts in all slots', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+  const action_ = result.Messages[0].Tags.find(t => t.name === 'Action').value
+  const resolutionAgent_ = result.Messages[0].Tags.find(t => t.name === 'ResolutionAgent').value
+  const outcomeSlotCount_ = result.Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
+  const questionId_ = result.Messages[0].Tags.find(t => t.name === 'QuestionId').value
+  const conditionId_ = result.Messages[0].Tags.find(t => t.name === 'ConditionId').value
+  const payoutNumerators_ = result.Messages[0].Tags.find(t => t.name === 'PayoutNumerators').value
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+  assert.equal(action_, "Condition-Resolution-Notice")
+  assert.equal(resolutionAgent_, resolutionAgent)
+  assert.equal(outcomeSlotCount_, '9')
+  assert.equal(questionId_, questionId)
+  assert.equal(conditionId_, conditionId)
+  assert.equal(JSON.stringify(payoutNumerators_), JSON.stringify(payouts))
+})
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+test('Reporting: should make reported payout numerators available', async () => {
+  // non-randomized questionId
+  const questionId = 'NON-RANDOM';
+  const outcomeSlotCount = 9;
+  const resolutionAgent = '123';
+  const conditionId = keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex')
 
-// test('Reporting: should not merge if any amount is short', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+  const result = await Send({
+    From: "1234",
+    Action: 'Get-Payout-Numerators',
+    ConditionId: conditionId,
+    Data: ''
+  })
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+  const action_ = result.Messages[0].Tags.find(t => t.name === 'Action').value
+  const conditionId_ = result.Messages[0].Tags.find(t => t.name === 'ConditionId').value
+  const payoutNumerators_ = result.Messages[0].Tags.find(t => t.name === 'PayoutNumerators').value
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+  assert.equal(action_, "Payout-Numerators")
+  assert.equal(conditionId_, conditionId)
+  assert.equal(payoutNumerators_, JSON.stringify([1,0,0,0,0,0,0,0,0]))
+})
 
-// test('Reporting: should send Condition-Resolution-Notice', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+test('Reporting: should make reported payout denomniator available', async () => {
+  // non-randomized questionId
+  const questionId = 'NON-RANDOM';
+  const outcomeSlotCount = 9;
+  const resolutionAgent = '123';
+  const conditionId = keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex')
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+  const result = await Send({
+    From: "1234",
+    Action: 'Get-Payout-Denominator',
+    ConditionId: conditionId,
+    Data: ''
+  })
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+  const action_ = result.Messages[0].Tags.find(t => t.name === 'Action').value
+  const conditionId_ = result.Messages[0].Tags.find(t => t.name === 'ConditionId').value
+  const payoutDenominator_ = result.Messages[0].Tags.find(t => t.name === 'PayoutDenominator').value
 
-// test('Reporting: should make reported payout numerators available', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
-
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
-
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+  assert.equal(action_, "Payout-Denominator")
+  assert.equal(conditionId_, conditionId)
+  assert.equal(payoutDenominator_, "1")
+})
 
 // test('Redeeming: should send Payout-Redemption-Notice', async () => {
 //   const resolutionAgent = '123';

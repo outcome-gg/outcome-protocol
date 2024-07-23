@@ -459,7 +459,7 @@ local function reportPayouts(msg)
   assert(outcomeSlotCount > 1, "there should be more than one outcome slot")
   -- IMPORTANT, the resolutionAgent is enforced to be the sender because it's part of the hash.
   local conditionId = getConditionId(msg.From, data.questionId, tostring(outcomeSlotCount))
-  assert(#PayoutNumerators[conditionId] == outcomeSlotCount, "condition not prepared or found")
+  assert(PayoutNumerators[conditionId] and #PayoutNumerators[conditionId] == outcomeSlotCount, "condition not prepared or found")
   assert(PayoutDenominator[conditionId] == 0, "payout denominator already set")
   -- Set the payout vector for the condition.
   local den = 0
@@ -751,6 +751,26 @@ Handlers.add('Transfer-Batch', Handlers.utils.hasMatchingTag('Action', 'Transfer
   end
 
   transferBatch(msg.From, msg.Tags.Recipient, tokenIds, quantities, msg.Tags.Cast, msg.Id)
+end)
+
+Handlers.add("Get-Payout-Numerators", Handlers.utils.hasMatchingTag("Action", "Get-Payout-Numerators"), function(msg)
+  assert(msg.Tags.ConditionId, "ConditionId is required!")
+  assert(PayoutNumerators[msg.Tags.ConditionId], "ConditionId must be valid!")
+  ao.send({
+    Action = "Payout-Numerators",
+    ConditionId = msg.Tags.ConditionId,
+    PayoutNumerators = json.encode(PayoutNumerators[msg.Tags.ConditionId])
+  })
+end)
+
+Handlers.add("Get-Payout-Denominator", Handlers.utils.hasMatchingTag("Action", "Get-Payout-Denominator"), function(msg)
+  assert(msg.Tags.ConditionId, "ConditionId is required!")
+  assert(PayoutDenominator[msg.Tags.ConditionId], "ConditionId must be valid!")
+  ao.send({
+    Action = "Payout-Denominator",
+    ConditionId = msg.Tags.ConditionId,
+    PayoutDenominator = tostring(PayoutDenominator[msg.Tags.ConditionId])
+  })
 end)
 
 
