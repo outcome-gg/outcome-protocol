@@ -62,7 +62,7 @@ local function burnBatchNotice(holder, ids, quantities)
   })
 end
 
-local function creditSingleNotice(sender, recipient, id, quantity)
+local function transferSingleNotices(sender, recipient, id, quantity)
   -- Send Debit-Notice to the Sender
   ao.send({
     Target = sender,
@@ -83,7 +83,7 @@ local function creditSingleNotice(sender, recipient, id, quantity)
   })
 end
 
-local function creditBatchNotice(sender, recipient, ids, quantities)
+local function transferBatchNotices(sender, recipient, ids, quantities)
   -- Send Debit-Notice to the Sender
   ao.send({
     Target = sender,
@@ -101,6 +101,16 @@ local function creditBatchNotice(sender, recipient, ids, quantities)
     TokenIds = json.encode(ids),
     Quantities = json.encode(quantities),
     Data = Colors.gray .. "You received batch from " .. Colors.green .. sender .. Colors.reset
+  })
+end
+
+local function transferErrorNotice(sender, id, msgId)
+  ao.send({
+    Target = sender,
+    Action = 'Transfer-Error',
+    ['Message-Id'] = msgId,
+    ['Token-Id'] = id,
+    Error = 'Insufficient Balance!'
   })
 end
 
@@ -344,6 +354,66 @@ local function batchBurn(from, ids, quantities)
   burnBatchNotice(from, ids, quantities)
 end
 
+local function transferSingle(from, recipient, id, quantity, cast, msgId)
+  if not BalancesOf[id] then BalancesOf[id] = {} end
+  if not BalancesOf[id][from] then BalancesOf[id][from] = "0" end
+  if not BalancesOf[id][recipient] then BalancesOf[id][recipient] = "0" end
+
+  local qty = bint(quantity)
+  local balance = bint(BalancesOf[id][from])
+  if bint.__le(qty, balance) then
+    BalancesOf[id][from] = tostring(bint.__sub(balance, qty))
+    BalancesOf[id][recipient] = tostring(bint.__add(BalancesOf[id][recipient], qty))
+
+    --[[
+         Only send the notifications to the Sender and Recipient
+         if the Cast tag is not set on the Transfer message
+       ]]
+    --
+    if not cast then
+      transferSingleNotices(from, recipient, id, quantity)
+    end
+  else
+    transferErrorNotice(from, id, msgId)
+  end
+end
+
+local function transferBatch(from, recipient, ids, quantities, cast, msgId)
+  -- Track successful id transfers
+  local ids_ = {}
+  local quantities_ = {}
+
+  for i = 1, #ids do
+    if not BalancesOf[ids[i]] then BalancesOf[ids[i]] = {} end
+    if not BalancesOf[ids[i]][from] then BalancesOf[ids[i]][from] = "0" end
+    if not BalancesOf[ids[i]][recipient] then BalancesOf[ids[i]][recipient] = "0" end
+
+    local qty = bint(quantities[i])
+    local balance = bint(BalancesOf[ids[i]][from])
+    if bint.__le(qty, balance) then
+      BalancesOf[ids[i]][from] = tostring(bint.__sub(balance, qty))
+      BalancesOf[ids[i]][recipient] = tostring(bint.__add(BalancesOf[ids[i]][recipient], qty))
+      table.insert(ids_, ids[i])
+      table.insert(quantities_, quantities[i])
+    else
+      transferErrorNotice(from, ids[i], msgId)
+    end
+  end
+
+  --[[
+        Only send the notifications to the Sender and Recipient
+        if the Cast tag is not set on the Transfer message
+      ]]
+  --
+  if not cast then
+    if #ids_ == 1 then
+      transferSingleNotices(from, recipient, ids_[1], quantities_[1])
+    elseif #ids_ > 1 then
+      transferBatchNotices(from, recipient, ids_, quantities_)
+    end
+  end
+end
+
 --[[
     Conditional Token Functions
   ]]
@@ -510,60 +580,6 @@ local function mergePositions(from, collateralToken, parentCollectionId, conditi
   positionsMergeNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
 end
 
--- function mergePositions(
---   IERC20 collateralToken,
---   bytes32 parentCollectionId,
---   bytes32 conditionId,
---   uint[] calldata partition,
---   uint amount
--- ) external {
---   require(partition.length > 1, "got empty or singleton partition");
---   uint outcomeSlotCount = payoutNumerators[conditionId].length;
---   require(outcomeSlotCount > 0, "condition not prepared yet");
-
---   uint fullIndexSet = (1 << outcomeSlotCount) - 1;
---   uint freeIndexSet = fullIndexSet;
---   uint[] memory positionIds = new uint[](partition.length);
---   uint[] memory amounts = new uint[](partition.length);
---   for (uint i = 0; i < partition.length; i++) {
---       uint indexSet = partition[i];
---       require(indexSet > 0 && indexSet < fullIndexSet, "got invalid index set");
---       require((indexSet & freeIndexSet) == indexSet, "partition not disjoint");
---       freeIndexSet ^= indexSet;
---       positionIds[i] = CTHelpers.getPositionId(collateralToken, CTHelpers.getCollectionId(parentCollectionId, conditionId, indexSet));
---       amounts[i] = amount;
---   }
---   _batchBurn(
---       msg.sender,
---       positionIds,
---       amounts
---   );
-
---   if (freeIndexSet == 0) {
---       if (parentCollectionId == bytes32(0)) {
---           require(collateralToken.transfer(msg.sender, amount), "could not send collateral tokens");
---       } else {
---           _mint(
---               msg.sender,
---               CTHelpers.getPositionId(collateralToken, parentCollectionId),
---               amount,
---               ""
---           );
---       }
---   } else {
---       _mint(
---           msg.sender,
---           CTHelpers.getPositionId(collateralToken,
---               CTHelpers.getCollectionId(parentCollectionId, conditionId, fullIndexSet ^ freeIndexSet)),
---           amount,
---           ""
---       );
---   }
-
---   emit PositionsMerge(msg.sender, collateralToken, parentCollectionId, conditionId, partition, amount);
--- }
-
-
 local function redeemPositions(msg)
   assert(msg.CollateralToken, "CollateralToken is required!")
   assert(msg.ParentCollectionId, "ParentCollectionId is required!")
@@ -682,23 +698,23 @@ Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Get-Info"), functi
 end)
 
 Handlers.add("Balance-Of", Handlers.utils.hasMatchingTag("Action", "Balance-Of"), function(msg)
-  assert(msg.Tags.Id, "Id is required!")
+  assert(msg.Tags.TokenId, "TokenId is required!")
   local bal = '0'
 
   -- If Id is found then cointinue
-  if BalancesOf[msg.Tags.Id] then
+  if BalancesOf[msg.Tags.TokenId] then
     -- If not Target is provided, then return the Senders balance
-    if (msg.Tags.Target and BalancesOf[msg.Tags.Id][msg.Tags.Target]) then
-      bal = BalancesOf[msg.Tags.Id][msg.Tags.Target]
-    elseif BalancesOf[msg.Tags.Id][msg.From] then
-      bal = BalancesOf[msg.Tags.Id][msg.From]
+    if (msg.Tags.Target and BalancesOf[msg.Tags.TokenId][msg.Tags.Target]) then
+      bal = BalancesOf[msg.Tags.TokenId][msg.Tags.Target]
+    elseif BalancesOf[msg.Tags.TokenId][msg.From] then
+      bal = BalancesOf[msg.Tags.TokenId][msg.From]
     end
   end
 
   ao.send({
     Target = msg.From,
     Balance = bal,
-    TokenId = msg.Tags.Id,
+    TokenId = msg.Tags.TokenId,
     Ticker = Ticker,
     Account = msg.Tags.Target or msg.From,
     Data = bal
@@ -714,5 +730,28 @@ end)
 Handlers.add('Balances-All', Handlers.utils.hasMatchingTag('Action', 'Balances-All'), function(msg)
   ao.send({ Target = msg.From, Data = json.encode(BalancesOf) })
 end)
+
+Handlers.add('Transfer-Single', Handlers.utils.hasMatchingTag('Action', 'Transfer-Single'), function(msg)
+  assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
+  assert(type(msg.Tags.TokenId) == 'string', 'TokenId is required!')
+  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
+  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than 0')
+  transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.TokenId, msg.Tags.Quantity, msg.Tags.Cast, msg.Id)
+end)
+
+Handlers.add('Transfer-Batch', Handlers.utils.hasMatchingTag('Action', 'Transfer-Batch'), function(msg)
+  assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
+  assert(type(msg.Tags.TokenIds) == 'string', 'TokenIds is required!')
+  local tokenIds = json.decode(msg.Tags.TokenIds)
+  assert(type(msg.Tags.Quantities) == 'string', 'Quantities is required!')
+  local quantities = json.decode(msg.Tags.Quantities)
+  assert(#tokenIds == #quantities, 'Input array lengths must match!')
+  for i = 1, #quantities do
+    assert(bint.__lt(0, bint(quantities[i])), 'Quantity must be greater than 0')
+  end
+
+  transferBatch(msg.From, msg.Tags.Recipient, tokenIds, quantities, msg.Tags.Cast, msg.Id)
+end)
+
 
 return "ok"

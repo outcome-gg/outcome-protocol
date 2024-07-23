@@ -1105,25 +1105,113 @@ test('Merge-Position: should burn positions tokens from the trader', async () =>
   // collateral balances
 })
 
-// test('Transferring: should not allow transferring more than split balance', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+test('Transferring: check Balance-Of', async () => {
+  const result = await Send({
+    From: "9876",
+    Action: 'Balance-Of',
+    TokenId: '0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1'
+  })
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+  assert.equal(result.Messages[0].Data, "30")
+})
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+test('Transferring: should not allow single transfer by more than split balance', async () => {
+  const result = await Send({
+    From: "9876",
+    Action: 'Transfer-Single',
+    Quantity: '31',
+    Recipient: '1234',
+    TokenId: '0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1'
+  })
+
+  const action_ = result.Messages[0].Tags.find(t => t.name === 'Action').value
+  const error_ = result.Messages[0].Tags.find(t => t.name === 'Error').value
+  const tokenId_ = result.Messages[0].Tags.find(t => t.name === 'Token-Id').value
+
+  assert.equal(action_, "Transfer-Error")
+  assert.equal(error_, "Insufficient Balance!")
+  assert.equal(tokenId_, '0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1')
+})
+
+test('Transferring: should single transfer and send notices', async () => {
+  const result = await Send({
+    From: "9876",
+    Action: 'Transfer-Single',
+    Quantity: '10',
+    Recipient: '1234',
+    TokenId: '0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1'
+  })
+
+  const action_0 = result.Messages[0].Tags.find(t => t.name === 'Action').value
+  const quantity_0 = result.Messages[0].Tags.find(t => t.name === 'Quantity').value
+  const tokenId_0 = result.Messages[0].Tags.find(t => t.name === 'TokenId').value
+  const recipient_0 = result.Messages[0].Tags.find(t => t.name === 'Recipient').value
+
+  const action_1 = result.Messages[1].Tags.find(t => t.name === 'Action').value
+  const quantity_1 = result.Messages[1].Tags.find(t => t.name === 'Quantity').value
+  const tokenId_1 = result.Messages[1].Tags.find(t => t.name === 'TokenId').value
+  const sender_1 = result.Messages[1].Tags.find(t => t.name === 'Sender').value
+
+  assert.equal(action_0, "Debit-Single-Notice")
+  assert.equal(quantity_0, "10")
+  assert.equal(tokenId_0, '0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1')
+  assert.equal(recipient_0, '1234')
+
+  assert.equal(action_1, "Credit-Single-Notice")
+  assert.equal(quantity_1, "10")
+  assert.equal(tokenId_1, '0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1')
+  assert.equal(sender_1, '9876')
+})
+
+test('Transferring: should not allow batch transfer by more than split balance', async () => {
+  const result = await Send({
+    From: "9876",
+    Action: 'Transfer-Batch',
+    Quantities: JSON.stringify(['21']),
+    Recipient: '1234',
+    TokenIds: JSON.stringify(['0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1'])
+  })
+
+  const action_ = result.Messages[0].Tags.find(t => t.name === 'Action').value
+  const error_ = result.Messages[0].Tags.find(t => t.name === 'Error').value
+  const tokenId_ = result.Messages[0].Tags.find(t => t.name === 'Token-Id').value
+
+  assert.equal(action_, "Transfer-Error")
+  assert.equal(error_, "Insufficient Balance!")
+  assert.equal(tokenId_, '0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1')
+})
+
+test('Transferring: should batch transfer and send notices', async () => {
+  const tokenIds = JSON.stringify(['0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1', '0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1'])
+  const quantities = JSON.stringify(['5', '5'])
+  const result = await Send({
+    From: "9876",
+    Action: 'Transfer-Batch',
+    Quantities: quantities,
+    Recipient: '1234',
+    TokenIds: tokenIds
+  })
+
+  const action_0 = result.Messages[0].Tags.find(t => t.name === 'Action').value
+  const quantities_0 = result.Messages[0].Tags.find(t => t.name === 'Quantities').value
+  const tokenIds_0 = result.Messages[0].Tags.find(t => t.name === 'TokenIds').value
+  const recipient_0 = result.Messages[0].Tags.find(t => t.name === 'Recipient').value
+
+  const action_1 = result.Messages[1].Tags.find(t => t.name === 'Action').value
+  const quantities_1 = result.Messages[1].Tags.find(t => t.name === 'Quantities').value
+  const tokenIds_1 = result.Messages[1].Tags.find(t => t.name === 'TokenIds').value
+  const sender_1 = result.Messages[1].Tags.find(t => t.name === 'Sender').value
+
+  assert.equal(action_0, "Debit-Batch-Notice")
+  assert.equal(quantities_0, quantities)
+  assert.equal(tokenIds_0, tokenIds)
+  assert.equal(recipient_0, '1234')
+
+  assert.equal(action_1, "Credit-Batch-Notice")
+  assert.equal(quantities_1, quantities)
+  assert.equal(tokenIds_1, tokenIds)
+  assert.equal(sender_1, '9876')
+})
 
 // test('Reporting: should not allow reporting by incorrect resolution agent', async () => {
 //   const resolutionAgent = '123';
