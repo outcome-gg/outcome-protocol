@@ -1389,262 +1389,143 @@ test('Reporting: should make reported payout denomniator available', async () =>
   assert.equal(payoutDenominator_, "1")
 })
 
-// test('Redeeming: should send Payout-Redemption-Notice', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+test('Redeeming: checking conditional token balances', async () => {
+  const result = await Send({
+    From: "1234",
+    Action: 'Balances-All',
+    Data: ''
+  })
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+  const balances = JSON.parse(result.Messages[0].Data)
+  // console.log("balances", balances)
+  // original: $ -> (A,B,C|D) ?
+  assert.equal(balances["4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532"]["9876"], '40')
+  assert.equal(balances["0a23b6f55f1ffa06bb9b6bb824dbcd672b6fcd06cc031b91d58f1acf34cf345d"]["9876"], '90')
+  assert.equal(balances["7d8a76cac061acdb983bb2e43c93aa0b2cf959378e6e25a43cbadcb1afd0e863"]["9876"], '90')
+  // split: C|D -> (C,D) 
+  assert.equal(balances["b61eeb7f086dfe73683a4f5a9040adf112fa8bda1cf41bf995d3b890e9f15335"]["9876"], '20')
+  assert.equal(balances["35d5963221eb06230aaeaa7085f67a8e9354855c4042e7785b22cd52eb2fae01"]["9876"], '20')
+  // new HI|LO ?
+  assert.equal(balances["9bab3ffd280420050d5a8be761ec828442de91d3a481dd5a938715331f87c4f5"]["9876"], '70') 
+  assert.equal(balances["4c879561ced61976c1cab946b26ab08b04e58a9d0d24b895829dd79180cccbf0"]["9876"], '100')
+  // new split: LO -> (LO&A, LO&B, LO&C|D)
+  assert.equal(balances["9104d8bf3d7facc2d4addecdf2f91dcaebe34882bad3c8f4ba097099cbe10c80"]["9876"], '30')
+  assert.equal(balances["1a5202803de9ab4467ea8d52abfa9da36ac433bdce3afd97930b11553ec53a0b"]["9876"], '60')
+  assert.equal(balances["6c1be55b038998072fa6e6a98a1028ea66fe172cdd93010c0d21eca6c287d81c"]["9876"], '30') 
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+  assert.equal(balances["0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1"]["9876"], '10') 
+  assert.equal(balances["0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1"]["1234"], '20') 
+})
 
-// test('Redeeming: should zero out redeemed positions', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+test('Redeeming: should send Payout-Redemption-Notice', async () => {
+  // non-random questionId
+  const questionId = 'NON-RANDOM';
+  const outcomeSlotCount = 9;
+  const resolutionAgent = "123";
+  const conditionId = keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex')
+  const partition =  [0b000000111, 0b000111000, 0b111000000] 
+  const collateralToken = "9876"
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+  const result = await Send({
+    From: "9876",
+    Action: 'Redeem-Positions',
+    Data: JSON.stringify({
+      collateralToken: collateralToken,
+      parentCollectionId: "",
+      conditionId: conditionId,
+      indexSets: partition
+    })
+  })
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+  const action_0 = result.Messages[0].Tags.find(t => t.name === 'Action').value
+  const tokenId_0 = result.Messages[0].Tags.find(t => t.name === 'TokenId').value
+  const quantity_0 = result.Messages[0].Tags.find(t => t.name === 'Quantity').value
 
-// test('Redeeming: should not affect others positions', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
+  const action_1 = result.Messages[1].Tags.find(t => t.name === 'Action').value
+  const tokenId_1 = result.Messages[1].Tags.find(t => t.name === 'TokenId').value
+  const quantity_1 = result.Messages[1].Tags.find(t => t.name === 'Quantity').value
 
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
+  const action_2 = result.Messages[2].Tags.find(t => t.name === 'Action').value
+  const tokenId_2 = result.Messages[2].Tags.find(t => t.name === 'TokenId').value
+  const quantity_2 = result.Messages[2].Tags.find(t => t.name === 'Quantity').value
 
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
+  const action_3 = result.Messages[3].Tags.find(t => t.name === 'Action').value
+  const recipient_3 = result.Messages[3].Tags.find(t => t.name === 'Recipient').value
+  const quantity_3 = result.Messages[3].Tags.find(t => t.name === 'Quantity').value
 
+  const action_4 = result.Messages[4].Tags.find(t => t.name === 'Action').value
+  const redeemer_4 = result.Messages[4].Tags.find(t => t.name === 'Redeemer').value
+  const payout_4 = result.Messages[4].Tags.find(t => t.name === 'Payout').value
+  const collateralToken_4 = result.Messages[4].Tags.find(t => t.name === 'CollateralToken').value
+  const indexSets_4 = result.Messages[4].Tags.find(t => t.name === 'IndexSets').value
+  const conditionId_4 = result.Messages[4].Tags.find(t => t.name === 'ConditionId').value
+  
+  assert.equal(action_0, "Burn-Single-Notice")
+  assert.equal(tokenId_0, "4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532")
+  assert.equal(quantity_0, "40")
+
+  assert.equal(action_1, "Burn-Single-Notice")
+  assert.equal(tokenId_1, "7d8a76cac061acdb983bb2e43c93aa0b2cf959378e6e25a43cbadcb1afd0e863")
+  assert.equal(quantity_1, "90")
+
+  assert.equal(action_2, "Burn-Single-Notice")
+  assert.equal(tokenId_2, "0a23b6f55f1ffa06bb9b6bb824dbcd672b6fcd06cc031b91d58f1acf34cf345d")
+  assert.equal(quantity_2, "90")
+
+  assert.equal(action_3, "Transfer")
+  assert.equal(recipient_3, "9876")
+  assert.equal(quantity_3, "40.0")
+
+  assert.equal(action_4, "Payout-Redemption-Notice")
+  assert.equal(redeemer_4, "9876")
+  assert.equal(payout_4, "40.0")
+  assert.equal(collateralToken_4, "9876")
+  assert.equal(indexSets_4, JSON.stringify([7,56,448]))
+  assert.equal(conditionId_4, "c4973b6190194a30089838ed3cdd5db1867c5137c9178223c923163ff381936e")
+})
+
+test('Redeeming: should zero out redeemed positions && not affect other positions', async () => {
+  const result = await Send({
+    From: "1234",
+    Action: 'Balances-All',
+    Data: ''
+  })
+
+  const balances = JSON.parse(result.Messages[0].Data)
+  // original: $ -> (A,B,C|D) - SHOULD BE BURNED
+  assert.equal(balances["4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532"]["9876"], '0')
+  assert.equal(balances["0a23b6f55f1ffa06bb9b6bb824dbcd672b6fcd06cc031b91d58f1acf34cf345d"]["9876"], '0')
+  assert.equal(balances["7d8a76cac061acdb983bb2e43c93aa0b2cf959378e6e25a43cbadcb1afd0e863"]["9876"], '0')
+  // split: C|D -> (C,D) 
+  assert.equal(balances["b61eeb7f086dfe73683a4f5a9040adf112fa8bda1cf41bf995d3b890e9f15335"]["9876"], '20')
+  assert.equal(balances["35d5963221eb06230aaeaa7085f67a8e9354855c4042e7785b22cd52eb2fae01"]["9876"], '20')
+  // new HI|LO ?
+  assert.equal(balances["9bab3ffd280420050d5a8be761ec828442de91d3a481dd5a938715331f87c4f5"]["9876"], '70') 
+  assert.equal(balances["4c879561ced61976c1cab946b26ab08b04e58a9d0d24b895829dd79180cccbf0"]["9876"], '100')
+  // new split: LO -> (LO&A, LO&B, LO&C|D)
+  assert.equal(balances["9104d8bf3d7facc2d4addecdf2f91dcaebe34882bad3c8f4ba097099cbe10c80"]["9876"], '30')
+  assert.equal(balances["1a5202803de9ab4467ea8d52abfa9da36ac433bdce3afd97930b11553ec53a0b"]["9876"], '60')
+  assert.equal(balances["6c1be55b038998072fa6e6a98a1028ea66fe172cdd93010c0d21eca6c287d81c"]["9876"], '30') 
+
+  assert.equal(balances["0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1"]["9876"], '10') 
+  assert.equal(balances["0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1"]["1234"], '20') 
+})
+
+// @dev to be checked via integration tests
 // test('Redeeming: should credit payout as collateral', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
-
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
-
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
-
-// test('Trader enters deeper position with another condition: combines collection IDs', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
-
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
-
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
-
-// test('Trader enters deeper position with another condition: sends Position-Split-Notice', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
-
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
-
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
-
-// test('Trader enters deeper position with another condition: burns value in the parent position', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
-
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
-
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
-// })
-
-// test('Trader enters deeper position with another condition: mints values in the child positions', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
-
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
-
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
 // })
 
 // test('Trader enters deeper position with another condition: should send Condition-Resolution-Notice', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
-
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
-
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
 // })
 
 // test('Trader enters deeper position with another condition: should reflect report via payoutNumerators', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
-
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
-
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
 // })
 
 // test('Trader enters deeper position with another condition: should not allow an update to the report', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
-
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
-
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
 // })
 
 // test('Trader enters deeper position with another condition: with valid redemption', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
-
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
-
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
 // })
 
 // test('Trader enters deeper position with another condition: should send Payout-Redemption-Notice', async () => {
-//   const resolutionAgent = '123';
-//     // randomize questionId
-//   const questionId = genRanHex(64);
-//   const outcomeSlotCount = 2;
-
-//   const result = await Send({
-//     From: "1234",
-//     Action: 'Prepare-Condition',
-//     Data: JSON.stringify({
-//       resolutionAgent: resolutionAgent,
-//       questionId: questionId,
-//       outcomeSlotCount: outcomeSlotCount
-//     })
-//   })
-
-//   console.log("result", result)
-//   assert.equal(result.Output.data.output, "ok")
 // })

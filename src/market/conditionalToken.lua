@@ -188,8 +188,8 @@ local function payoutRedemptionNotice(redeemer, collateralToken, parentCollectio
     CollateralToken = collateralToken,
     ParentCollectionId = parentCollectionId,
     ConditionId = conditionId,
-    IndexSets = indexSets,
-    Payout = payout
+    IndexSets = json.encode(indexSets),
+    Payout = tostring(payout)
   })
 end
 
@@ -580,15 +580,52 @@ local function mergePositions(from, collateralToken, parentCollectionId, conditi
   positionsMergeNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
 end
 
-local function redeemPositions(msg)
-  assert(msg.CollateralToken, "CollateralToken is required!")
-  assert(msg.ParentCollectionId, "ParentCollectionId is required!")
-  assert(msg.ConditionId, "ConditionId is required!")
-  assert(msg.IndexSets, "IndexSets is required!")
+local function redeemPositions(from, collateralToken, parentCollectionId, conditionId, indexSets)
+  local den = PayoutDenominator[conditionId]
+  assert(den > 0, "result for condition not received yet")
+  assert(PayoutNumerators[conditionId] and #PayoutNumerators[conditionId] > 0, "condition not prepared yet")
 
-  -- TODO
-  local payout = 0
-  payoutRedemptionNotice(msg.From, msg.CollateralToken, msg.ParentCollectionId, msg.ConditionId, msg.IndexSets, payout)
+  local outcomeSlotCount = #PayoutNumerators[conditionId]
+  local totalPayout = 0
+  local fullIndexSet = (1 << outcomeSlotCount) - 1
+
+  for i = 1, #indexSets do
+    local indexSet = indexSets[i]
+    assert(indexSet > 0 and indexSet < fullIndexSet, "got invalid index set")
+
+    local positionId = getPositionId(collateralToken, getCollectionId(parentCollectionId, conditionId, indexSet))
+    local payoutNumerator = 0
+
+    for j = 0, outcomeSlotCount - 1 do
+      if indexSet & (1 << j) ~= 0 then
+        payoutNumerator = payoutNumerator + PayoutNumerators[conditionId][j + 1]
+      end
+    end
+
+    assert(BalancesOf[positionId], "invalid position")
+    if not BalancesOf[positionId][from] then BalancesOf[positionId][from] = "0" end
+    local payoutStake = BalancesOf[positionId][from]
+    if bint.__lt(0, bint(payoutStake)) then
+      totalPayout = totalPayout + (payoutStake * payoutNumerator) / den
+      burn(from, positionId, payoutStake)
+    end
+  end
+
+  if totalPayout > 0 then
+    if parentCollectionId == "" then
+      -- TODO: assert that this passes before sending merge notice ("could not transfer payout to message sender")
+      ao.send({
+        Target = collateralToken,
+        Action = "Transfer",
+        Recipient = from,
+        Quantity = tostring(totalPayout)
+      })
+    else
+      mint(from, getPositionId(collateralToken, parentCollectionId), totalPayout)
+    end
+  end
+
+  payoutRedemptionNotice(from, collateralToken, parentCollectionId, conditionId, indexSets, totalPayout)
 end
 
 -- @dev Gets the outcome slot count of a condition.
@@ -652,7 +689,14 @@ Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-P
 end)
 
 Handlers.add("Redeem-Positions", Handlers.utils.hasMatchingTag("Action", "Redeem-Positions"), function(msg)
-  redeemPositions(msg)
+  local data = json.decode(msg.Data)
+  assert(data.collateralToken, "CollateralToken is required!")
+  assert(data.parentCollectionId, "ParentCollectionId is required!")
+  assert(data.conditionId, "ConditionId is required!")
+  assert(PayoutDenominator[data.conditionId], "ConditionId must be valid!")
+  assert(data.indexSets, "IndexSets is required!")
+
+  redeemPositions(msg.From, data.collateralToken, data.parentCollectionId, data.conditionId, data.indexSets)
 end)
 
 Handlers.add("Get-Outcome-Slot-Count", Handlers.utils.hasMatchingTag("Action", "Get-Outcome-Slot-Count"), function(msg)
