@@ -194,26 +194,28 @@ local function payoutRedemptionNotice(redeemer, collateralToken, parentCollectio
 end
 
 --[[
-    VARIABLES
+    GLOBALS
   ]]
 --
-if not BalancesOf then BalancesOf = {} end
+-- @dev used to reset state between integration tests
+ResetState = true
 
-if Name ~= 'Conditional Framework Token' then Name = 'Conditional Framework Token' end
+Version = "1.0.0"
 
-if Ticker ~= 'CFT' then Ticker = 'CFT' end
-
-if Denomination ~= 12 then Denomination = 12 end
+if Name ~= 'CFT-v' .. Version or ResetState then Name = 'CFT-v' .. Version  end
+if Ticker ~= 'CFT' or ResetState then Ticker = 'CFT' end
+if Denomination ~= 12 or ResetState then Denomination = 12 end
+if not BalancesOf or ResetState then BalancesOf = {} end
 
 -- @dev Mapping key is an condition ID. Value represents numerators of the payout vector associated with the condition. 
 -- This array is initialized with a length equal to the outcome slot count. E.g. Condition with 3 outcomes [A, B, C] and two of those correct [0.5, 0.5, 0]. 
 -- @dev Note from source: In Ethereum there are no decimal values, so here, 0.5 is represented by fractions like 1/2 == 0.5. That's why we need numerator and denominator values. Payout numerators are also used as a check of initialization. If the numerators array is empty (has length zero), the condition was not created/prepared. See getOutcomeSlotCount.
-if not PayoutNumerators then PayoutNumerators = {} end
+if not PayoutNumerators or ResetState then PayoutNumerators = {} end
 
 -- @dev Denominator is also used for checking if the condition has been resolved. If the denominator is non-zero, then the condition has been resolved.
-if not PayoutDenominator then PayoutDenominator = {} end
+if not PayoutDenominator or ResetState then PayoutDenominator = {} end
 
-if not Logo then Logo = '' end
+if not Logo or ResetState then Logo = '' end
 
 --[[
     FUNCTIONS
@@ -476,8 +478,8 @@ local function reportPayouts(msg)
 end
 
 -- @dev This function splits a position. If splitting from the collateral, this contract will attempt to transfer `amount` collateral from the message sender to itself. 
--- Otherwise, this contract will burn `amount` stake held by the message sender in the position being split worth of semi-fungible tokens. 
--- Regardless, if successful, `amount` stake will be minted in the split target positions. If any of the transfers, mints, or burns fail, the transaction will revert.
+-- Otherwise, this contract will burn `quantity` stake held by the message sender in the position being split worth of semi-fungible tokens. 
+-- Regardless, if successful, `quantity` stake will be minted in the split target positions. If any of the transfers, mints, or burns fail, the transaction will revert.
 -- The transaction will also revert if the given partition is trivial, invalid, or refers to more slots than the condition is prepared with.
 -- @param from The initiator of the original Split-Position / Create-Position action message.
 -- @param collateralToken The address of the positions' backing collateral token.
@@ -518,12 +520,10 @@ local function splitPosition(from, collateralToken, parentCollectionId, conditio
       burn(from, getPositionId(collateralToken, parentCollectionId), quantity)
     end
   else
-    -- assert(false, "foo " .. tostring(fullIndexSet ~ freeIndexSet))
     -- Partitioning a subset of outcomes for the condition in this branch.
     -- For example, for a condition with three outcomes A, B, and C, this branch
     -- allows the splitting of a position $:(A|C) to positions $:(A) and $:(C).
     burn(from, getPositionId(collateralToken, parentCollectionId), quantity)
-    -- burn(from, getPositionId(collateralToken, getCollectionId(parentCollectionId, conditionId, fullIndexSet ~ freeIndexSet)), quantity)
   end
 
   batchMint(from, positionIds, quantities)
@@ -675,7 +675,7 @@ Handlers.add("Split-Position", Handlers.utils.hasMatchingTag("Action", "Split-Po
   assert(data.conditionId, "conditionId is required!")
   assert(data.partition, "partition is required!")
   assert(data.quantity, "quantity is required!")
-  splitPosition(msg.From, data.collateralToken, data.parentCollectionId, data.conditionId, data.partition, data.quantity, false)
+  splitPosition(msg.Sender, data.collateralToken, data.parentCollectionId, data.conditionId, data.partition, data.quantity, false)
 end)
 
 Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-Positions"), function(msg)
@@ -708,7 +708,8 @@ Handlers.add("Get-Condition-Id", Handlers.utils.hasMatchingTag("Action", "Get-Co
   assert(msg.Tags.ResolutionAgent, "ResolutionAgent is required!")
   assert(msg.Tags.QuestionId, "QuestionId is required!")
   assert(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount is required!")
-  return getConditionId(msg.Tags.ResolutionAgent, msg.Tags.QuestionId, msg.Tags.OutcomeSlotCount)
+  local conditionId = getConditionId(msg.Tags.ResolutionAgent, msg.Tags.QuestionId, msg.Tags.OutcomeSlotCount)
+  ao.send({ Target = msg.From, Action = "Condition-Id", ResolutionAgent = msg.Tags.ResolutionAgent, QuestionId = msg.Tags.QuestionId, OutcomeSlotCount = msg.Tags.OutcomeSlotCount, ConditionId = conditionId })
 end)
 
 Handlers.add("Get-Collection-Id", Handlers.utils.hasMatchingTag("Action", "Get-Collection-Id"), function(msg)

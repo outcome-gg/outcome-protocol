@@ -4,15 +4,28 @@
   "version": "1.0.0",
   "description": "Outcome Protocol",
   "scripts": {
-    "test": "node --test test/**/*.test.js",
-    "test:market": "node --test test/market/*.test.js",
-    "test:sqlite": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test test/**/*.test.js"
+    "test:unit": "node --test test/unit/**/*.test.js",
+    "test:unit:market": "node --test test/unit/market/*.test.js",
+    "test:unit:market:amm": "node --test test/unit/market/amm.test.js",
+    "test:unit:market:conditionalTokens": "node --test test/unit/market/conditionalTokens.test.js",
+    "test:integration:amm": "yarn && mocha 'test/integration/amm*.js' --timeout 30000",
+    "test:integration:amm:clean": "yarn && yarn test:deploy && mocha 'test/integration/amm*.js' --timeout 30000",
+    "test:sqlite": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test test/**/*.test.js",
+    "test:deploy": "scripts/deploy.sh test",
+    "prod:deploy": "scripts/deploy.sh prod"
   },
   "keywords": [],
   "author": "",
   "dependencies": {
     "@permaweb/ao-loader": "^0.0.26",
-    "keccak256": "^1.0.6"
+    "@permaweb/aoconnect": "^0.0.51",
+    "axios": "^1.7.2",
+    "chai": "^4.3.10",
+    "dotenv": "^16.4.5",
+    "keccak256": "^1.0.6",
+    "mocha": "^10.2.0",
+    "path": "^0.12.7",
+    "yargs": "^17.2.1"
   },
   "engines": {
     "node": ">=22"

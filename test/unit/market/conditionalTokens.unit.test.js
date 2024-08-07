@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import * as assert from 'node:assert'
-import { Send } from '../aos.helper.js'
+import { Send } from '../../aos.helper.js'
 import fs from 'node:fs'
 import keccak256 from 'keccak256'
 
@@ -9,15 +9,15 @@ const genRanHex = size => [...Array(size)].map(() => Math.floor(Math.random() * 
 /* 
  * LOAD MODULE
  */
-test('load conditionalToken module', async () => {
-  const code = fs.readFileSync('./src/market/conditionalToken.lua', 'utf-8')
+test('load conditionalTokens module', async () => {
+  const code = fs.readFileSync('./src/market/conditionalTokens.lua', 'utf-8')
   const result = await Send({
     Action: 'Eval',
     Data: `
       local function _load() 
         ${code}
       end
-      _G.package.loaded["conditionalToken"] = _load()
+      _G.package.loaded["conditionalTokens"] = _load()
       return "ok"
     `
   })
@@ -36,7 +36,7 @@ test('load mock collateral token module', async () => {
       local function _load() 
         ${code}
       end
-      _G.package.loaded["conditionalToken"] = _load()
+      _G.package.loaded["token"] = _load()
       return "ok"
     `
   })

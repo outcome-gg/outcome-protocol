@@ -15,7 +15,7 @@ local outcomeToken = require("outcomeToken")
 
 -- market 
 local amm = require("amm")
-local conditionalToken = require("conditionalToken")
+local conditionalTokens = require("conditionalTokens")
 
 -- oracles 
 local dexi = require("dexi")

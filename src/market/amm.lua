@@ -1,2 +1,913 @@
-local amm = {}
-return amm
+local json = require('json')
+local bint = require('.bint')(256)
+local utils = require(".utils")
+local crypto = require('.crypto')
+local ao = require('ao')
+
+--[[
+    GLOBALS
+  ]]
+--
+-- @dev used to reset state between integration tests
+ResetState = true
+
+Version = "1.0.0"
+Initialized = false
+
+--[[
+    AMM
+  ]]
+--
+if not DataIndex or ResetState then DataIndex = '' end
+
+if not ConditionalTokens or ResetState then ConditionalTokens = '' end
+if not CollateralToken or ResetState then CollateralToken = '' end
+if not ConditionId or ResetState then ConditionId = '' end
+
+if not ONE or ResetState then ONE = 10^12 end
+if not Fee or ResetState then Fee = 0 end
+if not FeePoolWeight or ResetState then FeePoolWeight = 0 end
+if not TotalWithdrawnFees or ResetState then TotalWithdrawnFees = 0 end
+
+if not WithdrawnFees or ResetState then WithdrawnFees = {} end
+if not OutcomeSlotCounts or ResetState then OutcomeSlotCounts = {} end
+if not CollectionIds or ResetState then CollectionIds = {} end
+if not PositionIds or ResetState then PositionIds = {} end
+if not PoolBalances or ResetState then PoolBalances = {} end
+
+--[[
+    LP Token
+  ]]
+--
+if not Name or ResetState then Name = 'AMM-v' .. Version end
+if not Ticker or ResetState then Ticker = 'OUTCOME-LP-v' .. Version end
+if not Logo or ResetState then Logo = 'SBCCXwwecBlDqRLUjb8dYABExTJXLieawf7m2aBJ-KY' end
+
+if not Balances or ResetState then Balances = {} end
+if not TotalSupply or ResetState then TotalSupply = '0' end
+if not Denomination or ResetState then Denomination = 12 end
+
+--[[
+    NOTICES
+  ]]
+--
+
+local function mintNotice(recipient, quantity)
+  ao.send({
+    Target = recipient,
+    Quantity = tostring(quantity),
+    Action = 'Mint-Notice',
+    Data = Colors.gray .. "Successfully minted " .. Colors.blue .. tostring(quantity) .. Colors.reset
+  })
+end
+
+
+local function burnNotice(holder, quantity)
+  ao.send({
+    Target = holder,
+    Quantity = tostring(quantity),
+    Action = 'Burn-Notice',
+    Data = Colors.gray .. "Successfully burned " .. Colors.blue .. tostring(quantity) .. Colors.reset
+  })
+end
+
+local function transferNotices(sender, recipient, quantity)
+  -- Send Debit-Notice to the Sender
+  ao.send({
+    Target = sender,
+    Action = 'Debit-Notice',
+    Recipient = recipient,
+    Quantity = tostring(quantity),
+    Data = Colors.gray .. "You transferred " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " to " .. Colors.green .. recipient .. Colors.reset
+  })
+  -- Send Credit-Notice to the Recipient
+  ao.send({
+    Target = recipient,
+    Action = 'Credit-Notice',
+    Sender = sender,
+    Quantity = tostring(quantity),
+    Data = Colors.gray .. "You received " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " from " .. Colors.green .. sender .. Colors.reset
+  })
+end
+
+local function transferErrorNotice(sender, msgId)
+  ao.send({
+    Target = sender,
+    Action = 'Transfer-Error',
+    ['Message-Id'] = msgId,
+    Error = 'Insufficient Balance!'
+  })
+end
+
+local function newMarketNotice(conditionId, conditionalTokens, collateralToken, positionIds, fee, name, ticker, logo)
+  ao.send({
+    Target = DataIndex,
+    Action = "New-Market-Notice",
+    ConditionId = conditionId,
+    ConditionalTokens = conditionalTokens,
+    CollateralToken = collateralToken,
+    PositionIds = positionIds,
+    Fee = fee,
+    Name = name,
+    Ticker = ticker,
+    Logo = logo,
+    Data = "Successfully created market"
+  })
+end
+
+local function fundingAddedNotice(from, sendBackAmounts, mintAmount)
+  ao.send({
+    Target = from,
+    Action = "Funding-Added-Notice",
+    SendBackAmounts = json.encode(sendBackAmounts),
+    Data = "Successfully added funding"
+  })
+end
+
+local function fundingRemovedNotice()
+end
+
+local function buyNotice()
+end
+
+local function sellNotice()
+end
+
+--[[
+    FUNCTIONS
+  ]]
+--
+
+--[[
+    LP Token
+  ]]
+--
+
+-- @dev Internal function to mint an amount of a token
+-- @param to The address that will own the minted token
+-- @param quantity Quantity of the token to be minted
+local function mint(to, quantity)
+  assert(quantity, 'Quantity is required!')
+  assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
+
+  if not Balances[to] then Balances[to] = '0' end
+  Balances[to] = tostring(bint.__add(bint(Balances[to]), quantity))
+  TotalSupply = tostring(bint.__add(bint(TotalSupply), quantity))
+
+  -- Send notice
+  mintNotice(to, quantity)
+end
+
+-- @dev Internal function to burn an amount of a token
+-- @param from The address that will burn the token
+-- @param quantity Quantity of the token to be burned
+local function burn(from, quantity)
+  assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
+  assert(bint.__le(quantity, Balances[from]), 'User must have sufficient tokens!')
+  -- Burn tokens
+  Balances[from] = tostring(bint.__sub(Balances[from], quantity))
+  -- Send notice
+  burnNotice(from, quantity)
+end
+
+local function transfer(from, recipient, quantity, cast, msgId)
+  if not Balances[from] then Balances[from] = "0" end
+  if not Balances[recipient] then Balances[recipient] = "0" end
+
+  local qty = bint(quantity)
+  local balance = bint(Balances[from])
+  if bint.__le(qty, balance) then
+    Balances[from] = tostring(bint.__sub(balance, qty))
+    Balances[recipient] = tostring(bint.__add(Balances[recipient], qty))
+
+    --[[
+         Only send the notifications to the Sender and Recipient
+         if the Cast tag is not set on the Transfer message
+       ]]
+    --
+    if not cast then
+      transferNotices(from, recipient, quantity)
+    end
+  else
+    transferErrorNotice(from, msgId)
+  end
+end
+
+--[[
+    Helper Functions
+  ]]
+--
+local function recordCollectionIdsForAllOutcomes(conditionId, i, j)
+  ao.send({
+    Target = ConditionalTokens,
+    Action = "Get-Collection-Id",
+    ParentCollectionId = "",
+    ConditionId = conditionId,
+    IndexSet = j
+  }).onReply(
+    function(m)
+      local collectionId = m.CollectionId
+      CollectionIds[i][j] = collectionId
+      PositionIds[i][j] = crypto.digest.keccak256(CollateralToken .. collectionId).asHex()
+    end
+  )
+end
+
+local function recordOutcomeSlotCounts(conditionId, i)
+  ao.send({ Target = ConditionalTokens, Action = "Get-Outcome-Slot-Count", ConditionId = conditionId}).onReply(
+    function(m)
+      local outcomeSlotCount = m.OutcomeSlotCount
+      OutcomeSlotCounts[i] = outcomeSlotCount
+
+      -- Prepare tables: CollectionIds and PositionIds
+      for j = 1, outcomeSlotCount do
+        CollectionIds[i][j] = ""
+        PositionIds[i][j] = ""
+      end
+
+      -- Populate CollectionIds and PositionIds
+      for j = 1, outcomeSlotCount do
+        recordCollectionIdsForAllOutcomes(conditionId, i, j)
+      end
+    end
+  )
+end
+
+local function recordCollectionIdsForAllConditions(conditionId, i)
+  ao.send({
+    Target = ConditionalTokens,
+    Action = "Get-Collection-Id",
+    ParentCollectionId = "",
+    ConditionId = conditionId,
+    IndexSet = indexSet
+  }).onReply(
+    function(m)
+      local collectionId = m.CollectionId
+      CollectionIds[i] = collectionId
+      PositionIds[i] = crypto.digest.keccak256(CollateralToken .. collectionId).asHex()
+    end
+  )
+end
+
+-- Utility function: CeilDiv
+local function ceildiv(x, y)
+  if x > 0 then
+    return math.floor((x - 1) / y) + 1
+  end
+  return math.floor(x / y)
+end
+
+-- Get pool balances
+-- @dev TODO: remove this function
+local function getPoolBalances()
+  -- print(getPoolBalances)
+  -- local balances = {}
+  -- for i = 1, #PositionIds do
+  --   balances[PositionIds[i]] = PoolBalances
+  -- end
+  -- print("BALANCES " .. json.encode(balances))
+  -- return balances
+  return PoolBalances
+end
+
+-- Generate basic partition
+--@dev hardcoded to 2 outcomesSlotCount
+local function generateBasicPartition()
+  local partition = {}
+  for i = 0, 1 do
+    table.insert(partition, 1 << i)
+  end
+  return partition
+end
+
+-- Split positions through all conditions
+--@dev hardcoded to 2 outcomesSlotCount
+local function splitPosition(from, quantity)
+  local partition = generateBasicPartition()
+
+  -- TODO: return True iff passes 
+  ao.send({
+    Target = CollateralToken,
+    Action = "Transfer",
+    Quantity = quantity,
+    Recipient = ConditionalTokens,
+    Sender = from,
+    ['X-Action'] = "Create-Position",
+    ['X-ParentCollectionId'] = "",
+    ['X-ConditionId'] = ConditionId,
+    ['X-Partition'] = json.encode(partition),
+  })
+end
+
+-- Merge positions through all conditions
+local function mergePositionsThroughAllConditions(amount)
+  -- for i = 1, #ConditionIds do
+  --   local partition = generateBasicPartition(OutcomeSlotCounts[i])
+  --   for j = 1, #CollectionIds[i] do
+  --     ConditionalTokens.mergePositions(
+  --       CollateralToken,
+  --       CollectionIds[i][j],
+  --       ConditionIds[i],
+  --       partition,
+  --       amount
+  --     )
+  --   end
+  -- end
+end
+
+-- Collected fees
+function CollectedFees()
+  return FeePoolWeight - TotalWithdrawnFees
+end
+
+-- Fees withdrawable by an account
+local function feesWithdrawableBy(account)
+  -- local rawAmount = (FeePoolWeight * BalanceOf(account)) / TotalSupply()
+  -- return rawAmount - (WithdrawnFees[account] or 0)
+end
+
+-- Withdraw fees
+local function withdrawFees(account)
+  -- local rawAmount = (FeePoolWeight * BalanceOf(account)) / TotalSupply()
+  -- local withdrawableAmount = rawAmount - (WithdrawnFees[account] or 0)
+  -- if withdrawableAmount > 0 then
+  --   WithdrawnFees[account] = rawAmount
+  --   TotalWithdrawnFees = TotalWithdrawnFees + withdrawableAmount
+  --   assert(CollateralToken.transfer(account, withdrawableAmount), "withdrawal transfer failed")
+  -- end
+end
+
+-- Before token transfer
+-- function _beforeTokenTransfer(from, to, amount)
+--   if from ~= nil then
+--     withdrawFees(from)
+--   end
+
+--   local totalSupply = TotalSupply()
+--   local withdrawnFeesTransfer = totalSupply == 0 and amount or (FeePoolWeight * amount) / totalSupply
+
+--   if from ~= nil then
+--     WithdrawnFees[from] = WithdrawnFees[from] - withdrawnFeesTransfer
+--     TotalWithdrawnFees = TotalWithdrawnFees - withdrawnFeesTransfer
+--   else
+--     FeePoolWeight = FeePoolWeight + withdrawnFeesTransfer
+--   end
+
+--   if to ~= nil then
+--     WithdrawnFees[to] = (WithdrawnFees[to] or 0) + withdrawnFeesTransfer
+--     TotalWithdrawnFees = TotalWithdrawnFees + withdrawnFeesTransfer
+--   else
+--     FeePoolWeight =FeePoolWeight - withdrawnFeesTransfer
+--   end
+-- end
+
+--[[
+    Add Funding 
+  ]]
+--
+-- @dev: to test the use of distributionHint to set the initial probability distribuiton
+-- @dev: to test that adding subsquent funding does not alter the probability distribution
+local function addFunding(from, addedFunds, distributionHint)
+  assert(bint.__lt(0, bint(addedFunds)), "funding must be non-zero")
+
+  local sendBackAmounts = {}
+  local poolShareSupply = TotalSupply
+  local mintAmount = 0
+
+  if bint.__lt(0, bint(poolShareSupply)) then
+    assert(#distributionHint == 0, "cannot use distribution hint after initial funding")
+    local poolWeight = 0
+    for i = 1, #PoolBalances do
+      local balance = PoolBalances[i]
+      if bint.__lt(poolWeight, bint(balance)) then
+        poolWeight = bint(balance)
+      end
+    end
+
+    for i = 1, #PoolBalances do
+      local remaining = (addedFunds * PoolBalances[i]) / poolWeight
+      sendBackAmounts[i] = addedFunds - remaining
+    end
+
+    mintAmount = (addedFunds * poolShareSupply) / poolWeight
+  else
+    if #distributionHint > 0 then
+      local maxHint = 0
+      for i = 1, #distributionHint do
+        local hint = distributionHint[i]
+        if maxHint < hint then
+          maxHint = hint
+        end
+      end
+
+      for i = 1, #distributionHint do
+        local remaining = (addedFunds * distributionHint[i]) / maxHint
+        assert(remaining > 0, "must hint a valid distribution")
+        sendBackAmounts[i] = addedFunds - remaining
+      end
+    end
+
+    mintAmount = addedFunds
+  end
+
+  splitPosition(from, addedFunds)
+
+  mint(from, mintAmount)
+
+  -- Transform sendBackAmounts to array of amounts added
+  for i = 1, #sendBackAmounts do
+    sendBackAmounts[i] = addedFunds - sendBackAmounts[i]
+  end
+
+  fundingAddedNotice(from, sendBackAmounts, mintAmount)
+end
+
+--[[
+    Remove Funding 
+  ]]
+--
+local function removeFunding(sharesToBurn)
+  local poolBalances = getPoolBalances()
+
+  local sendAmounts = {}
+  -- local poolShareSupply = totalSupply()
+  for i = 1, #poolBalances do
+    -- sendAmounts[i] = (poolBalances[i] * sharesToBurn) / poolShareSupply
+  end
+
+  -- local collateralRemovedFromFeePool = CollateralToken.balanceOf(ao.id)
+
+  -- _burn(msg.sender, sharesToBurn)
+  -- collateralRemovedFromFeePool = collateralRemovedFromFeePool - CollateralToken.balanceOf(ao.id)
+
+  -- emit FPMMFundingRemoved(msg.sender, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
+end
+
+-- Handle ERC1155 token reception
+-- function onERC1155Received(operator, from, id, value, data)
+--   if operator == FixedProductMarketMaker then
+--     return "ERC1155_RECEIVED"
+--   end
+--   return ""
+-- end
+
+-- function onERC1155BatchReceived(operator, from, ids, values, data)
+--   if operator == FixedProductMarketMaker and from == nil then
+--     return "ERC1155_BATCH_RECEIVED"
+--   end
+--   return ""
+-- end
+
+--[[
+    Calc Buy Amount 
+  ]]
+--
+local function calcBuyAmount(investmentAmount, outcomeIndex)
+  assert(outcomeIndex < #PositionIds, "invalid outcome index")
+
+  local poolBalances = getPoolBalances()
+  local investmentAmountMinusFees = investmentAmount - ((investmentAmount * Fee) / ONE)
+  local buyTokenPoolBalance = poolBalances[outcomeIndex]
+  local endingOutcomeBalance = buyTokenPoolBalance * ONE
+
+  for i = 1, #poolBalances do
+    if i ~= outcomeIndex then
+      local poolBalance = poolBalances[i]
+      endingOutcomeBalance = ceildiv(endingOutcomeBalance * poolBalance, poolBalance + investmentAmountMinusFees)
+    end
+  end
+
+  assert(endingOutcomeBalance > 0, "must have non-zero balances")
+  return buyTokenPoolBalance + investmentAmountMinusFees - ceildiv(endingOutcomeBalance, ONE)
+end
+
+--[[
+    Calc Sell Amount
+  ]]
+--
+local function calcSellAmount(returnAmount, outcomeIndex)
+  assert(outcomeIndex < #PositionIds, "invalid outcome index")
+
+  local poolBalances = getPoolBalances()
+  local returnAmountPlusFees = ceildiv(returnAmount * ONE, ONE - Fee)
+  local sellTokenPoolBalance = poolBalances[outcomeIndex]
+  local endingOutcomeBalance = sellTokenPoolBalance * ONE
+
+  for i = 1, #poolBalances do
+    if i ~= outcomeIndex then
+      local poolBalance = poolBalances[i]
+      endingOutcomeBalance = ceildiv(endingOutcomeBalance * poolBalance, poolBalance - returnAmountPlusFees)
+    end
+  end
+
+  assert(endingOutcomeBalance > 0, "must have non-zero balances")
+  return returnAmountPlusFees + ceildiv(endingOutcomeBalance, ONE) - sellTokenPoolBalance
+end
+
+--[[
+    Buy 
+  ]]
+--
+local function buy(investmentAmount, outcomeIndex, minOutcomeTokensToBuy)
+  local outcomeTokensToBuy = calcBuyAmount(investmentAmount, outcomeIndex)
+  assert(outcomeTokensToBuy >= minOutcomeTokensToBuy, "minimum buy amount not reached")
+
+  -- assert(collateralToken.transferFrom(msg.sender, ao.id, investmentAmount), "cost transfer failed")
+
+  local feeAmount = (investmentAmount * Fee) / ONE
+  FeePoolWeight = FeePoolWeight + feeAmount
+  local investmentAmountMinusFees = investmentAmount - feeAmount
+  -- assert(CollateralToken.approve(ConditionalTokens, investmentAmountMinusFees), "approval for splits failed")
+  splitPosition(msg.From, investmentAmountMinusFees)
+
+  -- emit FPMMBuy(msg.sender, investmentAmount, feeAmount, outcomeIndex, outcomeTokensToBuy)
+end
+
+--[[
+    Sell 
+  ]]
+--
+local function sell(returnAmount, outcomeIndex, maxOutcomeTokensToSell)
+  local outcomeTokensToSell = calcSellAmount(returnAmount, outcomeIndex)
+  assert(outcomeTokensToSell <= maxOutcomeTokensToSell, "maximum sell amount exceeded")
+
+  local feeAmount = ceildiv(returnAmount * Fee, ONE - Fee)
+  FeePoolWeight = FeePoolWeight + feeAmount
+  local returnAmountPlusFees = returnAmount + feeAmount
+  mergePositionsThroughAllConditions(returnAmountPlusFees)
+
+  -- assert(CollateralToken.transfer(msg.sender, returnAmount), "return transfer failed")
+
+  -- emit FPMMSell(msg.sender, returnAmount, feeAmount, outcomeIndex, outcomeTokensToSell)
+end
+
+
+--[[
+    HANDLERS
+  ]]
+--
+
+--[[
+    Core 
+  ]]
+--
+
+local function isAddFunding(msg)
+  if msg.From == CollateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
+      return true
+  else
+      return false
+  end
+end
+
+--[[
+    Init
+  ]]
+--
+-- @dev only enable shallow markets on launch, i.e. where parentCollectionId = ""
+Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(msg)
+  assert(Initialized == false, "Market already initialized!")
+  assert(msg.Tags.ConditionId, "ConditionId is required!")
+  assert(msg.Tags.ConditionalTokens, "ConditionalTokens is required!")
+  assert(msg.Tags.CollateralToken, "CollateralToken is required!")
+  assert(msg.Tags.CollectionIds, "CollectionIds is required!")
+  local collectionIds = json.decode(msg.Tags.CollectionIds)
+  assert(#collectionIds == 2, "Must have two collectionIds!")
+  assert(msg.Tags.PositionIds, "PositionIds is required!")
+  local positionIds = json.decode(msg.Tags.PositionIds)
+  assert(#positionIds == 2, "Must have two positionIds!")
+  assert(msg.Tags.Fee, "Fee is required!")
+  assert(msg.Tags.Name, "Name is required!")
+  assert(msg.Tags.Ticker, "Ticker is required!")
+  assert(msg.Tags.Logo, "Logo is required!")
+  assert(bint.__lt(0, bint(msg.Tags.Fee)), "Fee must be greater than zero!")
+  assert(bint.__lt(bint(msg.Tags.Fee), ONE), "Fee must be less than one!")
+
+  -- Set Market globals
+  ConditionId = msg.Tags.ConditionId
+  ConditionalTokens = msg.Tags.ConditionalTokens
+  CollateralToken = msg.Tags.CollateralToken
+  CollectionIds = collectionIds
+  PositionIds = positionIds
+  DataIndex = msg.Tags.DataIndex
+  Fee = msg.Tags.Fee
+
+  -- Set LP token globals
+  Name = msg.Tags.Name
+  Ticker = msg.Tags.Ticker
+  Logo = msg.Tags.Logo
+
+  -- Initialized
+  Initialized = true
+
+  newMarketNotice(msg.Tags.ConditionId, msg.Tags.ConditionalTokens, msg.Tags.CollateralToken, msg.Tags.PositionIds, msg.Tags.Fee, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo)
+end)
+
+--[[
+    Info
+  ]]
+--
+Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(msg)
+  ao.send({
+    Target = msg.From,
+    Action = "Market-Info",
+    ConditionalTokens = ConditionalTokens,
+    CollateralToken = CollateralToken,
+    ConditionId = ConditionId,
+    Fee = tostring(Fee),
+    FeePoolWeight = tostring(FeePoolWeight)
+  })
+end)
+
+--[[
+    Add Funding
+  ]]
+--
+Handlers.add('Add-Funding', isAddFunding, function(msg)
+  assert(msg.Tags['Quantity'], 'Quantity is required!')
+  assert(bint.__lt(0, bint(msg.Tags['Quantity'])), 'Quantity must be greater than zero!')
+
+  local error = false
+  local errorMessage = ''
+
+  -- Ensure distribution
+  local distribution = {}
+  if not msg.Tags['X-Distribution'] then
+    error = true
+    errorMessage = 'X-Distribution is required!'
+  else
+    distribution = json.decode(msg.Tags['X-Distribution'])
+  end
+
+  if not error then
+    if bint.iszero(bint(TotalSupply)) then
+      -- Ensure distribution is set across all position ids
+      if #distribution ~= #PositionIds then
+        error = true
+        errorMessage = "Distribution length off"
+      end
+    else
+      -- Ensure distribution set only for initial funding
+      if bint.__lt(0, #distribution) then
+        error = true
+        errorMessage = "Cannot specify distribution after initial funding"
+      end
+    end
+  end
+
+  if error then
+    -- Return funds and assert error
+    ao.send({
+      Target = CollateralToken,
+      Action = 'Transfer',
+      Recipient = msg.Sender,
+      Quantity = msg.Quantity,
+      ['X-Error'] = 'Add-Funding Error: ' .. errorMessage
+    })
+    assert(false, errorMessage)
+  else
+    -- Add funding
+    addFunding(msg.Tags["Sender"], msg.Tags['Quantity'], distribution)
+  end
+end)
+
+Handlers.add("Remove-Funding", Handlers.utils.hasMatchingTag("Action", "Remove-Funding"), function(msg)
+  removeFunding('')
+end)
+
+Handlers.add("Calc-Buy-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Buy-Amount"), function(msg)
+end)
+
+Handlers.add("Calc-Sell-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Sell-Amount"), function(msg)
+end)
+
+Handlers.add("Buy", Handlers.utils.hasMatchingTag("Action", "Buy"), function(msg)
+  buy('', '')
+end)
+
+Handlers.add("Sell", Handlers.utils.hasMatchingTag("Action", "Sell"), function(msg)
+  sell('', '')
+end)
+
+--[[
+    LP Token  
+  ]]
+--
+
+--[[
+    Info
+  ]]
+--
+Handlers.add('info', Handlers.utils.hasMatchingTag('Action', 'Info'), function(msg)
+  ao.send({
+    Target = msg.From,
+    Name = Name,
+    Ticker = Ticker,
+    Logo = Logo,
+    Denomination = tostring(Denomination),
+    ConditionId = ConditionId,
+    CollateralToken = CollateralToken,
+    ConditionalTokens = ConditionalTokens,
+    FeePoolWeight = tostring(FeePoolWeight),
+    Fee = tostring(Fee)
+  })
+end)
+
+--[[
+    Balance
+  ]]
+--
+Handlers.add('balance', Handlers.utils.hasMatchingTag('Action', 'Balance'), function(msg)
+  local bal = '0'
+
+  -- If not Recipient is provided, then return the Senders balance
+  if (msg.Tags.Recipient) then
+    if (Balances[msg.Tags.Recipient]) then
+      bal = Balances[msg.Tags.Recipient]
+    end
+  elseif msg.Tags.Target and Balances[msg.Tags.Target] then
+    bal = Balances[msg.Tags.Target]
+  elseif Balances[msg.From] then
+    bal = Balances[msg.From]
+  end
+
+  ao.send({
+    Target = msg.From,
+    Balance = bal,
+    Ticker = Ticker,
+    Account = msg.Tags.Recipient or msg.From,
+    Data = bal
+  })
+end)
+
+--[[
+    Balances
+  ]]
+--
+Handlers.add('balances', Handlers.utils.hasMatchingTag('Action', 'Balances'),
+  function(msg) ao.send({ Target = msg.From, Data = json.encode(Balances) }) end)
+
+--[[
+    Transfer
+  ]]
+--
+Handlers.add('transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), function(msg)
+  assert(type(msg.Recipient) == 'string', 'Recipient is required!')
+  assert(type(msg.Quantity) == 'string', 'Quantity is required!')
+  assert(bint.__lt(0, bint(msg.Quantity)), 'Quantity must be greater than 0')
+
+  if not Balances[msg.From] then Balances[msg.From] = "0" end
+  if not Balances[msg.Recipient] then Balances[msg.Recipient] = "0" end
+
+  if bint(msg.Quantity) <= bint(Balances[msg.From]) then
+    Balances[msg.From] = utils.subtract(Balances[msg.From], msg.Quantity)
+    Balances[msg.Recipient] = utils.add(Balances[msg.Recipient], msg.Quantity)
+
+    --[[
+         Only send the notifications to the Sender and Recipient
+         if the Cast tag is not set on the Transfer message
+       ]]
+    --
+    if not msg.Cast then
+      -- Debit-Notice message template, that is sent to the Sender of the transfer
+      local debitNotice = {
+        Target = msg.From,
+        Action = 'Debit-Notice',
+        Recipient = msg.Recipient,
+        Quantity = msg.Quantity,
+        Data = Colors.gray ..
+            "You transferred " ..
+            Colors.blue .. msg.Quantity .. Colors.gray .. " to " .. Colors.green .. msg.Recipient .. Colors.reset
+      }
+      -- Credit-Notice message template, that is sent to the Recipient of the transfer
+      local creditNotice = {
+        Target = msg.Recipient,
+        Action = 'Credit-Notice',
+        Sender = msg.From,
+        Quantity = msg.Quantity,
+        Data = Colors.gray ..
+            "You received " ..
+            Colors.blue .. msg.Quantity .. Colors.gray .. " from " .. Colors.green .. msg.From .. Colors.reset
+      }
+
+      -- Add forwarded tags to the credit and debit notice messages
+      for tagName, tagValue in pairs(msg) do
+        -- Tags beginning with "X-" are forwarded
+        if string.sub(tagName, 1, 2) == "X-" then
+          debitNotice[tagName] = tagValue
+          creditNotice[tagName] = tagValue
+        end
+      end
+
+      -- Send Debit-Notice and Credit-Notice
+      ao.send(debitNotice)
+      ao.send(creditNotice)
+    end
+  else
+    ao.send({
+      Target = msg.From,
+      Action = 'Transfer-Error',
+      ['Message-Id'] = msg.Id,
+      Error = 'Insufficient Balance!'
+    })
+  end
+end)
+
+--[[
+  Mint
+  ]]
+--
+Handlers.add('mint', Handlers.utils.hasMatchingTag('Action', 'Mint'), function(msg)
+  assert(type(msg.Quantity) == 'string', 'Quantity is required!')
+  assert(bint(0) < bint(msg.Quantity), 'Quantity must be greater than zero!')
+
+  if not Balances[ao.id] then Balances[ao.id] = "0" end
+
+  if msg.From == ao.id then
+    -- Add tokens to the token pool, according to Quantity
+    Balances[msg.From] = utils.add(Balances[msg.From], msg.Quantity)
+    TotalSupply = utils.add(TotalSupply, msg.Quantity)
+    ao.send({
+      Target = msg.From,
+      Data = Colors.gray .. "Successfully minted " .. Colors.blue .. msg.Quantity .. Colors.reset
+    })
+  else
+    ao.send({
+      Target = msg.From,
+      Action = 'Mint-Error',
+      ['Message-Id'] = msg.Id,
+      Error = 'Only the Process Id can mint new ' .. Ticker .. ' tokens!'
+    })
+  end
+end)
+
+--[[
+    Total Supply
+  ]]
+--
+Handlers.add('totalSupply', Handlers.utils.hasMatchingTag('Action', 'Total-Supply'), function(msg)
+  assert(msg.From ~= ao.id, 'Cannot call Total-Supply from the same process!')
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Total-Supply',
+    Data = TotalSupply,
+    Ticker = Ticker
+  })
+end)
+
+--[[
+    Burn
+  ]]
+--
+Handlers.add('burn', Handlers.utils.hasMatchingTag('Action', 'Burn'), function(msg)
+  assert(type(msg.Quantity) == 'string', 'Quantity is required!')
+  assert(bint(msg.Quantity) <= bint(Balances[msg.From]), 'Quantity must be less than or equal to the current balance!')
+
+  Balances[msg.From] = utils.subtract(Balances[msg.From], msg.Quantity)
+  TotalSupply = utils.subtract(TotalSupply, msg.Quantity)
+
+  ao.send({
+    Target = msg.From,
+    Data = Colors.gray .. "Successfully burned " .. Colors.blue .. msg.Quantity .. Colors.reset
+  })
+end)
+
+--[[
+    Conditional Token Reply Handlers
+  ]]
+--
+
+local function isMintBatchNotice(msg)
+  if msg.From == ConditionalTokens and msg.Action == "Mint-Batch-Notice" then
+      return true
+  else
+      return false
+  end
+end
+
+--[[
+    Batch Mint Notice
+  ]]
+--
+Handlers.add('mintBatchNotice', isMintBatchNotice, function(msg)
+  assert(type(msg.TokenIds) == 'string', 'TokenIds is required!')
+  assert(type(msg.Quantities) == 'string', 'Quantities is required!')
+  local tokenIds = json.decode(msg.TokenIds)
+  local quantities = json.decode(msg.Quantities)
+  assert(#tokenIds == #quantities, 'Quantities / TokenIds length mismatch')
+
+  for i = 1, #PositionIds do
+    if not PoolBalances[i] then PoolBalances[i] = "0" end
+    local quantity = "0"
+    for j = 1, #tokenIds do
+      if tokenIds[j] == PositionIds[i] then
+        quantity = quantities[j]
+      end
+    end
+    local poolBalance = tostring(bint.__add(bint(PoolBalances[i]), quantity))
+    PoolBalances[i] = poolBalance
+  end
+end)
+
+return "ok"
