@@ -34,6 +34,7 @@ if not OutcomeSlotCounts or ResetState then OutcomeSlotCounts = {} end
 if not CollectionIds or ResetState then CollectionIds = {} end
 if not PositionIds or ResetState then PositionIds = {} end
 if not PoolBalances or ResetState then PoolBalances = {} end
+if not CollateralBalance or ResetState then CollateralBalance = '0' end
 
 --[[
     LP Token
@@ -120,11 +121,20 @@ local function fundingAddedNotice(from, sendBackAmounts, mintAmount)
     Target = from,
     Action = "Funding-Added-Notice",
     SendBackAmounts = json.encode(sendBackAmounts),
+    MintAmount = tostring(mintAmount),
     Data = "Successfully added funding"
   })
 end
 
-local function fundingRemovedNotice()
+local function fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
+  ao.send({
+    Target = from,
+    Action = "Funding-Removed-Notice",
+    SendAmounts = json.encode(sendAmounts),
+    CollateralRemovedFromFeePool = tostring(collateralRemovedFromFeePool),
+    SharesToBurn = tostring(sharesToBurn),
+    Data = "Successfully removed funding"
+  })
 end
 
 local function buyNotice()
@@ -163,9 +173,9 @@ end
 -- @param quantity Quantity of the token to be burned
 local function burn(from, quantity)
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
-  assert(bint.__le(quantity, Balances[from]), 'User must have sufficient tokens!')
+  assert(bint.__le(quantity, Balances[ao.id]), 'Must have sufficient tokens!')
   -- Burn tokens
-  Balances[from] = tostring(bint.__sub(Balances[from], quantity))
+  Balances[ao.id] = tostring(bint.__sub(Balances[ao.id], quantity))
   -- Send notice
   burnNotice(from, quantity)
 end
@@ -255,19 +265,6 @@ local function ceildiv(x, y)
     return math.floor((x - 1) / y) + 1
   end
   return math.floor(x / y)
-end
-
--- Get pool balances
--- @dev TODO: remove this function
-local function getPoolBalances()
-  -- print(getPoolBalances)
-  -- local balances = {}
-  -- for i = 1, #PositionIds do
-  --   balances[PositionIds[i]] = PoolBalances
-  -- end
-  -- print("BALANCES " .. json.encode(balances))
-  -- return balances
-  return PoolBalances
 end
 
 -- Generate basic partition
@@ -426,21 +423,22 @@ end
     Remove Funding 
   ]]
 --
-local function removeFunding(sharesToBurn)
-  local poolBalances = getPoolBalances()
+local function removeFunding(from, sharesToBurn)
+  assert(bint.__lt(0, bint(sharesToBurn)), "funding must be non-zero")
 
   local sendAmounts = {}
-  -- local poolShareSupply = totalSupply()
-  for i = 1, #poolBalances do
-    -- sendAmounts[i] = (poolBalances[i] * sharesToBurn) / poolShareSupply
+  local poolShareSupply = TotalSupply
+
+  for i = 1, #PoolBalances do
+    sendAmounts[i] = (PoolBalances[i] * sharesToBurn) / poolShareSupply
   end
 
-  -- local collateralRemovedFromFeePool = CollateralToken.balanceOf(ao.id)
+  local collateralRemovedFromFeePool = CollateralBalance
 
-  -- _burn(msg.sender, sharesToBurn)
-  -- collateralRemovedFromFeePool = collateralRemovedFromFeePool - CollateralToken.balanceOf(ao.id)
+  burn(from, sharesToBurn)
+  collateralRemovedFromFeePool = collateralRemovedFromFeePool - CollateralBalance
 
-  -- emit FPMMFundingRemoved(msg.sender, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
+  fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
 end
 
 -- Handle ERC1155 token reception
@@ -465,14 +463,13 @@ end
 local function calcBuyAmount(investmentAmount, outcomeIndex)
   assert(outcomeIndex < #PositionIds, "invalid outcome index")
 
-  local poolBalances = getPoolBalances()
   local investmentAmountMinusFees = investmentAmount - ((investmentAmount * Fee) / ONE)
-  local buyTokenPoolBalance = poolBalances[outcomeIndex]
+  local buyTokenPoolBalance = PoolBalances[outcomeIndex]
   local endingOutcomeBalance = buyTokenPoolBalance * ONE
 
-  for i = 1, #poolBalances do
+  for i = 1, #PoolBalances do
     if i ~= outcomeIndex then
-      local poolBalance = poolBalances[i]
+      local poolBalance = PoolBalances[i]
       endingOutcomeBalance = ceildiv(endingOutcomeBalance * poolBalance, poolBalance + investmentAmountMinusFees)
     end
   end
@@ -488,14 +485,13 @@ end
 local function calcSellAmount(returnAmount, outcomeIndex)
   assert(outcomeIndex < #PositionIds, "invalid outcome index")
 
-  local poolBalances = getPoolBalances()
   local returnAmountPlusFees = ceildiv(returnAmount * ONE, ONE - Fee)
-  local sellTokenPoolBalance = poolBalances[outcomeIndex]
+  local sellTokenPoolBalance = PoolBalances[outcomeIndex]
   local endingOutcomeBalance = sellTokenPoolBalance * ONE
 
-  for i = 1, #poolBalances do
+  for i = 1, #PoolBalances do
     if i ~= outcomeIndex then
-      local poolBalance = poolBalances[i]
+      local poolBalance = PoolBalances[i]
       endingOutcomeBalance = ceildiv(endingOutcomeBalance * poolBalance, poolBalance - returnAmountPlusFees)
     end
   end
@@ -554,6 +550,22 @@ end
 
 local function isAddFunding(msg)
   if msg.From == CollateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
+      return true
+  else
+      return false
+  end
+end
+
+local function isRemoveFunding(msg)
+  if msg.From == ao.id  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Remove-Funding" then
+      return true
+  else
+      return false
+  end
+end
+
+local function isCollateralDebitNotice(msg)
+  if msg.From == CollateralToken  and msg.Action == "Debit-Notice" and msg.Recipient == ao.id then
       return true
   else
       return false
@@ -624,11 +636,14 @@ end)
   ]]
 --
 Handlers.add('Add-Funding', isAddFunding, function(msg)
-  assert(msg.Tags['Quantity'], 'Quantity is required!')
-  assert(bint.__lt(0, bint(msg.Tags['Quantity'])), 'Quantity must be greater than zero!')
+  assert(msg.Tags.Quantity, 'Quantity is required!')
+  assert(bint.__lt(0, msg.Tags.Quantity), 'Quantity must be greater than zero!')
 
   local error = false
   local errorMessage = ''
+
+  -- Add to CollateralBalance
+  CollateralBalance = tostring(bint.__add(CollateralBalance, msg.Tags['Quantity']))
 
   -- Ensure distribution
   local distribution = {}
@@ -650,7 +665,7 @@ Handlers.add('Add-Funding', isAddFunding, function(msg)
       -- Ensure distribution set only for initial funding
       if bint.__lt(0, #distribution) then
         error = true
-        errorMessage = "Cannot specify distribution after initial funding"
+        errorMessage = "Cannot specify distribution after initial funding " .. json.encode(distribution)
       end
     end
   end
@@ -664,6 +679,8 @@ Handlers.add('Add-Funding', isAddFunding, function(msg)
       Quantity = msg.Quantity,
       ['X-Error'] = 'Add-Funding Error: ' .. errorMessage
     })
+
+    -- Assert Error
     assert(false, errorMessage)
   else
     -- Add funding
@@ -671,8 +688,34 @@ Handlers.add('Add-Funding', isAddFunding, function(msg)
   end
 end)
 
-Handlers.add("Remove-Funding", Handlers.utils.hasMatchingTag("Action", "Remove-Funding"), function(msg)
-  removeFunding('')
+Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
+  assert(msg.Tags['Quantity'], 'Quantity is required!')
+  assert(bint.__lt(0, msg.Tags['Quantity']), 'Quantity must be greater than zero!')
+  assert(bint.__lt(msg.Tags['Quantity'], CollateralBalance), 'Quantity must be less than balance! ' .. msg.Tags['Quantity'] .. " " .. CollateralBalance)
+
+  local error = false
+  local errorMessage = ''
+
+  if error then
+    -- Return funds and assert error
+    ao.send({
+      Target = ao.id,
+      Action = 'Transfer',
+      Recipient = msg.Sender,
+      Quantity = msg.Quantity,
+      ['X-Error'] = 'Add-Funding Error: ' .. errorMessage
+    })
+    assert(false, errorMessage)
+  else
+    removeFunding(msg.Sender, msg.Quantity)
+  end
+end)
+
+Handlers.add("Collateral-Debit-Notice", isCollateralDebitNotice, function(msg)
+  assert(msg.Quantity, 'Quantity is required!')
+  assert(bint.__lt(0, msg.Quantity), 'Quantity must be greater than zero!')
+
+  CollateralBalance = tostring(bint.__sub(bint(CollateralBalance), bint(msg.Quantity)))
 end)
 
 Handlers.add("Calc-Buy-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Buy-Amount"), function(msg)
@@ -760,8 +803,8 @@ Handlers.add('transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), fu
   if not Balances[msg.Recipient] then Balances[msg.Recipient] = "0" end
 
   if bint(msg.Quantity) <= bint(Balances[msg.From]) then
-    Balances[msg.From] = utils.subtract(Balances[msg.From], msg.Quantity)
-    Balances[msg.Recipient] = utils.add(Balances[msg.Recipient], msg.Quantity)
+    Balances[msg.From] = tostring(bint.__sub(bint(Balances[msg.From]), msg.Quantity))
+    Balances[msg.Recipient] = tostring(bint.__add(bint(Balances[msg.Recipient]), msg.Quantity))
 
     --[[
          Only send the notifications to the Sender and Recipient

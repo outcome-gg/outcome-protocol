@@ -326,8 +326,6 @@ describe("amm.integration.test", function () {
       expect(conditionId_).to.equal(keccak256(resolutionAgent + questionId + "2").toString('hex'))
       expect(resolutionAgent_).to.equal(resolutionAgent)
       expect(outcomeSlotCount_).to.equal(2)
-
-      console.log("conditionId: ", conditionId_)
     })
   })
 
@@ -854,13 +852,205 @@ describe("amm.integration.test", function () {
   /************************************************************************ 
   * amm.Remove-Funding
   ************************************************************************/
-  // describe("amm.Remove-Funding", function () {
-  //   it("+ve should remove funding", async () => {
-  //   })
+  describe("amm.Remove-Funding", function () {
+    before(async () => {
+      // Add delay to allow for previous test to complete
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    })
 
-  //   it("-ve should fail to remove funding greater than balance", async () => {
-  //   })
-  // })
+    it("+ve should remove funding", async () => {
+      let messageId;
+      let userBalanceBefore;
+      let userBalanceAfter;
+      let ammBalanceBefore;
+      let ammBalanceAfter;
+
+      const quantity = parseAmount(50, 12)
+      const xAction = "Remove-Funding"
+
+      async function getBalance(token, recipient) {
+        let messageId;
+        await message({
+          process: token,
+          tags: [
+            { name: "Action", value: "Balance" },
+            { name: "Recipient", value: recipient },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
+
+        let { Messages } = await result({
+          message: messageId,
+          process: token,
+        });
+
+        const balance = Messages[0].Data
+        return balance
+      }
+
+      async function removeFunding() {
+        await message({
+          process: amm,
+          tags: [
+            { name: "Action", value: "Transfer" },
+            { name: "Recipient", value: amm },
+            { name: "Quantity", value: quantity },
+            { name: "X-Action", value: xAction },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
+
+        let { Messages, Error } = await result({
+          message: messageId,
+          process: amm,
+        });
+
+        if (Error) {
+          console.log(Error)
+        }
+
+        return Messages
+      }
+
+      userBalanceBefore = await getBalance(amm, walletAddress);
+      ammBalanceBefore = await getBalance(amm, amm);
+
+      let Messages = await removeFunding();
+
+      userBalanceAfter = await getBalance(amm, walletAddress);
+      ammBalanceAfter = await getBalance(amm, amm);
+
+      expect(Messages.length).to.be.equal(2)
+
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const xAction_0 = Messages[0].Tags.find(t => t.name === 'X-Action').value
+      const recipient_0 = Messages[0].Tags.find(t => t.name === 'Recipient').value
+      const quantity_0 = Messages[0].Tags.find(t => t.name === 'Quantity').value
+      const fromProcess_0 = Messages[0].Tags.find(t => t.name === 'From-Process').value
+      
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const xAction_1 = Messages[1].Tags.find(t => t.name === 'X-Action').value
+      const sender_1 = Messages[1].Tags.find(t => t.name === 'Sender').value
+      const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
+      const fromProcess_1 = Messages[1].Tags.find(t => t.name === 'From-Process').value
+
+      // Debits LP tokens from the sender to the amm
+      expect(action_0).to.equal('Debit-Notice')
+      expect(xAction_0).to.equal('Remove-Funding')
+      expect(quantity_0).to.equal(quantity)
+      expect(recipient_0).to.equal(amm)
+      expect(fromProcess_0).to.equal(amm)
+
+      // Credits the amm with the LP tokens
+      expect(action_1).to.equal('Credit-Notice')
+      expect(xAction_1).to.equal('Remove-Funding')
+      expect(quantity_1).to.equal(quantity)
+      expect(sender_1).to.equal(walletAddress)
+      expect(fromProcess_1).to.equal(amm)
+
+      // Check balances
+      expect(userBalanceBefore).to.equal(parseAmount(200, 12))
+      expect(userBalanceAfter).to.equal(parseAmount(150, 12))
+      expect(ammBalanceBefore).to.equal(parseAmount(0, 12))
+      expect(ammBalanceAfter).to.equal(parseAmount(0, 12))
+    })
+
+    it("-ve should fail to remove funding greater than balance", async () => {
+      let messageId;
+      let userBalanceBefore;
+      let userBalanceAfter;
+      let ammBalanceBefore;
+      let ammBalanceAfter;
+
+      const quantity = parseAmount(200, 12)
+      const xAction = "Remove-Funding"
+
+      async function getBalance(token, recipient) {
+        let messageId;
+        await message({
+          process: token,
+          tags: [
+            { name: "Action", value: "Balance" },
+            { name: "Recipient", value: recipient },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
+
+        let { Messages } = await result({
+          message: messageId,
+          process: token,
+        });
+
+        const balance = Messages[0].Data
+        return balance
+      }
+
+      async function removeFunding() {
+        await message({
+          process: amm,
+          tags: [
+            { name: "Action", value: "Transfer" },
+            { name: "Recipient", value: amm },
+            { name: "Quantity", value: quantity },
+            { name: "X-Action", value: xAction },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
+
+        let { Messages, Error } = await result({
+          message: messageId,
+          process: amm,
+        });
+
+        if (Error) {
+          console.log(Error)
+        }
+
+        return Messages
+      }
+
+      userBalanceBefore = await getBalance(amm, walletAddress);
+      ammBalanceBefore = await getBalance(amm, amm);
+
+      let Messages = await removeFunding();
+
+      userBalanceAfter = await getBalance(amm, walletAddress);
+      ammBalanceAfter = await getBalance(amm, amm);
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
+
+      expect(action_).to.equal('Transfer-Error')
+      expect(error_).to.equal('Insufficient Balance!')
+
+      expect(userBalanceBefore).to.equal(parseAmount(150, 12))
+      expect(userBalanceAfter).to.equal(parseAmount(150, 12))
+      expect(ammBalanceBefore).to.equal(parseAmount(0, 12))
+      expect(ammBalanceAfter).to.equal(parseAmount(0, 12))
+    })
+  })
 
   /************************************************************************ 
   * amm.Calc-Buy-Amount
