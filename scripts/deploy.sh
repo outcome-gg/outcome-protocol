@@ -48,7 +48,7 @@ create_or_update_process() {
 if [ "$1" == "test" ]; then
     echo "Running in TEST mode..."
     # Deploy market contracts
-    create_or_update_process TEST_AMM src/market/amm.lua
+    create_or_update_process TEST_AMM3 src/market/amm.lua
     create_or_update_process TEST_CONDITIONAL_TOKENS src/market/conditionalTokens.lua
     # Deploy mock contracts
     create_or_update_process TEST_COLLATERAL_TOKEN src/mock/token.lua

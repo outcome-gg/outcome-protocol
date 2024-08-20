@@ -2,7 +2,7 @@ local json = require('json')
 local bint = require('.bint')(256)
 local utils = require(".utils")
 local crypto = require('.crypto')
-local ao = require('ao')
+local ao = require('.ao')
 
 --[[
     GLOBALS
@@ -137,7 +137,16 @@ local function fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeeP
   })
 end
 
-local function buyNotice()
+local function buyNotice(from, investmentAmount, feeAmount, outcomeIndex, outcomeTokensToBuy)
+  ao.send({
+    Target = from,
+    Action = "Buy-Notice",
+    InvestmentAmount = tostring(investmentAmount),
+    FeeAmount = tostring(feeAmount),
+    OutcomeIndex = tostring(outcomeIndex),
+    OutcomeTokensToBuy = tostring(outcomeTokensToBuy),
+    Data = "Successfully buy order"
+  })
 end
 
 local function sellNotice()
@@ -279,20 +288,20 @@ end
 
 -- Split positions through all conditions
 --@dev hardcoded to 2 outcomesSlotCount
-local function splitPosition(from, quantity)
+local function splitPosition(from, outcomeIndex, quantity)
   local partition = generateBasicPartition()
 
-  -- TODO: return True iff passes 
   ao.send({
     Target = CollateralToken,
     Action = "Transfer",
-    Quantity = quantity,
+    Quantity = tostring(quantity),
     Recipient = ConditionalTokens,
-    Sender = from,
     ['X-Action'] = "Create-Position",
     ['X-ParentCollectionId'] = "",
     ['X-ConditionId'] = ConditionId,
     ['X-Partition'] = json.encode(partition),
+    ['X-OutcomeIndex'] = tostring(outcomeIndex),
+    ['X-Sender'] = from
   })
 end
 
@@ -407,7 +416,8 @@ local function addFunding(from, addedFunds, distributionHint)
     mintAmount = addedFunds
   end
 
-  splitPosition(from, addedFunds)
+  -- splitPosition(from, 0, addedFunds)
+  Send({ Target=ao.id, Action = "CollateralToken.CreatePosition", Sender=from, OutcomeIndex="0", Quantity=addedFunds})
 
   mint(from, mintAmount)
 
@@ -461,7 +471,9 @@ end
   ]]
 --
 local function calcBuyAmount(investmentAmount, outcomeIndex)
-  assert(outcomeIndex < #PositionIds, "invalid outcome index")
+  assert(bint.__lt(0, investmentAmount), 'InvestmentAmount must be greater than zero!')
+  assert(bint.__lt(0, outcomeIndex), 'OutcomeIndex must be greater than zero!')
+  assert(bint.__le(outcomeIndex, #PositionIds), 'OutcomeIndex must be less than or equal to PositionIds length!')
 
   local investmentAmountMinusFees = investmentAmount - ((investmentAmount * Fee) / ONE)
   local buyTokenPoolBalance = PoolBalances[outcomeIndex]
@@ -475,7 +487,7 @@ local function calcBuyAmount(investmentAmount, outcomeIndex)
   end
 
   assert(endingOutcomeBalance > 0, "must have non-zero balances")
-  return buyTokenPoolBalance + investmentAmountMinusFees - ceildiv(endingOutcomeBalance, ONE)
+  return tostring(bint.ceil(buyTokenPoolBalance + investmentAmountMinusFees - ceildiv(endingOutcomeBalance, ONE)))
 end
 
 --[[
@@ -483,7 +495,9 @@ end
   ]]
 --
 local function calcSellAmount(returnAmount, outcomeIndex)
-  assert(outcomeIndex < #PositionIds, "invalid outcome index")
+  assert(bint.__lt(0, returnAmount), 'ReturnAmount must be greater than zero!')
+  assert(bint.__lt(0, outcomeIndex), 'OutcomeIndex must be greater than zero!')
+  assert(bint.__le(outcomeIndex, #PositionIds), 'OutcomeIndex must be less than or equal to PositionIds length!')
 
   local returnAmountPlusFees = ceildiv(returnAmount * ONE, ONE - Fee)
   local sellTokenPoolBalance = PoolBalances[outcomeIndex]
@@ -497,26 +511,26 @@ local function calcSellAmount(returnAmount, outcomeIndex)
   end
 
   assert(endingOutcomeBalance > 0, "must have non-zero balances")
-  return returnAmountPlusFees + ceildiv(endingOutcomeBalance, ONE) - sellTokenPoolBalance
+  return tostring(bint.ceil(returnAmountPlusFees + ceildiv(endingOutcomeBalance, ONE) - sellTokenPoolBalance))
 end
 
 --[[
     Buy 
   ]]
 --
-local function buy(investmentAmount, outcomeIndex, minOutcomeTokensToBuy)
+local function buy(from, investmentAmount, outcomeIndex, minOutcomeTokensToBuy)
   local outcomeTokensToBuy = calcBuyAmount(investmentAmount, outcomeIndex)
-  assert(outcomeTokensToBuy >= minOutcomeTokensToBuy, "minimum buy amount not reached")
+  assert(bint.__le(minOutcomeTokensToBuy, bint(outcomeTokensToBuy)), "Minimum outcome tokens not reached!")
 
-  -- assert(collateralToken.transferFrom(msg.sender, ao.id, investmentAmount), "cost transfer failed")
+  local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(investmentAmount, Fee), ONE)))
 
-  local feeAmount = (investmentAmount * Fee) / ONE
-  FeePoolWeight = FeePoolWeight + feeAmount
-  local investmentAmountMinusFees = investmentAmount - feeAmount
-  -- assert(CollateralToken.approve(ConditionalTokens, investmentAmountMinusFees), "approval for splits failed")
-  splitPosition(msg.From, investmentAmountMinusFees)
+  FeePoolWeight = tostring(bint.__add(FeePoolWeight, bint(feeAmount)))
 
-  -- emit FPMMBuy(msg.sender, investmentAmount, feeAmount, outcomeIndex, outcomeTokensToBuy)
+  local investmentAmountMinusFees = tostring(bint.__sub(investmentAmount, bint(feeAmount)))
+
+  Send({ Target = ao.id, Action = "CollateralToken.CreatePosition", Sender=from, Quantity=investmentAmountMinusFees, OutcomeIndex=tostring(outcomeIndex), OutcomeTokensToBuy=tostring(outcomeTokensToBuy)})
+
+  -- Process continued within "BuyOrderCompletion"
 end
 
 --[[
@@ -544,31 +558,94 @@ end
 --
 
 --[[
+    Collateral Token 
+  ]]
+--
+-- Handlers.add("Greeting-Name", Handlers.utils.hasMatchingTag('Action', 'Greeting'), function (msg)
+--   msg.reply({Data = "Hello " .. msg.Data or "bob"})
+--   print('server: replied to ' .. msg.Data or "bob")
+-- end)
+
+-- Handlers.add('CollateralToken.balance', Handlers.utils.hasMatchingTag('Action', 'CollateralToken.Balance'), function(msg) 
+--   local greeting = Send({Target = ao.id, Action = "Greeting", Data = "George"}).receive().Data
+--   print("client: " .. greeting)
+-- end)
+
+-- Handlers.add('CollateralToken.balance', Handlers.utils.hasMatchingTag('Action', 'CollateralToken.Balance2'), function(msg) 
+--   local balance = Send({Target = CollateralToken, Action = "Balance"}).receive()
+--   print("BALANCE: " .. json.encode(balance))
+-- end)
+
+--[[
+    Internal 
+  ]]
+--
+
+Handlers.add('CollateralToken.createPosition', Handlers.utils.hasMatchingTag('Action', 'CollateralToken.CreatePosition'), function(msg)
+  assert(msg.From == ao.id, "Internal use only")
+  assert(msg.Tags.Sender, "Sender is required!")
+  assert(msg.Tags.OutcomeIndex, "OutcomeIndex is required!")
+  assert(msg.Tags.Quantity, "Quantity is required!")
+
+  local partition = generateBasicPartition()
+
+  ao.send({
+    Target = CollateralToken,
+    Action = "Transfer",
+    Quantity = msg.Tags.Quantity,
+    Recipient = ConditionalTokens,
+    ['X-Action'] = "Create-Position",
+    ['X-ParentCollectionId'] = "",
+    ['X-ConditionId'] = ConditionId,
+    ['X-Partition'] = json.encode(partition),
+    ['X-OutcomeIndex'] = msg.Tags.OutcomeIndex,
+    ['X-OutcomeTokensToBuy'] = msg.Tags.OutcomeTokensToBuy,
+    ['X-Sender'] = msg.Tags.Sender
+  })
+end)
+
+--[[
     Core 
   ]]
 --
 
 local function isAddFunding(msg)
   if msg.From == CollateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
-      return true
+    return true
   else
-      return false
+    return false
   end
 end
 
 local function isRemoveFunding(msg)
   if msg.From == ao.id  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Remove-Funding" then
-      return true
+    return true
   else
-      return false
+    return false
   end
 end
 
 local function isCollateralDebitNotice(msg)
   if msg.From == CollateralToken  and msg.Action == "Debit-Notice" and msg.Recipient == ao.id then
-      return true
+    return true
   else
-      return false
+    return false
+  end
+end
+
+local function isBuy(msg)
+  if msg.From == CollateralToken and msg.Action == "Credit-Notice" and msg["X-Action"] == "Buy" then
+    return true
+  else
+    return false
+  end
+end
+
+local function isBuyOrderCompletion(msg)
+  if msg.From == ConditionalTokens and msg.Action == "Position-Split-Notice" and msg.Tags["X-OutcomeIndex"] ~= "0" then
+    return true
+  else
+    return false
   end
 end
 
@@ -619,10 +696,10 @@ end)
     Info
   ]]
 --
-Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(msg)
+Handlers.add("Market.Info", Handlers.utils.hasMatchingTag("Action", "Market-Info"), function(msg)
   ao.send({
     Target = msg.From,
-    Action = "Market-Info",
+    Action = "Market-Info1",
     ConditionalTokens = ConditionalTokens,
     CollateralToken = CollateralToken,
     ConditionId = ConditionId,
@@ -688,13 +765,21 @@ Handlers.add('Add-Funding', isAddFunding, function(msg)
   end
 end)
 
+--[[
+    Remove Funding
+  ]]
+--
 Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
   assert(msg.Tags['Quantity'], 'Quantity is required!')
   assert(bint.__lt(0, msg.Tags['Quantity']), 'Quantity must be greater than zero!')
-  assert(bint.__lt(msg.Tags['Quantity'], CollateralBalance), 'Quantity must be less than balance! ' .. msg.Tags['Quantity'] .. " " .. CollateralBalance)
-
+  
   local error = false
   local errorMessage = ''
+
+  if not bint.__lt(msg.Tags['Quantity'], CollateralBalance) then
+    error = true
+    errorMessage = 'Quantity must be less than balance! ' .. msg.Tags['Quantity'] .. " " .. CollateralBalance
+  end
 
   if error then
     -- Return funds and assert error
@@ -703,7 +788,7 @@ Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
       Action = 'Transfer',
       Recipient = msg.Sender,
       Quantity = msg.Quantity,
-      ['X-Error'] = 'Add-Funding Error: ' .. errorMessage
+      ['X-Error'] = 'Remove-Funding Error: ' .. errorMessage
     })
     assert(false, errorMessage)
   else
@@ -711,6 +796,10 @@ Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
   end
 end)
 
+--[[
+    Collateral Balance Management
+  ]]
+--
 Handlers.add("Collateral-Debit-Notice", isCollateralDebitNotice, function(msg)
   assert(msg.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, msg.Quantity), 'Quantity must be greater than zero!')
@@ -718,16 +807,107 @@ Handlers.add("Collateral-Debit-Notice", isCollateralDebitNotice, function(msg)
   CollateralBalance = tostring(bint.__sub(bint(CollateralBalance), bint(msg.Quantity)))
 end)
 
+--[[
+    Calc Buy Amount
+  ]]
+--
 Handlers.add("Calc-Buy-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Buy-Amount"), function(msg)
+  assert(msg.Tags.InvestmentAmount, 'InvestmentAmount is required!')
+  assert(msg.Tags.OutcomeIndex, 'OutcomeIndex is required!')
+  local outcomeIndex = tonumber(msg.Tags.OutcomeIndex)
+
+  local buyAmount = calcBuyAmount(msg.Tags.InvestmentAmount, outcomeIndex)
+
+  ao.send({
+    Target = msg.From,
+    BuyAmount = buyAmount,
+    Data = buyAmount
+  })
 end)
 
+--[[
+    Calc Sell Amount
+  ]]
+--
 Handlers.add("Calc-Sell-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Sell-Amount"), function(msg)
+  assert(msg.Tags.ReturnAmount, 'ReturnAmount is required!')
+  assert(msg.Tags.OutcomeIndex, 'OutcomeIndex is required!')
+  local outcomeIndex = tonumber(msg.Tags.OutcomeIndex)
+
+  local sellAmount = calcSellAmount(msg.Tags.ReturnAmount, outcomeIndex)
+
+  ao.send({
+    Target = msg.From,
+    SellAmount = sellAmount,
+    Data = sellAmount
+  })
 end)
 
-Handlers.add("Buy", Handlers.utils.hasMatchingTag("Action", "Buy"), function(msg)
-  buy('', '')
+--[[
+    Buy
+  ]]
+--
+Handlers.add("Buy", isBuy, function(msg)
+  assert(msg.Tags.Quantity, 'Quantity is required!')
+  assert(bint.__lt(0, msg.Tags.Quantity), 'Quantity must be greater than zero!')
+
+  local error = false
+  local errorMessage = ''
+
+  local outcomeTokensToBuy = '0'
+
+  if not msg.Tags['X-OutcomeIndex'] then
+    error = true
+    errorMessage = 'X-OutcomeIndex is required!'
+  elseif not msg.Tags['X-MinOutcomeTokensToBuy'] then
+    error = true
+    errorMessage = 'X-MinOutcomeTokensToBuy is required!'
+  else
+    outcomeTokensToBuy = calcBuyAmount(msg.Tags.Quantity, tonumber(msg.Tags['X-OutcomeIndex']))
+    if not bint.__le(bint(msg.Tags['X-MinOutcomeTokensToBuy']), bint(outcomeTokensToBuy)) then
+      error = true
+      errorMessage = "minimum buy amount not reached"
+    end
+  end
+
+  if error then
+    -- Return funds and assert error
+    ao.send({
+      Target = ao.id,
+      Action = 'Transfer',
+      Recipient = msg.Sender,
+      Quantity = msg.Quantity,
+      ['X-Error'] = 'Buy Error: ' .. errorMessage
+    })
+    assert(false, errorMessage)
+  else
+    buy(msg.Sender, msg.Quantity, tonumber(msg.Tags['X-OutcomeIndex']), tonumber(msg.Tags['X-MinOutcomeTokensToBuy']))
+  end
 end)
 
+Handlers.add("BuyOrderCompletion", isBuyOrderCompletion, function(msg)
+  assert(msg.Quantity, "Quantity is required!")
+  assert(bint.__lt(0, msg.Quantity), 'Quantity must be greater than zero!')
+  assert(msg.Tags["X-OutcomeIndex"], "OutcomeIndex is required!")
+  assert(msg.Tags["X-Sender"], "Sender is required!")
+  assert(msg.Tags["X-OutcomeTokensToBuy"], "OutcomeTokensToBuy is required!")
+  assert(bint.__lt(0, bint(msg.Tags["X-OutcomeTokensToBuy"])), 'OutcomeTokensToBuy must be greater than zero!')
+
+  ao.send({
+    Target = ConditionalTokens,
+    Action = "Transfer-Single",
+    Recipient = msg.Tags["X-Sender"],
+    TokenId = PositionIds[tonumber(msg.Tags["X-OutcomeIndex"])],
+    Quantity = msg.Tags["X-OutcomeTokensToBuy"]
+  })
+
+  -- buyNotice(from, investmentAmount, feeAmount, outcomeIndex, outcomeTokensToBuy)
+end)
+
+--[[
+    Sell
+  ]]
+--
 Handlers.add("Sell", Handlers.utils.hasMatchingTag("Action", "Sell"), function(msg)
   sell('', '')
 end)
@@ -741,7 +921,7 @@ end)
     Info
   ]]
 --
-Handlers.add('info', Handlers.utils.hasMatchingTag('Action', 'Info'), function(msg)
+Handlers.add('Token.info', Handlers.utils.hasMatchingTag('Action', 'Token-Info'), function(msg)
   ao.send({
     Target = msg.From,
     Name = Name,
@@ -788,7 +968,8 @@ end)
   ]]
 --
 Handlers.add('balances', Handlers.utils.hasMatchingTag('Action', 'Balances'),
-  function(msg) ao.send({ Target = msg.From, Data = json.encode(Balances) }) end)
+  function(msg) ao.send({ Target = msg.From, Data = json.encode(Balances) }) 
+end)
 
 --[[
     Transfer

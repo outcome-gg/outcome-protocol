@@ -150,18 +150,8 @@ local function conditionResolutionNotice(conditionId, resolutionAgent, questionI
 end
 
 -- @dev Emitted when a position is successfully split.
-local function positionSplitNotice(stakeholder, collateralToken, parentCollectionId, conditionId, partition, quantity)
-  ao.send({
-    Target = _DATA_INDEX,
-    Action = "Position-Split-Notice",
-    Process = ao.id,
-    Stakeholder = stakeholder,
-    CollateralToken = collateralToken,
-    ParentCollectionId = parentCollectionId,
-    ConditionId = conditionId,
-    Partition = partition,
-    Quantity = quantity
-  })
+local function positionSplitNotice(notice)
+  ao.send(notice)
 end
 
 -- @dev Emitted when positions are successfully merged.
@@ -310,12 +300,12 @@ end
 -- @param values Amounts of the tokens to be minted
 local function batchMint(to, ids, quantities)
   assert(#ids == #quantities, 'Ids and quantities must have the same lengths')
-
   for i = 1, #ids do
     if not BalancesOf[ids[i]] then BalancesOf[ids[i]] = {} end
     if not BalancesOf[ids[i]][to] then BalancesOf[ids[i]][to] = "0" end
     BalancesOf[ids[i]][to] = tostring(bint.__add(BalancesOf[ids[i]][to], quantities[i]))
   end
+
   -- Send notice
   mintBatchNotice(to, ids, quantities)
 end
@@ -488,7 +478,8 @@ end
 -- @param partition An array of disjoint index sets representing a nontrivial partition of the outcome slots of the given condition. E.g. A|B and C but not A|B and B|C (is not disjoint). Each element's a number which, together with the condition, represents the outcome collection. E.g. 0b110 is A|B, 0b010 is B, etc.
 -- @param quantity The quantity of collateral or stake to split.
 -- @param isCreate True if the position is being split from the collateralToken.
-local function splitPosition(from, collateralToken, parentCollectionId, conditionId, partition, quantity, isCreate)
+-- @param msg Msg passed to retrieve x-tags
+local function splitPosition(from, collateralToken, parentCollectionId, conditionId, partition, quantity, isCreate, msg)
   assert(#partition > 1, "got empty or singleton partition")
   assert(PayoutNumerators[conditionId] and #PayoutNumerators[conditionId] > 0, "condition not prepared yet")
 
@@ -528,7 +519,26 @@ local function splitPosition(from, collateralToken, parentCollectionId, conditio
 
   batchMint(from, positionIds, quantities)
 
-  positionSplitNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
+  local notice = {
+    Target = from,
+    Action = "Position-Split-Notice",
+    Process = ao.id,
+    Stakeholder = from,
+    CollateralToken = collateralToken,
+    ParentCollectionId = parentCollectionId,
+    ConditionId = conditionId,
+    Partition = json.encode(partition),
+    Quantity = quantity
+  }
+
+  for tagName, tagValue in pairs(msg) do
+    -- Tags beginning with "X-" are forwarded
+    if string.sub(tagName, 1, 2) == "X-" then
+      notice[tagName] = tagValue
+    end
+  end
+
+  positionSplitNotice(notice)
 end
 
 local function mergePositions(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
@@ -660,11 +670,10 @@ end
 Handlers.add("Create-Position",
   isCreatePosition,
   function(msg)
-    -- ao.send({ Target = '9876', Action = "Create-Position-Reached", Data = msg.Data })
-    assert(msg.Tags["X-ParentCollectionId"], "ParentCollectionId is required!")
-    assert(msg.Tags["X-ConditionId"], "ConditionId is required!")
-    assert(msg.Tags["X-Partition"], "Partition is required!")
-    splitPosition(msg.Sender, msg.From, msg.Tags["X-ParentCollectionId"], msg.Tags["X-ConditionId"], json.decode(msg.Tags["X-Partition"]), msg.Quantity, true)
+    assert(msg.Tags["X-ParentCollectionId"], "X-ParentCollectionId is required!")
+    assert(msg.Tags["X-ConditionId"], "X-ConditionId is required!")
+    assert(msg.Tags["X-Partition"], "X-Partition is required!")
+    splitPosition(msg.Sender, msg.From, msg.Tags["X-ParentCollectionId"], msg.Tags["X-ConditionId"], json.decode(msg.Tags["X-Partition"]), msg.Quantity, true, msg)
   end
 )
 
@@ -675,7 +684,7 @@ Handlers.add("Split-Position", Handlers.utils.hasMatchingTag("Action", "Split-Po
   assert(data.conditionId, "conditionId is required!")
   assert(data.partition, "partition is required!")
   assert(data.quantity, "quantity is required!")
-  splitPosition(msg.Sender, data.collateralToken, data.parentCollectionId, data.conditionId, data.partition, data.quantity, false)
+  splitPosition(msg.Sender, data.collateralToken, data.parentCollectionId, data.conditionId, data.partition, data.quantity, false, msg)
 end)
 
 Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-Positions"), function(msg)

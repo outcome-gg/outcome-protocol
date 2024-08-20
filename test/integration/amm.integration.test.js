@@ -10,7 +10,7 @@ import keccak256 from 'keccak256'
 
 dotenv.config();
 
-const amm = process.env.TEST_AMM;
+const amm = process.env.TEST_AMM3;
 const collateralToken = process.env.TEST_COLLATERAL_TOKEN;
 const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS;
 
@@ -346,7 +346,7 @@ describe("amm.integration.test", function () {
           { name: "PositionIds", value: JSON.stringify([positionIdIN, positionIdOUT]) },
           { name: "DataIndex", value: "" },
           { name: "Fee", value: "10000000000" }, // 1% fee (10^10)
-          { name: "Name", value: "Outcome ETH LP Token 1" }, 
+          { name: "Name", value: "Outcome ETH LP Token 2" }, 
           { name: "Ticker", value: "OETH1" }, 
           { name: "Logo", value: "" }, 
         ],
@@ -386,7 +386,7 @@ describe("amm.integration.test", function () {
       expect(collateralToken_).to.equal(collateralToken)
       expect(positionIds_).to.equal(JSON.stringify([positionIdIN, positionIdOUT]))
       expect(fee_).to.equal("10000000000")
-      expect(name_).to.equal("Outcome ETH LP Token 1")
+      expect(name_).to.equal("Outcome ETH LP Token 2")
       expect(ticker_).to.equal("OETH1")
       expect(logo_).to.equal("")
     })
@@ -438,7 +438,7 @@ describe("amm.integration.test", function () {
       await message({
         process: amm,
         tags: [
-          { name: "Action", value: "Info" },
+          { name: "Action", value: "Token-Info" },
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -469,7 +469,7 @@ describe("amm.integration.test", function () {
       const feePoolWeight_ = Messages[0].Tags.find(t => t.name === 'FeePoolWeight').value
       const fee_ = Messages[0].Tags.find(t => t.name === 'Fee').value
 
-      expect(name_).to.equal("Outcome ETH LP Token 1")
+      expect(name_).to.equal("Outcome ETH LP Token 2")
       expect(ticker_).to.equal("OETH1")
       expect(logo_).to.equal("")
       expect(denomination_).to.equal("12")
@@ -583,7 +583,7 @@ describe("amm.integration.test", function () {
     })
 
     it("+ve should have minted outcome tokens to amm in exchange for the LP tokens", async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
         process: conditionalTokens,
@@ -936,27 +936,23 @@ describe("amm.integration.test", function () {
       const xAction_0 = Messages[0].Tags.find(t => t.name === 'X-Action').value
       const recipient_0 = Messages[0].Tags.find(t => t.name === 'Recipient').value
       const quantity_0 = Messages[0].Tags.find(t => t.name === 'Quantity').value
-      const fromProcess_0 = Messages[0].Tags.find(t => t.name === 'From-Process').value
       
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
       const xAction_1 = Messages[1].Tags.find(t => t.name === 'X-Action').value
       const sender_1 = Messages[1].Tags.find(t => t.name === 'Sender').value
       const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
-      const fromProcess_1 = Messages[1].Tags.find(t => t.name === 'From-Process').value
 
       // Debits LP tokens from the sender to the amm
       expect(action_0).to.equal('Debit-Notice')
       expect(xAction_0).to.equal('Remove-Funding')
       expect(quantity_0).to.equal(quantity)
       expect(recipient_0).to.equal(amm)
-      expect(fromProcess_0).to.equal(amm)
 
       // Credits the amm with the LP tokens
       expect(action_1).to.equal('Credit-Notice')
       expect(xAction_1).to.equal('Remove-Funding')
       expect(quantity_1).to.equal(quantity)
       expect(sender_1).to.equal(walletAddress)
-      expect(fromProcess_1).to.equal(amm)
 
       // Check balances
       expect(userBalanceBefore).to.equal(parseAmount(200, 12))
@@ -1055,26 +1051,194 @@ describe("amm.integration.test", function () {
   /************************************************************************ 
   * amm.Calc-Buy-Amount
   ************************************************************************/
-  // describe("amm.Calc-Buy-Amount", function () {
-  //   it("+ve should calculate buy amount", async () => {
-  //   })
-  // })
+  describe("amm.Calc-Buy-Amount", function () {
+    it("+ve should calculate buy amount", async () => {
+      let messageId;
+      const investmentAmount = parseAmount(50, 12);
+      const outcomeIndex = "1";
+      
+      await message({
+        process: amm,
+        tags: [
+          { name: "Action", value: "Calc-Buy-Amount" },
+          { name: "InvestmentAmount", value: investmentAmount },
+          { name: "OutcomeIndex", value: outcomeIndex },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: amm,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const buyAmount_ = Messages[0].Tags.find(t => t.name === 'BuyAmount').value
+      
+      expect(buyAmount_).to.equal('89179358717434')
+    })
+  })
 
   /************************************************************************ 
   * amm.Calc-Sell-Amount
   ************************************************************************/
-  // describe("amm.Calc-Sell-Amount", function () {
-  //   it("+ve should calculate sell amount", async () => {
-  //   })
-  // })
+  describe("amm.Calc-Sell-Amount", function () {
+    it("+ve should calculate sell amount", async () => {
+      let messageId;
+      const returnAmount = parseAmount(50, 12);
+      const outcomeIndex = "1";
+      
+      await message({
+        process: amm,
+        tags: [
+          { name: "Action", value: "Calc-Sell-Amount" },
+          { name: "ReturnAmount", value: returnAmount },
+          { name: "OutcomeIndex", value: outcomeIndex },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: amm,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const sellAmount_ = Messages[0].Tags.find(t => t.name === 'SellAmount').value
+      
+      expect(sellAmount_).to.equal('118072618072620')
+    })
+  })
 
   /************************************************************************ 
   * amm.Buy
   ************************************************************************/
-  // describe("amm.Buy", function () {
-  //   it("+ve should buy outcome tokens", async () => {
-  //   })
-  // })
+  describe("amm.Buy", function () {
+    it("+ve should buy outcome tokens", async () => {
+      const investmentAmount = parseAmount(10, 12);
+      const outcomeIndex = "1";
+      const positionId = positionIdIN;
+
+      async function calcBuyAmount(amount, index) {
+        let messageId;
+        
+        await message({
+          process: amm,
+          tags: [
+            { name: "Action", value: "Calc-Buy-Amount" },
+            { name: "InvestmentAmount", value: amount },
+            { name: "OutcomeIndex", value: index },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
+
+        let { Messages, Error } = await result({
+          message: messageId,
+          process: amm,
+        });
+
+        if (Error) {
+          console.log(Error)
+        }
+
+        const buyAmount_ = Messages[0].Tags.find(t => t.name === 'BuyAmount').value
+        return buyAmount_
+      }
+
+      async function buy(amount, index, minAmount) {
+        let messageId;
+        
+        await message({
+          process: collateralToken,
+          tags: [
+            { name: "Action", value: "Transfer" },
+            { name: "Recipient", value: amm },
+            { name: "Quantity", value: amount },
+            { name: "X-Action", value: "Buy" },
+            { name: "X-OutcomeIndex", value: index },
+            { name: "X-MinOutcomeTokensToBuy", value: minAmount },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
+
+        let { Messages, Error } = await result({
+          message: messageId,
+          process: collateralToken,
+        });
+
+        if (Error) {
+          console.log(Error)
+        }
+      }
+
+      async function getBalanceOf(token, tokenId, recipient) {
+        let messageId;
+        await message({
+          process: token,
+          tags: [
+            { name: "Action", value: "Balance-Of" },
+            { name: "TokenId", value: tokenId },
+            { name: "Target", value: recipient },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
+
+        let { Messages } = await result({
+          message: messageId,
+          process: token,
+        });
+
+        const balance = Messages[0].Data
+        return balance
+      }
+
+      const balanceOfBefore = await getBalanceOf(conditionalTokens, positionId, walletAddress);
+      const buyAmount = await calcBuyAmount(investmentAmount, outcomeIndex);
+
+      await buy(investmentAmount, outcomeIndex, buyAmount.toString());
+
+      // wait for the buy to be processed
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      const balanceOfAfter = await getBalanceOf(conditionalTokens, positionId, walletAddress);
+
+      expect(buyAmount).to.be.equal((balanceOfAfter - balanceOfBefore).toString())
+    })
+  })
 
   /************************************************************************ 
   * amm.Sell
