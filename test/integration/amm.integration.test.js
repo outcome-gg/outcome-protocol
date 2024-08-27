@@ -1398,7 +1398,148 @@ describe("amm.integration.test", function () {
       expect(ammBalanceAfter.toString()).to.be.equal((Number(ammBalanceBefore) + feeAmount).toString())
     })
 
-  // //   // it("-ve should fail sell outcome tokens great than balance - fee", async () => {
-  // //   // })
+    it("-ve should fail sell outcome tokens great than balance - fee", async () => {
+      const returnAmount = parseAmount(10, 12); // Not accounting for balance
+      const outcomeIndex = "1";
+      const positionId = positionIdIN;
+
+      async function calcSellAmount(returnAmount, index) {
+        let messageId;
+        
+        await message({
+          process: amm,
+          tags: [
+            { name: "Action", value: "Calc-Sell-Amount" },
+            { name: "ReturnAmount", value: returnAmount },
+            { name: "OutcomeIndex", value: index },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
+
+        let { Messages, Error } = await result({
+          message: messageId,
+          process: amm,
+        });
+
+        if (Error) {
+          console.log(Error)
+        }
+
+        const sellAmount_ = Messages[0].Tags.find(t => t.name === 'SellAmount').value
+        return sellAmount_
+      }
+
+      async function sell(returnAmount, index, maxSellAmount) {
+        let messageId;
+        
+        await message({
+          process: conditionalTokens,
+          tags: [
+            { name: "Action", value: "Transfer-Single" },
+            { name: "Recipient", value: amm },
+            { name: "TokenId", value: positionId },
+            { name: "Quantity", value: maxSellAmount },
+            { name: "X-Action", value: "Sell" },
+            { name: "X-ReturnAmount", value: returnAmount },
+            { name: "X-OutcomeIndex", value: index },
+            { name: "X-MaxOutcomeTokensToSell", value: maxSellAmount },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
+
+        let { Messages, Error } = await result({
+          message: messageId,
+          process: collateralToken,
+        });
+
+        if (Error) {
+          console.log(Error)
+        }
+      }
+
+      async function getBalanceOf(token, tokenId, recipient) {
+        let messageId;
+        await message({
+          process: token,
+          tags: [
+            { name: "Action", value: "Balance-Of" },
+            { name: "TokenId", value: tokenId },
+            { name: "Recipient", value: recipient },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
+
+        let { Messages } = await result({
+          message: messageId,
+          process: token,
+        });
+
+        const balance = Messages[0].Data
+        return balance
+      }
+
+      async function getBalance(token, recipient) {
+        let messageId;
+        await message({
+          process: token,
+          tags: [
+            { name: "Action", value: "Balance" },
+            { name: "Recipient", value: recipient },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
+
+        let { Messages } = await result({
+          message: messageId,
+          process: token,
+        });
+
+        const balance = Messages[0].Data
+        return balance
+      }
+
+      const userBalanceOfBefore = await getBalanceOf(conditionalTokens, positionId, walletAddress);
+      const userBalanceBefore = await getBalance(collateralToken, walletAddress);
+      const ammBalanceOfBefore = await getBalanceOf(conditionalTokens, positionId, amm);
+      const ammBalanceBefore = await getBalance(collateralToken, amm);
+      const maxSellAmount = await calcSellAmount(returnAmount, outcomeIndex);
+
+      await sell(returnAmount, outcomeIndex, maxSellAmount.toString());
+
+      // wait for the sell to be processed
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      const userBalanceOfAfter = await getBalanceOf(conditionalTokens, positionId, walletAddress);
+      const userBalanceAfter = await getBalance(collateralToken, walletAddress);
+      const ammBalanceOfAfter = await getBalanceOf(conditionalTokens, positionId, amm);
+      const ammBalanceAfter = await getBalance(collateralToken, amm);
+
+      // User: Excpect user balances to remain the same
+      expect(userBalanceOfBefore).to.be.equal(userBalanceOfAfter)
+      expect(userBalanceBefore).to.be.equal(userBalanceAfter)
+
+      // AMM: Expect amm balances to remain the same
+      expect(ammBalanceOfBefore).to.be.equal(ammBalanceOfAfter)
+      expect(ammBalanceBefore).to.be.equal(ammBalanceAfter)
+    })
   })
 })
