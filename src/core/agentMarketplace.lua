@@ -1,2 +1,0 @@
-local agentMarketplace = {}
-return agentMarketplace

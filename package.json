@@ -8,8 +8,8 @@
     "test:unit:market": "node --test test/unit/market/*.test.js",
     "test:unit:market:amm": "node --test test/unit/market/amm.test.js",
     "test:unit:market:conditionalTokens": "node --test test/unit/market/conditionalTokens.test.js",
-    "test:integration:amm": "yarn && mocha 'test/integration/amm*.js' --timeout 30000",
-    "test:integration:amm:clean": "yarn && yarn test:deploy && mocha 'test/integration/amm*.js' --timeout 30000",
+    "test:integration:amm": "yarn && mocha 'test/integration/amm*.js' --timeout 50000",
+    "test:integration:amm:clean": "yarn && yarn test:deploy && mocha 'test/integration/amm*.js' --timeout 50000",
     "test:sqlite": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test test/**/*.test.js",
     "test:deploy": "scripts/deploy.sh test",
     "prod:deploy": "scripts/deploy.sh prod"

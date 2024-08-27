@@ -52,35 +52,48 @@ local function burnSingleNotice(holder, id, quantity)
   })
 end
 
-local function burnBatchNotice(holder, ids, quantities)
-  ao.send({
-    Target = holder,
-    TokenIds = json.encode(ids),
-    Quantities = json.encode(quantities),
-    Action = 'Burn-Batch-Notice',
-    Data = "Successfully burned batch"
-  })
+local function burnBatchNotice(notice)
+  ao.send(notice)
 end
 
-local function transferSingleNotices(sender, recipient, id, quantity)
+local function transferSingleNotices(sender, recipient, id, quantity, msg)
   -- Send Debit-Notice to the Sender
-  ao.send({
+  local debitNotice = {
     Target = sender,
     Action = 'Debit-Single-Notice',
     Recipient = recipient,
     TokenId = tostring(id),
     Quantity = tostring(quantity),
     Data = Colors.gray .. "You transferred " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.gray .. " to " .. Colors.green .. recipient .. Colors.reset
-  })
+  }
+
+  for tagName, tagValue in pairs(msg) do
+    -- Tags beginning with "X-" are forwarded
+    if string.sub(tagName, 1, 2) == "X-" then
+      debitNotice[tagName] = tagValue
+    end
+  end
+
+  ao.send(debitNotice)
+
   -- Send Credit-Notice to the Recipient
-  ao.send({
+  local creditNotice = {
     Target = recipient,
     Action = 'Credit-Single-Notice',
     Sender = sender,
     TokenId = tostring(id),
     Quantity = tostring(quantity),
     Data = Colors.gray .. "You received " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.gray .. " from " .. Colors.green .. sender .. Colors.reset
-  })
+  }
+
+  for tagName, tagValue in pairs(msg) do
+    -- Tags beginning with "X-" are forwarded
+    if string.sub(tagName, 1, 2) == "X-" then
+      creditNotice[tagName] = tagValue
+    end
+  end
+
+  ao.send(creditNotice)
 end
 
 local function transferBatchNotices(sender, recipient, ids, quantities)
@@ -155,18 +168,8 @@ local function positionSplitNotice(notice)
 end
 
 -- @dev Emitted when positions are successfully merged.
-local function positionsMergeNotice(stakeholder, collateralToken, parentCollectionId, conditionId, partition, quantity)
-  ao.send({
-    Target = _DATA_INDEX,
-    Action = "Positions-Merge-Notice",
-    Process = ao.id,
-    Stakeholder = stakeholder,
-    CollateralToken = collateralToken,
-    ParentCollectionId = parentCollectionId,
-    ConditionId = conditionId,
-    Partition = partition,
-    Quantity = quantity
-  })
+local function positionsMergeNotice(notice)
+  ao.send(notice)
 end
 
 local function payoutRedemptionNotice(redeemer, collateralToken, parentCollectionId, conditionId, indexSets, payout)
@@ -329,24 +332,44 @@ end
 -- @param from The address that will burn the tokens
 -- @param ids IDs of the tokens to be burned
 -- @param quantity Quantities of the tokens to be burned
-local function batchBurn(from, ids, quantities)
+-- @param msg For sending X-Tags
+local function batchBurn(from, ids, quantities, msg)
   assert(#ids == #quantities, 'Ids and quantities must have the same lengths')
   -- Validate batch input
   for i = 1, #ids do
     assert(bint.__lt(0, quantities[i]), 'Quantity must be greater than zero!')
-    assert( BalancesOf[ids[i]], 'Id must exist!')
+    assert(BalancesOf[ids[i]], 'Id must exist!')
     assert(BalancesOf[ids[i]][from], 'User must hold token! ' .. i .. " ".. ids[i])
     assert(bint.__le(quantities[i], BalancesOf[ids[i]][from]), 'User must have sufficient tokens!')
   end
+
+  local outcomeBalances = {}
   -- Burn batch
   for i = 1, #ids do
     BalancesOf[ids[i]][from] = tostring(bint.__sub(BalancesOf[ids[i]][from], quantities[i]))
+    outcomeBalances[i] = BalancesOf[ids[i]][from]
+  end
+
+  local notice = {
+    Target = from,
+    TokenIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+    OutcomeBalances = json.encode(outcomeBalances),
+    Action = 'Burn-Batch-Notice',
+    Data = "Successfully burned batch"
+  }
+
+  for tagName, tagValue in pairs(msg) do
+    -- Tags beginning with "X-" are forwarded
+    if string.sub(tagName, 1, 2) == "X-" then
+      notice[tagName] = tagValue
+    end
   end
   -- Send notice
-  burnBatchNotice(from, ids, quantities)
+  burnBatchNotice(notice)
 end
 
-local function transferSingle(from, recipient, id, quantity, cast, msgId)
+local function transferSingle(from, recipient, id, quantity, cast, msg)
   if not BalancesOf[id] then BalancesOf[id] = {} end
   if not BalancesOf[id][from] then BalancesOf[id][from] = "0" end
   if not BalancesOf[id][recipient] then BalancesOf[id][recipient] = "0" end
@@ -363,10 +386,10 @@ local function transferSingle(from, recipient, id, quantity, cast, msgId)
        ]]
     --
     if not cast then
-      transferSingleNotices(from, recipient, id, quantity)
+      transferSingleNotices(from, recipient, id, quantity, msg)
     end
   else
-    transferErrorNotice(from, id, msgId)
+    transferErrorNotice(from, id, msg.Id)
   end
 end
 
@@ -541,7 +564,7 @@ local function splitPosition(from, collateralToken, parentCollectionId, conditio
   positionSplitNotice(notice)
 end
 
-local function mergePositions(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
+local function mergePositions(from, collateralToken, parentCollectionId, conditionId, partition, quantity, msg)
   assert(#partition > 1, "got empty or singleton partition")
   assert(PayoutNumerators[conditionId] and #PayoutNumerators[conditionId] > 0, "condition not prepared yet")
 
@@ -552,7 +575,6 @@ local function mergePositions(from, collateralToken, parentCollectionId, conditi
 
   -- freeIndexSet starts as the full collection
   local freeIndexSet = fullIndexSet
-
   -- This loop checks that all condition sets are disjoint (the same outcome is not part of more than 1 set)
   local positionIds = {}
   local quantities = {}
@@ -565,20 +587,31 @@ local function mergePositions(from, collateralToken, parentCollectionId, conditi
     quantities[i] = quantity
   end
 
-  -- if quantity == 30 then
-  --   assert(false, "batchBurn input: " .. json.encode(positionIds) .. " " .. json.encode(quantities))
-  -- end
+  batchBurn(from, positionIds, quantities, msg)
 
-  batchBurn(from, positionIds, quantities)
+  local mergeToCollateral = false
 
   if freeIndexSet == 0 then
     if parentCollectionId == "" then
-      -- TODO: assert that this passes before sending merge notice
+      mergeToCollateral = true
       ao.send({
         Target = collateralToken,
         Action = "Transfer",
         Recipient = from,
-        Quantity = tostring(quantity)
+        Quantity = tostring(quantity),
+        ['X-Action'] = "Positions-Merge-Completion",
+        ['X-CollateralToken'] = collateralToken,
+        ['X-ParentCollectionId'] = parentCollectionId,
+        ['X-ConditionId'] = conditionId,
+        ['X-Partition'] = json.encode(partition),
+        ['X-Quantity'] = quantity,
+        ['X-Sender'] = msg.Tags['X-Sender'],
+        ['X-ReturnAmount'] = msg.Tags['X-ReturnAmount'],
+        ['X-OutcomeTokensToSell'] = msg.Tags['X-OutcomeTokensToSell'],
+        ['X-TokenId'] = positionIds[tonumber(msg.Tags['X-OutcomeIndex'])],
+        ['X-OutcomeIndex'] = msg.Tags['X-OutcomeIndex'],
+        ['X-Quantities'] = json.encode(quantities),
+        ['X-Message'] = json.encode(msg)
       })
     else
       mint(from, getPositionId(collateralToken, parentCollectionId), quantity)
@@ -587,7 +620,46 @@ local function mergePositions(from, collateralToken, parentCollectionId, conditi
     mint(from, getPositionId(collateralToken, getCollectionId(parentCollectionId, conditionId, fullIndexSet ~ freeIndexSet)), quantity, "")
   end
 
-  positionsMergeNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
+  if not mergeToCollateral then
+    ao.send({
+      Target = ao.id,
+      Action = "Positions-Merge-Completion",
+      ['X-From'] = from,
+      ['X-CollateralToken'] = collateralToken,
+      ['X-ParentCollectionId'] = parentCollectionId,
+      ['X-ConditionId'] = conditionId,
+      ['X-Partition'] = json.encode(partition),
+      ['X-Quantity'] = quantity,
+      ['X-Sender'] = msg.Tags['X-Sender'],
+      ['X-ReturnAmount'] = msg.Tags['X-ReturnAmount'],
+      ['X-OutcomeTokensToSell'] = msg.Tags['X-OutcomeTokensToSell'],
+      ['X-TokenId'] = positionIds[msg.Tags['X-OutcomeIndex']],
+      ['X-OutcomeIndex'] =msg.Tags['X-OutcomeIndex'],
+      ['X-Quantities'] = json.encode(quantities),
+      ['X-Message'] = json.encode(msg)
+    })
+  end
+end
+
+local function mergePositionsCompletion(from, collateralToken, parentCollectionId, conditionId, partition, quantity, msg)
+  local notice = {
+    Target = from,
+    Action = "Positions-Merge-Notice",
+    CollateralToken = collateralToken,
+    ParentCollectionId = parentCollectionId,
+    ConditionId = conditionId,
+    Partition = json.encode(partition),
+    Quantity = quantity
+  }
+
+  for tagName, tagValue in pairs(msg) do
+    -- Tags beginning with "X-" are forwarded
+    if string.sub(tagName, 1, 2) == "X-" then
+      notice[tagName] = tagValue
+    end
+  end
+
+  positionsMergeNotice(notice)
 end
 
 local function redeemPositions(from, collateralToken, parentCollectionId, conditionId, indexSets)
@@ -651,6 +723,16 @@ end
     HANDLERS
   ]]
 --
+local function isMergeOrderCompletion(msg)
+  if (msg.From == CollateralToken and msg.Action == "Debit-Notice" and msg["X-Action"] == "Positions-Merge-Completion") or
+  (msg.From == ao.id and msg.Action == "Positions-Merge-Completion") then
+    return true
+  else
+    return false
+  end
+end
+
+
 Handlers.add("Prepare-Condition", Handlers.utils.hasMatchingTag("Action", "Prepare-Condition"), function(msg)
   prepareCondition(msg)
 end)
@@ -694,7 +776,11 @@ Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-P
   assert(data.conditionId, "ConditionId is required!")
   assert(data.partition, "Partition is required!")
   assert(data.quantity, "Quantity is required!")
-  mergePositions(msg.From, data.collateralToken, data.parentCollectionId, data.conditionId, data.partition, data.quantity)
+  mergePositions(msg.From, data.collateralToken, data.parentCollectionId, data.conditionId, data.partition, data.quantity, msg)
+end)
+
+Handlers.add("Merge-Positions-Completion", isMergeOrderCompletion, function(msg)
+  mergePositionsCompletion(msg.Tags['X-From'],msg.Tags['X-CollateralToken'], msg.Tags['X-ParentCollectionId'], msg.Tags['X-ConditionId'], msg.Tags['X-Partition'], msg.Tags['X-Quantity'], msg.Tags['X-Msg'])
 end)
 
 Handlers.add("Redeem-Positions", Handlers.utils.hasMatchingTag("Action", "Redeem-Positions"), function(msg)
@@ -757,9 +843,9 @@ Handlers.add("Balance-Of", Handlers.utils.hasMatchingTag("Action", "Balance-Of")
 
   -- If Id is found then cointinue
   if BalancesOf[msg.Tags.TokenId] then
-    -- If not Target is provided, then return the Senders balance
-    if (msg.Tags.Target and BalancesOf[msg.Tags.TokenId][msg.Tags.Target]) then
-      bal = BalancesOf[msg.Tags.TokenId][msg.Tags.Target]
+    -- If not Recipient is provided, then return the Senders balance
+    if (msg.Tags.Recipient and BalancesOf[msg.Tags.TokenId][msg.Tags.Recipient]) then
+      bal = BalancesOf[msg.Tags.TokenId][msg.Tags.Recipient]
     elseif BalancesOf[msg.Tags.TokenId][msg.From] then
       bal = BalancesOf[msg.Tags.TokenId][msg.From]
     end
@@ -770,7 +856,7 @@ Handlers.add("Balance-Of", Handlers.utils.hasMatchingTag("Action", "Balance-Of")
     Balance = bal,
     TokenId = msg.Tags.TokenId,
     Ticker = Ticker,
-    Account = msg.Tags.Target or msg.From,
+    Account = msg.Tags.Recipient or msg.From,
     Data = bal
   })
 end)
@@ -790,7 +876,7 @@ Handlers.add('Transfer-Single', Handlers.utils.hasMatchingTag('Action', 'Transfe
   assert(type(msg.Tags.TokenId) == 'string', 'TokenId is required!')
   assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than 0')
-  transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.TokenId, msg.Tags.Quantity, msg.Tags.Cast, msg.Id)
+  transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.TokenId, msg.Tags.Quantity, msg.Tags.Cast, msg)
 end)
 
 Handlers.add('Transfer-Batch', Handlers.utils.hasMatchingTag('Action', 'Transfer-Batch'), function(msg)

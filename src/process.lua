@@ -5,7 +5,6 @@ local resolutionAgent = require("resolutionAgent")
 local serviceAgent = require("serviceAgent")
 
 -- core
-local agentMarketplace = require("agentMarketplace")
 local configurator = require("configurator")
 local cronManager = require("cronManager")
 local dataIndex = require("dataIndex")
