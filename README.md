@@ -1,56 +1,103 @@
 # Outcome Protocol
 
-This is a simple github template repo that can be used to build and maintain AOS processes. 
-It is setup to test locally out of the box, deploy when using trunk-based deployment.
+## Processes
 
-## How it works?
+| Process Name                     | SLOC | Purpose                                                                                                                                                                                               |
+| --------------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| src/agents/dataAgent.lua             | 330  | A process used to request, retrieve and subscribe to data feeds sources from Oracles.                                                                                                                                |
+| src/agents/predictionAgent.lua       | 2  | A process that subscribes to a DataAgent to enter and exit prediction positions.                                                                                                                              |
+| src/agents/resolutionAgent.lua                     | 154   | A process that can be polled and/or subscribes to receive data from a DataAgent to resolve a market. to .                                                                                                                             |
+| src/agents/serviceAgent.lua               | 2  | An internal agent used to periodically fetch data and update the DataIndex.                                                                                      |
+| src/core/configurator.lua                | 2  | The single point of Admin / Emergency Admin entry to update Core processes.                                                 |
+| src/core/cronManager.lua           | 2  | A process used to schedule, trigger and pause periodic cron jobs.                         |
+| src/core/dataIndex.lua         | 1472   | The protocol's DB. Non-critical data storage used to facilitate complex quieries made by the frontend.                                                                                                                                                                   |
+| src/core/dbAdmin.lua             | 38  | An open-source AO SqLite process placed here to be accessed by the DataIndex.                    |
+| src/core/marketFoundry.lua             | 9  | Used to spawn fully-autonomous markets: a collection of AMM, DataAgent and ResolutionAgent processes. |
+| src/core/orderBook.lua               | 2   | Used to create limit orders. Sits on top of each market's AMM to offer hybrid market+limit order book.                                                                                                                                                                    |
+| src/core/outcomeToken.lua             | 248   | Outcome's utility token.                                                                                                                                             |
+| src/market/amm.lua      | 1307  | A Fixed Price Market Maker designed for binary tokens.                                                                                                                                                                     |
+| src/market/conditionalTokens.lua            | 916  | Conditional Framework Tokens to enable combinatorial market positions, based on those developed by Gnosis.                                                                                                                                                         |
+| src/oracles/dexi.lua    | 2   | Oracle process for Dexi integration.                                                                                                                                                                   |
+| src/oracles/orbit.lua | 2   | Oracle process for 0rbit integration.                                                                                                                                                                    |
+| src/oracles/tau.lua     | 2   | Oracle process for Tau integration.                                                                                                                                                                                           |                         |
+| **Total**                         | 4488 |
 
-You can create a new repo with this template and then utilize TDD to construct your AOS process, 
-step by step, test by test. This workflow gives you a nice developer experience and an extremely
-easy way to test and publish your code.
+```ml
+src
+└─ agents
+  └─ dataAgent.lua
+  └─ dbAdmin.lua
+  └─ predictionAgent.lua
+  └─ resolutionAgent.lua
+  └─ serviceAgent.lua
+└─ core
+  └─ configurator.lua
+  └─ cronManager.lua
+  └─ dataIndex.lua
+  └─ dbAdmin.lua
+  └─ marketFoundry.lua
+  └─ orderBook.lua
+  └─ outcomeToken.lua
+└─ market
+  └─ amm.lua
+  └─ conditionalTokens.lua
+└─ oracles
+  └─ dexi.lua
+  └─ orbit.lua
+  └─ tau.lua 
+```
+For more details on the Outcome protocol and its processes, please see the [docs](https://docs.outcome.gg). 
 
-## First Test
+## Setup
 
-In test/main.test.js after the load source test, create a test that designs a prompt function.
+Outcome is built on AOS 2.0 to include aoSqLite functionality. 
 
-```js
-test('create a prompt', async () => {
-  const result = await Send({Action: 'Eval', Data: 'Prompt = function () return "hi> " end' })
-  assert.equal(result.prompt, 'hi> ')
-})
+To install AOS 2.0, currently, run: 
+```
+npm i -g https://preview_ao.g8way.io
 ```
 
-Save then run `npm t`
+To setup locally add Arweave Wallet json file(s) to root, named:
+- `./wallet.json` (for deployment and testing)
+- `./wallet2.json` (for testing)
 
-More Examples coming soon...
+## Deploy
 
-## Manually Deploy
-
+To deploy test processes, run:
 ```
-npm i --no-fund -g https://get_ao.g8way.io
-aos --load src/main.lua
+yarn test:deploy
 ```
 
-## Deploy Setup
+To deploy prod processes, run:
+```
+yarn prod:deploy
+```
 
-In you github repo, you need to setup a few secrets:
+## Tests
 
-* Your Process Identifier `AOS`
-* Your Deployment Key `KEYFILE` (you want to base64 encode it)
+Unit tests and integration tests are located in `/test/unit` and `/test/integration`, respectively.
 
-> NOTE: Don't have a deployment key, use `~/.aos.json`
+To run unit tests, run:
+```
+yarn test:unit
+```
 
-## SQLite Process Testing
+To run a specific unit test, run:
+```
+yarn test:unit:{FOLDER}:{PROCESS}
+```
 
+To run integration tests, run: 
+```
+yarn test:integration   
+```
 
+To run a specific integration test, run: 
+```
+yarn test:integration:{PROCESS}
+```
 
-## CONTRIBUTIONS
-
-If you like this approach to building AOS processes, and have suggestions to make improves please
-submit issues or PRs. But lets keep it simple and easy to use.
-
-### Principles
-
-* Should be easy to use
-* Should emulate typing commands in the aos console
-* Should make testing fun with AOS
+To redeploy and run a specific integration test, run: 
+```
+yarn test:integration:{PROCESS}:clean
+```

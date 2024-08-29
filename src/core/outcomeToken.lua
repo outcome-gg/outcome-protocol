@@ -63,6 +63,7 @@ ResetState = true
 Variant = "0.0.3"
 
 if not Balances or ResetState then Balances = {} end
+if not Denomination or ResetState then Denomination = 12 end
 
 if Name ~= 'Outcome Token' or ResetState then Name = 'Outcome Token' end
 if Ticker ~= 'OTCM' or ResetState then Ticker = 'OTCM' end
@@ -246,3 +247,5 @@ Handlers.add('burn', Handlers.utils.hasMatchingTag('Action', 'Burn'), function(m
     Data = Colors.gray .. "Successfully burned " .. Colors.blue .. msg.Quantity .. Colors.reset
   })
 end)
+
+return "ok"

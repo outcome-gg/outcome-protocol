@@ -21,5 +21,4 @@ local dexi = require("dexi")
 local orbit = require("orbit")
 local tau = require("tau")
 
-local x = 1 + 1
-return x
+return "ok"

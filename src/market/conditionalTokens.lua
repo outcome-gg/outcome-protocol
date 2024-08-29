@@ -913,5 +913,4 @@ Handlers.add("Get-Payout-Denominator", Handlers.utils.hasMatchingTag("Action", "
   })
 end)
 
-
 return "ok"

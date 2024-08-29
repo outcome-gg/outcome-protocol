@@ -1,5 +1,5 @@
 import { message, createDataItemSigner, result, results } from "@permaweb/aoconnect";
-import { getMessageData, getNoticeData, getNoticeAction, getErrorMessage, parseAmount, parseBalances, delay } from "./utils.js";
+import { getMessageData, getNoticeData, getNoticeAction, getErrorMessage, parseAmount, parseBalances, delay } from "../utils.js";
 import { expect } from "chai";
 import { readFileSync } from "fs";
 import { fileURLToPath } from 'url';
@@ -51,10 +51,10 @@ describe("amm.integration.test", function () {
   before(async () => ( 
     // Txn execution variables
     wallet = JSON.parse(
-      readFileSync(path.join(__dirname, '../../wallet.json')).toString(),
+      readFileSync(path.join(__dirname, '../../../wallet.json')).toString(),
     ),
     wallet2 = JSON.parse(
-      readFileSync(path.join(__dirname, '../../wallet2.json')).toString(),
+      readFileSync(path.join(__dirname, '../../../wallet2.json')).toString(),
     ),
     walletAddress = 'XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I',
     walletAddress2 = 'm6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0',

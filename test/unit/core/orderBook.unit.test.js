@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import * as assert from 'node:assert'
-import { Send } from '../aos.helper.js'
+import { Send } from '../../aos.helper.js'
 import fs from 'node:fs'
 
 /* 

@@ -7,12 +7,13 @@ touch .env
 create_or_update_process() {
     PROCESS_NAME=$1
     SCRIPT_PATH=$2
+    SCRIPT_TAG=$3
     PROCESS_ID_VAR="${PROCESS_NAME}"
 
     # Use expect to interact with the server, capture the process ID, load the script, and exit
     PROCESS_OUTPUT=$(expect -c "
     log_user 0
-    spawn aos \"$PROCESS_NAME\"
+    spawn aos \"$PROCESS_NAME\" $SCRIPT_TAG
     log_user 1
     expect {
         -re {Your AOS process: ([a-zA-Z0-9_-]+)} {
@@ -47,15 +48,20 @@ create_or_update_process() {
 # Check for command-line argument
 if [ "$1" == "test" ]; then
     echo "Running in TEST mode..."
+    # Deploy core contracts
+    create_or_update_process TEST_DATA_INDEX4 src/core/dataIndex.lua --sqlite
     # Deploy market contracts
     create_or_update_process TEST_AMM3 src/market/amm.lua
     create_or_update_process TEST_CONDITIONAL_TOKENS src/market/conditionalTokens.lua
     # Deploy mock contracts
     create_or_update_process TEST_COLLATERAL_TOKEN src/mock/token.lua
+    
 elif [ "$1" == "prod" ]; then
     echo "Running in PROD mode..."
+    # Deploy core contracts
+    create_or_update_process PROD_DATA_INDEX4 src/core/dataIndex.lua --sqlite
     # Deploy market contracts
-    create_or_update_process PROD_AMM src/market/amm.lua
+    create_or_update_process PROD_AMM3 src/market/amm.lua
     create_or_update_process PROD_CONDITIONAL_TOKENS src/market/conditionalTokens.lua
 else
     echo "Usage: $0 {test|prod}"
