@@ -1,5 +1,5 @@
 -- reference: https://github.com/gnosis/conditional-tokens-contracts/blob/master/contracts/ConditionalTokens.sol
-local ao = require('ao')
+local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
 local utils = require(".utils")
@@ -133,19 +133,19 @@ end
 --
 
 -- @dev Emitted upon the successful preparation of a condition.
+-- @param sender The address of the account that prepared the condition.
 -- @param conditionId The condition's ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(questionId, resolutionAgent, outcomeSlotCount))``.
 -- @param resolutionAgent The process assigned to report the result for the prepared condition.
 -- @param questionId An identifier for the question to be answered by the resolutionAgent.
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
-local function conditionPreparationNotice(conditionId, resolutionAgent, questionId, outcomesSlotCount)
+local function conditionPreparationNotice(sender, conditionId, resolutionAgent, questionId, outcomesSlotCount)
   ao.send({
-    Target = _DATA_INDEX,
+    Target = "NLph98HoV0dzFLP-q0H1doDwMhI3VDwhc8BFOgpxZlI",
     Action = "Condition-Preparation-Notice",
-    Process = ao.id,
     ConditionId = conditionId,
     ResolutionAgent = resolutionAgent,
     QuestionId = questionId,
-    OutcomeSlotCount = outcomesSlotCount
+    OutcomeSlotCount = tostring(outcomesSlotCount)
   })
 end
 
@@ -439,8 +439,9 @@ end
 -- @param questionId An identifier for the question to be answered by the resolutionAgent.
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
 local function prepareCondition(msg)
+  print("prepareCondition 0 ")
   local data = json.decode(msg.Data)
-  assert(data.resolutionAgent, "resolutionAgent is required!" )
+  assert(data.resolutionAgent, "resolutionAgent is required!")
   assert(data.questionId, "questionId is required!")
   assert(data.outcomeSlotCount, "outcomeSlotCount is required!")
   assert(type(data.outcomeSlotCount) == 'number', "outcomeSlotCount must be a number!")
@@ -458,7 +459,7 @@ local function prepareCondition(msg)
   -- Initialize the denominator to zero to indicate that the condition has not been resolved.
   PayoutDenominator[conditionId] = 0
   -- Send the condition preparation notice.
-  conditionPreparationNotice(conditionId, data.resolutionAgent, data.questionId, data.outcomeSlotCount)
+  conditionPreparationNotice(msg.From, conditionId, data.resolutionAgent, data.questionId, data.outcomeSlotCount)
 end
 
 -- @dev Called by the resolutionAgent for reporting results of conditions. Will set the payout vector for the condition with the ID `keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount))`, 
