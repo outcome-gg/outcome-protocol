@@ -197,7 +197,7 @@ local function transfer(from, recipient, quantity, cast, msgId)
   local balance = bint(Balances[from])
   if bint.__le(qty, balance) then
     Balances[from] = tostring(bint.__sub(balance, qty))
-    Balances[recipient] = tostring(bint.__add(Balances[recipient], qty))
+    Balances[recipient] = tostring(bint.__add(bint(Balances[recipient]), qty))
 
     --[[
          Only send the notifications to the Sender and Recipient
