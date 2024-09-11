@@ -70,4 +70,31 @@ function LimitLevelTreeMethods:_rebalance(node)
   return node
 end
 
+-- New: nextBest function to get the next best level in the tree
+function LimitLevelTreeMethods:nextBest()
+  if not self.root then
+    return nil  -- If the tree is empty, there's no next best
+  end
+
+  -- Traverse the tree to find the next best price
+  local node = self.root
+  local nextBestNode = nil
+
+  -- If we're working with bids, we want the highest price just below the current best bid
+  -- For asks, we want the lowest price just above the current best ask
+  while node do
+    if node.leftChild then
+      nextBestNode = node.leftChild
+      node = node.leftChild
+    elseif node.rightChild then
+      nextBestNode = node.rightChild
+      node = node.rightChild
+    else
+      break
+    end
+  end
+
+  return nextBestNode
+end
+
 return LimitLevelTree

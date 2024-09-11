@@ -54,7 +54,7 @@ if [ "$1" == "test" ]; then
     # Deploy market contracts
     create_or_update_process TEST_AMM3 src/market/amm.lua
     create_or_update_process TEST_CONDITIONAL_TOKENS src/market/conditionalTokens.lua
-    create_or_update_process TEST_EXCHANGE3 src/market/exchange.lua
+    create_or_update_process TEST_EXCHANGE7 src/market/exchange.lua
     # Deploy mock contracts
     create_or_update_process TEST_COLLATERAL_TOKEN src/mock/token.lua
     
@@ -66,7 +66,7 @@ elif [ "$1" == "prod" ]; then
     # Deploy market contracts
     create_or_update_process PROD_AMM3 src/market/amm.lua
     create_or_update_process PROD_CONDITIONAL_TOKENS src/market/conditionalTokens.lua
-    create_or_update_process PROD_EXCHANGE3 src/market/exchange.lua
+    create_or_update_process PROD_EXCHANGE7 src/market/exchange.lua
 else
     echo "Usage: $0 {test|prod}"
     exit 1

@@ -25,15 +25,19 @@ function OrderMethods:popFromList()
   if self.previousItem then
     self.previousItem.nextItem = self.nextItem
   else
+    -- If there's no previous item, this is the head, so update the head pointer
     self.root.head = self.nextItem
   end
   if self.nextItem then
     self.nextItem.previousItem = self.previousItem
   else
+    -- If there's no next item, this is the tail, so update the tail pointer
     self.root.tail = self.previousItem
   end
+  -- Decrement the count and size in the root (OrderList)
   self.root.count = self.root.count - 1
   self.root.parentLimit.size = self.root.parentLimit.size - self.size
 end
+
 
 return Order

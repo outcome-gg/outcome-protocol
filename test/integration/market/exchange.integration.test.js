@@ -11,7 +11,7 @@ import exp from "constants";
 
 dotenv.config();
 
-const exchange = process.env.TEST_EXCHANGE3;
+const exchange = process.env.TEST_EXCHANGE10;
 const collateralToken = process.env.TEST_COLLATERAL_TOKEN;
 const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS;
 
@@ -111,15 +111,15 @@ describe("exchange.integration.test", function () {
         'size' : 5, 
         'price' : 97},
       ],
-    limitOrderFill = [ // size 5 available
+    limitOrderFill = [ 
       {'isBid' : true, 
         'size' : 3, 
-        'price' : 100},
+        'price' : 101},
     ],
-    limitOrderPartialFill = [ // size 2 available after limitOrderFill
+    limitOrderPartialFill = [
       {'isBid' : true, 
-        'size' : 3, 
-        'price' : 100},
+        'size' : 12, 
+        'price' : 101},
     ],
 
       orderIds = []
@@ -473,13 +473,65 @@ describe("exchange.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
       const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-      const originalOrder_ = JSON.parse(Messages[0].Data)
+      const orderBookSize_ = Messages[0].Tags.find(t => t.name === 'OrderBookSize').value
+      const trades_ = Messages[0].Tags.find(t => t.name === 'Trades').value
+      const order_ = JSON.parse(Messages[0].Data)
 
       expect(action_).to.equal("Order-Processed")
       expect(success_).to.equal('true')
-      expect(originalOrder_.size).to.equal(limitOrders[0].size)
-      expect(originalOrder_.price).to.equal(limitOrders[0].price)
-      expect(originalOrder_.isBid).to.equal(limitOrders[0].isBid)
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+      expect(orderBookSize_).to.equal(limitOrders[0].size.toString())
+      expect(trades_).to.equal('[]')
+      expect(order_.size).to.equal(limitOrders[0].size)
+      expect(order_.price).to.equal(limitOrders[0].price)
+      expect(order_.isBid).to.equal(limitOrders[0].isBid)
+
+      orderIds.push(orderId_)
+    })
+
+    it("+ve should process another add order", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(limitOrders[0]),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
+      const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
+      const orderBookSize_ = Messages[0].Tags.find(t => t.name === 'OrderBookSize').value
+      const trades_ = Messages[0].Tags.find(t => t.name === 'Trades').value
+      const order_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Processed")
+      expect(success_).to.equal('true')
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+      expect(orderBookSize_).to.equal(limitOrders[0].size.toString())
+      expect(trades_).to.equal('[]')
+      expect(order_.size).to.equal(limitOrders[0].size)
+      expect(order_.price).to.equal(limitOrders[0].price)
+      expect(order_.isBid).to.equal(limitOrders[0].isBid)
 
       orderIds.push(orderId_)
     })
@@ -487,12 +539,11 @@ describe("exchange.integration.test", function () {
     it("+ve should update an order - size", async () => {
       let messageId;
 
-      let order = limitOrders[0]
+      let order = JSON.parse(JSON.stringify(limitOrders[0]));
       // set the order id
       order.uid = orderIds[0]
       // update the order size
       order.size *= 2
-      console.log("order: ", order)
 
       await message({
         process: exchange,
@@ -521,27 +572,30 @@ describe("exchange.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
       const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-      const originalOrder_ = JSON.parse(Messages[0].Data)
-
-      console.log("orderId_: ", orderId_)
-      console.log("originalOrder_: ", originalOrder_)
+      const orderBookSize_ = Messages[0].Tags.find(t => t.name === 'OrderBookSize').value
+      const trades_ = Messages[0].Tags.find(t => t.name === 'Trades').value
+      const order_ = JSON.parse(Messages[0].Data)
 
       expect(action_).to.equal("Order-Processed")
       expect(success_).to.equal('true')
-      expect(originalOrder_.size).to.equal(limitOrders[0].size)
-      expect(originalOrder_.price).to.equal(limitOrders[0].price)
-      expect(originalOrder_.isBid).to.equal(limitOrders[0].isBid)
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+      expect(orderBookSize_).to.equal(order.size.toString())
+      expect(trades_).to.equal('[]')
+      expect(order_.size).to.equal(order.size)
+      expect(order_.price).to.equal(order.price)
+      expect(order_.isBid).to.equal(order.isBid)
     })
 
     it("+ve should cancel an order", async () => {
       let messageId;
 
-      let order = limitOrders[0]
+      let order = JSON.parse(JSON.stringify(limitOrders[0]));
       // set the order id
       order.uid = orderIds[0]
       // cancel order by setting size to zero
       order.size = 0
-      console.log("order: ", order)
+      console.log("order:: ", order)
 
       await message({
         process: exchange,
@@ -570,17 +624,21 @@ describe("exchange.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
       const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-      const originalOrder_ = JSON.parse(Messages[0].Data)
-
-      console.log("orderId_: ", orderId_)
-      console.log("originalOrder_: ", originalOrder_)
+      const orderBookSize_ = Messages[0].Tags.find(t => t.name === 'OrderBookSize').value
+      const trades_ = Messages[0].Tags.find(t => t.name === 'Trades').value
+      const order_ = JSON.parse(Messages[0].Data)
 
       expect(action_).to.equal("Order-Processed")
       expect(success_).to.equal('true')
-      expect(originalOrder_.size).to.equal(limitOrders[0].size)
-      expect(originalOrder_.price).to.equal(limitOrders[0].price)
-      expect(originalOrder_.isBid).to.equal(limitOrders[0].isBid)
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+      expect(orderBookSize_).to.equal('0')
+      expect(trades_).to.equal('[]')
+      expect(order_.size).to.equal(order.size)
+      expect(order_.price).to.equal(order.price)
+      expect(order_.isBid).to.equal(order.isBid)
     })
+  
 
     it("+ve should fill an order", async () => {
       let messageId;
@@ -611,58 +669,67 @@ describe("exchange.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
       const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-      const originalOrder_ = JSON.parse(Messages[0].Data)
-
-      console.log("orderId_: ", orderId_)
-      console.log("originalOrder_: ", originalOrder_)
+      const orderBookSize_ = Messages[0].Tags.find(t => t.name === 'OrderBookSize').value
+      const trades_ = Messages[0].Tags.find(t => t.name === 'Trades').value
+      const order_ = JSON.parse(Messages[0].Data)
 
       expect(action_).to.equal("Order-Processed")
       expect(success_).to.equal('true')
-      expect(originalOrder_.size).to.equal(limitOrderFill[0].size)
-      expect(originalOrder_.price).to.equal(limitOrderFill[0].price)
-      expect(originalOrder_.isBid).to.equal(limitOrderFill[0].isBid)
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+      expect(orderBookSize_).to.equal('0')
+
+      expect(JSON.parse(trades_)[0].size).to.equal(limitOrderFill[0].size)
+      expect(order_.size).to.equal(limitOrderFill[0].size)
+      expect(order_.price).to.equal(limitOrderFill[0].price)
+      expect(order_.isBid).to.equal(limitOrderFill[0].isBid)
     })
 
-    // it("+ve should partially fill an order", async () => {
-    //   // let messageId;
-    //   // await message({
-    //   //   process: exchange,
-    //   //   tags: [
-    //   //     { name: "Action", value: "Process-Order" },
-    //   //   ],
-    //   //   signer: createDataItemSigner(wallet),
-    //   //   data: JSON.stringify(limitOrders[0]),
-    //   // })
-    //   // .then((id) => {
-    //   //   messageId = id;
-    //   // })
-    //   // .catch(console.error);
+    it("+ve should partially fill an order", async () => {
+      // await new Promise(resolve => setTimeout(resolve, 5000));
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(limitOrderPartialFill[0]),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
-    //   // let { Messages, Error } = await result({
-    //   //   message: messageId,
-    //   //   process: exchange,
-    //   // });
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
 
-    //   // if (Error) {
-    //   //   console.log(Error)
-    //   // }
+      if (Error) {
+        console.log(Error)
+      }
 
-    //   // expect(Messages.length).to.be.equal(1)
+      expect(Messages.length).to.be.equal(1)
 
-    //   // const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-    //   // const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
-    //   // const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-    //   // const originalOrder_ = JSON.parse(Messages[0].Data)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
+      const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
+      const orderBookSize_ = Messages[0].Tags.find(t => t.name === 'OrderBookSize').value
+      const trades_ = Messages[0].Tags.find(t => t.name === 'Trades').value
+      const order_ = JSON.parse(Messages[0].Data)
 
-    //   // console.log("orderId_: ", orderId_)
-    //   // console.log("originalOrder_: ", originalOrder_)
+      expect(action_).to.equal("Order-Processed")
+      expect(success_).to.equal('true')
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+      expect(orderBookSize_).to.equal('10')
 
-    //   // expect(action_).to.equal("Order-Processed")
-    //   // expect(success_).to.equal('true')
-    //   // expect(originalOrder_.size).to.equal(limitOrders[0].size)
-    //   // expect(originalOrder_.price).to.equal((limitOrders[0].price * 1000).toString())
-    //   // expect(originalOrder_.isBid).to.equal(limitOrders[0].isBid)
-    // })
+      expect(JSON.parse(trades_)[0].size).to.equal((limitOrders[0].size - limitOrderFill[0].size))
+      expect(order_.size).to.equal(limitOrderPartialFill[0].size)
+      expect(order_.price).to.equal(limitOrderPartialFill[0].price)
+      expect(order_.isBid).to.equal(limitOrderPartialFill[0].isBid)
+    })
 
     // it("+ve should fill multiple orders at the same level", async () => {
     //   // let messageId;

@@ -94,7 +94,7 @@ local function assertMaxDp(value, maxDp)
   assert(value == roundedValue, "Value has more than " .. maxDp .. " decimal places")
 
   -- If the value passes the assertion, return it as a string without decimals
-  return tostring(math.floor(roundedValue * factor))
+  return tostring(math.floor(value * factor))
 end
 
 
@@ -109,20 +109,25 @@ local function processOrder(order, msgId, i)
   -- Create order object
   order = limitOrderBookOrder:new(order.uid, order.isBid, order.size, order.price)
   -- Process order
-  local success = LimitOrderBook:process(order)
-  return success, order.uid
+  local success, orderBookSize, trades = LimitOrderBook:process(order)
+  return success, order.uid, orderBookSize, trades
 end
 
-local function processOrders(orders, msgId)
-  local successList = {}
-  local orderIdList = {}
-  for i = 1, #orders do
-    local success, orderId = processOrder(orders[i], msgId, i)
-    table.insert(successList, success)
-    table.insert(orderIdList, orderId)
-  end
-  return successList, orderIdList
-end
+-- local function processOrders(orders, msgId)
+--   local successList = {}
+--   local orderIdList = {}
+--   local orderBookSizeList = {}
+--   local tradesList = {}
+
+--   for i = 1, #orders do
+--     local success, orderId, orderBookSize, trades = processOrder(orders[i], msgId, i)
+--     table.insert(successList, success)
+--     table.insert(orderIdList, orderId)
+--     table.insert(orderBookSizeList, orderBookSize)
+--     table.insert(tradesList, trades)
+--   end
+--   return successList, orderIdList, orderBookSizeList, tradesList
+-- end
 
 local function cancelOrder()
   -- TODO
@@ -199,7 +204,6 @@ end)
   ]]
 --
 Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-Order'), function(msg)
-  print('Process-Order:srt')
   local order = json.decode(msg.Data)
   assert(type(order.isBid) == 'boolean', 'isBid is required!')
   assert(type(order.size) == 'number', 'size is required!')
@@ -209,42 +213,45 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
   order.price = priceString
 
   -- process single order
-  local success, orderId = processOrder(order, msg.Id, 1)
+  local success, orderId, orderBookSize, trades = processOrder(order, msg.Id, 1)
 
   ao.send({
     Target = msg.From,
     Action = 'Order-Processed',
     Success = tostring(success),
     OrderId = orderId,
-    Data = msg.Data
-  })
-  print('Process-Order:end')
-end)
-
-Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-Orders'), function(msg)
-  print("==")
-  print('Process-Orders')
-  local orders = json.decode(msg.Data)
-  for i = 1, #orders do
-    assert(type(orders[i].isBid) == 'boolean', 'isBid is required!')
-    assert(type(orders[i].size) == 'number', 'size is required!')
-    assertMaxDp(orders[i].size, 0)
-    assert(type(orders[i].price) == 'number', 'price is required!')
-    local priceString = assertMaxDp(orders[i].price, 3)
-    orders[i].price = priceString
-  end
-
-  -- process multiple orders
-  local successList, orderIds = processOrders(orders, msg.Id)
-
-  ao.send({
-    Target = msg.From,
-    Action = 'Orders-Processed',
-    Successes = json.encode(successList),
-    OrdersIds = json.encode(orderIds),
+    OrderBookSize = tostring(orderBookSize),
+    Trades = json.encode(trades),
     Data = msg.Data
   })
 end)
+
+-- Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-Orders'), function(msg)
+--   print("==")
+--   print('Process-Orders')
+--   local orders = json.decode(msg.Data)
+--   for i = 1, #orders do
+--     assert(type(orders[i].isBid) == 'boolean', 'isBid is required!')
+--     assert(type(orders[i].size) == 'number', 'size is required!')
+--     assertMaxDp(orders[i].size, 0)
+--     assert(type(orders[i].price) == 'number', 'price is required!')
+--     local priceString = assertMaxDp(orders[i].price, 3)
+--     orders[i].price = priceString
+--   end
+
+--   -- process multiple orders
+--   local successList, orderIds, orderBookSizes, tradesList = processOrders(orders, msg.Id)
+
+--   ao.send({
+--     Target = msg.From,
+--     Action = 'Orders-Processed',
+--     Successes = json.encode(successList),
+--     OrdersIds = json.encode(orderIds),
+--     OrderBookSizes = json.encode(orderBookSizes),
+--     TradesList = json.encode(tradesList),
+--     Data = msg.Data
+--   })
+-- end)
 
 Handlers.add('Cancel-Order', Handlers.utils.hasMatchingTag('Action', 'Cancel-Order'), function(msg)
 -- TODO
