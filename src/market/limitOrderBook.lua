@@ -37,6 +37,14 @@ function LimitOrderBookMethods:process(order)
       success, positionSize, executedTrades = self:add(order)
     end
   end
+
+  print("***")
+  print("***")
+  print("bestAsk object: " .. (self.bestAsk and json.encode(Utils.serializeWithoutCircularReferences(self.bestAsk)) or "nil"))
+  print("***")
+  print("bestBid object: " .. (self.bestBid and json.encode(Utils.serializeWithoutCircularReferences(self.bestBid)) or "nil"))
+  print("***")
+  print("***")
   return success, positionSize, executedTrades
 end
 
@@ -44,11 +52,33 @@ end
 function LimitOrderBookMethods:update(order)
   local existingOrder = self.orders[order.uid]
   local sizeDiff = existingOrder.size - order.size
+
+  -- update the order size
   existingOrder.size = order.size
-  existingOrder.root.parentLimit.size = existingOrder.root.parentLimit.size - sizeDiff
+
+  -- Recalculate the size of the parent limit (price level)
+  if existingOrder.root.parentLimit and existingOrder.root.parentLimit.updateLevelSize then
+    existingOrder.root.parentLimit:updateLevelSize()
+  else
+    print("parentLimit does not have updateLevelSize")
+  end
+
+  -- Ensure bestBid or bestAsk is updated if necessary
+  if order.isBid then
+    if self.bestBid then
+      self.bestBid:updateLevelSize()  -- Recalculate the best bid size
+    end
+  else
+    if self.bestAsk then
+      self.bestAsk:updateLevelSize()  -- Recalculate the best ask size
+    end
+  end
+
   self.orders[order.uid] = existingOrder
   return self.orders[order.uid] == existingOrder, self.orders[order.uid].size
 end
+
+
 
 -- @return success
 function LimitOrderBookMethods:remove(order)
@@ -56,6 +86,12 @@ function LimitOrderBookMethods:remove(order)
   if existingOrder then
     existingOrder:popFromList()
     self.orders[order.uid] = nil
+
+    -- Recalculate the size of the price level
+    if self.priceLevels[existingOrder.price] then
+      self.priceLevels[existingOrder.price]:updateLevelSize()
+    end
+
     if not next(self.priceLevels[existingOrder.price]) then
       self.priceLevels[existingOrder.price] = nil
     end
@@ -65,18 +101,10 @@ end
 
 -- @return success, orderBookSize, trades
 function LimitOrderBookMethods:add(order)
-  print("ORDER " .. order.uid .. " SIZE: " .. order.size)
-  print("===")
-  print("Appending order: UID = " .. tostring(order.uid) .. ", Size = " .. tostring(order.size))
-  print("Before append - Head: " .. (self.head and tostring(self.head.uid) or "nil") .. ", Tail: " .. (self.tail and tostring(self.tail.uid) or "nil"))
-  print("===")
-
-  -- Match orders before adding to the order book
   local executedTrades = self:matchOrders(order)
 
   if order.size > 0 then
     if not self.priceLevels[order.price] then
-      -- Create a new limit level if it doesn't exist
       local limitLevel = LimitLevel:new(order)
       self.orders[order.uid] = order
       self.priceLevels[order.price] = limitLevel
@@ -94,11 +122,14 @@ function LimitOrderBookMethods:add(order)
         end
       end
     else
-      -- Add order to the existing price level
       self.orders[order.uid] = order
       self.priceLevels[order.price]:append(order)
     end
+
+    -- Recalculate the size of the price level
+    self.priceLevels[order.price]:updateLevelSize()
   end
+
   local positionSize = self.orders[order.uid] == nil and 0 or self.orders[order.uid].size
   return self.orders[order.uid] ~= nil or #executedTrades > 0, positionSize, executedTrades
 end
@@ -109,32 +140,46 @@ function LimitOrderBookMethods:matchOrders(order)
   local executedTrades = {}
   local remainingSize = order.size
 
-  -- TODO: Remove count limit
+  -- @dev infinite loop protection
   local count = 0
+  local maxIterations = order.size
 
   if order.isBid then
     -- Match against the best asks
-    while remainingSize > 0 and self.bestAsk and self.bestAsk.price <= order.price and count < 5 do
+    print("==BID==")
+    print(order.size .. "," .. order.price .. "," .. order.uid)
+    print("--")
+    print("bestAsk size: " .. (self.bestAsk and self.bestAsk.size or "nil"))
+    print("bestAsk object: " .. (self.bestAsk and json.encode(Utils.serializeWithoutCircularReferences(self.bestAsk)) or "nil"))
+    while remainingSize > 0 and self.bestAsk and self.bestAsk.size > 0 and tonumber(self.bestAsk.price) <= tonumber(order.price) and count < maxIterations do
+      print("RUN WHILE self.bestAsk.size: " .. self.bestAsk.size)
+      print("-")
       count = count + 1
       local bestAsk = self.bestAsk
 
       if bestAsk.size <= remainingSize then
+        print("IF")
         -- Fully execute the best ask
         table.insert(executedTrades, self:executeTrade(order, bestAsk, bestAsk.size))
         remainingSize = order.size
 
         if bestAsk.size == 0 then
+          print("IF IF")
           self:removeBestAsk()
         end
       else
+        print("ELSE")
         -- Partially execute the best ask
         table.insert(executedTrades, self:executeTrade(order, bestAsk, remainingSize))
         remainingSize = order.size
       end
     end
   else
+    print("==ASK==")
+    print(order.size .. "," .. order.price .. "," .. order.uid)
+    print("--")
     -- Match against the best bids
-    while remainingSize > 0 and self.bestBid and order.price <= self.bestBid.price and count < 5 do
+    while remainingSize > 0 and self.bestBid and self.bestBid.size > 0 and tonumber(order.price) <= tonumber(self.bestBid.price) and count < maxIterations do
       count = count + 1
       local bestBid = self.bestBid
 
@@ -265,10 +310,23 @@ end
 
 function LimitOrderBookMethods:checkOrderValidity(order)
   -- check precision of price and size, (3dp and integer respectively)
-  local roundedPrice = order.price and math.floor(math.floor(order.price * 10 ^ 3 + 0.5) / 10 ^ 3) or 0
-  local roundedSize = order.size and math.floor(math.floor(order.size * 10 + 0.5) / 10) or 0
+  local roundedPrice = order.price and math.floor(order.price * 10 ^ 3 + 0.5) / 10 ^ 3 or 0
+  local roundedSize = order.size and math.floor(order.size) or 0
+  -- check for existing order
+  local isCancel = order.size == 0
+  local isUpdate = self.orders[order.uid] and true or false
 
-  if not order.price or type(order.price) ~= 'number' or order.price <= 0 or order.price ~= roundedPrice then
+  if (isCancel or isUpdate) and not self.orders[order.uid] then
+    return false, "Invalid order id"
+  end
+
+  -- check for price mismatch
+  local existingPriceMisMatch = false
+  if isUpdate then
+    existingPriceMisMatch = (self.orders[order.uid] and order.price and self.orders[order.uid].price ~= tostring(math.floor(order.price * 10 ^ 3)))
+  end
+
+  if not order.price or type(order.price) ~= 'number' or order.price <= 0 or order.price ~= roundedPrice or existingPriceMisMatch then
     return false, "Invalid price"
   end
 
@@ -276,7 +334,7 @@ function LimitOrderBookMethods:checkOrderValidity(order)
     return false, "Invalid size"
   end
 
-  if type(order.isBid) ~= 'boolean' then
+  if type(order.isBid) ~= 'boolean' or (isUpdate and order.isBid and self.orders[order.uid].isBid ~= order.isBid) then
     return false, "Invalid isBid"
   end
 

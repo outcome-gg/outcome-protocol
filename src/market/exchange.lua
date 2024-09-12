@@ -239,7 +239,7 @@ Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-
     Target = msg.From,
     Action = 'Orders-Processed',
     Successes = json.encode(successList),
-    OrdersIds = json.encode(orderIds),
+    OrderIds = json.encode(orderIds),
     PositionSizes = json.encode(positionSizes),
     ExecutedTradesList = json.encode(executedTradesList),
     Data = msg.Data

@@ -94,7 +94,6 @@ local function processOrders(orders)
   local ordersInBook = {}
   local tradesList = {}
   for i = 1, #orders do
-    print("processOrders i " .. tostring(i))
     local trades, orderInBook = processOrder(orders[i])
     table.insert(tradesList, trades)
     table.insert(ordersInBook, orderInBook)

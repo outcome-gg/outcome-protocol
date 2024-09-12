@@ -32,6 +32,21 @@ function LimitLevelMethods:isRoot()
   return self.parent == nil
 end
 
+-- Method to update the size of this level by summing the size of all orders
+function LimitLevelMethods:updateLevelSize()
+  local totalSize = 0
+  local currentOrder = self.orders.head
+  local headUid = currentOrder and currentOrder.uid or "nil"
+  while currentOrder do
+    if totalSize == 0 or currentOrder.uid ~= headUid then
+      totalSize = totalSize + currentOrder.size
+    end
+    currentOrder = currentOrder.next  -- Move to the next order in the list
+  end
+  self.size = totalSize
+end
+
+
 -- Calculate the balance factor (left height - right height)
 function LimitLevelMethods:balanceFactor()
   local leftHeight = self.leftChild and self.leftChild.height or 0
