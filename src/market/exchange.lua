@@ -8,63 +8,47 @@ local limitOrderBookOrder = require('order')
 
 --[[
     GLOBALS
-  ]]
---
--- @dev used to reset state between integration tests
+]]
 ResetState = true
-
 Version = "1.0.1"
 Initialized = false
-
--- @dev init new limit order book
 LimitOrderBook = limitOrderBook:new()
 
 --[[
     Exchange
-  ]]
---
+]]
 if not DataIndex or ResetState then DataIndex = '' end
-
 if not ConditionalTokens or ResetState then ConditionalTokens = '' end
 if not ConditionId or ResetState then ConditionId = '' end
-
 if not ParentCollectionId or ResetState then ParentCollectionId = '' end
 if not CollateralToken or ResetState then CollateralToken = '' end
-
 if not CollateralBalance or ResetState then CollateralBalance = '0' end
 if not UserCollateralBalance or ResetState then UserCollateralBalance = {} end
-
 if not Name or ResetState then Name = 'Exchange-v' .. Version end
 
 --[[
     NOTICES
-  ]]
---
+]]
 -- TODO
 
 --[[
     HELPER FUNCTIONS
-  ]]
---
-
---[[
-    CORE FUNCTIONS
-  ]]
---
+]]
+local function assertMaxDp(value, maxDp)
+  local factor = 10 ^ maxDp
+  local roundedValue = math.floor(value * factor + 0.5) / factor
+  assert(value == roundedValue, "Value has more than " .. maxDp .. " decimal places")
+  return tostring(math.floor(value * factor))
+end
 
 --[[
     Funding
-  ]]
---
+]]
 local function addFunding(sender, addedFunds)
-  -- Add to CollateralBalance
   CollateralBalance = tostring(bint.__add(bint(CollateralBalance), bint(addedFunds)))
-
-  -- Add to UserCollateralBalance
   if not CollateralBalance[sender] then CollateralBalance[sender] = '0' end
   CollateralBalance = tostring(bint.__add(bint(CollateralBalance), bint(addedFunds)))
 
-  -- Create Position 
   ao.send({
     Target = CollateralToken,
     Action = 'Transfer',
@@ -82,100 +66,109 @@ local function removeFunding()
   -- TODO
 end
 
-
-local function assertMaxDp(value, maxDp)
-  -- Calculate the rounding factor based on the max decimal places
-  local factor = 10 ^ maxDp
-
-  -- Round the value to the specified number of decimal places
-  local roundedValue = math.floor(value * factor + 0.5) / factor
-
-  -- Assert if the original value exceeds the allowed precision
-  assert(value == roundedValue, "Value has more than " .. maxDp .. " decimal places")
-
-  -- If the value passes the assertion, return it as a string without decimals
-  return tostring(math.floor(value * factor))
-end
-
+--[[
+    CORE FUNCTIONS 
+]]
 
 --[[
-    Orders
-  ]]
---
--- @returns success, orderId
+    Order Processing & Management
+]]
+-- @returns success, orderId, positionSize, executedTrades
 local function processOrder(order, msgId, i)
-  -- Create unique id if not provided
   order.uid = order.uid or msgId .. '_' .. i
-  -- Create order object
   order = limitOrderBookOrder:new(order.uid, order.isBid, order.size, order.price)
-  -- Process order
-  local success, orderBookSize, trades = LimitOrderBook:process(order)
-  return success, order.uid, orderBookSize, trades
+  local success, positionSize, executedTrades = LimitOrderBook:process(order)
+  return success, order.uid, positionSize, executedTrades
 end
 
--- local function processOrders(orders, msgId)
---   local successList = {}
---   local orderIdList = {}
---   local orderBookSizeList = {}
---   local tradesList = {}
-
---   for i = 1, #orders do
---     local success, orderId, orderBookSize, trades = processOrder(orders[i], msgId, i)
---     table.insert(successList, success)
---     table.insert(orderIdList, orderId)
---     table.insert(orderBookSizeList, orderBookSize)
---     table.insert(tradesList, trades)
---   end
---   return successList, orderIdList, orderBookSizeList, tradesList
--- end
-
-local function cancelOrder()
-  -- TODO
-end
-
-local function modifyOrder()
-  -- TODO
-end
-
---[[
-    Data
-  ]]
---
-local function getVolumeAtPrice()
-  -- TODO
-end
-
-local function getBestBid()
-  -- TODO
-end
-
-local function getBestAsk()
-  -- TODO
-end
-
---[[
-    HANDLERS
-  ]]
---
-
---[[
-    Funding
-  ]]
---
-local function isAddFundingCollateralToken(msg)
-  if msg.From == CollateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
-    return true
-  else
-    return false
+-- @returns lists of successes, orderIds, positionSizes, executedTrades
+local function processOrders(orders, msgId)
+  local successList, orderIdList, positionSizeList, executedTradesList = {}, {}, {}, {}
+  for i = 1, #orders do
+    local success, orderId, positionSize, executedTrades = processOrder(orders[i], msgId, i)
+    table.insert(successList, success)
+    table.insert(orderIdList, orderId)
+    table.insert(positionSizeList, positionSize)
+    table.insert(executedTradesList, executedTrades)
   end
+  return successList, orderIdList, positionSizeList, executedTradesList
+end
+
+--[[
+    Order Book Metrics & Queries
+]]
+-- @returns best Bid/Ask, spread, midPrice, totalVolume, marketDepth
+local function getOrderBookMetrics()
+  local bestBid = LimitOrderBook:getBestBid()
+  local bestAsk = LimitOrderBook:getBestAsk()
+  local spread = LimitOrderBook:getSpread()
+  local midPrice = LimitOrderBook:getMidPrice()
+  local totalVolume = LimitOrderBook:getTotalVolume()
+  local marketDepth = LimitOrderBook:getMarketDepth()
+
+  return {
+    bestBid = bestBid,
+    bestAsk = bestAsk,
+    spread = spread,
+    midPrice = midPrice,
+    totalVolume = totalVolume,
+    marketDepth = marketDepth
+  }
+end
+
+--[[
+    Order Details Queries
+]]
+local function getOrderById(orderId)
+  return LimitOrderBook:getOrderById(orderId)
+end
+
+local function getPriceForOrderId(orderId)
+  return LimitOrderBook:getPriceForOrderId(orderId)
+end
+
+--[[
+    Price Benchmarking & Risk Functions
+]]
+local function getRiskMetrics()
+  local vwap = LimitOrderBook:getVWAP()
+  local bidExposure = LimitOrderBook:getBidExposure()
+  local askExposure = LimitOrderBook:getAskExposure()
+  local netExposure = LimitOrderBook:getNetExposure()
+  local marginExposure = LimitOrderBook:getMarginExposure()
+
+  return {
+    vwap = vwap,
+    exposure = {
+      bid = bidExposure,
+      ask = askExposure,
+      net = netExposure,
+      margin = marginExposure
+    }
+  }
+end
+
+--[[
+  HANDLERS
+]]
+
+--[[
+  Funding
+]]
+local function isAddFundingCollateralToken(msg)
+if msg.From == CollateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
+  return true
+else
+  return false
+end
 end
 
 local function isAddFundingConditionalTokens(msg)
-  if msg.From == CollateralToken  and msg.Action == "Credit-Batch-Notice" and msg["X-Action"] == "Add-Funding" then
-    return true
-  else
-    return false
-  end
+if msg.From == CollateralToken  and msg.Action == "Credit-Batch-Notice" and msg["X-Action"] == "Add-Funding" then
+  return true
+else
+  return false
+end
 end
 
 Handlers.add('Add-Funding-CollateralToken', isAddFundingCollateralToken, function(msg)
@@ -191,8 +184,7 @@ Handlers.add('Add-Funding-ConditionalTokens', isAddFundingConditionalTokens, fun
   assert(msg.Tags.TokenIds, 'TokenIds is required!')
   assert(msg.Tags['X-Order'], 'X-Order is required!')
 
-  -- TODO: Pass X-Order through conditionalTokens transferBatchNotice
-
+-- TODO: Pass X-Order through conditionalTokens transferBatchNotice
 end)
 
 Handlers.add('Remove-Funding', Handlers.utils.hasMatchingTag('Action', 'Remove-Funding'), function(msg)
@@ -200,81 +192,228 @@ Handlers.add('Remove-Funding', Handlers.utils.hasMatchingTag('Action', 'Remove-F
 end)
 
 --[[
-    Order Functions
-  ]]
---
+    Order Processing & Management
+]]
 Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-Order'), function(msg)
   local order = json.decode(msg.Data)
-  assert(type(order.isBid) == 'boolean', 'isBid is required!')
-  assert(type(order.size) == 'number', 'size is required!')
-  assertMaxDp(order.size, 0)
-  assert(type(order.price) == 'number', 'price is required!')
-  local priceString = assertMaxDp(order.price, 3)
-  order.price = priceString
+  -- validate order
+  local isValidOrder, orderValidityMessage = LimitOrderBook:checkOrderValidity(order)
+  if not isValidOrder then
+    ao.send({
+      Target = msg.From,
+      Action = 'Process-Order-Error',
+      Data = orderValidityMessage
+    })
+  else
+    local priceString = assertMaxDp(order.price, 3)
+    order.price = priceString
 
-  -- process single order
-  local success, orderId, orderBookSize, trades = processOrder(order, msg.Id, 1)
+    local success, orderId, positionSize, executedTrades = processOrder(order, msg.Id, 1)
+
+    ao.send({
+      Target = msg.From,
+      Action = 'Order-Processed',
+      Success = tostring(success),
+      OrderId = orderId,
+      PositionSize = tostring(positionSize),
+      ExecutedTrades = json.encode(executedTrades),
+      Data = msg.Data
+    })
+  end
+end)
+
+Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-Orders'), function(msg)
+  local orders = json.decode(msg.Data)
+  for i = 1, #orders do
+    assert(type(orders[i].isBid) == 'boolean', 'isBid is required!')
+    assert(type(orders[i].size) == 'number', 'size is required!')
+    assertMaxDp(orders[i].size, 0)
+    assert(type(orders[i].price) == 'number', 'price is required!')
+    local priceString = assertMaxDp(orders[i].price, 3)
+    orders[i].price = priceString
+  end
+
+  local successList, orderIds, positionSizes, executedTradesList = processOrders(orders, msg.Id)
 
   ao.send({
     Target = msg.From,
-    Action = 'Order-Processed',
-    Success = tostring(success),
-    OrderId = orderId,
-    OrderBookSize = tostring(orderBookSize),
-    Trades = json.encode(trades),
+    Action = 'Orders-Processed',
+    Successes = json.encode(successList),
+    OrdersIds = json.encode(orderIds),
+    PositionSizes = json.encode(positionSizes),
+    ExecutedTradesList = json.encode(executedTradesList),
     Data = msg.Data
   })
 end)
 
--- Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-Orders'), function(msg)
---   print("==")
---   print('Process-Orders')
---   local orders = json.decode(msg.Data)
---   for i = 1, #orders do
---     assert(type(orders[i].isBid) == 'boolean', 'isBid is required!')
---     assert(type(orders[i].size) == 'number', 'size is required!')
---     assertMaxDp(orders[i].size, 0)
---     assert(type(orders[i].price) == 'number', 'price is required!')
---     local priceString = assertMaxDp(orders[i].price, 3)
---     orders[i].price = priceString
---   end
-
---   -- process multiple orders
---   local successList, orderIds, orderBookSizes, tradesList = processOrders(orders, msg.Id)
-
---   ao.send({
---     Target = msg.From,
---     Action = 'Orders-Processed',
---     Successes = json.encode(successList),
---     OrdersIds = json.encode(orderIds),
---     OrderBookSizes = json.encode(orderBookSizes),
---     TradesList = json.encode(tradesList),
---     Data = msg.Data
---   })
--- end)
-
-Handlers.add('Cancel-Order', Handlers.utils.hasMatchingTag('Action', 'Cancel-Order'), function(msg)
--- TODO
-end)
-
-Handlers.add('Modify-Order', Handlers.utils.hasMatchingTag('Action', 'Modify-Order'), function(msg)
--- TODO
-end)
-
 --[[
-    Data Functions
-  ]]
---
-Handlers.add('Get-Volume-At-Price', Handlers.utils.hasMatchingTag('Action', 'Get-Volume-At-Price'), function(msg)
--- TODO
+    Order Book Metrics & Queries
+]]
+Handlers.add('Get-Order-Book-Metrics', Handlers.utils.hasMatchingTag('Action', 'Get-Order-Book-Metrics'), function(msg)
+  local metrics = getOrderBookMetrics()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Order-Book-Metrics',
+    Data = json.encode(metrics)
+  })
 end)
 
 Handlers.add('Get-Best-Bid', Handlers.utils.hasMatchingTag('Action', 'Get-Best-Bid'), function(msg)
--- TODO
+  local bestBid = LimitOrderBook:getBestBid()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Best-Bid',
+    Data = json.encode(bestBid)
+  })
 end)
 
 Handlers.add('Get-Best-Ask', Handlers.utils.hasMatchingTag('Action', 'Get-Best-Ask'), function(msg)
--- TODO
+  local bestAsk = LimitOrderBook:getBestAsk()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Best-Ask',
+    Data = json.encode(bestAsk)
+  })
+end)
+
+Handlers.add('Get-Spread', Handlers.utils.hasMatchingTag('Action', 'Get-Spread'), function(msg)
+  local spread = LimitOrderBook:getSpread()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Spread',
+    Data = spread
+  })
+end)
+
+Handlers.add('Get-Mid-Price', Handlers.utils.hasMatchingTag('Action', 'Get-Mid-Price'), function(msg)
+  local midPrice = LimitOrderBook:getMidPrice()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Mid-Price',
+    Data = midPrice
+  })
+end)
+
+Handlers.add('Get-Total-Volume', Handlers.utils.hasMatchingTag('Action', 'Get-Total-Volume'), function(msg)
+  local totalVolume = LimitOrderBook:getTotalVolume()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Total-Volume',
+    Data = totalVolume
+  })
+end)
+
+Handlers.add('Get-Market-Depth', Handlers.utils.hasMatchingTag('Action', 'Get-Market-Depth'), function(msg)
+  local marketDepth = LimitOrderBook:getMarketDepth()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Market-Depth',
+    Data = json.encode(marketDepth)
+  })
+end)
+
+--[[
+    Order Details Queries
+]]
+Handlers.add('Get-Order-By-Id', Handlers.utils.hasMatchingTag('Action', 'Get-Order-By-Id'), function(msg)
+  local order = getOrderById(msg.Tags.OrderId)
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Order-Details',
+    Data = json.encode(order)
+  })
+end)
+
+Handlers.add('Get-Price-For-Order-Id', Handlers.utils.hasMatchingTag('Action', 'Get-Price-For-Order-Id'), function(msg)
+  local price = getPriceForOrderId(msg.Tags.OrderId)
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Order-Price',
+    Data = price
+  })
+end)
+
+Handlers.add('Check-Order-Validity', Handlers.utils.hasMatchingTag('Action', 'Check-Order-Validity'), function(msg)
+  local order = json.decode(msg.Data)
+  local isValid = LimitOrderBook:checkOrderValidity(order)
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Order-Validity',
+    Data = tostring(isValid)
+  })
+end)
+
+--[[
+    Price Benchmarking & Risk Functions
+]]
+Handlers.add('Get-Risk-Metrics', Handlers.utils.hasMatchingTag('Action', 'Get-Risk-Metrics'), function(msg)
+  local metrics = getRiskMetrics()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Risk-Metrics',
+    Data = json.encode(metrics)
+  })
+end)
+
+Handlers.add('Get-VWAP', Handlers.utils.hasMatchingTag('Action', 'Get-VWAP'), function(msg)
+  local vwap = LimitOrderBook:getVWAP()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'VWAP',
+    Data = vwap
+  })
+end)
+
+Handlers.add('Get-Bid-Exposure', Handlers.utils.hasMatchingTag('Action', 'Get-Bid-Exposure'), function(msg)
+  local bidExposure = LimitOrderBook:getBidExposure()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Bid-Exposure',
+    Data = bidExposure
+  })
+end)
+
+Handlers.add('Get-Ask-Exposure', Handlers.utils.hasMatchingTag('Action', 'Get-Ask-Exposure'), function(msg)
+  local askExposure = LimitOrderBook:getAskExposure()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Ask-Exposure',
+    Data = askExposure
+  })
+end)
+
+Handlers.add('Get-Net-Exposure', Handlers.utils.hasMatchingTag('Action', 'Get-Net-Exposure'), function(msg)
+  local netExposure = LimitOrderBook:getNetExposure()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Net-Exposure',
+    Data = netExposure
+  })
+end)
+
+Handlers.add('Get-Margin-Exposure', Handlers.utils.hasMatchingTag('Action', 'Get-Margin-Exposure'), function(msg)
+  local marginExposure = LimitOrderBook:getMarginExposure()
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Margin-Exposure',
+    Data = marginExposure
+  })
 end)
 
 return 'ok'

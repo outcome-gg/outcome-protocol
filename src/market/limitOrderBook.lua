@@ -25,19 +25,19 @@ end
 
 function LimitOrderBookMethods:process(order)
   local success
-  local orderBookSize = 0
-  local trades = {}
+  local positionSize = 0
+  local executedTrades = {}
 
   if order.size == 0 then
     success = self:remove(order)
   else
     if self.orders[order.uid] then
-      success, orderBookSize = self:update(order)
+      success, positionSize = self:update(order)
     else
-      success, orderBookSize, trades = self:add(order)
+      success, positionSize, executedTrades = self:add(order)
     end
   end
-  return success, orderBookSize, trades
+  return success, positionSize, executedTrades
 end
 
 -- @return success, orderBookSize
@@ -72,7 +72,7 @@ function LimitOrderBookMethods:add(order)
   print("===")
 
   -- Match orders before adding to the order book
-  local trades = self:matchOrders(order)
+  local executedTrades = self:matchOrders(order)
 
   if order.size > 0 then
     if not self.priceLevels[order.price] then
@@ -99,14 +99,14 @@ function LimitOrderBookMethods:add(order)
       self.priceLevels[order.price]:append(order)
     end
   end
-  local orderBookSize = self.orders[order.uid] == nil and 0 or self.orders[order.uid].size
-  return self.orders[order.uid] ~= nil or #trades > 0, orderBookSize, trades
+  local positionSize = self.orders[order.uid] == nil and 0 or self.orders[order.uid].size
+  return self.orders[order.uid] ~= nil or #executedTrades > 0, positionSize, executedTrades
 end
 
 
 -- Function to match orders and execute trades
 function LimitOrderBookMethods:matchOrders(order)
-  local trades = {}
+  local executedTrades = {}
   local remainingSize = order.size
 
   -- TODO: Remove count limit
@@ -120,7 +120,7 @@ function LimitOrderBookMethods:matchOrders(order)
 
       if bestAsk.size <= remainingSize then
         -- Fully execute the best ask
-        table.insert(trades, self:executeTrade(order, bestAsk, bestAsk.size))
+        table.insert(executedTrades, self:executeTrade(order, bestAsk, bestAsk.size))
         remainingSize = order.size
 
         if bestAsk.size == 0 then
@@ -128,7 +128,7 @@ function LimitOrderBookMethods:matchOrders(order)
         end
       else
         -- Partially execute the best ask
-        table.insert(trades, self:executeTrade(order, bestAsk, remainingSize))
+        table.insert(executedTrades, self:executeTrade(order, bestAsk, remainingSize))
         remainingSize = order.size
       end
     end
@@ -140,7 +140,7 @@ function LimitOrderBookMethods:matchOrders(order)
 
       if bestBid.size <= remainingSize then
         -- Fully execute the best bid
-        table.insert(trades, self:executeTrade(order, bestBid, bestBid.size))
+        table.insert(executedTrades, self:executeTrade(order, bestBid, bestBid.size))
         remainingSize = order.size
 
         if bestBid.size == 0 then
@@ -148,14 +148,14 @@ function LimitOrderBookMethods:matchOrders(order)
         end
       else
         -- Partially execute the best bid
-        table.insert(trades, self:executeTrade(order, bestBid, remainingSize))
+        table.insert(executedTrades, self:executeTrade(order, bestBid, remainingSize))
         remainingSize = order.size
       end
     end
   end
 
   order.size = remainingSize
-  return trades
+  return executedTrades
 end
 
 -- Execute a trade and return trade details
@@ -209,6 +209,129 @@ function LimitOrderBookMethods:removeBestAsk()
   end
 end
 
+--[[
+    Order Book Metrics & Queries
+]]
+function LimitOrderBookMethods:getBestBid()
+  return self.bestBid
+end
 
+function LimitOrderBookMethods:getBestAsk()
+  return self.bestAsk
+end
+
+function LimitOrderBookMethods:getSpread()
+  if self.bestBid and self.bestAsk then
+    return self.bestAsk.price - self.bestBid.price
+  end
+  return nil
+end
+
+function LimitOrderBookMethods:getVolumeAtPrice(price)
+  local priceLevel = self.priceLevels[price]
+  if priceLevel then
+    return priceLevel.orders.parentLimit.size
+  end
+  return 0
+end
+
+function LimitOrderBookMethods:getTotalVolume()
+  local totalVolume = 0
+  for _, level in pairs(self.priceLevels) do
+    totalVolume = totalVolume + level.orders.parentLimit.size
+  end
+  return totalVolume
+end
+
+function LimitOrderBookMethods:getMarketDepth()
+  local depth = {}
+  for price, level in pairs(self.priceLevels) do
+    table.insert(depth, { price = price, size = level.orders.parentLimit.size })
+  end
+  return depth
+end
+
+--[[
+    Order Details Queries
+]]
+function LimitOrderBookMethods:getOrderById(orderId)
+  return self.orders[orderId]
+end
+
+function LimitOrderBookMethods:getPriceForOrderId(orderId)
+  local order = self.orders[orderId]
+  return order and order.price or nil
+end
+
+function LimitOrderBookMethods:checkOrderValidity(order)
+  -- check precision of price and size, (3dp and integer respectively)
+  local roundedPrice = order.price and math.floor(math.floor(order.price * 10 ^ 3 + 0.5) / 10 ^ 3) or 0
+  local roundedSize = order.size and math.floor(math.floor(order.size * 10 + 0.5) / 10) or 0
+
+  if not order.price or type(order.price) ~= 'number' or order.price <= 0 or order.price ~= roundedPrice then
+    return false, "Invalid price"
+  end
+
+  if not order.size or type(order.size) ~= 'number' or order.size < 0 or order.size ~= roundedSize then
+    return false, "Invalid size"
+  end
+
+  if type(order.isBid) ~= 'boolean' then
+    return false, "Invalid isBid"
+  end
+
+  return true, "Order is valid"
+end
+
+--[[
+    Price Benchmarking & Risk Functions
+]]
+--@dev Calculates Volume-Weighted Average Price (VWAP)
+function LimitOrderBookMethods:getVWAP()
+  local totalVolume = 0
+  local weightedSum = 0
+
+  for price, level in pairs(self.priceLevels) do
+    weightedSum = weightedSum + (price * level.size)
+    totalVolume = totalVolume + level.size
+  end
+
+  if totalVolume == 0 then
+    return 0  -- Prevent division by zero
+  end
+
+  return weightedSum / totalVolume
+end
+
+function LimitOrderBookMethods:getBidExposure()
+  local bidExposure = 0
+  for _, level in pairs(self.bids:allLevels()) do
+      bidExposure = bidExposure + (level.size * level.price)
+  end
+  return bidExposure
+end
+
+function LimitOrderBookMethods:getAskExposure()
+  local askExposure = 0
+  for _, level in pairs(self.asks:allLevels()) do
+      askExposure = askExposure + (level.size * level.price)
+  end
+  return askExposure
+end
+
+function LimitOrderBookMethods:getNetExposure()
+  return self:getBidExposure() - self:getAskExposure()
+end
+
+function LimitOrderBookMethods:getMarginExposure(marginRate)
+  local marginExposure = 0
+  for _, level in pairs(self.bids:allLevels()) do
+      marginExposure = marginExposure + (level.size * level.price * marginRate)
+  end
+  for _, level in pairs(self.asks:allLevels()) do
+      marginExposure = marginExposure + (level.size * level.price * marginRate)
+  end
+  return marginExposure
+end
 
 return LimitOrderBook
