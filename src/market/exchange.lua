@@ -1,6 +1,6 @@
 local json = require('json')
 local bint = require('.bint')(256)
-local utils = require(".utils")
+local Utils = require("Utils")
 local crypto = require('.crypto')
 local ao = require('.ao')
 local limitOrderBook = require('limitOrderBook')
@@ -77,8 +77,8 @@ end
 local function processOrder(order, msgId, i)
   order.uid = order.uid or msgId .. '_' .. i
   order = limitOrderBookOrder:new(order.uid, order.isBid, order.size, order.price)
-  local success, positionSize, executedTrades = LimitOrderBook:process(order)
-  return success, order.uid, positionSize, executedTrades
+  local success, orderSize, executedTrades = LimitOrderBook:process(order)
+  return success, order.uid, orderSize, executedTrades
 end
 
 -- @returns lists of successes, orderIds, positionSizes, executedTrades
@@ -208,16 +208,15 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
     local priceString = assertMaxDp(order.price, 3)
     order.price = priceString
 
-    local success, orderId, positionSize, executedTrades = processOrder(order, msg.Id, 1)
+    local success, orderId, orderSize, executedTrades = processOrder(order, msg.Id, 1)
 
     ao.send({
       Target = msg.From,
       Action = 'Order-Processed',
       Success = tostring(success),
       OrderId = orderId,
-      PositionSize = tostring(positionSize),
-      ExecutedTrades = json.encode(executedTrades),
-      Data = msg.Data
+      OrderSize = tostring(orderSize),
+      Data = json.encode(Utils.serializeWithoutCircularReferences(executedTrades))
     })
   end
 end)
@@ -233,16 +232,15 @@ Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-
     orders[i].price = priceString
   end
 
-  local successList, orderIds, positionSizes, executedTradesList = processOrders(orders, msg.Id)
+  local successList, orderIds, orderSizes, executedTradesList = processOrders(orders, msg.Id)
 
   ao.send({
     Target = msg.From,
     Action = 'Orders-Processed',
     Successes = json.encode(successList),
     OrderIds = json.encode(orderIds),
-    PositionSizes = json.encode(positionSizes),
-    ExecutedTradesList = json.encode(executedTradesList),
-    Data = msg.Data
+    OrderSizes = json.encode(orderSizes),
+    Data = json.encode(executedTradesList)
   })
 end)
 

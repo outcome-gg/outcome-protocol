@@ -70,31 +70,51 @@ function LimitLevelTreeMethods:_rebalance(node)
   return node
 end
 
--- New: nextBest function to get the next best level in the tree
-function LimitLevelTreeMethods:nextBest()
+-- Get the next best level in the tree
+function LimitLevelTreeMethods:nextBest(currentNode)
   if not self.root then
     return nil  -- If the tree is empty, there's no next best
   end
 
-  -- Traverse the tree to find the next best price
-  local node = self.root
   local nextBestNode = nil
 
-  -- If we're working with bids, we want the highest price just below the current best bid
-  -- For asks, we want the lowest price just above the current best ask
-  while node do
-    if node.leftChild then
-      nextBestNode = node.leftChild
-      node = node.leftChild
-    elseif node.rightChild then
-      nextBestNode = node.rightChild
-      node = node.rightChild
-    else
-      break
+  -- Traverse up to find the next best price, ignoring zero size nodes
+  local function traverseUp(node, visited)
+    -- 'visited' will track nodes to prevent revisiting
+    visited = visited or {}
+
+    while node do
+      -- Check if the node has been visited to prevent infinite looping
+      if visited[node] then
+        return nil  -- Avoid looping back to the same node
+      end
+
+      -- Mark this node as visited
+      visited[node] = true
+
+      -- Traverse left or right based on child sizes
+      if node.leftChild and node.leftChild.size > 0 then
+        node = node.leftChild
+      elseif node.rightChild and node.rightChild.size > 0 then
+        node = node.rightChild
+      else
+        return node  -- Found a valid node with size > 0
+      end
     end
+    return nil  -- If no valid node is found, return nil
+  end
+
+  -- Start at the current node, check if it has a valid size
+  local visited = {}
+  nextBestNode = traverseUp(currentNode or self.root, visited)
+
+  -- Continue traversal to find a valid next best node
+  while nextBestNode and nextBestNode.size == 0 do
+    nextBestNode = traverseUp(nextBestNode, visited)
   end
 
   return nextBestNode
 end
+
 
 return LimitLevelTree
