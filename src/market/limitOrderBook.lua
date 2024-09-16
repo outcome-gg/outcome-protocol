@@ -94,8 +94,7 @@ end
 function LimitOrderBookMethods:add(order)
   local executedTrades = self:matchOrders(order)
 
-  -- TODO remove hard coding for testing
-  if order.size > 0 and order.size ~= 11 then
+  if order.size > 0 then
     if not self.priceLevels[order.price] then
       local limitLevel = LimitLevel:new(order)
       self.orders[order.uid] = order
@@ -103,12 +102,12 @@ function LimitOrderBookMethods:add(order)
 
       -- Insert into bid or ask tree
       if order.isBid then
-        self.bids:insert(limitLevel)
+        self.bids:insert(limitLevel, order.isBid)
         if not self.bestBid or order.price > self.bestBid.price then
           self.bestBid = limitLevel
         end
       else
-        self.asks:insert(limitLevel)
+        self.asks:insert(limitLevel, order.isBid)
         if not self.bestAsk or order.price < self.bestAsk.price then
           self.bestAsk = limitLevel
         end
@@ -131,12 +130,13 @@ end
 function LimitOrderBookMethods:matchOrders(order)
   local executedTrades = {}
   local remainingSize = tonumber(order.size) or 0
-  local maxIterations = 10
+  local maxIterations = 100
   local count = 0
 
   -- Choose the right matching side (bid or ask)
   local isBid = order.isBid
-  local bestLevel = isBid and self.bestAsk or self.bestBid
+  -- returns the best ask if isBid is true, else returns the best bid (accounting for nil)
+  local bestLevel = isBid and self.bestAsk or (not isBid and self.bestBid or nil)
   local bestLevelType = isBid and "ASK" or "BID"
   local matchComparison = isBid and (function(a, b) return a <= b end) or (function(a, b) return a >= b end)
 
@@ -159,7 +159,11 @@ function LimitOrderBookMethods:matchOrders(order)
       else
           matchedOrder, matchedOrderSize = self:removeBestBid()
       end
-      trade = self:executeTrade(order, matchedOrder, matchedOrderSize)
+      -- Handle no matches
+      if not matchedOrder then
+        return self[isBid and "bestAsk" or "bestBid"], remainingSize_, nil
+      end
+      trade = self:executeTrade(order, remainingSize_, matchedOrder, matchedOrderSize)
       remainingSize_ = math.max(remainingSize_ - tonumber(trade.size), 0)
     else
       -- Partial size match
@@ -169,7 +173,7 @@ function LimitOrderBookMethods:matchOrders(order)
       else
           matchedOrder, matchedOrderSize = self:updateBestBid(remainingSize_)
       end
-      trade = self:executeTrade(order_, matchedOrder, matchedOrderSize)
+      trade = self:executeTrade(order_, remainingSize_, matchedOrder, matchedOrderSize)
       remainingSize_ = 0
     end
     return self[isBid and "bestAsk" or "bestBid"], remainingSize_, trade
@@ -180,11 +184,9 @@ function LimitOrderBookMethods:matchOrders(order)
     -- Handle trade logic
     local trade = nil
     bestLevel, remainingSize, trade = handleTrade(bestLevel, order, remainingSize)
-
     -- Collect trade data if trade executed
     if trade then
       table.insert(executedTrades, trade)
-      print("Remaining size after trade: " .. remainingSize)
     end
 
     -- Increment counter
@@ -203,10 +205,10 @@ end
 
 
 -- Execute a trade and return trade details
-function LimitOrderBookMethods:executeTrade(order, matchedOrder, matchedOrderSize)
+function LimitOrderBookMethods:executeTrade(order, orderSizeRemaining, matchedOrder, matchedOrderSize)
   local trade = Utils.serializeWithoutCircularReferences({
     price = matchedOrder.price,
-    size = tonumber(matchedOrderSize < order.size and matchedOrderSize or order.size),
+    size = tonumber(matchedOrderSize < orderSizeRemaining and matchedOrderSize or orderSizeRemaining),
     buyer = order.isBid and order.uid or matchedOrder.uid, -- TODO use sender addresses
     seller = order.isBid and matchedOrder.uid or order.uid, -- TODO use sender addresses
     timestamp = os.time()
@@ -223,7 +225,6 @@ function LimitOrderBookMethods:removeBestAsk()
   if self.bestAsk and self.bestAsk.orders and self.bestAsk.orders.head then
     bestAskOrder = self.bestAsk.orders.head
     bestAskOrderSize = bestAskOrder.size
-
     -- Remove the head order at the best ask
     self:remove(bestAskOrder)
     -- Update the best ask price level
@@ -240,7 +241,6 @@ function LimitOrderBookMethods:removeBestBid()
   if self.bestBid and self.bestBid.orders and self.bestBid.orders.head then
     bestBidOrder = self.bestBid.orders.head
     bestBidOrderSize = bestBidOrder.size
-
     -- Remove the head order at the best bid
     self:remove(bestBidOrder)
 
