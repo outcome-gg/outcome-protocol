@@ -103,16 +103,16 @@ local function getOrderBookMetrics()
   local bestAsk = LimitOrderBook:getBestAsk()
   local spread = LimitOrderBook:getSpread()
   local midPrice = LimitOrderBook:getMidPrice()
-  local totalVolume = LimitOrderBook:getTotalVolume()
+  local totalLiquidity = LimitOrderBook:getTotalLiquidity()
   local marketDepth = LimitOrderBook:getMarketDepth()
 
   return {
-    bestBid = bestBid,
-    bestAsk = bestAsk,
-    spread = spread,
-    midPrice = midPrice,
-    totalVolume = totalVolume,
-    marketDepth = marketDepth
+    bestBid = tostring(bestBid),
+    bestAsk = tostring(bestAsk),
+    spread = tostring(spread),
+    midPrice = tostring(midPrice),
+    totalLiquidity = json.encode(totalLiquidity),
+    marketDepth = json.encode(marketDepth)
   }
 end
 

@@ -972,10 +972,177 @@ describe("exchange.integration.test", function () {
     })
   })
 
+  /************************************************************************ 
+  * Order Book Metrics & Queries
+  ************************************************************************/
+  describe("Order Book Metrics & Queries", function () {
+    it("+ve should add orders (to have no resting bids)", async () => {
+      // add remaining limitOrders
+      let orders = limitOrders.slice(1, limitOrders.length - 1);
 
- 
-    // // TODO: Move test
-    // it("+ve should calculate correct VWAP", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Process-Orders" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(orders),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const successes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Successes').value)
+
+      expect(action_).to.equal("Orders-Processed")
+      for (let i = 0; i < orders.length; i++) {
+        expect(successes_[i]).to.equal(true)
+      }
+    })
+
+    it("+ve should retrieve best bid/ask (where no bid exists)", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      console.log("JSON.parse(data_.marketDepth)['bids']: ", JSON.parse(data_.marketDepth)['bids'])
+      console.log("JSON.parse(data_.marketDepth)['asks']: ", JSON.parse(data_.marketDepth)['asks'])
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('nil')
+      expect(data_.bestAsk).to.equal('100000')
+      expect(data_.spread).to.equal('nil')
+      expect(data_.midPrice).to.equal('nil')
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(738)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(246)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(492)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0)
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(0)
+    });
+
+    // it("+ve should add orders (to have resting bids)", async () => {
+    //   // add remaining limitOrders
+    //   let orders = [{'isBid' : false, 'size' : 5, 'price' : 200}];
+
+    //   let messageId;
+    //   await message({
+    //     process: exchange,
+    //     tags: [
+    //       { name: "Action", value: "Process-Orders" },
+    //     ],
+    //     signer: createDataItemSigner(wallet),
+    //     data: JSON.stringify(orders),
+    //   })
+    //   .then((id) => {
+    //     messageId = id;
+    //   })
+    //   .catch(console.error);
+
+    //   let { Messages, Error } = await result({
+    //     message: messageId,
+    //     process: exchange,
+    //   });
+
+    //   if (Error) {
+    //     console.log(Error)
+    //   }
+
+    //   expect(Messages.length).to.be.equal(1)
+
+    //   const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+    //   const successes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Successes').value)
+
+    //   expect(action_).to.equal("Orders-Processed")
+    //   for (let i = 0; i < orders.length; i++) {
+    //     expect(successes_[i]).to.equal(true)
+    //   }
+    // })
+
+    // it("+ve should retrieve best bid/ask (where bid exists)", async () => {
+    //   let messageId;
+    //   await message({
+    //     process: exchange,
+    //     tags: [
+    //       { name: "Action", value: "Get-Order-Book-Metrics" },
+    //     ],
+    //     signer: createDataItemSigner(wallet),
+    //     data: "",
+    //   })
+    //   .then((id) => {
+    //     messageId = id;
+    //   })
+    //   .catch(console.error);
+
+    //   let { Messages, Error } = await result({
+    //     message: messageId,
+    //     process: exchange,
+    //   });
+
+    //   if (Error) {
+    //     console.log(Error)
+    //   }
+
+    //   expect(Messages.length).to.be.equal(1)
+    //   const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+    //   const data_ = JSON.parse(Messages[0].Data)
+
+    //   expect(action_).to.equal("Order-Book-Metrics")
+    //   // expect(data_.bestBid).to.equal('101000')
+    //   expect(data_.bestAsk).to.equal('100000')
+    //   expect(data_.spread).to.equal('4000')
+    //   expect(data_.midPoint).to.equal('99000')
+    //   expect(data_.totalVolume).to.equal('33')
+    //   expect(data_.marketDepth).to.equal('15')
+    // });
+
+    it("+ve should calculate spread", async () => { /* Test Code */ });
+    it("+ve should calculate market depth", async () => { /* Test Code */ });
+    it("+ve should return total volume", async () => { /* Test Code */ });
+    it("-ve should return appropriate values when order book is empty", async () => { /* Test Code */ });
+  });
+
+  /************************************************************************ 
+  * Price Benchmarking & Risk Functions
+  ************************************************************************/
+  describe("Price Benchmarking & Risk Functions", function () {
+    // it("+ve should calculate VWAP", async () => {
     //   // Assume orders were added
     //   let vwapMessageId;
     //   await message({
@@ -996,224 +1163,6 @@ describe("exchange.integration.test", function () {
     //   let vwap = Messages[0].Data;
     //   expect(vwap).to.be.greaterThan(0);  // VWAP should be positive
     // });
-
-
-
-  /************************************************************************ 
-  * exchange.Process-Orders
-  ************************************************************************/
-  // describe("exchange.Process-Orders", function () {
-  //   // it("+ve should process all add orders", async () => {
-  //   //   let messageId;
-  //   //   await message({
-  //   //     process: exchange,
-  //   //     tags: [
-  //   //       { name: "Action", value: "Process-Orders" },
-  //   //     ],
-  //   //     signer: createDataItemSigner(wallet),
-  //   //     data: JSON.stringify(limitOrders.slice(0,2)),
-  //   //   })
-  //   //   .then((id) => {
-  //   //     messageId = id;
-  //   //   })
-  //   //   .catch(console.error);
-
-  //   //   let { Messages, Error } = await result({
-  //   //     message: messageId,
-  //   //     process: exchange,
-  //   //   });
-
-  //   //   if (Error) {
-  //   //     console.log(Error)
-  //   //   }
-
-  //   //   expect(Messages.length).to.be.equal(1)
-
-  //   //   const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //   //   const successes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Successes').value)
-  //   //   const ordersIds_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrdersIds').value)
-  //   //   const originalOrders_ = JSON.parse(Messages[0].Data)
-
-  //   //   console.log("ordersIds_: ", ordersIds_)
-
-  //   //   expect(successes_.length).to.equal(2)
-  //   //   expect(ordersIds_.length).to.equal(2)
-
-  //   //   expect(action_).to.equal("Orders-Processed")
-  //   //   expect(originalOrders_[0].size).to.equal(limitOrders[0].size)
-  //   //   expect(originalOrders_[0].price).to.equal(limitOrders[0].price)
-  //   //   expect(originalOrders_[0].isBid).to.equal(limitOrders[0].isBid)
-  //   //   expect(successes_[0]).to.equal(true)
-
-  //   //   expect(originalOrders_[1].size).to.equal(limitOrders[1].size)
-  //   //   expect(originalOrders_[1].price).to.equal(limitOrders[1].price)
-  //   //   expect(originalOrders_[1].isBid).to.equal(limitOrders[1].isBid)
-  //   //   expect(successes_[1]).to.equal(true)
-  //   })
-
-  //   it("+ve should process all update orders", async () => {
-  //     // let messageId;
-  //     // await message({
-  //     //   process: exchange,
-  //     //   tags: [
-  //     //     { name: "Action", value: "Process-Orders" },
-  //     //   ],
-  //     //   signer: createDataItemSigner(wallet),
-  //     //   data: JSON.stringify(limitOrders),
-  //     // })
-  //     // .then((id) => {
-  //     //   messageId = id;
-  //     // })
-  //     // .catch(console.error);
-
-  //     // let { Messages, Error } = await result({
-  //     //   message: messageId,
-  //     //   process: exchange,
-  //     // });
-
-  //     // if (Error) {
-  //     //   console.log(Error)
-  //     // }
-
-  //     // expect(Messages.length).to.be.equal(1)
-
-  //     // const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     // const successes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Successes').value)
-  //     // const ordersIds_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrdersIds').value)
-  //     // const originalOrders_ = JSON.parse(Messages[0].Data)
-
-  //     // console.log("ordersIds_: ", ordersIds_)
-
-  //     // expect(successes_.length).to.equal(limitOrders.length)
-  //     // expect(ordersIds_.length).to.equal(limitOrders.length)
-
-  //     // expect(action_).to.equal("Orders-Processed")
-  //     // for (let i = 0; i < limitOrders.length; i++) {
-  //     //   expect(originalOrders_[i].size).to.equal(limitOrders[i].size)
-  //     //   expect(originalOrders_[i].price).to.equal(limitOrders[i].price)
-  //     //   expect(originalOrders_[i].isBid).to.equal(limitOrders[i].isBid)
-  //     //   expect(successes_[i]).to.equal(true)
-  //     // }
-  //   })
-
-  //   it("+ve should process all remove orders", async () => {
-  //     // let messageId;
-  //     // await message({
-  //     //   process: exchange,
-  //     //   tags: [
-  //     //     { name: "Action", value: "Process-Orders" },
-  //     //   ],
-  //     //   signer: createDataItemSigner(wallet),
-  //     //   data: JSON.stringify(limitOrders),
-  //     // })
-  //     // .then((id) => {
-  //     //   messageId = id;
-  //     // })
-  //     // .catch(console.error);
-
-  //     // let { Messages, Error } = await result({
-  //     //   message: messageId,
-  //     //   process: exchange,
-  //     // });
-
-  //     // if (Error) {
-  //     //   console.log(Error)
-  //     // }
-
-  //     // expect(Messages.length).to.be.equal(1)
-
-  //     // const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     // const successes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Successes').value)
-  //     // const ordersIds_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrdersIds').value)
-  //     // const originalOrders_ = JSON.parse(Messages[0].Data)
-
-  //     // console.log("ordersIds_: ", ordersIds_)
-
-  //     // expect(successes_.length).to.equal(limitOrders.length)
-  //     // expect(ordersIds_.length).to.equal(limitOrders.length)
-
-  //     // expect(action_).to.equal("Orders-Processed")
-  //     // for (let i = 0; i < limitOrders.length; i++) {
-  //     //   expect(originalOrders_[i].size).to.equal(limitOrders[i].size)
-  //     //   expect(originalOrders_[i].price).to.equal(limitOrders[i].price)
-  //     //   expect(originalOrders_[i].isBid).to.equal(limitOrders[i].isBid)
-  //     //   expect(successes_[i]).to.equal(true)
-  //     // }
-  //   })
-
-  //   // it("+ve should process all mixed-type orders", async () => {
-  //   //   let messageId;
-  //   //   await message({
-  //   //     process: exchange,
-  //   //     tags: [
-  //   //       { name: "Action", value: "Process-Orders" },
-  //   //     ],
-  //   //     signer: createDataItemSigner(wallet),
-  //   //     data: JSON.stringify(limitOrders),
-  //   //   })
-  //   //   .then((id) => {
-  //   //     messageId = id;
-  //   //   })
-  //   //   .catch(console.error);
-
-  //   //   let { Messages, Error } = await result({
-  //   //     message: messageId,
-  //   //     process: exchange,
-  //   //   });
-
-  //   //   if (Error) {
-  //   //     console.log(Error)
-  //   //   }
-
-  //   //   expect(Messages.length).to.be.equal(1)
-
-  //   //   const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //   //   const successes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Successes').value)
-  //   //   const ordersIds_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrdersIds').value)
-  //   //   const originalOrders_ = JSON.parse(Messages[0].Data)
-
-  //   //   console.log("ordersIds_: ", ordersIds_)
-
-  //   //   expect(successes_.length).to.equal(limitOrders.length)
-  //   //   expect(ordersIds_.length).to.equal(limitOrders.length)
-
-  //   //   expect(action_).to.equal("Orders-Processed")
-  //   //   for (let i = 0; i < limitOrders.length; i++) {
-  //   //     expect(originalOrders_[i].size).to.equal(limitOrders[i].size)
-  //   //     expect(originalOrders_[i].price).to.equal(limitOrders[i].price)
-  //   //     expect(originalOrders_[i].isBid).to.equal(limitOrders[i].isBid)
-  //   //     expect(successes_[i]).to.equal(true)
-  //   //   }
-  //   // })
-  // })
-
-  /************************************************************************ 
-  * Order Book Metrics & Queries
-  ************************************************************************/
-  describe("Order Book Metrics & Queries", function () {
-    it("+ve should retrieve best bid/ask", async () => { /* Test Code */ });
-    it("+ve should calculate spread", async () => { /* Test Code */ });
-    it("+ve should calculate market depth", async () => { /* Test Code */ });
-    it("+ve should return total volume", async () => { /* Test Code */ });
-    it("-ve should return appropriate values when order book is empty", async () => { /* Test Code */ });
-  });
-
-  /************************************************************************ 
-  * Order Details Queries
-  ************************************************************************/
-  describe("Order Book Metrics & Queries", function () {
-    it("+ve should retrieve best bid/ask", async () => { /* Test Code */ });
-    it("+ve should calculate spread", async () => { /* Test Code */ });
-    it("+ve should calculate market depth", async () => { /* Test Code */ });
-    it("+ve should return total volume", async () => { /* Test Code */ });
-    it("-ve should return appropriate values when order book is empty", async () => { /* Test Code */ });
-  });
-
-  /************************************************************************ 
-  * Price Benchmarking & Risk Functions
-  ************************************************************************/
-  describe("Price Benchmarking & Risk Functions", function () {
-    it("+ve should calculate VWAP", async () => { /* Test Code */ });
     it("+ve should calculate bid exposure", async () => { /* Test Code */ });
     it("+ve should calculate ask exposure", async () => { /* Test Code */ });
     it("+ve should calculate net exposure", async () => { /* Test Code */ });

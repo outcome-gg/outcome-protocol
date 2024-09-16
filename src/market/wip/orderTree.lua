@@ -26,6 +26,7 @@ end
 
 -- Constructor
 function OrderTree:new()
+  print("OrderTree:new()")
   -- Create a new object and set the metatable to OrderTreeMethods directly
   local obj = {}
   obj.priceMap = {}                     -- Dictionary containing price : OrderList

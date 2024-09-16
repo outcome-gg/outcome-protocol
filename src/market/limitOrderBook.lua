@@ -15,7 +15,7 @@ function LimitOrderBook:new()
     asks = LimitLevelTree:new(),
     bestBid = nil,
     bestAsk = nil,
-    priceLevels = {},
+    priceLevels = { bids = {}, asks = {} },
     orders = {}
   }
   -- Set the metatable to LimitOrderBookMethods for method lookup
@@ -79,12 +79,13 @@ function LimitOrderBookMethods:remove(order)
     self.orders[order.uid] = nil
 
     -- Recalculate the size of the price level
-    if self.priceLevels[existingOrder.price] then
-      self.priceLevels[existingOrder.price]:updateLevelSize()
+    local orderType = existingOrder.isBid and "bids" or "asks"
+    if self.priceLevels[orderType][existingOrder.price] then
+      self.priceLevels[orderType][existingOrder.price]:updateLevelSize()
     end
 
-    if not next(self.priceLevels[existingOrder.price]) then
-      self.priceLevels[existingOrder.price] = nil
+    if not next(self.priceLevels[orderType][existingOrder.price]) then
+      self.priceLevels[orderType][existingOrder.price] = nil
     end
   end
   return self.orders[order.uid] == nil
@@ -93,12 +94,13 @@ end
 -- @return success, orderBookSize, trades
 function LimitOrderBookMethods:add(order)
   local executedTrades = self:matchOrders(order)
+  local orderType = order.isBid and "bids" or "asks"
 
   if order.size > 0 then
-    if not self.priceLevels[order.price] then
+    if not self.priceLevels[orderType][order.price] then
       local limitLevel = LimitLevel:new(order)
       self.orders[order.uid] = order
-      self.priceLevels[order.price] = limitLevel
+      self.priceLevels[orderType][order.price] = limitLevel
 
       -- Insert into bid or ask tree
       if order.isBid then
@@ -114,11 +116,11 @@ function LimitOrderBookMethods:add(order)
       end
     else
       self.orders[order.uid] = order
-      self.priceLevels[order.price]:append(order)
+      self.priceLevels[orderType][order.price]:append(order)
     end
 
     -- Recalculate the size of the price level
-    self.priceLevels[order.price]:updateLevelSize()
+    self.priceLevels[orderType][order.price]:updateLevelSize()
   end
 
   local positionSize = self.orders[order.uid] == nil and 0 or self.orders[order.uid].size
@@ -290,12 +292,23 @@ end
 --[[
     Order Book Metrics & Queries
 ]]
+function LimitOrderBookMethods:_getBest(isBid)
+  local bestLevel = isBid and self.bestBid or (not isBid and self.bestAsk or nil)
+  local bestLevelPrice = nil
+  if bestLevel and bestLevel.orders and bestLevel.orders.head then
+    bestLevelPrice = bestLevel.orders.head.price
+  else
+    print("LimitOrderBookMethods:_getBest: no best level price found")
+  end
+  return bestLevelPrice
+end
+
 function LimitOrderBookMethods:getBestBid()
-  return self.bestBid
+  return self:_getBest(true)
 end
 
 function LimitOrderBookMethods:getBestAsk()
-  return self.bestAsk
+  return self:_getBest(false)
 end
 
 function LimitOrderBookMethods:getSpread()
@@ -305,29 +318,58 @@ function LimitOrderBookMethods:getSpread()
   return nil
 end
 
-function LimitOrderBookMethods:getVolumeAtPrice(price)
-  local priceLevel = self.priceLevels[price]
-  if priceLevel then
-    return priceLevel.orders.parentLimit.size
+function LimitOrderBookMethods:getMidPrice()
+  if self.bestBid and self.bestAsk then
+    return (self.bestAsk.price + self.bestBid.price) / 2
   end
-  return 0
+  return nil
 end
 
-function LimitOrderBookMethods:getTotalVolume()
-  local totalVolume = 0
-  for _, level in pairs(self.priceLevels) do
-    totalVolume = totalVolume + level.orders.parentLimit.size
+function LimitOrderBookMethods:getLiquidityAtPrice(price)
+  local bidsPriceLevel = self.priceLevels['bids'][price]
+  local asksPriceLevel = self.priceLevels['asks'][price]
+
+  local bidsLiquidity = bidsPriceLevel and bidsPriceLevel.orders.parentLimit.size or 0
+  local asksLiquidity = asksPriceLevel and asksPriceLevel.orders.parentLimit.size or 0
+
+  return { bids = bidsLiquidity, asks = asksLiquidity }
+end
+
+function LimitOrderBookMethods:getTotalLiquidity()
+  local bidsLiquidity = 0
+  local asksLiquidity = 0
+
+  for _, level in pairs(self.priceLevels['bids']) do
+    bidsLiquidity = bidsLiquidity + level.orders.parentLimit.size
   end
-  return totalVolume
+
+  for _, level in pairs(self.priceLevels['asks']) do
+    asksLiquidity = asksLiquidity + level.orders.parentLimit.size
+  end
+
+  return { bids = bidsLiquidity, asks = asksLiquidity, total = bidsLiquidity + asksLiquidity }
 end
 
 function LimitOrderBookMethods:getMarketDepth()
-  local depth = {}
-  for price, level in pairs(self.priceLevels) do
-    table.insert(depth, { price = price, size = level.orders.parentLimit.size })
+  local depth = { bids = {}, asks = {} }
+
+  -- Collect bid levels
+  for price, level in pairs(self.priceLevels['bids']) do
+    table.insert(depth.bids, { price = price, totalLiquidity = level.orders.parentLimit.size })
   end
+
+  -- Collect ask levels
+  for price, level in pairs(self.priceLevels['asks']) do
+    table.insert(depth.asks, { price = price, totalLiquidity = level.orders.parentLimit.size })
+  end
+
+  -- Sort bids in descending order and asks in ascending order
+  table.sort(depth.bids, function(a, b) return tonumber(a.price) > tonumber(b.price) end)
+  table.sort(depth.asks, function(a, b) return tonumber(a.price) < tonumber(b.price) end)
+
   return depth
 end
+
 
 --[[
     Order Details Queries
@@ -379,19 +421,25 @@ end
 ]]
 --@dev Calculates Volume-Weighted Average Price (VWAP)
 function LimitOrderBookMethods:getVWAP()
-  local totalVolume = 0
-  local weightedSum = 0
+  local bidsTotalVolume, asksTotalVolume = 0, 0
+  local bidsWeightedSum, asksWeightedSum = 0, 0
+  local bidsVWAP, asksVWAP = 0, 0
 
-  for price, level in pairs(self.priceLevels) do
-    weightedSum = weightedSum + (price * level.size)
-    totalVolume = totalVolume + level.size
+  for price, level in pairs(self.priceLevels['bids']) do
+    bidsWeightedSum = bidsWeightedSum + (price * level.size)
+    bidsTotalVolume = bidsTotalVolume + level.size
   end
 
-  if totalVolume == 0 then
-    return 0  -- Prevent division by zero
+  for price, level in pairs(self.priceLevels['asks']) do
+    asksWeightedSum = asksWeightedSum + (price * level.size)
+    asksTotalVolume = asksTotalVolume + level.size
   end
 
-  return weightedSum / totalVolume
+  -- Prevent division by zero
+  bidsVWAP = bidsTotalVolume == 0 and 0 or bidsWeightedSum / bidsTotalVolume
+  asksVWAP = asksTotalVolume == 0 and 0 or asksWeightedSum / asksTotalVolume
+
+  return { bids = bidsVWAP, asks = asksVWAP }
 end
 
 function LimitOrderBookMethods:getBidExposure()

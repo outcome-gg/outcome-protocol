@@ -39,11 +39,11 @@ function OrderListMethods:append(order)
   self.parentLimit.size = self.parentLimit.size + order.size
 
   -- Debugging: Print the current state of the order list (head and tail)
-  print("-")
-  print("OrderListMethods:append - Head UID: " .. (self.head and tostring(self.head.uid) or "nil"))
-  print("OrderListMethods:append - Tail UID: " .. (self.tail and tostring(self.tail.uid) or "nil"))
-  print("OrderListMethods:append - List count: " .. tostring(self.count))
-  print("OrderListMethods:append - Parent limit size: " .. tostring(self.parentLimit.size))
+  -- print("-")
+  -- print("OrderListMethods:append - Head UID: " .. (self.head and tostring(self.head.uid) or "nil"))
+  -- print("OrderListMethods:append - Tail UID: " .. (self.tail and tostring(self.tail.uid) or "nil"))
+  -- print("OrderListMethods:append - List count: " .. tostring(self.count))
+  -- print("OrderListMethods:append - Parent limit size: " .. tostring(self.parentLimit.size))
 end
 
 return OrderList

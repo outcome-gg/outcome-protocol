@@ -1,3 +1,6 @@
+local json = require('json')
+local Utils = require('Utils')
+
 local LimitLevel = require("LimitLevel")
 
 local LimitLevelTree = {}
@@ -114,6 +117,31 @@ function LimitLevelTreeMethods:nextBest(currentNode)
   end
 
   return nextBestNode
+end
+
+function LimitLevelTreeMethods:allLevels()
+  local levels = {}
+
+  -- Helper function to perform in-order traversal
+  local function traverse(node)
+    if not node then return end
+
+    -- Traverse the left subtree
+    traverse(node.leftChild)
+
+    -- Collect the current node (price level)
+    table.insert(levels, node)
+
+    -- Traverse the right subtree
+    traverse(node.rightChild)
+  end
+
+  -- Start traversal from the root
+  traverse(self.root)
+
+  print("LimitLevelTreeMethods:allLevels() - levels: " .. #levels)
+  print("LimitLevelTreeMethods:allLevels() - data  : " .. json.encode(Utils.serializeWithoutCircularReferences(levels)))
+  return levels
 end
 
 
