@@ -28,33 +28,66 @@ function LimitOrderBookMethods:process(order)
   local orderSize = 0
   local executedTrades = {}
 
+  print("==PROCESS==")
+  print(order.price .. "," .. order.size .. "," .. (order.isBid and "bid" or "ask"))
+  local printThis = false
   if order.size == 0 then
+    print("->Remove")
+    printThis = true
     success = self:remove(order)
   else
     if self.orders[order.uid] then
+      print("->Update")
+      printThis = true
       success, orderSize = self:update(order)
     else
+      print("->Add")
+      printThis = true
       success, orderSize, executedTrades = self:add(order)
     end
   end
 
+  if printThis then
+    print("-")
+    print("success        : " .. tostring(success))
+    print("orderSize      : " .. tostring(orderSize))
+    print("executedTrades : " .. json.encode(executedTrades))
+    local parentLimitSize = self.orders[order.uid] and self.orders[order.uid].root.parentLimit.size or nil
+    print("parentLimitSize: " .. tostring(parentLimitSize))
+    print("=")
+    print("")
+
+    print("***")
+    print("Best Bid: " .. json.encode(self.bestBid and Utils.serializeWithoutCircularReferences(self.bestBid) or {}))
+    print("***")
+    print("Best Ask: " .. json.encode(self.bestAsk and Utils.serializeWithoutCircularReferences(self.bestAsk) or {}))
+    print("***")
+    print("self.orders: " .. json.encode(Utils.serializeWithoutCircularReferences(self.orders)))
+    print("***")
+    print("self.priceLevels: " .. json.encode(Utils.serializeWithoutCircularReferences(self.priceLevels)))
+    print("***")
+    print("")
+  end
   return success, orderSize, executedTrades
 end
 
 -- @return success, orderBookSize
 function LimitOrderBookMethods:update(order)
   local existingOrder = self.orders[order.uid]
-  local sizeDiff = existingOrder.size - order.size
+  print("##")
+  print("existingOrder: " .. json.encode(Utils.serializeWithoutCircularReferences(existingOrder)))
+  print("##")
+
+  -- update the parentLimit size
+  if existingOrder.root.parentLimit and existingOrder.root.parentLimit.size then
+    existingOrder.root.parentLimit.size = existingOrder.root.parentLimit.size - existingOrder.size + order.size
+  else
+    print("order root does not have parentLimit.size")
+  end
 
   -- update the order size
   existingOrder.size = order.size
-
-  -- Recalculate the size of the parent limit (price level)
-  if existingOrder.root.parentLimit and existingOrder.root.parentLimit.updateLevelSize then
-    existingOrder.root.parentLimit:updateLevelSize()
-  else
-    print("parentLimit does not have updateLevelSize")
-  end
+  self.orders[order.uid] = existingOrder
 
   -- Ensure bestBid or bestAsk is updated if necessary
   if order.isBid then
@@ -67,7 +100,6 @@ function LimitOrderBookMethods:update(order)
     end
   end
 
-  self.orders[order.uid] = existingOrder
   return self.orders[order.uid] == existingOrder, self.orders[order.uid].size
 end
 

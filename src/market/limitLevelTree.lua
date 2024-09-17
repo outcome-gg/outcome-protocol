@@ -74,7 +74,7 @@ function LimitLevelTreeMethods:_rebalance(node)
 end
 
 -- Get the next best level in the tree
-function LimitLevelTreeMethods:nextBest(currentNode)
+function LimitLevelTreeMethods:nextBest()
   if not self.root then
     return nil  -- If the tree is empty, there's no next best
   end
@@ -95,13 +95,30 @@ function LimitLevelTreeMethods:nextBest(currentNode)
       -- Mark this node as visited
       visited[node] = true
 
-      -- Traverse left or right based on child sizes
-      if node.leftChild and node.leftChild.size > 0 then
-        node = node.leftChild
-      elseif node.rightChild and node.rightChild.size > 0 then
-        node = node.rightChild
+      -- First, check the parent node's orders
+      if node.orders and node.orders.count > 0 then
+        return node  -- Found a valid node with orders
+      end
+
+      -- For bids, prioritize higher prices, for asks prioritize lower prices
+      if self.root.isBid then
+        -- Bid traversal (right child first)
+        if node.rightChild and node.rightChild.size > 0 then
+          node = node.rightChild
+        elseif node.leftChild and node.leftChild.size > 0 then
+          node = node.leftChild
+        else
+          return nil  -- No valid node found
+        end
       else
-        return node  -- Found a valid node with size > 0
+        -- Ask traversal (left child first)
+        if node.leftChild and node.leftChild.size > 0 then
+          node = node.leftChild
+        elseif node.rightChild and node.rightChild.size > 0 then
+          node = node.rightChild
+        else
+          return node.parent  --  No valid node found
+        end
       end
     end
     return nil  -- If no valid node is found, return nil
@@ -109,7 +126,7 @@ function LimitLevelTreeMethods:nextBest(currentNode)
 
   -- Start at the current node, check if it has a valid size
   local visited = {}
-  nextBestNode = traverseUp(currentNode or self.root, visited)
+  nextBestNode = traverseUp(self.root, visited)
 
   -- Continue traversal to find a valid next best node
   while nextBestNode and nextBestNode.size == 0 do
@@ -139,8 +156,6 @@ function LimitLevelTreeMethods:allLevels()
   -- Start traversal from the root
   traverse(self.root)
 
-  print("LimitLevelTreeMethods:allLevels() - levels: " .. #levels)
-  print("LimitLevelTreeMethods:allLevels() - data  : " .. json.encode(Utils.serializeWithoutCircularReferences(levels)))
   return levels
 end
 

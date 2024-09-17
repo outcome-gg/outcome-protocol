@@ -12,8 +12,8 @@ function Utils.serializeWithoutCircularReferences(obj, seen)
 
   local copy = {}
   for key, value in pairs(obj) do
-    -- Skip circular reference fields like 'parentLimit', 'previousItem', 'nextItem'
-    if key ~= "parentLimit" and key ~= "previousItem" and key ~= "nextItem" then
+    -- Skip circular reference fields like 'previousItem', 'nextItem'
+    if key ~= "previousItem" and key ~= "nextItem" then
       if type(value) == "table" then
         copy[key] = Utils.serializeWithoutCircularReferences(value, seen)
       else

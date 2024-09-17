@@ -13,7 +13,7 @@ function OrderList:new(parentLimit)
   local obj = {
     head = nil,
     tail = nil,
-    parentLimit = parentLimit,
+    parentLimit = { size = parentLimit.size },
     count = 0
   }
   -- Set the metatable to OrderListMethods for method lookup
