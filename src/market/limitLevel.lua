@@ -34,7 +34,6 @@ end
 
 -- Method to update the size of this level by summing the size of all orders
 function LimitLevelMethods:updateLevelSize()
-  print("LimitLevelMethods:updateLevelSize:srt self.size " .. self.size)
   local totalSize = 0
   local currentOrder = self.orders.head
   local headUid = currentOrder and currentOrder.uid or "nil"
@@ -45,7 +44,6 @@ function LimitLevelMethods:updateLevelSize()
     currentOrder = currentOrder.next  -- Move to the next order in the list
   end
   self.size = totalSize
-  print("LimitLevelMethods:updateLevelSize:end self.size " .. self.size)
 end
 
 

@@ -74,7 +74,7 @@ function LimitLevelTreeMethods:_rebalance(node)
 end
 
 -- Get the next best level in the tree
-function LimitLevelTreeMethods:nextBest()
+function LimitLevelTreeMethods:nextBest(currentNode)
   if not self.root then
     return nil  -- If the tree is empty, there's no next best
   end
@@ -108,7 +108,7 @@ function LimitLevelTreeMethods:nextBest()
         elseif node.leftChild and node.leftChild.size > 0 then
           node = node.leftChild
         else
-          return nil  -- No valid node found
+          return node.parent   -- No valid node found
         end
       else
         -- Ask traversal (left child first)
@@ -117,7 +117,7 @@ function LimitLevelTreeMethods:nextBest()
         elseif node.rightChild and node.rightChild.size > 0 then
           node = node.rightChild
         else
-          return node.parent  --  No valid node found
+          return node.parent  -- No valid node found
         end
       end
     end
@@ -126,7 +126,7 @@ function LimitLevelTreeMethods:nextBest()
 
   -- Start at the current node, check if it has a valid size
   local visited = {}
-  nextBestNode = traverseUp(self.root, visited)
+  nextBestNode = traverseUp(currentNode or self.root, visited)
 
   -- Continue traversal to find a valid next best node
   while nextBestNode and nextBestNode.size == 0 do
