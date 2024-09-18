@@ -297,13 +297,13 @@ Handlers.add('Get-Mid-Price', Handlers.utils.hasMatchingTag('Action', 'Get-Mid-P
   })
 end)
 
-Handlers.add('Get-Total-Volume', Handlers.utils.hasMatchingTag('Action', 'Get-Total-Volume'), function(msg)
-  local totalVolume = LimitOrderBook:getTotalVolume()
+Handlers.add('Get-Total-Liquidity', Handlers.utils.hasMatchingTag('Action', 'Get-Total-Liquidity'), function(msg)
+  local totalLiquidity = LimitOrderBook:getTotalLiquidity()
 
   ao.send({
     Target = msg.From,
-    Action = 'Total-Volume',
-    Data = totalVolume
+    Action = 'Total-Liquidity',
+    Data = totalLiquidity
   })
 end)
 
