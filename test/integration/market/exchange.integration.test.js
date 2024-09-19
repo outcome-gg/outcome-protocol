@@ -1479,6 +1479,10 @@ describe("exchange.integration.test", function () {
       const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
       const executedTrades_ = JSON.parse(Messages[0].Data)
 
+      console.log("order", order)
+      console.log("executedTrades_", executedTrades_)
+      console.log("orderSize_", orderSize_)
+
       expect(action_).to.equal("Order-Processed")
       expect(success_).to.equal('true')
       expect(typeof(orderId_)).to.equal('string')
@@ -1544,6 +1548,10 @@ describe("exchange.integration.test", function () {
           orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
         }
       }
+
+      console.log("orderBookAsks", orderBookAsks)
+      console.log("orderBookBids", orderBookBids)
+      console.log("data_", data_)
 
       // TRADE matches asks of 5 shares at 101.000 + 5 shares at 101.123
 
@@ -2350,34 +2358,1101 @@ describe("exchange.integration.test", function () {
   });
 
   /************************************************************************ 
+  * Order Details Queries
+  ************************************************************************/
+  describe("Order Details Queries", function () {
+    const orders = [
+      {
+        'isBid' : false, 
+        'size' : 5, 
+        'price' : 90
+      },
+      {
+        'isBid' : true, 
+        'size' : 30, 
+        'price' : 88
+      }
+    ]
+    let orderIds = []
+
+    it("+ve [process] should add bid/ask orders", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Process-Orders" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(orders),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const orderIds_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrderIds').value)
+      const successes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Successes').value)
+      const orderSizes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrderSizes').value)
+      const executedTradesList_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Orders-Processed")
+      expect(successes_.length).to.equal(2)
+      expect(successes_[0]).to.equal(true)
+      expect(successes_[1]).to.equal(true)
+      expect(orderIds_.length).to.equal(2)
+      expect(orderIds_[0]).to.not.equal('')
+      expect(orderIds_[1]).to.not.equal('')
+      expect(orderSizes_.length).to.equal(2)
+      expect(orderSizes_[0]).to.equal(5)
+      expect(orderSizes_[1]).to.equal(30)
+      expect(executedTradesList_.length).to.equal(2)
+      expect(executedTradesList_[0].length).to.equal(0)
+      expect(executedTradesList_[1].length).to.equal(0)
+
+      orderIds = orderIds_
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (after processing orders)", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+        }
+      }
+
+      // ORDER is ask of 5 shares at 96.500
+      // TRADE matches bids of 3 and 5 shares at 98.000 and 97.000, respectively
+
+      console.log("DATA", data_)
+      console.log("orderBookAsks", orderBookAsks)
+      console.log("orderBookBids", orderBookBids)
+
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('88000')
+      expect(data_.bestAsk).to.equal('90000')
+      expect(Number(data_.spread)).to.equal(2000)
+      expect(Number(data_.midPrice)).to.equal(89000)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(35)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(30)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(5)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(5) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(7) // priceLevels
+      expect(orderBookAsks['103000']).to.equal(0)
+      expect(orderBookAsks['102000']).to.equal(0)
+      expect(orderBookAsks['101123']).to.equal(0)
+      expect(orderBookAsks['101000']).to.equal(0)
+      expect(orderBookAsks['100000']).to.equal(0)
+      expect(orderBookAsks['96500']).to.equal(0)
+      expect(orderBookAsks['90000']).to.equal(5)
+      expect(orderBookBids['99000']).to.equal(0)
+      expect(orderBookBids['98000']).to.equal(0)
+      expect(orderBookBids['97000']).to.equal(0)
+      expect(orderBookBids['95500']).to.equal(0)
+      expect(orderBookBids['88000']).to.equal(30)
+    });
+   
+    it("+ve should get order details (id exists)", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Order-Details" },
+          { name: "OrderId", value: orderIds[0] },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Details")
+      expect(data_['isBid']).to.equal(orders[0].isBid)
+      expect(data_['size']).to.equal(orders[0].size)
+      expect(data_['price']).to.equal((orders[0].price * 1000).toString()) // 3dp
+    });
+
+    it("-ve should get order details (id doesn't exist)", async () => {
+      const orderId = 'orderId1234567890'
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Order-Details" },
+          { name: "OrderId", value: orderId },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = Messages[0].Data
+
+      expect(action_).to.equal("Order-Details-Error")
+      expect(data_).to.equal(orderId)
+    });
+    
+    it("+ve should get order price (id exists)", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Order-Price" },
+          { name: "OrderId", value: orderIds[0] },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = Messages[0].Data
+
+      expect(action_).to.equal("Order-Price")
+      expect(data_).to.equal((orders[0].price * 1000).toString()) // 3dp
+    });
+
+    it("-ve should get order price (id doesn't exist)", async () => {
+      const orderId = 'orderId1234567890'
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Order-Price" },
+          { name: "OrderId", value: orderId },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = Messages[0].Data
+
+      expect(action_).to.equal("Order-Price-Error")
+      expect(data_).to.equal(orderId)
+    });
+
+    it("+ve should check order validity (valid)", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Check-Order-Validity" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(orders[0]),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const isValid_ = Messages[0].Tags.find(t => t.name === 'IsValid').value
+      const data_ = Messages[0].Data
+
+      expect(action_).to.equal("Order-Validity")
+      expect(isValid_).to.equal("true")
+      expect(data_).to.equal("Order is valid")
+    });
+
+    it("+ve should check order validity (invalid isBid)", async () => {
+      let messageId;
+      let order = {
+        'isBid' : false, 
+        'size' : 5, 
+        'price' : 90
+      }
+      order.isBid = 'foo'
+
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Check-Order-Validity" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const isValid_ = Messages[0].Tags.find(t => t.name === 'IsValid').value
+      const data_ = Messages[0].Data
+
+      expect(action_).to.equal("Order-Validity")
+      expect(isValid_).to.equal("false")
+      expect(data_).to.equal("Invalid isBid")
+    });
+
+    it("+ve should check order validity (invalid size)", async () => {
+      let messageId;
+      let order = {
+        'isBid' : false, 
+        'size' : 5, 
+        'price' : 90
+      }
+      order.size = 'foo'
+
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Check-Order-Validity" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const isValid_ = Messages[0].Tags.find(t => t.name === 'IsValid').value
+      const data_ = Messages[0].Data
+
+      expect(action_).to.equal("Order-Validity")
+      expect(isValid_).to.equal("false")
+      expect(data_).to.equal("Invalid size")
+    });
+
+    it("+ve should check order validity (invalid price)", async () => {
+      let messageId;
+      let order = {
+        'isBid' : false, 
+        'size' : 5, 
+        'price' : 90
+      }
+      order.price = 'foo'
+
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Check-Order-Validity" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const isValid_ = Messages[0].Tags.find(t => t.name === 'IsValid').value
+      const data_ = Messages[0].Data
+
+      expect(action_).to.equal("Order-Validity")
+      expect(isValid_).to.equal("false")
+      expect(data_).to.equal("Invalid price")
+    });
+
+    it("+ve should check order validity (invalid order id)", async () => {
+      let messageId;
+      let order = {
+        'isBid' : false, 
+        'size' : 0, 
+        'price' : 90
+      }
+      order.size = 'foo'
+
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Check-Order-Validity" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const isValid_ = Messages[0].Tags.find(t => t.name === 'IsValid').value
+      const data_ = Messages[0].Data
+
+      expect(action_).to.equal("Order-Validity")
+      expect(isValid_).to.equal("false")
+      expect(data_).to.equal("Invalid size")
+    });
+  });
+
+  /************************************************************************ 
   * Price Benchmarking & Risk Functions
   ************************************************************************/
   describe("Price Benchmarking & Risk Functions", function () {
-    // it("+ve should calculate VWAP", async () => {
-    //   // Assume orders were added
-    //   let vwapMessageId;
-    //   await message({
-    //     process: exchange,
-    //     tags: [{ name: "Action", value: "Get-VWAP" }],
-    //     signer: createDataItemSigner(wallet),
-    //     data: "",
-    //   }).then((id) => {
-    //     vwapMessageId = id;
-    //   }).catch(console.error);
-    
-    //   let { Messages, Error } = await result({
-    //     message: vwapMessageId,
-    //     process: exchange,
-    //   });
-    
-    //   expect(Messages.length).to.be.equal(1);
-    //   let vwap = Messages[0].Data;
-    //   expect(vwap).to.be.greaterThan(0);  // VWAP should be positive
-    // });
-    it("+ve should calculate bid exposure", async () => { /* Test Code */ });
-    it("+ve should calculate ask exposure", async () => { /* Test Code */ });
-    it("+ve should calculate net exposure", async () => { /* Test Code */ });
-    it("-ve should return zero for exposures when no orders exist", async () => { /* Test Code */ });
-  });
+    const orders = [
+      {
+        'isBid' : false, 
+        'size' : 5, 
+        'price' : 90
+      },
+      {
+        'isBid' : true, 
+        'size' : 30, 
+        'price' : 88
+      }
+    ]
 
+    const moreOrders = [
+      {
+        'isBid' : false, 
+        'size' : 5, 
+        'price' : 96
+      },
+      {
+        'isBid' : true, 
+        'size' : 60, 
+        'price' : 22
+      }
+    ]
+
+    const reverseOrders = [
+      {
+        'isBid' : false, 
+        'size' : 30, 
+        'price' : 88
+      },
+      {
+        'isBid' : false, 
+        'size' : 60, 
+        'price' : 22
+      },
+      {
+        'isBid' : true, 
+        'size' : 5, 
+        'price' : 90
+      },
+      {
+        'isBid' : true, 
+        'size' : 5, 
+        'price' : 96
+      }
+      
+
+    ]
+
+    it("+ve [metrics] should retrieve orderbook metrics (before testing risk)", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+        }
+      }
+
+      // ORDER is ask of 5 shares at 96.500
+      // TRADE matches bids of 3 and 5 shares at 98.000 and 97.000, respectively
+
+      console.log("DATA", data_)
+      console.log("orderBookAsks", orderBookAsks)
+      console.log("orderBookBids", orderBookBids)
+
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('88000')
+      expect(data_.bestAsk).to.equal('90000')
+      expect(Number(data_.spread)).to.equal(2000)
+      expect(Number(data_.midPrice)).to.equal(89000)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(35)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(30)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(5)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(5) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(7) // priceLevels
+      expect(orderBookAsks['103000']).to.equal(0)
+      expect(orderBookAsks['102000']).to.equal(0)
+      expect(orderBookAsks['101123']).to.equal(0)
+      expect(orderBookAsks['101000']).to.equal(0)
+      expect(orderBookAsks['100000']).to.equal(0)
+      expect(orderBookAsks['96500']).to.equal(0)
+      expect(orderBookAsks['90000']).to.equal(5)
+      expect(orderBookBids['99000']).to.equal(0)
+      expect(orderBookBids['98000']).to.equal(0)
+      expect(orderBookBids['97000']).to.equal(0)
+      expect(orderBookBids['95500']).to.equal(0)
+      expect(orderBookBids['88000']).to.equal(30)
+    });
+
+    it("+ve should calculate VWAP", async () => {let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-VWAP" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const vwap = data_
+      const asksVwap = vwap.asks
+      const bidsVwap = vwap.bids
+
+      expect(action_).to.equal("VWAP")
+      expect(asksVwap).to.equal(orders[0].price * 1000)
+      expect(bidsVwap).to.equal(orders[1].price * 1000)
+    });
+
+    it("+ve should calculate bid exposure", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Bid-Exposure" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = Messages[0].Data
+
+      console.log("data_", data_)
+
+      expect(action_).to.equal("Bid-Exposure")
+      expect(data_).to.equal(orders[1].price * 1000 * orders[1].size)
+    });
+
+    it("+ve should calculate ask exposure", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Ask-Exposure" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = Messages[0].Data
+
+      expect(action_).to.equal("Ask-Exposure")
+      expect(data_).to.equal(orders[0].price * 1000 * orders[0].size)
+    });
+
+    it("+ve should calculate net exposure", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Net-Exposure" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = Messages[0].Data
+
+      expect(action_).to.equal("Net-Exposure")
+      expect(data_).to.equal(orders[1].price * 1000 * orders[1].size - orders[0].price * 1000 * orders[0].size)
+    });
+
+    it("+ve should get risk metrics (w/ orders)", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Risk-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      console.log("data_", data_)
+
+      const vwap = data_.vwap
+      const asksVwap = vwap.asks
+      const bidsVwap = vwap.bids
+      const askExposure = data_.exposure.ask
+      const bidExposure = data_.exposure.bid
+      const netExposure = data_.exposure.net
+
+      expect(action_).to.equal("Risk-Metrics")
+      expect(asksVwap).to.equal(orders[0].price * 1000)
+      expect(bidsVwap).to.equal(orders[1].price * 1000)
+      expect(askExposure).to.equal(orders[0].price * 1000 * orders[0].size)
+      expect(bidExposure).to.equal(orders[1].price * 1000 * orders[1].size)
+      expect(netExposure).to.equal(bidExposure - askExposure)
+    });
+
+    it("+ve [process] should add moreOrders (to check VWAP)", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Process-Orders" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(moreOrders),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const orderIds_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrderIds').value)
+      const successes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Successes').value)
+      const orderSizes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrderSizes').value)
+      const executedTradesList_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Orders-Processed")
+      expect(successes_.length).to.equal(2)
+      expect(successes_[0]).to.equal(true)
+      expect(successes_[1]).to.equal(true)
+      expect(orderIds_.length).to.equal(2)
+      expect(orderIds_[0]).to.not.equal('')
+      expect(orderIds_[1]).to.not.equal('')
+      expect(orderSizes_.length).to.equal(2)
+      expect(orderSizes_[0]).to.equal(moreOrders[0].size)
+      expect(orderSizes_[1]).to.equal(moreOrders[1].size)
+      expect(executedTradesList_.length).to.equal(2)
+      expect(executedTradesList_[0].length).to.equal(0)
+      expect(executedTradesList_[1].length).to.equal(0)
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (after moreOrders)", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+        }
+      }
+
+      // ORDER is ask of 5 shares at 96.500
+      // TRADE matches bids of 3 and 5 shares at 98.000 and 97.000, respectively
+
+      console.log("DATA", data_)
+      console.log("orderBookAsks", orderBookAsks)
+      console.log("orderBookBids", orderBookBids)
+
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('88000')
+      expect(data_.bestAsk).to.equal('90000')
+      expect(Number(data_.spread)).to.equal(2000)
+      expect(Number(data_.midPrice)).to.equal(89000)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(100)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(90)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(10)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(6) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(8) // priceLevels
+      expect(orderBookAsks['103000']).to.equal(0)
+      expect(orderBookAsks['102000']).to.equal(0)
+      expect(orderBookAsks['101123']).to.equal(0)
+      expect(orderBookAsks['101000']).to.equal(0)
+      expect(orderBookAsks['100000']).to.equal(0)
+      expect(orderBookAsks['96500']).to.equal(0)
+      expect(orderBookAsks['96000']).to.equal(5)
+      expect(orderBookAsks['90000']).to.equal(5)
+      expect(orderBookBids['99000']).to.equal(0)
+      expect(orderBookBids['98000']).to.equal(0)
+      expect(orderBookBids['97000']).to.equal(0)
+      expect(orderBookBids['95500']).to.equal(0)
+      expect(orderBookBids['88000']).to.equal(30)
+      expect(orderBookBids['22000']).to.equal(60)
+    });
+
+    it("+ve should get risk metrics (w/ more orders)", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Risk-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const vwap = data_.vwap
+      const asksVwap = vwap.asks
+      const bidsVwap = vwap.bids
+      const askExposure = data_.exposure.ask
+      const bidExposure = data_.exposure.bid
+      const netExposure = data_.exposure.net
+
+      expect(action_).to.equal("Risk-Metrics")
+      expect(asksVwap).to.equal(1000 * ((orders[0].price * orders[0].size) + (moreOrders[0].price * moreOrders[0].size)) / ( orders[0].size + moreOrders[0].size))
+      expect(bidsVwap).to.equal(1000 * ((orders[1].price * orders[1].size) + (moreOrders[1].price * moreOrders[1].size)) / ( orders[1].size + moreOrders[1].size))
+      expect(askExposure).to.equal((orders[0].price * 1000 * orders[0].size) + (moreOrders[0].price * 1000 * moreOrders[0].size))
+      expect(bidExposure).to.equal((orders[1].price * 1000 * orders[1].size) + (moreOrders[1].price * 1000 * moreOrders[1].size))
+      expect(netExposure).to.equal(bidExposure - askExposure)
+    });
+
+    it("+ve [process] should add reverseOrders (to remove all orders)", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Process-Orders" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(reverseOrders),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const orderIds_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrderIds').value)
+      const successes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Successes').value)
+      const orderSizes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrderSizes').value)
+      const executedTradesList_ = JSON.parse(Messages[0].Data)
+
+      console.log("reverseOrders", reverseOrders)
+      console.log("orderSizes_", orderSizes_)
+      console.log("executedTradesList_", executedTradesList_)
+
+      expect(action_).to.equal("Orders-Processed")
+      expect(successes_.length).to.equal(4)
+      expect(successes_[0]).to.equal(true)
+      expect(successes_[1]).to.equal(true)
+      expect(successes_[2]).to.equal(true)
+      expect(successes_[3]).to.equal(true)
+      expect(orderIds_.length).to.equal(4)
+      expect(orderIds_[0]).to.not.equal('')
+      expect(orderIds_[1]).to.not.equal('')
+      expect(orderIds_[2]).to.not.equal('')
+      expect(orderIds_[3]).to.not.equal('')
+      expect(orderSizes_.length).to.equal(4)
+      expect(orderSizes_[0]).to.equal(0)
+      expect(orderSizes_[1]).to.equal(0)
+      expect(orderSizes_[2]).to.equal(0)
+      expect(orderSizes_[3]).to.equal(0)
+      expect(executedTradesList_.length).to.equal(4)
+      expect(executedTradesList_[0].length).to.not.equal(0)
+      expect(executedTradesList_[1].length).to.not.equal(0)
+      expect(executedTradesList_[2].length).to.not.equal(0)
+      expect(executedTradesList_[3].length).to.not.equal(0)
+    })
+    
+    it("+ve should risk metrics with zero exposures (w/o orders)", async () => {
+      let messageId;
+      await message({
+        process: exchange,
+        tags: [
+          { name: "Action", value: "Get-Risk-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: exchange,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const vwap = data_.vwap
+      const asksVwap = vwap.asks
+      const bidsVwap = vwap.bids
+      const askExposure = data_.exposure.ask
+      const bidExposure = data_.exposure.bid
+      const netExposure = data_.exposure.net
+
+      expect(action_).to.equal("Risk-Metrics")
+      expect(asksVwap).to.equal(0)
+      expect(bidsVwap).to.equal(0)
+      expect(askExposure).to.equal(0)
+      expect(bidExposure).to.equal(0)
+      expect(netExposure).to.equal(0)
+    });
+  });
 })

@@ -34,7 +34,21 @@ function LimitOrderBookMethods:process(order)
     if self.orders[order.uid] then
       success, orderSize = self:update(order)
     else
+      print("")
+      print("--ADD--")
+      print(order.size .. "," .. order.price .. "," .. tostring(order.isBid))
+      
+      print("Best Bid B4: " .. (self.bestBid and json.encode(Utils.serializeWithoutCircularReferences(self.bestBid)) or "nil"))
+      
+      print("Best Ask B4: " .. (self.bestAsk and json.encode(Utils.serializeWithoutCircularReferences(self.bestAsk)) or "nil"))
+      
+      print("-")
       success, orderSize, executedTrades = self:add(order)
+      
+      print("Best Bid AF: " .. (self.bestBid and json.encode(Utils.serializeWithoutCircularReferences(self.bestBid)) or "nil"))
+      
+      print("Best Ask AF: " .. (self.bestAsk and json.encode(Utils.serializeWithoutCircularReferences(self.bestAsk)) or "nil"))
+      
     end
   end
 
@@ -229,6 +243,11 @@ function LimitOrderBookMethods:removeBestAsk()
     -- Remove the head order at the best ask
     self:remove(bestAskOrder)
     -- Update the best ask price level
+
+    -- print("***")
+    -- print("self.priceLevels['asks'][bestAskOrder.price]: " .. json.encode(Utils.serializeWithoutCircularReferences(self.priceLevels['asks'][bestAskOrder.price])))
+    -- print("***")
+
     self.bestAsk = self.asks:nextBest(self.bestAsk)
   end
   return bestAskOrder, bestAskOrderSize
@@ -242,6 +261,17 @@ function LimitOrderBookMethods:removeBestBid()
     bestBidOrderSize = bestBidOrder.size
     -- Remove the head order at the best bid
     self:remove(bestBidOrder)
+
+    -- print("***")
+    -- print("self.orders:" .. json.encode(Utils.serializeWithoutCircularReferences(self.orders)))
+    -- print("***")
+    -- print("bestBidOrder: " .. json.encode(Utils.serializeWithoutCircularReferences(bestBidOrder)))
+    -- print("***")
+    -- print("self.priceLevels['bids'][bestBidOrder.price]: " .. json.encode(Utils.serializeWithoutCircularReferences(self.priceLevels['bids'][bestBidOrder.price])))
+    -- print("***")
+    -- print("self.bestBid: " .. json.encode(Utils.serializeWithoutCircularReferences(self.bestBid)))  
+    -- print("***")
+
     -- Update the best bid price level
     self.bestBid = self.bids:nextBest(self.bestBid)
   end
@@ -370,19 +400,16 @@ end
 --[[
     Order Details Queries
 ]]
-function LimitOrderBookMethods:getOrderById(orderId)
+function LimitOrderBookMethods:getOrderDetails(orderId)
   return self.orders[orderId]
 end
 
-function LimitOrderBookMethods:getPriceForOrderId(orderId)
+function LimitOrderBookMethods:getOrderPrice(orderId)
   local order = self.orders[orderId]
   return order and order.price or nil
 end
 
 function LimitOrderBookMethods:checkOrderValidity(order)
-  -- check precision of price and size, (3dp and integer respectively)
-  local roundedPrice = order.price and math.floor(order.price * 10 ^ 3 + 0.5) / 10 ^ 3 or 0
-  local roundedSize = order.size and math.floor(order.size) or 0
   -- check for existing order
   local isCancel = order.size == 0
   local isUpdate = self.orders[order.uid] and true or false
@@ -391,22 +418,35 @@ function LimitOrderBookMethods:checkOrderValidity(order)
     return false, "Invalid order id"
   end
 
+  -- check types
+  if type(order.isBid) ~= 'boolean' or (isUpdate and order.isBid and self.orders[order.uid].isBid ~= order.isBid) then
+    return false, "Invalid isBid"
+  end
+
+  if not order.price or type(order.price) ~= 'number' or order.price <= 0 then
+    return false, "Invalid price"
+  end
+
+  if not order.size or type(order.size) ~= 'number' or order.size < 0 then
+    return false, "Invalid size"
+  end
+
+  -- check precision of price and size, (3dp and integer respectively)
+  local roundedPrice = order.price and math.floor(order.price * 10 ^ 3 + 0.5) / 10 ^ 3 or 0
+  local roundedSize = order.size and math.floor(order.size) or 0
+
   -- check for price mismatch
   local existingPriceMisMatch = false
   if isUpdate then
     existingPriceMisMatch = (self.orders[order.uid] and order.price and self.orders[order.uid].price ~= tostring(math.floor(order.price * 10 ^ 3)))
   end
 
-  if not order.price or type(order.price) ~= 'number' or order.price <= 0 or order.price ~= roundedPrice or existingPriceMisMatch then
+  if order.price ~= roundedPrice or existingPriceMisMatch then
     return false, "Invalid price"
   end
 
-  if not order.size or type(order.size) ~= 'number' or order.size < 0 or order.size ~= roundedSize then
+  if order.size ~= roundedSize then
     return false, "Invalid size"
-  end
-
-  if type(order.isBid) ~= 'boolean' or (isUpdate and order.isBid and self.orders[order.uid].isBid ~= order.isBid) then
-    return false, "Invalid isBid"
   end
 
   return true, "Order is valid"
@@ -440,7 +480,7 @@ end
 
 function LimitOrderBookMethods:getBidExposure()
   local bidExposure = 0
-  for _, level in pairs(self.bids:allLevels()) do
+  for _, level in pairs(self.priceLevels['bids']) do
       bidExposure = bidExposure + (level.size * level.price)
   end
   return bidExposure
@@ -448,7 +488,7 @@ end
 
 function LimitOrderBookMethods:getAskExposure()
   local askExposure = 0
-  for _, level in pairs(self.asks:allLevels()) do
+  for _, level in pairs(self.priceLevels['asks']) do
       askExposure = askExposure + (level.size * level.price)
   end
   return askExposure
@@ -460,10 +500,10 @@ end
 
 function LimitOrderBookMethods:getMarginExposure(marginRate)
   local marginExposure = 0
-  for _, level in pairs(self.bids:allLevels()) do
+  for _, level in pairs(self.priceLevels['bids']) do
       marginExposure = marginExposure + (level.size * level.price * marginRate)
   end
-  for _, level in pairs(self.asks:allLevels()) do
+  for _, level in pairs(self.priceLevels['asks']) do
       marginExposure = marginExposure + (level.size * level.price * marginRate)
   end
   return marginExposure

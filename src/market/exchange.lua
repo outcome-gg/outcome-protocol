@@ -119,12 +119,12 @@ end
 --[[
     Order Details Queries
 ]]
-local function getOrderById(orderId)
-  return LimitOrderBook:getOrderById(orderId)
+local function getOrderDetails(orderId)
+  return LimitOrderBook:getOrderDetails(orderId)
 end
 
-local function getPriceForOrderId(orderId)
-  return LimitOrderBook:getPriceForOrderId(orderId)
+local function getOrderPrice(orderId)
+  return LimitOrderBook:getOrderPrice(orderId)
 end
 
 --[[
@@ -135,15 +135,13 @@ local function getRiskMetrics()
   local bidExposure = LimitOrderBook:getBidExposure()
   local askExposure = LimitOrderBook:getAskExposure()
   local netExposure = LimitOrderBook:getNetExposure()
-  local marginExposure = LimitOrderBook:getMarginExposure()
 
   return {
     vwap = vwap,
     exposure = {
       bid = bidExposure,
       ask = askExposure,
-      net = netExposure,
-      margin = marginExposure
+      net = netExposure
     }
   }
 end
@@ -320,18 +318,36 @@ end)
 --[[
     Order Details Queries
 ]]
-Handlers.add('Get-Order-By-Id', Handlers.utils.hasMatchingTag('Action', 'Get-Order-By-Id'), function(msg)
-  local order = getOrderById(msg.Tags.OrderId)
+Handlers.add('Get-Order-Details', Handlers.utils.hasMatchingTag('Action', 'Get-Order-Details'), function(msg)
+  local order = getOrderDetails(msg.Tags.OrderId)
+
+  if not order then
+    ao.send({
+      Target = msg.From,
+      Action = 'Order-Details-Error',
+      Data = msg.Tags.OrderId
+    })
+    return
+  end
 
   ao.send({
     Target = msg.From,
     Action = 'Order-Details',
-    Data = json.encode(order)
+    Data = json.encode(Utils.serializeWithoutCircularReferences(order))
   })
 end)
 
-Handlers.add('Get-Price-For-Order-Id', Handlers.utils.hasMatchingTag('Action', 'Get-Price-For-Order-Id'), function(msg)
-  local price = getPriceForOrderId(msg.Tags.OrderId)
+Handlers.add('Get-Order-Price', Handlers.utils.hasMatchingTag('Action', 'Get-Order-Price'), function(msg)
+  local price = getOrderPrice(msg.Tags.OrderId)
+
+  if not price then
+    ao.send({
+      Target = msg.From,
+      Action = 'Order-Price-Error',
+      Data = msg.Tags.OrderId
+    })
+    return
+  end
 
   ao.send({
     Target = msg.From,
@@ -342,12 +358,13 @@ end)
 
 Handlers.add('Check-Order-Validity', Handlers.utils.hasMatchingTag('Action', 'Check-Order-Validity'), function(msg)
   local order = json.decode(msg.Data)
-  local isValid = LimitOrderBook:checkOrderValidity(order)
+  local isValid, message = LimitOrderBook:checkOrderValidity(order)
 
   ao.send({
     Target = msg.From,
     Action = 'Order-Validity',
-    Data = tostring(isValid)
+    IsValid = tostring(isValid),
+    Data = message
   })
 end)
 
@@ -405,7 +422,9 @@ Handlers.add('Get-Net-Exposure', Handlers.utils.hasMatchingTag('Action', 'Get-Ne
 end)
 
 Handlers.add('Get-Margin-Exposure', Handlers.utils.hasMatchingTag('Action', 'Get-Margin-Exposure'), function(msg)
-  local marginExposure = LimitOrderBook:getMarginExposure()
+  assert(msg.Tags.MarginRate, 'MarginRate is required!')
+  assert(tonumber(msg.Tags.MarginRate) > 0, 'MarginRate must be greater than zero!')
+  local marginExposure = LimitOrderBook:getMarginExposure(msg.Tags.MarginRate)
 
   ao.send({
     Target = msg.From,
