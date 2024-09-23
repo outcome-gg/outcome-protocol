@@ -1,8 +1,6 @@
+local deque = require('deque')
+local Order = require('order')
 local json = require('json')
-local Utils = require('Utils')
-
-local LimitLevelTree = require("LimitLevelTree")
-local LimitLevel = require("LimitLevel")
 
 local LimitOrderBook = {}
 local LimitOrderBookMethods = {}
@@ -11,404 +9,264 @@ local LimitOrderBookMethods = {}
 function LimitOrderBook:new()
   -- Create a new object and set the metatable to LimitOrderBookMethods directly
   local obj = {
-    bids = LimitLevelTree:new(),
-    asks = LimitLevelTree:new(),
+    bids = {},  -- Deque-based price levels for bids
+    asks = {},  -- Deque-based price levels for asks
     bestBid = nil,
     bestAsk = nil,
-    priceLevels = { bids = {}, asks = {} },
-    orders = {}
+    orders = {} -- Store orders in a map for fast lookup
   }
-  -- Set the metatable to LimitOrderBookMethods for method lookup
   setmetatable(obj, { __index = LimitOrderBookMethods })
   return obj
 end
 
-function LimitOrderBookMethods:process(order)
-  local success
-  local orderSize = 0
+-- Add an order to the book
+function LimitOrderBookMethods:add(order)
+  
+  print("")
+  print("")
+  print("")
+  print("--ADD--")
+  print(order.price .. ", " .. order.size .. ", " .. tostring(order.isBid))
+  local orderType = order.isBid and "bids" or "asks"
+  local oppositeOrderType = order.isBid and "asks" or "bids"
+  local price = tostring(order.price)
   local executedTrades = {}
 
-  if order.size == 0 then
-    success = self:remove(order)
-  else
-    if self.orders[order.uid] then
-      success, orderSize = self:update(order)
+  print("bestBid srt: " .. json.encode(self.bestBid))
+  print("bestAsk srt: " .. json.encode(self.bestAsk))
+
+  -- First, try to match the order with opposite orders
+  executedTrades = self:matchOrders(order)
+  print("executedTrades " .. json.encode(executedTrades))
+
+  print("order.size " .. tostring(order.size))
+
+  -- If there's any remaining size of the order, add it to the order book
+  if order.size > 0 then
+    print("order.size > 0")
+    -- If the price level doesn't exist, initialize it with a deque
+    if not self[orderType][price] then
+      self[orderType][price] = deque:new()
+    end
+
+    -- Enqueue the order into the price level deque
+    self[orderType][price]:pushTail(order)
+
+    -- Store the order for fast lookup
+    self.orders[order.uid] = order
+
+    -- Update best bid/ask if necessary
+    if order.isBid then
+      self.bestBid = self:getNextBestBid()
     else
-      print("")
-      print("--ADD--")
-      print(order.size .. "," .. order.price .. "," .. tostring(order.isBid))
-      
-      print("Best Bid B4: " .. (self.bestBid and json.encode(Utils.serializeWithoutCircularReferences(self.bestBid)) or "nil"))
-      
-      print("Best Ask B4: " .. (self.bestAsk and json.encode(Utils.serializeWithoutCircularReferences(self.bestAsk)) or "nil"))
-      
-      print("-")
-      success, orderSize, executedTrades = self:add(order)
-      
-      print("Best Bid AF: " .. (self.bestBid and json.encode(Utils.serializeWithoutCircularReferences(self.bestBid)) or "nil"))
-      
-      print("Best Ask AF: " .. (self.bestAsk and json.encode(Utils.serializeWithoutCircularReferences(self.bestAsk)) or "nil"))
-      
+      self.bestAsk = self:getNextBestAsk()
     end
   end
 
-  return success, orderSize, executedTrades
+  print("")
+  print("=")
+  print("bestBid end: " .. json.encode(self.bestBid))
+  print("bestAsk end: " .. json.encode(self.bestAsk))
+  print("-")
+  print("bestBid end: " .. (self:getBestBid() and json.encode(self:getBestBid()) or "nil"))
+  print("bestAsk end: " .. (self:getBestAsk() and json.encode(self:getBestAsk()) or "nil"))
+  print("=")
+  print("")
+  return true, order.size, executedTrades
 end
 
--- @return success, orderBookSize
+
+-- Update an existing order in the book
 function LimitOrderBookMethods:update(order)
   local existingOrder = self.orders[order.uid]
 
-  -- update the parentLimit size
-  if existingOrder.root.parentLimit and existingOrder.root.parentLimit.size then
-    existingOrder.root.parentLimit.size = existingOrder.root.parentLimit.size - existingOrder.size + order.size
+  if not existingOrder then
+    return false, 0  -- Return failure if the order does not exist
   end
 
-  -- update the order size
-  existingOrder.size = order.size
-  self.orders[order.uid] = existingOrder
+  -- Store the old size before updating
+  local oldSize = existingOrder.size
 
-  -- Ensure bestBid or bestAsk is updated if necessary
-  if order.isBid then
-    if self.bestBid then
-      self.bestBid:updateLevelSize()  -- Recalculate the best bid size
-    end
-  else
-    if self.bestAsk then
-      self.bestAsk:updateLevelSize()  -- Recalculate the best ask size
-    end
+  -- Update the order size using the method from order.lua
+  existingOrder:updateSize(order.size)
+
+  -- If the size is now 0, remove the order
+  if order.size == 0 then
+    return self:remove(existingOrder)
   end
 
-  -- Recalculate the size of the price level
-  local orderType = order.isBid and "bids" or "asks"
-  if self.priceLevels[orderType][order.price] then
-    self.priceLevels[orderType][order.price]:updateLevelSize()
+  -- Recalculate the best bid or ask if the updated order affects it
+  if order.isBid and self.bestBid and self.bestBid.uid == order.uid then
+    self.bestBid = self:getNextBestBid()
+  elseif not order.isBid and self.bestAsk and self.bestAsk.uid == order.uid then
+    self.bestAsk = self:getNextBestAsk()
   end
-  return self.orders[order.uid] == existingOrder, self.orders[order.uid].size
+
+  -- Return success and the updated order size
+  return true, existingOrder.size, {}
 end
 
--- @return success
+-- Remove an order from the book
 function LimitOrderBookMethods:remove(order)
-  local existingOrder = self.orders[order.uid]
-  if existingOrder then
-    existingOrder:popFromList()
-    self.orders[order.uid] = nil
-
-    -- Recalculate the size of the price level
-    local orderType = existingOrder.isBid and "bids" or "asks"
-    if self.priceLevels[orderType][existingOrder.price] then
-      self.priceLevels[orderType][existingOrder.price]:updateLevelSize()
-    end
-
-    if not next(self.priceLevels[orderType][existingOrder.price]) then
-      self.priceLevels[orderType][existingOrder.price] = nil
-    end
-  end
-  return self.orders[order.uid] == nil
-end
-
--- @return success, orderBookSize, trades
-function LimitOrderBookMethods:add(order)
-  local executedTrades = self:matchOrders(order)
+  print("remove")
   local orderType = order.isBid and "bids" or "asks"
+  print("r1")
+  local price = tostring(order.price)
+  print("r2")
+  local priceLevel = self[orderType][price]
+  print("r3")
 
-  if order.size > 0 then
-    if not self.priceLevels[orderType][order.price] then
-      local limitLevel = LimitLevel:new(order)
-      self.orders[order.uid] = order
-      self.priceLevels[orderType][order.price] = limitLevel
+  if not priceLevel or not priceLevel.data or #priceLevel.data == 0 then return false end
+  print("r4")
 
-      -- Insert into bid or ask tree
-      if order.isBid then
-        self.bids:insert(limitLevel, order.isBid)
-        if not self.bestBid or tonumber(order.price) > tonumber(self.bestBid.price) then
-          self.bestBid = limitLevel
-        end
-      else
-        self.asks:insert(limitLevel, order.isBid)
-        if not self.bestAsk or tonumber(order.price) < tonumber(self.bestAsk.price) then
-          self.bestAsk = limitLevel
-        end
-      end
-    else
-      self.orders[order.uid] = order
-      self.priceLevels[orderType][order.price]:append(order)
+  print("priceLevel: " .. json.encode(priceLevel))
+
+  -- -- Find and remove the order in the deque
+  -- for i = priceLevel.head, priceLevel.tail do
+  --   print("r5")
+  --   print("i: " .. i)
+  --   if priceLevel.data[i].uid == order.uid then
+  --     print("r6")
+  --     table.remove(priceLevel.data, i)
+  --     print("r7")
+  --     break
+  --   end
+  -- end
+
+  print("order.uid: " .. order.uid)
+  print("self[orderType][price]: " .. json.encode(self[orderType][price]))
+
+  -- Remove the order in the deque by value
+  self[orderType][price]:popByUid(order.uid)
+
+  print("r8")
+  -- Remove the price level if it is empty
+  if priceLevel:isEmpty() then
+    print("r9")
+    self[orderType][price] = nil
+    print("r10")
+
+    -- Update best bid/ask if necessary
+    if order.isBid and self.bestBid and self.bestBid.uid == order.uid then
+      print("r11")
+      self.bestBid = self:getNextBestBid()
+      print("r12")
+    elseif not order.isBid and self.bestAsk and self.bestAsk.uid == order.uid then
+      print("r13")
+      self.bestAsk = self:getNextBestAsk()
+      print("r14")
     end
-
-    -- Recalculate the size of the price level
-    self.priceLevels[orderType][order.price]:updateLevelSize()
   end
 
-  local positionSize = self.orders[order.uid] == nil and 0 or self.orders[order.uid].size
-  return self.orders[order.uid] ~= nil or #executedTrades > 0, positionSize, executedTrades
+  print("r15")
+
+  -- Remove from global order map
+  self.orders[order.uid] = nil
+
+  print("r16")
+  return true, 0, {}
 end
 
+-- Process an order
+function LimitOrderBookMethods:process(order)
+  if self.orders[order.uid] then
+    -- Update order if it exists
+    return self:update(order)
+  else
+    -- Otherwise, add a new order and check for matches
+    return self:add(order)
+  end
+end
 
--- Function to match orders and execute trades
+-- Get the next best bid
+function LimitOrderBookMethods:getNextBestBid()
+  local bestBidPrice = nil
+  for price, priceLevel in pairs(self.bids) do
+    -- Check if the price level contains valid orders
+    if #priceLevel.data > 0 and priceLevel.data[priceLevel.head].size > 0 and (not bestBidPrice or tonumber(price) > tonumber(bestBidPrice)) then
+      bestBidPrice = price
+    end
+  end
+  return self.bids[bestBidPrice] and self.bids[bestBidPrice]:peekHead() or nil
+end
+
+-- Get the next best ask
+function LimitOrderBookMethods:getNextBestAsk()
+  print(">>LimitOrderBookMethods:getNextBestAsk")
+  local bestAskPrice = nil
+  for price, priceLevel in pairs(self.asks) do
+    -- print("price: " .. price)
+    -- print("priceLevel: " .. json.encode(priceLevel))
+    -- Check if the price level contains valid orders
+    if #priceLevel.data > 0 and priceLevel.data[priceLevel.head].size > 0 and (not bestAskPrice or tonumber(price) < tonumber(bestAskPrice)) then
+      bestAskPrice = price
+      print("bestAskPrice: " .. bestAskPrice)
+    end
+  end
+  return self.asks[bestAskPrice] and self.asks[bestAskPrice]:peekHead() or nil
+end
+
+-- Match and execute orders
 function LimitOrderBookMethods:matchOrders(order)
   local executedTrades = {}
   local remainingSize = tonumber(order.size) or 0
-  local maxIterations = 100
-  local count = 0
+  local bestLevel = order.isBid and self.bestAsk or self.bestBid
+  local matchComparison = order.isBid and (function(a, b) return a <= b end) or (function(a, b) return a >= b end)
 
-  -- Choose the right matching side (bid or ask)
-  local isBid = order.isBid
-  -- returns the best ask if isBid is true, else returns the best bid (accounting for nil)
-  local bestLevel = isBid and self.bestAsk or (not isBid and self.bestBid or nil)
-  local bestLevelType = isBid and "ASK" or "BID"
-  local matchComparison = isBid and (function(a, b) return a <= b end) or (function(a, b) return a >= b end)
-
-  -- Helper function to handle trades
-  local function handleTrade(level_, order_, remainingSize_)
-    local trade = nil
-    if level_.size == 0 then
-      -- Skip level with 0 size
-      if isBid then
-        self:removeBestAsk()
-      else
-        self:removeBestBid()
-      end
-      return self[isBid and "bestAsk" or "bestBid"], remainingSize_
-    elseif level_.size <= remainingSize_ then
-      -- Full size match
-      local matchedOrder, matchedOrderSize = nil, 0
-      if isBid then
-          matchedOrder, matchedOrderSize = self:removeBestAsk()
-      else
-          matchedOrder, matchedOrderSize = self:removeBestBid()
-      end
-      -- Handle no matches
-      if not matchedOrder then
-        return self[isBid and "bestAsk" or "bestBid"], remainingSize_, nil
-      end
-      trade = self:executeTrade(order, remainingSize_, matchedOrder, matchedOrderSize)
-      remainingSize_ = math.max(remainingSize_ - tonumber(trade.size), 0)
-    else
-      -- Partial size match
-      local matchedOrder, matchedOrderSize = nil, 0
-      if isBid then
-          matchedOrder, matchedOrderSize = self:updateBestAsk(remainingSize_)
-      else
-          matchedOrder, matchedOrderSize = self:updateBestBid(remainingSize_)
-      end
-      trade = self:executeTrade(order_, remainingSize_, matchedOrder, matchedOrderSize)
-      remainingSize_ = 0
-    end
-    return self[isBid and "bestAsk" or "bestBid"], remainingSize_, trade
-  end
-
-  -- Matching loop
-  while remainingSize > 0 and bestLevel and matchComparison(tonumber(bestLevel.price), tonumber(order.price)) and count < maxIterations do
+  while bestLevel and remainingSize > 0 and matchComparison(tonumber(bestLevel.price), tonumber(order.price)) do
     -- Handle trade logic
-    local trade = nil
-    bestLevel, remainingSize, trade = handleTrade(bestLevel, order, remainingSize)
-    -- Collect trade data if trade executed
+    local trade = self:executeTrade(order, bestLevel)
     if trade then
       table.insert(executedTrades, trade)
+      remainingSize = remainingSize - trade.size
     end
+    -- print("trade:" .. json.encode(trade))
+    -- print("order.isBid: " .. tostring(order.isBid))
+    bestLevel = order.isBid and self:getNextBestAsk() or self:getNextBestBid()
+  end
+  print("-")
+  print("bestLevel af:" .. json.encode(bestLevel))
+  print("")
 
-    -- Increment counter
-    count = count + 1
-    if count > maxIterations then
-      print("Max iterations reached, breaking.")
-      break
-    end
+  order.size = remainingSize
+
+  -- Update best bid/ask
+  if order.isBid then
+    self.bestAsk = bestLevel
+  else
+    self.bestBid = bestLevel
   end
 
-  -- Final update to the order size
-  order.size = remainingSize
   return executedTrades
 end
 
--- Execute a trade and return trade details
-function LimitOrderBookMethods:executeTrade(order, orderSizeRemaining, matchedOrder, matchedOrderSize)
-  local trade = Utils.serializeWithoutCircularReferences({
+-- Execute trade
+function LimitOrderBookMethods:executeTrade(order, matchedOrder)
+  print("executeTrade order.size " .. tostring(order.size))
+  local tradeSize = math.min(order.size, matchedOrder.size)
+  print("t0")
+  matchedOrder.size = matchedOrder.size - tradeSize
+  print("t1")
+  order.size = order.size - tradeSize
+  print("t2")
+
+  -- If the matched order's size is 0, remove it from the book
+  if matchedOrder.size == 0 then
+    print("t3")
+    self:remove(matchedOrder)
+    print("t4")
+  end
+  print("t5")
+
+  return {
+    buyer = order.isBid and order.uid or matchedOrder.uid,
+    seller = order.isBid and matchedOrder.uid or order.uid,
     price = matchedOrder.price,
-    size = tonumber(matchedOrderSize < orderSizeRemaining and matchedOrderSize or orderSizeRemaining),
-    buyer = order.isBid and order.uid or matchedOrder.uid, -- TODO use sender addresses
-    seller = order.isBid and matchedOrder.uid or order.uid, -- TODO use sender addresses
-    timestamp = os.time()
-  })
-  -- update bestAsk or bestBid size
-  matchedOrder.size = matchedOrderSize - trade.size
-  return trade
+    size = tradeSize
+  }
 end
 
-function LimitOrderBookMethods:removeBestAsk()
-  local bestAskOrder = nil
-  local bestAskOrderSize = 0
-  if self.bestAsk and self.bestAsk.orders and self.bestAsk.orders.head then
-    bestAskOrder = self.bestAsk.orders.head
-    bestAskOrderSize = bestAskOrder.size
-    -- Remove the head order at the best ask
-    self:remove(bestAskOrder)
-    -- Update the best ask price level
-
-    -- print("***")
-    -- print("self.priceLevels['asks'][bestAskOrder.price]: " .. json.encode(Utils.serializeWithoutCircularReferences(self.priceLevels['asks'][bestAskOrder.price])))
-    -- print("***")
-
-    self.bestAsk = self.asks:nextBest(self.bestAsk)
-  end
-  return bestAskOrder, bestAskOrderSize
-end
-
-function LimitOrderBookMethods:removeBestBid()
-  local bestBidOrder = nil
-  local bestBidOrderSize = 0
-  if self.bestBid and self.bestBid.orders and self.bestBid.orders.head then
-    bestBidOrder = self.bestBid.orders.head
-    bestBidOrderSize = bestBidOrder.size
-    -- Remove the head order at the best bid
-    self:remove(bestBidOrder)
-
-    -- print("***")
-    -- print("self.orders:" .. json.encode(Utils.serializeWithoutCircularReferences(self.orders)))
-    -- print("***")
-    -- print("bestBidOrder: " .. json.encode(Utils.serializeWithoutCircularReferences(bestBidOrder)))
-    -- print("***")
-    -- print("self.priceLevels['bids'][bestBidOrder.price]: " .. json.encode(Utils.serializeWithoutCircularReferences(self.priceLevels['bids'][bestBidOrder.price])))
-    -- print("***")
-    -- print("self.bestBid: " .. json.encode(Utils.serializeWithoutCircularReferences(self.bestBid)))  
-    -- print("***")
-
-    -- Update the best bid price level
-    self.bestBid = self.bids:nextBest(self.bestBid)
-  end
-  return bestBidOrder, bestBidOrderSize
-end
-
-
-function LimitOrderBookMethods:updateBestAsk(tradeSize)
-  local bestAskOrder = nil
-  local bestAskOrderSize = 0
-  if self.bestAsk and self.bestAsk.orders and self.bestAsk.orders.head then
-    bestAskOrder = self.bestAsk.orders.head
-    bestAskOrderSize = bestAskOrder.size
-    -- Set the bestAsk size to the new provided size
-    bestAskOrder.size = bestAskOrder.size - tradeSize
-    -- Ensure the level size is updated after the modification
-    self.bestAsk:updateLevelSize()
-    -- Update the parentLimit size
-    if self.bestAsk and self.bestAsk.orders and self.bestAsk.orders.head then
-      self.orders[self.bestAsk.orders.head.uid].root.parentLimit.size = self.orders[self.bestAsk.orders.head.uid].root.parentLimit.size - tradeSize
-    end
-  end
-  return bestAskOrder, bestAskOrderSize
-end
-
-
-function LimitOrderBookMethods:updateBestBid(tradeSize)
-  local bestBidOrder = nil
-  local bestBidOrderSize = 0
-  if self.bestBid and self.bestBid.orders and self.bestBid.orders.head then
-    bestBidOrder = self.bestBid.orders.head
-    bestBidOrderSize = bestBidOrder.size
-    -- Set the bestAsk size to the new provided size
-    bestBidOrder.size = bestBidOrder.size - tradeSize
-    -- Ensure the level size is updated after the modification
-    self.bestBid:updateLevelSize()
-    -- Update the parentLimit size
-    if self.bestBid and self.bestBid.orders and self.bestBid.orders.head then
-      self.orders[self.bestBid.orders.head.uid].root.parentLimit.size = self.orders[self.bestBid.orders.head.uid].root.parentLimit.size - tradeSize
-    end
-  end
-  return bestBidOrder, bestBidOrderSize
-end
-
-
---[[
-    Order Book Metrics & Queries
-]]
-function LimitOrderBookMethods:_getBest(isBid)
-  local bestLevel = isBid and self.bestBid or (not isBid and self.bestAsk or nil)
-  local bestLevelPrice = nil
-  if bestLevel and bestLevel.orders and bestLevel.orders.head then
-    bestLevelPrice = bestLevel.orders.head.price
-  end
-  return bestLevelPrice
-end
-
-function LimitOrderBookMethods:getBestBid()
-  return self:_getBest(true)
-end
-
-function LimitOrderBookMethods:getBestAsk()
-  return self:_getBest(false)
-end
-
-function LimitOrderBookMethods:getSpread()
-  if self.bestBid and self.bestAsk then
-    return self.bestAsk.price - self.bestBid.price
-  end
-  return nil
-end
-
-function LimitOrderBookMethods:getMidPrice()
-  if self.bestBid and self.bestAsk then
-    return (self.bestAsk.price + self.bestBid.price) / 2
-  end
-  return nil
-end
-
-function LimitOrderBookMethods:getLiquidityAtPrice(price)
-  local bidsPriceLevel = self.priceLevels['bids'][price]
-  local asksPriceLevel = self.priceLevels['asks'][price]
-
-  local bidsLiquidity = bidsPriceLevel and bidsPriceLevel.orders.parentLimit.size or 0
-  local asksLiquidity = asksPriceLevel and asksPriceLevel.orders.parentLimit.size or 0
-
-  return { bids = bidsLiquidity, asks = asksLiquidity }
-end
-
-function LimitOrderBookMethods:getTotalLiquidity()
-  local bidsLiquidity = 0
-  local asksLiquidity = 0
-
-  for _, level in pairs(self.priceLevels['bids']) do
-    bidsLiquidity = bidsLiquidity + level.orders.parentLimit.size
-  end
-
-  for _, level in pairs(self.priceLevels['asks']) do
-    asksLiquidity = asksLiquidity + level.orders.parentLimit.size
-  end
-
-  return { bids = bidsLiquidity, asks = asksLiquidity, total = bidsLiquidity + asksLiquidity }
-end
-
-function LimitOrderBookMethods:getMarketDepth()
-  local depth = { bids = {}, asks = {} }
-
-  -- Collect bid levels
-  for price, level in pairs(self.priceLevels['bids']) do
-    table.insert(depth.bids, { price = price, totalLiquidity = level.orders.parentLimit.size })
-  end
-
-  -- Collect ask levels
-  for price, level in pairs(self.priceLevels['asks']) do
-    table.insert(depth.asks, { price = price, totalLiquidity = level.orders.parentLimit.size })
-  end
-
-  -- Sort bids in descending order and asks in ascending order
-  table.sort(depth.bids, function(a, b) return tonumber(a.price) > tonumber(b.price) end)
-  table.sort(depth.asks, function(a, b) return tonumber(a.price) < tonumber(b.price) end)
-
-  return depth
-end
-
-
---[[
-    Order Details Queries
-]]
-function LimitOrderBookMethods:getOrderDetails(orderId)
-  return self.orders[orderId]
-end
-
-function LimitOrderBookMethods:getOrderPrice(orderId)
-  local order = self.orders[orderId]
-  return order and order.price or nil
-end
-
+-- Check if an order is valid
 function LimitOrderBookMethods:checkOrderValidity(order)
   -- check for existing order
   local isCancel = order.size == 0
@@ -441,15 +299,134 @@ function LimitOrderBookMethods:checkOrderValidity(order)
     existingPriceMisMatch = (self.orders[order.uid] and order.price and self.orders[order.uid].price ~= tostring(math.floor(order.price * 10 ^ 3)))
   end
 
-  if order.price ~= roundedPrice or existingPriceMisMatch then
+  if existingPriceMisMatch then
     return false, "Invalid price"
   end
 
+  if order.price ~= roundedPrice or existingPriceMisMatch then
+    return false, "Invalid price precision"
+  end
+
   if order.size ~= roundedSize then
-    return false, "Invalid size"
+    return false, "Invalid size precision"
   end
 
   return true, "Order is valid"
+end
+
+function LimitOrderBookMethods:getBestBid()
+  -- Ensure bestBid is valid and contains orders
+  if self.bestBid and #self.bids[tostring(self.bestBid.price)].data > 0 then
+    return self.bestBid.price
+  else
+    -- If bestBid is invalid, find the next best bid
+    local nextBestBid = self:getNextBestBid()
+    return nextBestBid and nextBestBid.price or nil
+  end
+end
+
+function LimitOrderBookMethods:getBestAsk()
+  -- Ensure bestAsk is valid and contains orders
+  if self.bestAsk and #self.asks[tostring(self.bestAsk.price)].data > 0 then
+    return self.bestAsk.price
+  else
+    -- If bestAsk is invalid, find the next best ask
+    local nextBestAsk = self:getNextBestAsk()
+    return nextBestAsk and nextBestAsk.price or nil
+  end
+end
+
+
+function LimitOrderBookMethods:getSpread()
+  -- Return the spread between the best bid and best ask
+  local bestBidPrice = self:getBestBid()
+  local bestAskPrice = self:getBestAsk()
+
+  if bestBidPrice and bestAskPrice then
+    return tonumber(bestAskPrice) - tonumber(bestBidPrice)
+  end
+  return nil
+end
+
+function LimitOrderBookMethods:getMidPrice()
+  -- Return the mid price between the best bid and best ask
+  local bestBidPrice = self:getBestBid()
+  local bestAskPrice = self:getBestAsk()
+
+  if bestBidPrice and bestAskPrice then
+    return (tonumber(bestBidPrice) + tonumber(bestAskPrice)) / 2
+  end
+  return nil
+end
+
+function LimitOrderBookMethods:getTotalSize()
+  local totalBidsSize = 0
+  local totalAsksSize = 0
+
+  -- Iterate over all bid levels and sum up the order sizes
+  for price, priceLevel in pairs(self.bids) do
+    for _, order in ipairs(priceLevel.data) do
+      totalBidsSize = totalBidsSize + order.size
+    end
+  end
+
+  -- Iterate over all ask levels and sum up the order sizes
+  for price, priceLevel in pairs(self.asks) do
+    for _, order in ipairs(priceLevel.data) do
+      totalAsksSize = totalAsksSize + order.size
+    end
+  end
+
+  return {
+    bids = totalBidsSize,
+    asks = totalAsksSize,
+    total = totalBidsSize + totalAsksSize
+  }
+end
+
+
+function LimitOrderBookMethods:getMarketDepth()
+  local marketDepth = { bids = {}, asks = {} }
+
+  -- Collect bid levels
+  for price, priceLevel in pairs(self.bids) do
+    local levelSize = 0
+    for _, order in ipairs(priceLevel.data) do
+      levelSize = levelSize + order.size
+    end
+    if levelSize > 0 then
+      table.insert(marketDepth.bids, { price = price, levelSize = levelSize })
+    end
+  end
+
+  -- Collect ask levels
+  for price, priceLevel in pairs(self.asks) do
+    local levelSize = 0
+    for _, order in ipairs(priceLevel.data) do
+      levelSize = levelSize + order.size
+    end
+    if levelSize > 0 then
+      table.insert(marketDepth.asks, { price = price, levelSize = levelSize })
+    end
+  end
+
+  -- Sort bids in descending order and asks in ascending order
+  table.sort(marketDepth.bids, function(a, b) return tonumber(a.price) > tonumber(b.price) end)
+  table.sort(marketDepth.asks, function(a, b) return tonumber(a.price) < tonumber(b.price) end)
+
+  return marketDepth
+end
+
+--[[
+    Order Details Queries
+]]
+function LimitOrderBookMethods:getOrderDetails(orderId)
+  return self.orders[orderId]
+end
+
+function LimitOrderBookMethods:getOrderPrice(orderId)
+  local order = self.orders[orderId]
+  return order and order.price or nil
 end
 
 --[[
@@ -457,18 +434,22 @@ end
 ]]
 --@dev Calculates Volume-Weighted Average Price (VWAP)
 function LimitOrderBookMethods:getVWAP()
+  print("LimitOrderBookMethods:getVWAP")
+  print("bids: " .. json.encode(self.bids))
   local bidsTotalVolume, asksTotalVolume = 0, 0
   local bidsWeightedSum, asksWeightedSum = 0, 0
   local bidsVWAP, asksVWAP = 0, 0
 
-  for price, level in pairs(self.priceLevels['bids']) do
-    bidsWeightedSum = bidsWeightedSum + (price * level.size)
-    bidsTotalVolume = bidsTotalVolume + level.size
+  for price, level in pairs(self.bids) do
+    print("price: " .. price)
+    print("level: " .. json.encode(level))
+    bidsWeightedSum = bidsWeightedSum + (price * level.levelSize)
+    bidsTotalVolume = bidsTotalVolume + level.levelSize
   end
 
-  for price, level in pairs(self.priceLevels['asks']) do
-    asksWeightedSum = asksWeightedSum + (price * level.size)
-    asksTotalVolume = asksTotalVolume + level.size
+  for price, level in pairs(self.asks) do
+    asksWeightedSum = asksWeightedSum + (price * level.levelSize)
+    asksTotalVolume = asksTotalVolume + level.levelSize
   end
 
   -- Prevent division by zero
@@ -480,16 +461,16 @@ end
 
 function LimitOrderBookMethods:getBidExposure()
   local bidExposure = 0
-  for _, level in pairs(self.priceLevels['bids']) do
-      bidExposure = bidExposure + (level.size * level.price)
+  for price, level in pairs(self.bids) do
+      bidExposure = bidExposure + (level.levelSize * price)
   end
   return bidExposure
 end
 
 function LimitOrderBookMethods:getAskExposure()
   local askExposure = 0
-  for _, level in pairs(self.priceLevels['asks']) do
-      askExposure = askExposure + (level.size * level.price)
+  for price, level in pairs(self.asks) do
+      askExposure = askExposure + (level.levelSize * price)
   end
   return askExposure
 end
@@ -500,11 +481,11 @@ end
 
 function LimitOrderBookMethods:getMarginExposure(marginRate)
   local marginExposure = 0
-  for _, level in pairs(self.priceLevels['bids']) do
-      marginExposure = marginExposure + (level.size * level.price * marginRate)
+  for price, level in pairs(self.bids) do
+      marginExposure = marginExposure + (level.levelSize * price * marginRate)
   end
-  for _, level in pairs(self.priceLevels['asks']) do
-      marginExposure = marginExposure + (level.size * level.price * marginRate)
+  for price, level in pairs(self.asks) do
+      marginExposure = marginExposure + (level.levelSize * price * marginRate)
   end
   return marginExposure
 end

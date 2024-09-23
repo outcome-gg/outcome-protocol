@@ -103,7 +103,7 @@ local function getOrderBookMetrics()
   local bestAsk = LimitOrderBook:getBestAsk()
   local spread = LimitOrderBook:getSpread()
   local midPrice = LimitOrderBook:getMidPrice()
-  local totalLiquidity = LimitOrderBook:getTotalLiquidity()
+  local totalSize = LimitOrderBook:getTotalSize()
   local marketDepth = LimitOrderBook:getMarketDepth()
 
   return {
@@ -111,7 +111,7 @@ local function getOrderBookMetrics()
     bestAsk = tostring(bestAsk),
     spread = tostring(spread),
     midPrice = tostring(midPrice),
-    totalLiquidity = json.encode(totalLiquidity),
+    totalSize = json.encode(totalSize),
     marketDepth = json.encode(marketDepth)
   }
 end
@@ -295,13 +295,13 @@ Handlers.add('Get-Mid-Price', Handlers.utils.hasMatchingTag('Action', 'Get-Mid-P
   })
 end)
 
-Handlers.add('Get-Total-Liquidity', Handlers.utils.hasMatchingTag('Action', 'Get-Total-Liquidity'), function(msg)
-  local totalLiquidity = LimitOrderBook:getTotalLiquidity()
+Handlers.add('Get-Total-Size', Handlers.utils.hasMatchingTag('Action', 'Get-Total-Size'), function(msg)
+  local totalSize = LimitOrderBook:getTotalSize()
 
   ao.send({
     Target = msg.From,
-    Action = 'Total-Liquidity',
-    Data = totalLiquidity
+    Action = 'Total-Size',
+    Data = totalSize
   })
 end)
 

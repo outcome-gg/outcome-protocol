@@ -9,35 +9,26 @@ function Order:new(uid, isBid, size, price)
     uid = uid,
     isBid = isBid,
     size = size,
-    price = price,
-    nextItem = nil,
-    previousItem = nil,
-    root = nil
+    price = price
   }
   -- Set the metatable to OrderMethods for method lookup
-  setmetatable(obj,  { __index = OrderMethods })
+  setmetatable(obj, { __index = OrderMethods })
   return obj
 end
 
-function OrderMethods:popFromList()
-  assert(self.root, "Error: order has no root (OrderList reference) set")
-
-  if self.previousItem then
-    self.previousItem.nextItem = self.nextItem
-  else
-    -- If there's no previous item, this is the head, so update the head pointer
-    self.root.head = self.nextItem
-  end
-  if self.nextItem then
-    self.nextItem.previousItem = self.previousItem
-  else
-    -- If there's no next item, this is the tail, so update the tail pointer
-    self.root.tail = self.previousItem
-  end
-  -- Decrement the count and size in the root (OrderList)
-  self.root.count = self.root.count - 1
-  self.root.parentLimit.size = self.root.parentLimit.size - self.size
+-- Method to update the size of the order
+function OrderMethods:updateSize(newSize)
+  self.size = newSize
 end
 
+-- Method to get order details as a string (for logging or debugging)
+function OrderMethods:toString()
+  return json.encode({
+    uid = self.uid,
+    isBid = self.isBid,
+    size = self.size,
+    price = self.price
+  })
+end
 
 return Order

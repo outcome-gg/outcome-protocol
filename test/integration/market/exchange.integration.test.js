@@ -11,7 +11,7 @@ import exp from "constants";
 
 dotenv.config();
 
-const exchange = process.env.TEST_EXCHANGE79;
+const exchange = process.env.TEST_EXCHANGE80;
 const collateralToken = process.env.TEST_COLLATERAL_TOKEN;
 const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS;
 
@@ -212,9 +212,9 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('nil')
       expect(data_.spread).to.equal('nil')
       expect(data_.midPrice).to.equal('nil')
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(0)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(0)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(0)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(0)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(0)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(0)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0)
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(0)
     });
@@ -297,9 +297,9 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('nil')
       expect(data_.spread).to.equal('nil')
       expect(data_.midPrice).to.equal('nil')
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(5)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(5)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(0)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(5)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(5)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(0)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(1)
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(0)
     });
@@ -382,9 +382,9 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('101000')
       expect(Number(data_.spread)).to.equal(4000)
       expect(Number(data_.midPrice)).to.equal(99000)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(10)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(5)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(5)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(10)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(5)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(5)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(1)
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(1)
     });
@@ -434,7 +434,7 @@ describe("exchange.integration.test", function () {
 
         orderIds.push(orderIds_[i])
       }
-    })
+    });
 
     it("+ve [metrics] should retrieve orderbook metrics (after multiple orders w/o matching)", async () => {
       let messageId;
@@ -473,18 +473,18 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
@@ -493,9 +493,9 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('100000')
       expect(Number(data_.spread)).to.equal(1000)
       expect(Number(data_.midPrice)).to.equal(99500)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(60)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(40)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(60)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(40)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(4) // 4 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -543,7 +543,7 @@ describe("exchange.integration.test", function () {
       const errorMessage_ = Messages[0].Data
 
       expect(action_).to.equal("Process-Order-Error")
-      expect(errorMessage_).to.equal("Invalid size")
+      expect(errorMessage_).to.equal("Invalid size precision")
     })
 
     it("-ve should reject an order with invalid (negative) size", async () => {
@@ -700,18 +700,18 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
@@ -720,9 +720,9 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('100000')
       expect(Number(data_.spread)).to.equal(1000)
       expect(Number(data_.midPrice)).to.equal(99500)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(60)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(40)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(60)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(40)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(4) // 4 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -819,18 +819,18 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
@@ -839,9 +839,9 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('100000')
       expect(Number(data_.spread)).to.equal(1000)
       expect(Number(data_.midPrice)).to.equal(99500)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(65)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(45)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(65)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(45)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -890,7 +890,7 @@ describe("exchange.integration.test", function () {
       const errorMessage_ = Messages[0].Data
 
       expect(action_).to.equal("Process-Order-Error")
-      expect(errorMessage_).to.equal("Invalid price")
+      expect(errorMessage_).to.equal("Invalid price precision")
     })
 
     it("+ve should update an existing order (size)", async () => {
@@ -977,18 +977,18 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
@@ -997,9 +997,9 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('100000')
       expect(Number(data_.spread)).to.equal(1000)
       expect(Number(data_.midPrice)).to.equal(99500)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(70)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(50)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(70)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(50)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -1173,18 +1173,18 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
@@ -1193,9 +1193,9 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('100000')
       expect(Number(data_.spread)).to.equal(1000)
       expect(Number(data_.midPrice)).to.equal(99500)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(60)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(40)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(60)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(40)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -1285,18 +1285,18 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
@@ -1305,9 +1305,9 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('100000')
       expect(Number(data_.spread)).to.equal(1000)
       expect(Number(data_.midPrice)).to.equal(99500)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(60)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(40)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(60)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(40)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 5 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -1404,18 +1404,18 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
@@ -1426,16 +1426,15 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('101000')
       expect(Number(data_.spread)).to.equal(2000)
       expect(Number(data_.midPrice)).to.equal(100000)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(55)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(35)
-      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
-      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 5 priceLevels
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(55)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(35)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(4) // priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
       expect(orderBookAsks['102000']).to.equal(20)
       expect(orderBookAsks['101123']).to.equal(5)
       expect(orderBookAsks['101000']).to.equal(5)
-      expect(orderBookAsks['100000']).to.equal(0)
       expect(orderBookBids['99000']).to.equal(10)
       expect(orderBookBids['98000']).to.equal(5)
       expect(orderBookBids['97000']).to.equal(5)
@@ -1478,10 +1477,6 @@ describe("exchange.integration.test", function () {
       const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
       const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
       const executedTrades_ = JSON.parse(Messages[0].Data)
-
-      console.log("order", order)
-      console.log("executedTrades_", executedTrades_)
-      console.log("orderSize_", orderSize_)
 
       expect(action_).to.equal("Order-Processed")
       expect(success_).to.equal('true')
@@ -1534,24 +1529,20 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
-
-      console.log("orderBookAsks", orderBookAsks)
-      console.log("orderBookBids", orderBookBids)
-      console.log("data_", data_)
 
       // TRADE matches asks of 5 shares at 101.000 + 5 shares at 101.123
 
@@ -1560,16 +1551,13 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('102000')
       expect(Number(data_.spread)).to.equal(3000)
       expect(Number(data_.midPrice)).to.equal(100500)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(45)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(25)
-      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
-      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 5 priceLevels
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(45)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(25)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(2) // priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
       expect(orderBookAsks['102000']).to.equal(20)
-      expect(orderBookAsks['101123']).to.equal(0)
-      expect(orderBookAsks['101000']).to.equal(0)
-      expect(orderBookAsks['100000']).to.equal(0)
       expect(orderBookBids['99000']).to.equal(10)
       expect(orderBookBids['98000']).to.equal(5)
       expect(orderBookBids['97000']).to.equal(5)
@@ -1666,18 +1654,18 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
@@ -1689,17 +1677,13 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('102000')
       expect(Number(data_.spread)).to.equal(4000)
       expect(Number(data_.midPrice)).to.equal(100000)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(33)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(8)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(25)
-      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
-      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 5 priceLevels
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(33)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(8)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(25)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(2) // 3 priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(2) // 5 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
       expect(orderBookAsks['102000']).to.equal(20)
-      expect(orderBookAsks['101123']).to.equal(0)
-      expect(orderBookAsks['101000']).to.equal(0)
-      expect(orderBookAsks['100000']).to.equal(0)
-      expect(orderBookBids['99000']).to.equal(0)
       expect(orderBookBids['98000']).to.equal(3)
       expect(orderBookBids['97000']).to.equal(5)
     });
@@ -1793,18 +1777,18 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
@@ -1816,20 +1800,14 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('96500')
       expect(data_.spread).to.equal('nil')
       expect(data_.midPrice).to.equal('nil')
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(30)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(0)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(30)
-      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // priceLevels
-      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(6) // priceLevels
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(30)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(0)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(30)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(3) // priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
       expect(orderBookAsks['102000']).to.equal(20)
-      expect(orderBookAsks['101123']).to.equal(0)
-      expect(orderBookAsks['101000']).to.equal(0)
-      expect(orderBookAsks['100000']).to.equal(0)
       expect(orderBookAsks['96500']).to.equal(5)
-      expect(orderBookBids['99000']).to.equal(0)
-      expect(orderBookBids['98000']).to.equal(0)
-      expect(orderBookBids['97000']).to.equal(0)
     });
   })
 
@@ -1874,18 +1852,18 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
@@ -1897,20 +1875,14 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('96500')
       expect(data_.spread).to.equal('nil')
       expect(data_.midPrice).to.equal('nil')
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(30)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(0)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(30)
-      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // priceLevels
-      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(6) // priceLevels
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(30)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(0)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(30)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(3) // priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
       expect(orderBookAsks['102000']).to.equal(20)
-      expect(orderBookAsks['101123']).to.equal(0)
-      expect(orderBookAsks['101000']).to.equal(0)
-      expect(orderBookAsks['100000']).to.equal(0)
       expect(orderBookAsks['96500']).to.equal(5)
-      expect(orderBookBids['99000']).to.equal(0)
-      expect(orderBookBids['98000']).to.equal(0)
-      expect(orderBookBids['97000']).to.equal(0)
     });
 
     it("+ve should retrieve best bid (where no bid exists)", async () => {
@@ -2158,42 +2130,36 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       expect(action_).to.equal("Market-Depth")
-      expect(data_['bids'].length).to.equal(4) // priceLevels
-      expect(data_['asks'].length).to.equal(6) // priceLevels
+      expect(data_['bids'].length).to.equal(1) // priceLevels
+      expect(data_['asks'].length).to.equal(3) // priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
       expect(orderBookAsks['102000']).to.equal(20)
-      expect(orderBookAsks['101123']).to.equal(0)
-      expect(orderBookAsks['101000']).to.equal(0)
-      expect(orderBookAsks['100000']).to.equal(0)
       expect(orderBookAsks['96500']).to.equal(5)
-      expect(orderBookBids['99000']).to.equal(0)
-      expect(orderBookBids['98000']).to.equal(0)
-      expect(orderBookBids['97000']).to.equal(0)
       expect(orderBookBids['95500']).to.equal(5)
     });
 
-    it("+ve should return total liquidity", async () => {
+    it("+ve should return total size", async () => {
       let messageId;
       await message({
         process: exchange,
         tags: [
-          { name: "Action", value: "Get-Total-Liquidity" },
+          { name: "Action", value: "Get-Total-Size" },
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -2216,7 +2182,7 @@ describe("exchange.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const data_ = JSON.parse(Messages[0].Data)
 
-      expect(action_).to.equal("Total-Liquidity")
+      expect(action_).to.equal("Total-Size")
       expect(data_['total']).to.equal(35)
       expect(data_['bids']).to.equal(5)
       expect(data_['asks']).to.equal(30)
@@ -2319,18 +2285,18 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
     
@@ -2339,21 +2305,11 @@ describe("exchange.integration.test", function () {
       expect(data_.bestAsk).to.equal('nil')
       expect(data_.spread).to.equal('nil')
       expect(data_.midPrice).to.equal('nil')
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(0)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(0)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(0)
-      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(4) // priceLevels
-      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(6) // priceLevels
-      expect(orderBookAsks['103000']).to.equal(0)
-      expect(orderBookAsks['102000']).to.equal(0)
-      expect(orderBookAsks['101123']).to.equal(0)
-      expect(orderBookAsks['101000']).to.equal(0)
-      expect(orderBookAsks['100000']).to.equal(0)
-      expect(orderBookAsks['96500']).to.equal(0)
-      expect(orderBookBids['99000']).to.equal(0)
-      expect(orderBookBids['98000']).to.equal(0)
-      expect(orderBookBids['97000']).to.equal(0)
-      expect(orderBookBids['95500']).to.equal(0)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(0)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(0)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(0)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(0) // priceLevels
     });
   });
 
@@ -2461,50 +2417,35 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       // ORDER is ask of 5 shares at 96.500
       // TRADE matches bids of 3 and 5 shares at 98.000 and 97.000, respectively
 
-      console.log("DATA", data_)
-      console.log("orderBookAsks", orderBookAsks)
-      console.log("orderBookBids", orderBookBids)
-
-
       expect(action_).to.equal("Order-Book-Metrics")
       expect(data_.bestBid).to.equal('88000')
       expect(data_.bestAsk).to.equal('90000')
       expect(Number(data_.spread)).to.equal(2000)
       expect(Number(data_.midPrice)).to.equal(89000)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(35)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(30)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(5)
-      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(5) // priceLevels
-      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(7) // priceLevels
-      expect(orderBookAsks['103000']).to.equal(0)
-      expect(orderBookAsks['102000']).to.equal(0)
-      expect(orderBookAsks['101123']).to.equal(0)
-      expect(orderBookAsks['101000']).to.equal(0)
-      expect(orderBookAsks['100000']).to.equal(0)
-      expect(orderBookAsks['96500']).to.equal(0)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(35)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(30)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(5)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(1) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(1) // priceLevels
       expect(orderBookAsks['90000']).to.equal(5)
-      expect(orderBookBids['99000']).to.equal(0)
-      expect(orderBookBids['98000']).to.equal(0)
-      expect(orderBookBids['97000']).to.equal(0)
-      expect(orderBookBids['95500']).to.equal(0)
       expect(orderBookBids['88000']).to.equal(30)
     });
    
@@ -2944,50 +2885,35 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       // ORDER is ask of 5 shares at 96.500
       // TRADE matches bids of 3 and 5 shares at 98.000 and 97.000, respectively
 
-      console.log("DATA", data_)
-      console.log("orderBookAsks", orderBookAsks)
-      console.log("orderBookBids", orderBookBids)
-
-
       expect(action_).to.equal("Order-Book-Metrics")
       expect(data_.bestBid).to.equal('88000')
       expect(data_.bestAsk).to.equal('90000')
       expect(Number(data_.spread)).to.equal(2000)
       expect(Number(data_.midPrice)).to.equal(89000)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(35)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(30)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(5)
-      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(5) // priceLevels
-      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(7) // priceLevels
-      expect(orderBookAsks['103000']).to.equal(0)
-      expect(orderBookAsks['102000']).to.equal(0)
-      expect(orderBookAsks['101123']).to.equal(0)
-      expect(orderBookAsks['101000']).to.equal(0)
-      expect(orderBookAsks['100000']).to.equal(0)
-      expect(orderBookAsks['96500']).to.equal(0)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(35)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(30)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(5)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(1) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(1) // priceLevels
       expect(orderBookAsks['90000']).to.equal(5)
-      expect(orderBookBids['99000']).to.equal(0)
-      expect(orderBookBids['98000']).to.equal(0)
-      expect(orderBookBids['97000']).to.equal(0)
-      expect(orderBookBids['95500']).to.equal(0)
       expect(orderBookBids['88000']).to.equal(30)
     });
 
@@ -3056,8 +2982,6 @@ describe("exchange.integration.test", function () {
 
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const data_ = Messages[0].Data
-
-      console.log("data_", data_)
 
       expect(action_).to.equal("Bid-Exposure")
       expect(data_).to.equal(orders[1].price * 1000 * orders[1].size)
@@ -3158,8 +3082,6 @@ describe("exchange.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const data_ = JSON.parse(Messages[0].Data)
 
-      console.log("data_", data_)
-
       const vwap = data_.vwap
       const asksVwap = vwap.asks
       const bidsVwap = vwap.bids
@@ -3259,51 +3181,36 @@ describe("exchange.integration.test", function () {
       for (let i = 0; i < priceLevelsBids.length; i++) {
         let priceLevel = priceLevelsBids[i]
         if (orderBookBids[priceLevel.price] === undefined) {
-          orderBookBids[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookBids[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       for (let i = 0; i < priceLevelsAsks.length; i++) {
         let priceLevel = priceLevelsAsks[i]
         if (orderBookAsks[priceLevel.price] === undefined) {
-          orderBookAsks[priceLevel.price] = priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
         } else {
-          orderBookAsks[priceLevel.price] += priceLevel.totalLiquidity
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
         }
       }
 
       // ORDER is ask of 5 shares at 96.500
       // TRADE matches bids of 3 and 5 shares at 98.000 and 97.000, respectively
 
-      console.log("DATA", data_)
-      console.log("orderBookAsks", orderBookAsks)
-      console.log("orderBookBids", orderBookBids)
-
-
       expect(action_).to.equal("Order-Book-Metrics")
       expect(data_.bestBid).to.equal('88000')
       expect(data_.bestAsk).to.equal('90000')
       expect(Number(data_.spread)).to.equal(2000)
       expect(Number(data_.midPrice)).to.equal(89000)
-      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(100)
-      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(90)
-      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(10)
-      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(6) // priceLevels
-      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(8) // priceLevels
-      expect(orderBookAsks['103000']).to.equal(0)
-      expect(orderBookAsks['102000']).to.equal(0)
-      expect(orderBookAsks['101123']).to.equal(0)
-      expect(orderBookAsks['101000']).to.equal(0)
-      expect(orderBookAsks['100000']).to.equal(0)
-      expect(orderBookAsks['96500']).to.equal(0)
+      expect(JSON.parse(data_.totalSize)['total']).to.equal(100)
+      expect(JSON.parse(data_.totalSize)['bids']).to.equal(90)
+      expect(JSON.parse(data_.totalSize)['asks']).to.equal(10)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(2) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(2) // priceLevels
       expect(orderBookAsks['96000']).to.equal(5)
       expect(orderBookAsks['90000']).to.equal(5)
-      expect(orderBookBids['99000']).to.equal(0)
-      expect(orderBookBids['98000']).to.equal(0)
-      expect(orderBookBids['97000']).to.equal(0)
-      expect(orderBookBids['95500']).to.equal(0)
       expect(orderBookBids['88000']).to.equal(30)
       expect(orderBookBids['22000']).to.equal(60)
     });
@@ -3383,10 +3290,6 @@ describe("exchange.integration.test", function () {
       const successes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Successes').value)
       const orderSizes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrderSizes').value)
       const executedTradesList_ = JSON.parse(Messages[0].Data)
-
-      console.log("reverseOrders", reverseOrders)
-      console.log("orderSizes_", orderSizes_)
-      console.log("executedTradesList_", executedTradesList_)
 
       expect(action_).to.equal("Orders-Processed")
       expect(successes_.length).to.equal(4)
