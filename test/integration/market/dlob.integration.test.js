@@ -176,6 +176,47 @@ describe("dlob.integration.test", function () {
   // })
 
   /************************************************************************ 
+  * Fund Management
+  ************************************************************************/
+  describe("dlob.Fund Management", function () {
+    it("+ve should get balance info (no balances)", async () => {
+    })
+
+    it("+ve should add funds", async () => {
+    })
+
+    it("+ve should add shares", async () => {
+    })
+
+    it("+ve should get balance info (balances)", async () => {
+    })
+
+    it("+ve should withdraw funds (partial)", async () => {
+    })
+
+    it("+ve should withdraw shares (partial)", async () => {
+    })
+
+    it("+ve should withdraw funds (all)", async () => {
+    })
+
+    it("+ve should withdraw shares (all)", async () => {
+    })
+
+    it("+ve [process] should process an order (bid)", async () => {
+    })
+
+    it("+ve should get balance info (locked funds)", async () => {
+    })
+
+    it("+ve [process] should process an order (ask)", async () => {
+    })
+
+    it("+ve should get balance info (locked shares)", async () => {
+    })
+  })
+
+  /************************************************************************ 
   * Order Processing & Management
   ************************************************************************/
   describe("Order Processing & Management", function () {
@@ -212,9 +253,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('nil')
       expect(data_.spread).to.equal('nil')
       expect(data_.midPrice).to.equal('nil')
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(0)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(0)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(0)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(0)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(0)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(0)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0)
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(0)
     });
@@ -292,14 +333,16 @@ describe("dlob.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const data_ = JSON.parse(Messages[0].Data)
 
+      const liquidity = limitOrders[limitOrders.length - 1].size * limitOrders[limitOrders.length - 1].price
+
       expect(action_).to.equal("Order-Book-Metrics")
       expect(data_.bestBid).to.equal('97000')
       expect(data_.bestAsk).to.equal('nil')
       expect(data_.spread).to.equal('nil')
       expect(data_.midPrice).to.equal('nil')
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(5)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(5)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(0)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(liquidity)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(liquidity)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(0)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(1)
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(0)
     });
@@ -377,14 +420,17 @@ describe("dlob.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const data_ = JSON.parse(Messages[0].Data)
 
+      const bidLiquidity = limitOrders[limitOrders.length - 1].size * limitOrders[limitOrders.length - 1].price
+      const askLiquidity = limitOrders[0].size * limitOrders[0].price
+
       expect(action_).to.equal("Order-Book-Metrics")
       expect(data_.bestBid).to.equal('97000')
       expect(data_.bestAsk).to.equal('101000')
       expect(Number(data_.spread)).to.equal(4000)
       expect(Number(data_.midPrice)).to.equal(99000)
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(10)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(5)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(5)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(bidLiquidity + askLiquidity)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(bidLiquidity)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(askLiquidity)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(1)
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(1)
     });
@@ -493,9 +539,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('100000')
       expect(Number(data_.spread)).to.equal(1000)
       expect(Number(data_.midPrice)).to.equal(99500)
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(60)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(40)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6030)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4065)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(4) // 4 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -720,9 +766,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('100000')
       expect(Number(data_.spread)).to.equal(1000)
       expect(Number(data_.midPrice)).to.equal(99500)
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(60)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(40)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6030)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4065)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(4) // 4 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -839,9 +885,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('100000')
       expect(Number(data_.spread)).to.equal(1000)
       expect(Number(data_.midPrice)).to.equal(99500)
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(65)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(45)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6535.615)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4570.615)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -997,9 +1043,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('100000')
       expect(Number(data_.spread)).to.equal(1000)
       expect(Number(data_.midPrice)).to.equal(99500)
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(70)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(50)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(7040.615)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(5075.615)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -1193,9 +1239,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('100000')
       expect(Number(data_.spread)).to.equal(1000)
       expect(Number(data_.midPrice)).to.equal(99500)
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(60)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(40)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6030.615)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4065.615)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -1305,9 +1351,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('100000')
       expect(Number(data_.spread)).to.equal(1000)
       expect(Number(data_.midPrice)).to.equal(99500)
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(60)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(40)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6030.615)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4065.615)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 5 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -1426,9 +1472,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('101000')
       expect(Number(data_.spread)).to.equal(2000)
       expect(Number(data_.midPrice)).to.equal(100000)
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(55)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(35)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(5530.615)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(3565.615)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(4) // priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -1551,9 +1597,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('102000')
       expect(Number(data_.spread)).to.equal(3000)
       expect(Number(data_.midPrice)).to.equal(100500)
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(45)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(20)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(25)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(4520)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(2555)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(2) // priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -1677,9 +1723,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('102000')
       expect(Number(data_.spread)).to.equal(4000)
       expect(Number(data_.midPrice)).to.equal(100000)
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(33)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(8)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(25)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(3334)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(779)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(2555)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(2) // 3 priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(2) // 5 priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -1800,9 +1846,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('96500')
       expect(data_.spread).to.equal('nil')
       expect(data_.midPrice).to.equal('nil')
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(30)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(0)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(30)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(3037.5)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(0)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(3037.5)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0) // priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(3) // priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -1875,9 +1921,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('96500')
       expect(data_.spread).to.equal('nil')
       expect(data_.midPrice).to.equal('nil')
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(30)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(0)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(30)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(3037.5)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(0)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(3037.5)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0) // priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(3) // priceLevels
       expect(orderBookAsks['103000']).to.equal(5)
@@ -2154,12 +2200,12 @@ describe("dlob.integration.test", function () {
       expect(orderBookBids['95500']).to.equal(5)
     });
 
-    it("+ve should return total size", async () => {
+    it("+ve should return total liquidity", async () => {
       let messageId;
       await message({
         process: dlob,
         tags: [
-          { name: "Action", value: "Get-Total-Size" },
+          { name: "Action", value: "Get-Total-Liquidity" },
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -2182,10 +2228,10 @@ describe("dlob.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const data_ = JSON.parse(Messages[0].Data)
 
-      expect(action_).to.equal("Total-Size")
-      expect(data_['total']).to.equal(35)
-      expect(data_['bids']).to.equal(5)
-      expect(data_['asks']).to.equal(30)
+      expect(action_).to.equal("Total-Liquidity")
+      expect(data_['total']).to.equal(3515)
+      expect(data_['bids']).to.equal(477.5)
+      expect(data_['asks']).to.equal(3037.5)
     });
 
     it("+ve [process] should execute all existing orders", async () => {
@@ -2305,9 +2351,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('nil')
       expect(data_.spread).to.equal('nil')
       expect(data_.midPrice).to.equal('nil')
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(0)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(0)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(0)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(0)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(0)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(0)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0) // priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(0) // priceLevels
     });
@@ -2440,9 +2486,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('90000')
       expect(Number(data_.spread)).to.equal(2000)
       expect(Number(data_.midPrice)).to.equal(89000)
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(35)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(30)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(5)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(3090)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(2640)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(450)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(1) // priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(1) // priceLevels
       expect(orderBookAsks['90000']).to.equal(5)
@@ -2908,9 +2954,9 @@ describe("dlob.integration.test", function () {
       expect(data_.bestAsk).to.equal('90000')
       expect(Number(data_.spread)).to.equal(2000)
       expect(Number(data_.midPrice)).to.equal(89000)
-      expect(JSON.parse(data_.totalSize)['total']).to.equal(35)
-      expect(JSON.parse(data_.totalSize)['bids']).to.equal(30)
-      expect(JSON.parse(data_.totalSize)['asks']).to.equal(5)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(35)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(30)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(5)
       expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(1) // priceLevels
       expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(1) // priceLevels
       expect(orderBookAsks['90000']).to.equal(5)

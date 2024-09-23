@@ -286,28 +286,28 @@ function LimitOrderBookMethods:getMidPrice()
   return nil
 end
 
-function LimitOrderBookMethods:getTotalSize()
-  local totalBidsSize = 0
-  local totalAsksSize = 0
+function LimitOrderBookMethods:getTotalLiquidity()
+  local totalBidsLiquidity = 0
+  local totalAsksLiquidity = 0
 
   -- Iterate over all bid levels and sum up the order sizes
   for price, priceLevel in pairs(self.bids) do
     for _, order in ipairs(priceLevel.data) do
-      totalBidsSize = totalBidsSize + order.size
+      totalBidsLiquidity = totalBidsLiquidity + ((tonumber(price) * order.size) / 1000)
     end
   end
 
   -- Iterate over all ask levels and sum up the order sizes
   for price, priceLevel in pairs(self.asks) do
     for _, order in ipairs(priceLevel.data) do
-      totalAsksSize = totalAsksSize + order.size
+      totalAsksLiquidity = totalAsksLiquidity + ((tonumber(price) * order.size) / 1000)
     end
   end
 
   return {
-    bids = totalBidsSize,
-    asks = totalAsksSize,
-    total = totalBidsSize + totalAsksSize
+    bids = totalBidsLiquidity,
+    asks = totalAsksLiquidity,
+    total = totalBidsLiquidity + totalAsksLiquidity
   }
 end
 

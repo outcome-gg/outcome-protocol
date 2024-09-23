@@ -1,2 +1,0 @@
-local orderBook = {}
-return orderBook

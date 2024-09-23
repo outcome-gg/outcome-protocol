@@ -4,6 +4,7 @@ local bint = require('.bint')(256)
 
 local limitOrderBook = require('modules.limitOrderBook')
 local limitOrderBookOrder = require('modules.order')
+local balanceManager = require('modules.balanceManager')
 
 --[[
     GLOBALS
@@ -11,27 +12,45 @@ local limitOrderBookOrder = require('modules.order')
 ResetState = true
 Version = "1.0.1"
 Initialized = false
-LimitOrderBook = limitOrderBook:new()
 
 --[[
-    Exchange
+    DLOB
 ]]
-if not DataIndex or ResetState then DataIndex = '' end
+LimitOrderBook = limitOrderBook:new()
+BalanceManager = balanceManager:new()
+
 if not ConditionalTokens or ResetState then ConditionalTokens = '' end
-if not ConditionId or ResetState then ConditionId = '' end
-if not ParentCollectionId or ResetState then ParentCollectionId = '' end
+if not ConditionalTokensId or ResetState then ConditionalTokensId = '' end
 if not CollateralToken or ResetState then CollateralToken = '' end
-if not CollateralBalance or ResetState then CollateralBalance = '0' end
-if not UserCollateralBalance or ResetState then UserCollateralBalance = {} end
+if not DataIndex or ResetState then DataIndex = '' end
 if not Name or ResetState then Name = 'DLOB-v' .. Version end
 
 --[[
     NOTICES
 ]]
--- TODO
+local function initNotice(conditionalTokens, conditionalTokensId, collateralToken)
+  ao.send({
+    Target = DataIndex,
+    Action = "Init-DLOB-Notice",
+    ConditionalTokens = conditionalTokens,
+    ConditionalTokensId = conditionalTokensId,
+    CollateralToken = collateralToken
+  })
+end
+
+local function processOrderNotice() end
+local function processOrdersNotice() end
+local function addFundsNotice() end
+local function addSharesNotice() end
+local function removeFundsNotice() end
+local function removeSharesNotice() end
 
 --[[
-    HELPER FUNCTIONS
+    FUNCTIONS
+]]
+
+--[[
+    Helper Functions
 ]]
 local function assertMaxDp(value, maxDp)
   local factor = 10 ^ maxDp
@@ -41,33 +60,31 @@ local function assertMaxDp(value, maxDp)
 end
 
 --[[
-    Funding
+    Fund Management
 ]]
-local function addFunding(sender, addedFunds)
-  CollateralBalance = tostring(bint.__add(bint(CollateralBalance), bint(addedFunds)))
-  if not CollateralBalance[sender] then CollateralBalance[sender] = '0' end
-  CollateralBalance = tostring(bint.__add(bint(CollateralBalance), bint(addedFunds)))
-
-  ao.send({
-    Target = CollateralToken,
-    Action = 'Transfer',
-    Quantity = addedFunds,
-    Recipient = ConditionalTokens,
-    ['X-Action'] = 'Create-Position',
-    ['X-ParentCollectionId'] = ParentCollectionId,
-    ['X-ConditionId'] = ConditionId,
-    ['X-Partition'] = json.encode({1,2}),
-    ['X-Sender'] = sender
-  })
+local function isAddFunds(msg)
+  if msg.From == CollateralToken  and msg.Action == "Credit-Notice" then
+    return true
+  else
+    return false
+  end
 end
 
-local function removeFunding()
-  -- TODO
+local function isAddShares(msg)
+  local res = false
+  if  msg.From == ConditionalTokens and msg.Action == "Credit-Single-Notice" then
+    res = msg.Tags.TokenIds == ConditionalTokensId
+  elseif msg.From == ConditionalTokens and msg.Action == "Credit-Batch-Notice" then
+    local tokenIds = json.decode(msg.Tags.TokenIds)
+    res = true
+    for i = 1, #tokenIds do
+      if tokenIds[i] ~= ConditionalTokensId then
+        res = false
+      end
+    end
+  end
+  return res
 end
-
---[[
-    CORE FUNCTIONS 
-]]
 
 --[[
     Order Processing & Management
@@ -102,16 +119,16 @@ local function getOrderBookMetrics()
   local bestAsk = LimitOrderBook:getBestAsk()
   local spread = LimitOrderBook:getSpread()
   local midPrice = LimitOrderBook:getMidPrice()
-  local totalSize = LimitOrderBook:getTotalSize()
   local marketDepth = LimitOrderBook:getMarketDepth()
+  local totalLiquidity = LimitOrderBook:getTotalLiquidity()
 
   return {
     bestBid = tostring(bestBid),
     bestAsk = tostring(bestAsk),
     spread = tostring(spread),
     midPrice = tostring(midPrice),
-    totalSize = json.encode(totalSize),
-    marketDepth = json.encode(marketDepth)
+    marketDepth = json.encode(marketDepth),
+    totalLiquidity = json.encode(totalLiquidity)
   }
 end
 
@@ -150,42 +167,87 @@ end
 ]]
 
 --[[
-  Funding
+    Init
 ]]
-local function isAddFundingCollateralToken(msg)
-if msg.From == CollateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
-  return true
-else
-  return false
-end
-end
+Handlers.add('Init', Handlers.utils.hasMatchingTag("Action", "Init"), function(msg)
+  assert(Initialized == false, "DLOB already initialized!")
+  assert(msg.Tags.ConditionalTokens, "ConditionalTokens is required!")
+  assert(msg.Tags.ConditionalTokensId, "ConditionalTokensId is required!")
+  assert(msg.Tags.CollateralToken, "CollateralToken is required!")
+  assert(msg.Tags.DataIndex, "DataIndex is required!")
 
-local function isAddFundingConditionalTokens(msg)
-if msg.From == CollateralToken  and msg.Action == "Credit-Batch-Notice" and msg["X-Action"] == "Add-Funding" then
-  return true
-else
-  return false
-end
-end
+  -- Initialized
+  Initialized = true
 
-Handlers.add('Add-Funding-CollateralToken', isAddFundingCollateralToken, function(msg)
+  -- Send notice
+  initNotice(msg.Tags.ConditionalToken, msg.Tags.ConditionalTokensId, msg.Tags.CollateralToken)
+end)
+
+--[[
+    Fund Management
+]]
+Handlers.add('Add-Funds', isAddFunds, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
+  assert(msg.Tags['X-Sender'], 'X-Sender is required!')
 
-  addFunding(msg.From, msg.Tags.Quantity)
+  BalanceManager:addFunds(msg.Tags['X-Sender'], msg.Tags.Quantity)
 end)
 
-Handlers.add('Add-Funding-ConditionalTokens', isAddFundingConditionalTokens, function(msg)
-  assert(msg.Tags.Quantities, 'Quantities is required!')
-  -- assert(bint.__lt(0, bint(msg.Tags.Quantities)), 'Quantity must be greater than zero!')
-  assert(msg.Tags.TokenIds, 'TokenIds is required!')
-  assert(msg.Tags['X-Order'], 'X-Order is required!')
+Handlers.add('Add-Shares', isAddShares, function(msg)
+  assert(msg.Tags.Quantity or msg.Tags.Quantities, 'Quantity or Quantities is required!')
+  local quantity = msg.Tags.Quantities and json.decod(msg.Tags.Quantities)[1] or msg.Tags.Quantity
+  assert(bint.__lt(0, bint(quantity)), 'quantity must be greater than zero!')
+  assert(msg.Tags['X-Sender'], 'X-Sender is required!')
 
--- TODO: Pass X-Order through conditionalTokens transferBatchNotice
+  BalanceManager:addShares(msg.Tags['X-Sender'], msg.Tags.Quantity)
 end)
 
-Handlers.add('Remove-Funding', Handlers.utils.hasMatchingTag('Action', 'Remove-Funding'), function(msg)
--- TODO
+Handlers.add('Remove-Funds', Handlers.utils.hasMatchingTag('Action', 'Remove-Funds'), function(msg)
+  assert(msg.Tags.Quantity, 'Quantity is required!')
+  local fundBalance = BalanceManager:getAvailableFunds(msg.Tags['X-Sender'])
+  assert(bint.__le(bint(msg.Tags.Quantity), bint(fundBalance)), "Insufficient fund balance")
+
+  ao.send({
+    Target = CollateralToken,
+    Action = 'Transfer',
+    Recipient = msg.From,
+    Quantity = msg.Tags.Quantity
+  })
+end)
+
+Handlers.add('Remove-Shares', Handlers.utils.hasMatchingTag('Action', 'Remove-Shares'), function(msg)
+  assert(msg.Tags.Quantity, 'Quantity is required!')
+  local shareBalance = BalanceManager:getAvailableShares(msg.Tags['X-Sender'])
+  assert(bint.__le(bint(msg.Tags.Quantity), bint(shareBalance)), "Insufficient share balance")
+
+  ao.send({
+    Target = ConditionalTokens,
+    Action = 'Transfer-Single',
+    Recipient = msg.From,
+    TokenId = ConditionalTokensId,
+    Quantity = msg.Tags.Quantity
+  })
+end)
+
+Handlers.add('Get-Balance-Info', Handlers.utils.hasMatchingTag('Action', 'Get-Balance-Info'), function(msg)
+  local availableFunds = BalanceManager:getAvailableFunds()
+  local availableShares = BalanceManager:getAvailableShares()
+  local lockedFunds = BalanceManager:getLockedFunds()
+  local lockedShares = BalanceManager:getLockedShares()
+
+  local balanceInfo = {
+    availableFunds = availableFunds,
+    availableShares = availableShares,
+    lockedFunds = lockedFunds,
+    lockedShares = lockedShares
+  }
+
+  ao.send({
+    Target = msg.From,
+    Action = 'Balance-Info',
+    Data = json.encode(balanceInfo)
+  })
 end)
 
 --[[
@@ -221,10 +283,8 @@ end)
 Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-Orders'), function(msg)
   local orders = json.decode(msg.Data)
   for i = 1, #orders do
-    assert(type(orders[i].isBid) == 'boolean', 'isBid is required!')
-    assert(type(orders[i].size) == 'number', 'size is required!')
-    assertMaxDp(orders[i].size, 0)
-    assert(type(orders[i].price) == 'number', 'price is required!')
+    local isValidOrder, orderValidityMessage = LimitOrderBook:checkOrderValidity(orders[i])
+    assert(isValidOrder, 'order ' .. tostring(i) .. ': ' .. orderValidityMessage)
     local priceString = assertMaxDp(orders[i].price, 3)
     orders[i].price = priceString
   end
@@ -294,13 +354,13 @@ Handlers.add('Get-Mid-Price', Handlers.utils.hasMatchingTag('Action', 'Get-Mid-P
   })
 end)
 
-Handlers.add('Get-Total-Size', Handlers.utils.hasMatchingTag('Action', 'Get-Total-Size'), function(msg)
-  local totalSize = LimitOrderBook:getTotalSize()
+Handlers.add('Get-Total-Liquidity', Handlers.utils.hasMatchingTag('Action', 'Get-Total-Liquidity'), function(msg)
+  local totalLiquidity = LimitOrderBook:getTotalLiquidity()
 
   ao.send({
     Target = msg.From,
-    Action = 'Total-Size',
-    Data = totalSize
+    Action = 'Total-Liquidity',
+    Data = totalLiquidity
   })
 end)
 
