@@ -1,10 +1,9 @@
+local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
-local Utils = require("Utils")
-local crypto = require('.crypto')
-local ao = require('.ao')
-local limitOrderBook = require('limitOrderBook')
-local limitOrderBookOrder = require('order')
+
+local limitOrderBook = require('modules.limitOrderBook')
+local limitOrderBookOrder = require('modules.order')
 
 --[[
     GLOBALS
@@ -24,7 +23,7 @@ if not ParentCollectionId or ResetState then ParentCollectionId = '' end
 if not CollateralToken or ResetState then CollateralToken = '' end
 if not CollateralBalance or ResetState then CollateralBalance = '0' end
 if not UserCollateralBalance or ResetState then UserCollateralBalance = {} end
-if not Name or ResetState then Name = 'Exchange-v' .. Version end
+if not Name or ResetState then Name = 'DLOB-v' .. Version end
 
 --[[
     NOTICES
@@ -214,7 +213,7 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
       Success = tostring(success),
       OrderId = orderId,
       OrderSize = tostring(orderSize),
-      Data = json.encode(Utils.serializeWithoutCircularReferences(executedTrades))
+      Data = json.encode(executedTrades)
     })
   end
 end)
@@ -333,7 +332,7 @@ Handlers.add('Get-Order-Details', Handlers.utils.hasMatchingTag('Action', 'Get-O
   ao.send({
     Target = msg.From,
     Action = 'Order-Details',
-    Data = json.encode(Utils.serializeWithoutCircularReferences(order))
+    Data = json.encode(order)
   })
 end)
 

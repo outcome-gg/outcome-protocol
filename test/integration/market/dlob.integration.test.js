@@ -11,11 +11,11 @@ import exp from "constants";
 
 dotenv.config();
 
-const exchange = process.env.TEST_EXCHANGE80;
+const dlob = process.env.TEST_DLOB;
 const collateralToken = process.env.TEST_COLLATERAL_TOKEN;
 const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS;
 
-console.log("EXCHANGE: ", exchange)
+console.log("DLOB: ", dlob)
 console.log("COLLATERAL TOKEN: ", collateralToken)
 console.log("CONDITIONAL TOKENS: ", conditionalTokens)
 
@@ -54,7 +54,7 @@ let orderIds;
 /* 
 * Tests
 */
-describe("exchange.integration.test", function () {
+describe("dlob.integration.test", function () {
   before(async () => ( 
     // Txn execution variables
     wallet = JSON.parse(
@@ -115,11 +115,11 @@ describe("exchange.integration.test", function () {
   // /************************************************************************ 
   // * Initialization and Setup
   // ************************************************************************/
-  // describe("exchange.Init", function () {
+  // describe("dlob.Init", function () {
   //   it("+ve should init exchange", async () => {
   //     let messageId;
   //     await message({
-  //       process: exchange,
+  //       process: dlob,
   //       tags: [
   //         { name: "Action", value: "Init" },
   //         { name: "ConditionId", value: conditionId },
@@ -143,7 +143,7 @@ describe("exchange.integration.test", function () {
 
   //     let { Messages, Error } = await result({
   //       message: messageId,
-  //       process: exchange,
+  //       process: dlob,
   //     });
 
   //     if (Error) {
@@ -182,7 +182,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (where no orders exists)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -196,7 +196,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -225,7 +225,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -239,7 +239,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -267,7 +267,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (where bid exists)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -281,7 +281,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -310,7 +310,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -324,7 +324,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -352,7 +352,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (where bid & ask exist)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -366,7 +366,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -395,7 +395,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Orders" },
         ],
@@ -409,7 +409,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -439,7 +439,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (after multiple orders w/o matching)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -453,7 +453,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -516,7 +516,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -530,7 +530,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -555,7 +555,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -569,7 +569,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -594,7 +594,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -608,7 +608,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -633,7 +633,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -647,7 +647,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -666,7 +666,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (same after rejected orders)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -680,7 +680,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -743,7 +743,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -757,7 +757,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -785,7 +785,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (including new 3dp bid)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -799,7 +799,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -863,7 +863,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -877,7 +877,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -903,7 +903,7 @@ describe("exchange.integration.test", function () {
       order.size *= 2
 
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -917,7 +917,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -943,7 +943,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (after updated order)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -957,7 +957,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1022,7 +1022,7 @@ describe("exchange.integration.test", function () {
       order.isBid = !order.isBid
 
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -1036,7 +1036,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1060,7 +1060,7 @@ describe("exchange.integration.test", function () {
       order.price = order.price + 1
 
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -1074,7 +1074,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1098,7 +1098,7 @@ describe("exchange.integration.test", function () {
       order.size = 0
 
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -1112,7 +1112,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1139,7 +1139,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (after canceled order)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -1153,7 +1153,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1218,7 +1218,7 @@ describe("exchange.integration.test", function () {
       order.size = 0
 
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -1232,7 +1232,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1251,7 +1251,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (no change after non-cancelation)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -1265,7 +1265,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1329,7 +1329,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -1343,7 +1343,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1370,7 +1370,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (after trade / filled order)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -1384,7 +1384,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1449,7 +1449,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -1463,7 +1463,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1495,7 +1495,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (after trade across orders)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -1509,7 +1509,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1572,7 +1572,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -1586,7 +1586,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1620,7 +1620,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (after ask order filled at diff levels)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -1634,7 +1634,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1697,7 +1697,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -1711,7 +1711,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1743,7 +1743,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (after all bids matched)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -1757,7 +1757,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1818,7 +1818,7 @@ describe("exchange.integration.test", function () {
     it("+ve should retrieve metrics", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -1832,7 +1832,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1888,7 +1888,7 @@ describe("exchange.integration.test", function () {
     it("+ve should retrieve best bid (where no bid exists)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Best-Bid" },
         ],
@@ -1902,7 +1902,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1926,7 +1926,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Order" },
         ],
@@ -1940,7 +1940,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -1968,7 +1968,7 @@ describe("exchange.integration.test", function () {
     it("+ve should retrieve best bid (where bid exists)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Best-Bid" },
         ],
@@ -1982,7 +1982,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2000,7 +2000,7 @@ describe("exchange.integration.test", function () {
     it("+ve should retrieve best ask", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Best-Ask" },
         ],
@@ -2014,7 +2014,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2032,7 +2032,7 @@ describe("exchange.integration.test", function () {
     it("+ve should retrieve spread", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Spread" },
         ],
@@ -2046,7 +2046,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2064,7 +2064,7 @@ describe("exchange.integration.test", function () {
     it("+ve should retrieve midPrice", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Mid-Price" },
         ],
@@ -2078,7 +2078,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2096,7 +2096,7 @@ describe("exchange.integration.test", function () {
     it("+ve should calculate market depth", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Market-Depth" },
         ],
@@ -2110,7 +2110,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2157,7 +2157,7 @@ describe("exchange.integration.test", function () {
     it("+ve should return total size", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Total-Size" },
         ],
@@ -2171,7 +2171,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2204,7 +2204,7 @@ describe("exchange.integration.test", function () {
 
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Orders" },
         ],
@@ -2218,7 +2218,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2251,7 +2251,7 @@ describe("exchange.integration.test", function () {
     it("-ve should return appropriate values when order book is empty", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -2265,7 +2265,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2334,7 +2334,7 @@ describe("exchange.integration.test", function () {
     it("+ve [process] should add bid/ask orders", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Orders" },
         ],
@@ -2348,7 +2348,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2383,7 +2383,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (after processing orders)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -2397,7 +2397,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2452,7 +2452,7 @@ describe("exchange.integration.test", function () {
     it("+ve should get order details (id exists)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Details" },
           { name: "OrderId", value: orderIds[0] },
@@ -2467,7 +2467,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2489,7 +2489,7 @@ describe("exchange.integration.test", function () {
       const orderId = 'orderId1234567890'
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Details" },
           { name: "OrderId", value: orderId },
@@ -2504,7 +2504,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2523,7 +2523,7 @@ describe("exchange.integration.test", function () {
     it("+ve should get order price (id exists)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Price" },
           { name: "OrderId", value: orderIds[0] },
@@ -2538,7 +2538,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2558,7 +2558,7 @@ describe("exchange.integration.test", function () {
       const orderId = 'orderId1234567890'
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Price" },
           { name: "OrderId", value: orderId },
@@ -2573,7 +2573,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2592,7 +2592,7 @@ describe("exchange.integration.test", function () {
     it("+ve should check order validity (valid)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Check-Order-Validity" },
         ],
@@ -2606,7 +2606,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2634,7 +2634,7 @@ describe("exchange.integration.test", function () {
       order.isBid = 'foo'
 
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Check-Order-Validity" },
         ],
@@ -2648,7 +2648,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2676,7 +2676,7 @@ describe("exchange.integration.test", function () {
       order.size = 'foo'
 
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Check-Order-Validity" },
         ],
@@ -2690,7 +2690,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2718,7 +2718,7 @@ describe("exchange.integration.test", function () {
       order.price = 'foo'
 
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Check-Order-Validity" },
         ],
@@ -2732,7 +2732,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2760,7 +2760,7 @@ describe("exchange.integration.test", function () {
       order.size = 'foo'
 
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Check-Order-Validity" },
         ],
@@ -2774,7 +2774,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2851,7 +2851,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (before testing risk)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -2865,7 +2865,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2919,7 +2919,7 @@ describe("exchange.integration.test", function () {
 
     it("+ve should calculate VWAP", async () => {let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-VWAP" },
         ],
@@ -2933,7 +2933,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2957,7 +2957,7 @@ describe("exchange.integration.test", function () {
     it("+ve should calculate bid exposure", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Bid-Exposure" },
         ],
@@ -2971,7 +2971,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -2990,7 +2990,7 @@ describe("exchange.integration.test", function () {
     it("+ve should calculate ask exposure", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Ask-Exposure" },
         ],
@@ -3004,7 +3004,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -3023,7 +3023,7 @@ describe("exchange.integration.test", function () {
     it("+ve should calculate net exposure", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Net-Exposure" },
         ],
@@ -3037,7 +3037,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -3056,7 +3056,7 @@ describe("exchange.integration.test", function () {
     it("+ve should get risk metrics (w/ orders)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Risk-Metrics" },
         ],
@@ -3070,7 +3070,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -3100,7 +3100,7 @@ describe("exchange.integration.test", function () {
     it("+ve [process] should add moreOrders (to check VWAP)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Orders" },
         ],
@@ -3114,7 +3114,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -3147,7 +3147,7 @@ describe("exchange.integration.test", function () {
     it("+ve [metrics] should retrieve orderbook metrics (after moreOrders)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Order-Book-Metrics" },
         ],
@@ -3161,7 +3161,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -3218,7 +3218,7 @@ describe("exchange.integration.test", function () {
     it("+ve should get risk metrics (w/ more orders)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Risk-Metrics" },
         ],
@@ -3232,7 +3232,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -3262,7 +3262,7 @@ describe("exchange.integration.test", function () {
     it("+ve [process] should add reverseOrders (to remove all orders)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Process-Orders" },
         ],
@@ -3276,7 +3276,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {
@@ -3317,7 +3317,7 @@ describe("exchange.integration.test", function () {
     it("+ve should risk metrics with zero exposures (w/o orders)", async () => {
       let messageId;
       await message({
-        process: exchange,
+        process: dlob,
         tags: [
           { name: "Action", value: "Get-Risk-Metrics" },
         ],
@@ -3331,7 +3331,7 @@ describe("exchange.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: exchange,
+        process: dlob,
       });
 
       if (Error) {

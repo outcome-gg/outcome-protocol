@@ -28,11 +28,8 @@ end
 
 -- Remove from the deque by uid
 function DequeMethods:popByUid(uid)
-  print("DequeMethods:popByUid")
   for i = self.head, self.tail do
-    print("i: " .. i)
     if self.data[i].uid == uid then
-      print("match")
       self.levelSize = self.levelSize - self.data[i].size
       self.tail = self.tail - 1
       table.remove(self.data, i)

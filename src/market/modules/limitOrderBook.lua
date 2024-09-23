@@ -1,6 +1,4 @@
-local deque = require('deque')
-local Order = require('order')
-local json = require('json')
+local deque = require('modules.deque')
 
 local LimitOrderBook = {}
 local LimitOrderBookMethods = {}
@@ -21,29 +19,16 @@ end
 
 -- Add an order to the book
 function LimitOrderBookMethods:add(order)
-  
-  print("")
-  print("")
-  print("")
-  print("--ADD--")
-  print(order.price .. ", " .. order.size .. ", " .. tostring(order.isBid))
   local orderType = order.isBid and "bids" or "asks"
   local oppositeOrderType = order.isBid and "asks" or "bids"
   local price = tostring(order.price)
   local executedTrades = {}
 
-  print("bestBid srt: " .. json.encode(self.bestBid))
-  print("bestAsk srt: " .. json.encode(self.bestAsk))
-
   -- First, try to match the order with opposite orders
   executedTrades = self:matchOrders(order)
-  print("executedTrades " .. json.encode(executedTrades))
-
-  print("order.size " .. tostring(order.size))
 
   -- If there's any remaining size of the order, add it to the order book
   if order.size > 0 then
-    print("order.size > 0")
     -- If the price level doesn't exist, initialize it with a deque
     if not self[orderType][price] then
       self[orderType][price] = deque:new()
@@ -63,15 +48,6 @@ function LimitOrderBookMethods:add(order)
     end
   end
 
-  print("")
-  print("=")
-  print("bestBid end: " .. json.encode(self.bestBid))
-  print("bestAsk end: " .. json.encode(self.bestAsk))
-  print("-")
-  print("bestBid end: " .. (self:getBestBid() and json.encode(self:getBestBid()) or "nil"))
-  print("bestAsk end: " .. (self:getBestAsk() and json.encode(self:getBestAsk()) or "nil"))
-  print("=")
-  print("")
   return true, order.size, executedTrades
 end
 
@@ -108,62 +84,30 @@ end
 
 -- Remove an order from the book
 function LimitOrderBookMethods:remove(order)
-  print("remove")
   local orderType = order.isBid and "bids" or "asks"
-  print("r1")
   local price = tostring(order.price)
-  print("r2")
   local priceLevel = self[orderType][price]
-  print("r3")
 
   if not priceLevel or not priceLevel.data or #priceLevel.data == 0 then return false end
-  print("r4")
-
-  print("priceLevel: " .. json.encode(priceLevel))
-
-  -- -- Find and remove the order in the deque
-  -- for i = priceLevel.head, priceLevel.tail do
-  --   print("r5")
-  --   print("i: " .. i)
-  --   if priceLevel.data[i].uid == order.uid then
-  --     print("r6")
-  --     table.remove(priceLevel.data, i)
-  --     print("r7")
-  --     break
-  --   end
-  -- end
-
-  print("order.uid: " .. order.uid)
-  print("self[orderType][price]: " .. json.encode(self[orderType][price]))
 
   -- Remove the order in the deque by value
   self[orderType][price]:popByUid(order.uid)
 
-  print("r8")
   -- Remove the price level if it is empty
   if priceLevel:isEmpty() then
-    print("r9")
     self[orderType][price] = nil
-    print("r10")
 
     -- Update best bid/ask if necessary
     if order.isBid and self.bestBid and self.bestBid.uid == order.uid then
-      print("r11")
       self.bestBid = self:getNextBestBid()
-      print("r12")
     elseif not order.isBid and self.bestAsk and self.bestAsk.uid == order.uid then
-      print("r13")
       self.bestAsk = self:getNextBestAsk()
-      print("r14")
     end
   end
-
-  print("r15")
 
   -- Remove from global order map
   self.orders[order.uid] = nil
 
-  print("r16")
   return true, 0, {}
 end
 
@@ -192,15 +136,10 @@ end
 
 -- Get the next best ask
 function LimitOrderBookMethods:getNextBestAsk()
-  print(">>LimitOrderBookMethods:getNextBestAsk")
   local bestAskPrice = nil
   for price, priceLevel in pairs(self.asks) do
-    -- print("price: " .. price)
-    -- print("priceLevel: " .. json.encode(priceLevel))
-    -- Check if the price level contains valid orders
     if #priceLevel.data > 0 and priceLevel.data[priceLevel.head].size > 0 and (not bestAskPrice or tonumber(price) < tonumber(bestAskPrice)) then
       bestAskPrice = price
-      print("bestAskPrice: " .. bestAskPrice)
     end
   end
   return self.asks[bestAskPrice] and self.asks[bestAskPrice]:peekHead() or nil
@@ -220,13 +159,8 @@ function LimitOrderBookMethods:matchOrders(order)
       table.insert(executedTrades, trade)
       remainingSize = remainingSize - trade.size
     end
-    -- print("trade:" .. json.encode(trade))
-    -- print("order.isBid: " .. tostring(order.isBid))
     bestLevel = order.isBid and self:getNextBestAsk() or self:getNextBestBid()
   end
-  print("-")
-  print("bestLevel af:" .. json.encode(bestLevel))
-  print("")
 
   order.size = remainingSize
 
@@ -242,21 +176,14 @@ end
 
 -- Execute trade
 function LimitOrderBookMethods:executeTrade(order, matchedOrder)
-  print("executeTrade order.size " .. tostring(order.size))
   local tradeSize = math.min(order.size, matchedOrder.size)
-  print("t0")
   matchedOrder.size = matchedOrder.size - tradeSize
-  print("t1")
   order.size = order.size - tradeSize
-  print("t2")
 
   -- If the matched order's size is 0, remove it from the book
   if matchedOrder.size == 0 then
-    print("t3")
     self:remove(matchedOrder)
-    print("t4")
   end
-  print("t5")
 
   return {
     buyer = order.isBid and order.uid or matchedOrder.uid,
@@ -434,15 +361,11 @@ end
 ]]
 --@dev Calculates Volume-Weighted Average Price (VWAP)
 function LimitOrderBookMethods:getVWAP()
-  print("LimitOrderBookMethods:getVWAP")
-  print("bids: " .. json.encode(self.bids))
   local bidsTotalVolume, asksTotalVolume = 0, 0
   local bidsWeightedSum, asksWeightedSum = 0, 0
   local bidsVWAP, asksVWAP = 0, 0
 
   for price, level in pairs(self.bids) do
-    print("price: " .. price)
-    print("level: " .. json.encode(level))
     bidsWeightedSum = bidsWeightedSum + (price * level.levelSize)
     bidsTotalVolume = bidsTotalVolume + level.levelSize
   end
