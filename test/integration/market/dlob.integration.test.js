@@ -1362,7 +1362,7 @@ describe("dlob.integration.test", function () {
       expect(orderId_).to.not.equal("")
       expect(orderSize_).to.equal("0")
       expect(executedTrades_.length).to.be.equal(1)
-      expect(executedTrades_[0].price).to.be.equal(order.price)
+      expect(executedTrades_[0].price).to.be.equal((order.price*1000).toString())
       expect(executedTrades_[0].size).to.be.equal(order.size)
     })
 
@@ -1448,9 +1448,9 @@ describe("dlob.integration.test", function () {
       expect(orderId_).to.not.equal("")
       expect(orderSize_).to.equal("2")
       expect(executedTrades_.length).to.be.equal(2)
-      expect(executedTrades_[0].price).to.be.equal(order.price)
+      expect(executedTrades_[0].price).to.be.equal((order.price * 1000).toString())
       expect(executedTrades_[0].size).to.be.equal(5)
-      expect(executedTrades_[1].price).to.be.equal(order.price)
+      expect(executedTrades_[1].price).to.be.equal((order.price * 1000).toString())
       expect(executedTrades_[1].size).to.be.equal(5)
     })
 
@@ -1496,1648 +1496,1689 @@ describe("dlob.integration.test", function () {
       expect(data_.lockedFunds).to.equal(0)
       expect(data_.lockedShares).to.equal(lockedShares)
     })
+
+    it("+ve [process] should add ask order (to clear LOB for next tests)", async () => {
+      let order = {'isBid' : true, 'size' : 9, 'price' : 101}
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
+      const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
+      const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
+      const executedTrades_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Processed")
+      expect(success_).to.equal("true")
+      expect(orderId_).to.not.equal("")
+      expect(orderSize_).to.equal("0")
+      expect(executedTrades_.length).to.be.equal(3)
+    })
   })
 
-  // /************************************************************************ 
-  // * Order Processing & Management
-  // ************************************************************************/
-  // describe("Order Processing & Management", function () {
-  //   it("+ve [metrics] should retrieve orderbook metrics (where no orders exists)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('nil')
-  //     expect(data_.bestAsk).to.equal('nil')
-  //     expect(data_.spread).to.equal('nil')
-  //     expect(data_.midPrice).to.equal('nil')
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(0)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(0)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(0)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0)
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(0)
-  //   });
-
-  //   it("+ve should add a new bid order", async () => {
-  //     let order = limitOrders[limitOrders.length - 1]
-  //     expect(order.isBid).to.be.equal(true)
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
-  //     const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-  //     const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
-  //     const executedTrades_ = JSON.parse(Messages[0].Data)
-
-  //     expect(action_).to.equal("Order-Processed")
-  //     expect(success_).to.equal('true')
-  //     expect(typeof(orderId_)).to.equal('string')
-  //     expect(orderId_).to.not.equal('')
-  //     expect(orderSize_).to.equal(order.size.toString())
-  //     expect(executedTrades_.length).to.equal(0)
-
-  //     orderIds.push(orderId_)
-  //   })
-
-  //   it("+ve [metrics] should retrieve orderbook metrics (where bid exists)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     const liquidity = limitOrders[limitOrders.length - 1].size * limitOrders[limitOrders.length - 1].price
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('97000')
-  //     expect(data_.bestAsk).to.equal('nil')
-  //     expect(data_.spread).to.equal('nil')
-  //     expect(data_.midPrice).to.equal('nil')
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(liquidity)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(liquidity)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(0)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(1)
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(0)
-  //   });
-
-  //   it("+ve should add a new ask order", async () => {
-  //     let order = limitOrders[0]
-  //     expect(order.isBid).to.be.equal(false)
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-  //     const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
-  //     const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
-  //     const executedTrades_ = JSON.parse(Messages[0].Data)
-
-  //     expect(action_).to.equal("Order-Processed")
-  //     expect(success_).to.equal('true')
-  //     expect(typeof(orderId_)).to.equal('string')
-  //     expect(orderId_).to.not.equal('')
-  //     expect(orderSize_).to.equal(order.size.toString())
-  //     expect(executedTrades_.length).to.equal(0)
-
-  //     orderIds.push(orderId_)
-  //   })
-
-  //   it("+ve [metrics] should retrieve orderbook metrics (where bid & ask exist)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     const bidLiquidity = limitOrders[limitOrders.length - 1].size * limitOrders[limitOrders.length - 1].price
-  //     const askLiquidity = limitOrders[0].size * limitOrders[0].price
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('97000')
-  //     expect(data_.bestAsk).to.equal('101000')
-  //     expect(Number(data_.spread)).to.equal(4000)
-  //     expect(Number(data_.midPrice)).to.equal(99000)
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(bidLiquidity + askLiquidity)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(bidLiquidity)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(askLiquidity)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(1)
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(1)
-  //   });
-
-  //   it("+ve should add orders at different price levels", async () => {
-  //     // add remaining limitOrders
-  //     let orders = limitOrders.slice(1, limitOrders.length - 1);
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Orders" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(orders),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const successes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Successes').value)
-  //     const orderIds_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrderIds').value)
-  //     const orderSizes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrderSizes').value)
-  //     const executedtradesList_ = JSON.parse(Messages[0].Data)
-
-  //     expect(action_).to.equal("Orders-Processed")
-  //     for (let i = 0; i < orders.length; i++) {
-  //       expect(successes_[i]).to.equal(true)
-  //       expect(orderIds_[i]).to.not.equal('')
-  //       expect(orderSizes_[i]).to.equal(orders[i].size)
-  //       expect(executedtradesList_[i].length).to.equal(0)
-  //       expect(orderSizes_[i]).to.equal(orders[i].size)
-
-  //       orderIds.push(orderIds_[i])
-  //     }
-  //   });
-
-  //   it("+ve [metrics] should retrieve orderbook metrics (after multiple orders w/o matching)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
-  //     const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
-
-  //     let orderBookBids = {}
-  //     let orderBookAsks = {}
-
-  //     for (let i = 0; i < priceLevelsBids.length; i++) {
-  //       let priceLevel = priceLevelsBids[i]
-  //       if (orderBookBids[priceLevel.price] === undefined) {
-  //         orderBookBids[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookBids[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     for (let i = 0; i < priceLevelsAsks.length; i++) {
-  //       let priceLevel = priceLevelsAsks[i]
-  //       if (orderBookAsks[priceLevel.price] === undefined) {
-  //         orderBookAsks[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookAsks[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('99000')
-  //     expect(data_.bestAsk).to.equal('100000')
-  //     expect(Number(data_.spread)).to.equal(1000)
-  //     expect(Number(data_.midPrice)).to.equal(99500)
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6030)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4065)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(4) // 4 priceLevels
-  //     expect(orderBookAsks['103000']).to.equal(5)
-  //     expect(orderBookAsks['102000']).to.equal(20)
-  //     expect(orderBookAsks['101000']).to.equal(10)
-  //     expect(orderBookAsks['100000']).to.equal(5)
-  //     expect(orderBookBids['99000']).to.equal(10)
-  //     expect(orderBookBids['98000']).to.equal(5)
-  //     expect(orderBookBids['97000']).to.equal(5)
-  //   });
-
-  //   it("-ve should reject an order with invalid (non-integer) size", async () => {
-  //     // non-integer size
-  //     let order = {'isBid' : false, 
-  //       'size' : 5.1, 
-  //       'price' : 101
-  //     }
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const errorMessage_ = Messages[0].Data
-
-  //     expect(action_).to.equal("Process-Order-Error")
-  //     expect(errorMessage_).to.equal("Invalid size precision")
-  //   })
-
-  //   it("-ve should reject an order with invalid (negative) size", async () => {
-  //     // negative size
-  //     let order = {'isBid' : false, 
-  //       'size' : -1, 
-  //       'price' : 101
-  //     }
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const errorMessage_ = Messages[0].Data
-
-  //     expect(action_).to.equal("Process-Order-Error")
-  //     expect(errorMessage_).to.equal("Invalid size")
-  //   })
-
-  //   it("-ve should reject an order with invalid (negative) price", async () => {
-  //     // negative price
-  //     let order = {'isBid' : false, 
-  //       'size' : 5, 
-  //       'price' : -101
-  //     }
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const errorMessage_ = Messages[0].Data
-
-  //     expect(action_).to.equal("Process-Order-Error")
-  //     expect(errorMessage_).to.equal("Invalid price")
-  //   })
-
-  //   it("-ve should reject an order with invalid (zero) price", async () => {
-  //     // negative price
-  //     let order = {'isBid' : false, 
-  //       'size' : 5, 
-  //       'price' : 0
-  //     }
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const errorMessage_ = Messages[0].Data
-
-  //     expect(action_).to.equal("Process-Order-Error")
-  //     expect(errorMessage_).to.equal("Invalid price")
-  //   })
-
-  //   it("+ve [metrics] should retrieve orderbook metrics (same after rejected orders)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
-  //     const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
-
-  //     let orderBookBids = {}
-  //     let orderBookAsks = {}
-
-  //     for (let i = 0; i < priceLevelsBids.length; i++) {
-  //       let priceLevel = priceLevelsBids[i]
-  //       if (orderBookBids[priceLevel.price] === undefined) {
-  //         orderBookBids[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookBids[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     for (let i = 0; i < priceLevelsAsks.length; i++) {
-  //       let priceLevel = priceLevelsAsks[i]
-  //       if (orderBookAsks[priceLevel.price] === undefined) {
-  //         orderBookAsks[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookAsks[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('99000')
-  //     expect(data_.bestAsk).to.equal('100000')
-  //     expect(Number(data_.spread)).to.equal(1000)
-  //     expect(Number(data_.midPrice)).to.equal(99500)
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6030)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4065)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(4) // 4 priceLevels
-  //     expect(orderBookAsks['103000']).to.equal(5)
-  //     expect(orderBookAsks['102000']).to.equal(20)
-  //     expect(orderBookAsks['101000']).to.equal(10)
-  //     expect(orderBookAsks['100000']).to.equal(5)
-  //     expect(orderBookBids['99000']).to.equal(10)
-  //     expect(orderBookBids['98000']).to.equal(5)
-  //     expect(orderBookBids['97000']).to.equal(5)
-  //   });
-
-  //   it("+ve should accept an order with 3dp precision price", async () => {
-  //     // negative price
-  //     let order = {'isBid' : false, 
-  //       'size' : 5, 
-  //       'price' : 101.123
-  //     }
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-  //     const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
-  //     const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
-  //     const executedTrades_ = JSON.parse(Messages[0].Data)
-
-  //     expect(action_).to.equal("Order-Processed")
-  //     expect(success_).to.equal('true')
-  //     expect(typeof(orderId_)).to.equal('string')
-  //     expect(orderId_).to.not.equal('')
-  //     expect(orderSize_).to.equal(order.size.toString())
-  //     expect(executedTrades_.length).to.equal(0)
-
-  //     orderIds.push(orderId_)
-  //   })
-
-  //   it("+ve [metrics] should retrieve orderbook metrics (including new 3dp bid)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
-  //     const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
-
-  //     let orderBookBids = {}
-  //     let orderBookAsks = {}
-
-  //     for (let i = 0; i < priceLevelsBids.length; i++) {
-  //       let priceLevel = priceLevelsBids[i]
-  //       if (orderBookBids[priceLevel.price] === undefined) {
-  //         orderBookBids[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookBids[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     for (let i = 0; i < priceLevelsAsks.length; i++) {
-  //       let priceLevel = priceLevelsAsks[i]
-  //       if (orderBookAsks[priceLevel.price] === undefined) {
-  //         orderBookAsks[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookAsks[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('99000')
-  //     expect(data_.bestAsk).to.equal('100000')
-  //     expect(Number(data_.spread)).to.equal(1000)
-  //     expect(Number(data_.midPrice)).to.equal(99500)
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6535.615)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4570.615)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
-  //     expect(orderBookAsks['103000']).to.equal(5)
-  //     expect(orderBookAsks['102000']).to.equal(20)
-  //     expect(orderBookAsks['101123']).to.equal(5)
-  //     expect(orderBookAsks['101000']).to.equal(10)
-  //     expect(orderBookAsks['100000']).to.equal(5)
-  //     expect(orderBookBids['99000']).to.equal(10)
-  //     expect(orderBookBids['98000']).to.equal(5)
-  //     expect(orderBookBids['97000']).to.equal(5)
-  //   });
-
-  //   it("-ve should reject an order with invalid (>3dp) price", async () => {
-  //     // negative price
-  //     let order = {'isBid' : false, 
-  //       'size' : 5, 
-  //       'price' : 201.1234
-  //     }
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const errorMessage_ = Messages[0].Data
-
-  //     expect(action_).to.equal("Process-Order-Error")
-  //     expect(errorMessage_).to.equal("Invalid price precision")
-  //   })
-
-  //   it("+ve should update an existing order (size)", async () => {
-  //     let messageId;
-
-  //     let order = JSON.parse(JSON.stringify(limitOrders[0]));
-  //     // set the order id
-  //     order.uid = orderIds[1]
-  //     // update the order size
-  //     order.size *= 2
-
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-  //     const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
-  //     const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
-  //     const executedTrades_ = JSON.parse(Messages[0].Data)
-
-  //     expect(action_).to.equal("Order-Processed")
-  //     expect(success_).to.equal('true')
-  //     expect(typeof(orderId_)).to.equal('string')
-  //     expect(orderId_).to.not.equal('')
-  //     expect(orderSize_).to.equal(order.size.toString())
-  //     expect(executedTrades_.length).to.equal(0)
-  //   })
-
-  //   it("+ve [metrics] should retrieve orderbook metrics (after updated order)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
-  //     const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
-
-  //     let orderBookBids = {}
-  //     let orderBookAsks = {}
-
-  //     for (let i = 0; i < priceLevelsBids.length; i++) {
-  //       let priceLevel = priceLevelsBids[i]
-  //       if (orderBookBids[priceLevel.price] === undefined) {
-  //         orderBookBids[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookBids[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     for (let i = 0; i < priceLevelsAsks.length; i++) {
-  //       let priceLevel = priceLevelsAsks[i]
-  //       if (orderBookAsks[priceLevel.price] === undefined) {
-  //         orderBookAsks[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookAsks[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('99000')
-  //     expect(data_.bestAsk).to.equal('100000')
-  //     expect(Number(data_.spread)).to.equal(1000)
-  //     expect(Number(data_.midPrice)).to.equal(99500)
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(7040.615)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(5075.615)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
-  //     expect(orderBookAsks['103000']).to.equal(5)
-  //     expect(orderBookAsks['102000']).to.equal(20)
-  //     expect(orderBookAsks['101123']).to.equal(5)
-  //     expect(orderBookAsks['101000']).to.equal(15)
-  //     expect(orderBookAsks['100000']).to.equal(5)
-  //     expect(orderBookBids['99000']).to.equal(10)
-  //     expect(orderBookBids['98000']).to.equal(5)
-  //     expect(orderBookBids['97000']).to.equal(5)
-  //   });
-
-  //   it("+ve should reject an update to existing order (isBid)", async () => {
-  //     let messageId;
-
-  //     let order = JSON.parse(JSON.stringify(limitOrders[0]));
-  //     // set the order id
-  //     order.uid = orderIds[1]
-  //     // update the order direction
-  //     order.isBid = !order.isBid
-
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const errorMessage_ = Messages[0].Data
-
-  //     expect(action_).to.equal("Process-Order-Error")
-  //     expect(errorMessage_).to.equal("Invalid isBid")
-  //   })
-
-  //   it("+ve should reject an update to existing order (price)", async () => {
-  //     let messageId;
-
-  //     let order = JSON.parse(JSON.stringify(limitOrders[0]));
-  //     // set the order id
-  //     order.uid = orderIds[1]
-  //     // update the order price
-  //     order.price = order.price + 1
-
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const errorMessage_ = Messages[0].Data
-
-  //     expect(action_).to.equal("Process-Order-Error")
-  //     expect(errorMessage_).to.equal("Invalid price")
-  //   })
-
-  //   it("+ve should cancel an existing order", async () => {
-  //     let messageId;
-
-  //     let order = JSON.parse(JSON.stringify(limitOrders[0]));
-  //     // set the order id
-  //     order.uid = orderIds[1]
-  //     // cancel order by setting size to zero
-  //     order.size = 0
-
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-  //     const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
-  //     const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
-  //     const executedTrades_ = JSON.parse(Messages[0].Data)
-
-  //     expect(action_).to.equal("Order-Processed")
-  //     expect(success_).to.equal('true')
-  //     expect(typeof(orderId_)).to.equal('string')
-  //     expect(orderId_).to.not.equal('')
-  //     expect(orderSize_).to.equal('0')
-  //     expect(executedTrades_.length).to.equal(0)
-  //     expect(orderSize_).to.equal(order.size.toString())
-  //   })
-
-  //   it("+ve [metrics] should retrieve orderbook metrics (after canceled order)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
-  //     const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
-
-  //     let orderBookBids = {}
-  //     let orderBookAsks = {}
-
-  //     for (let i = 0; i < priceLevelsBids.length; i++) {
-  //       let priceLevel = priceLevelsBids[i]
-  //       if (orderBookBids[priceLevel.price] === undefined) {
-  //         orderBookBids[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookBids[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     for (let i = 0; i < priceLevelsAsks.length; i++) {
-  //       let priceLevel = priceLevelsAsks[i]
-  //       if (orderBookAsks[priceLevel.price] === undefined) {
-  //         orderBookAsks[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookAsks[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('99000')
-  //     expect(data_.bestAsk).to.equal('100000')
-  //     expect(Number(data_.spread)).to.equal(1000)
-  //     expect(Number(data_.midPrice)).to.equal(99500)
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6030.615)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4065.615)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
-  //     expect(orderBookAsks['103000']).to.equal(5)
-  //     expect(orderBookAsks['102000']).to.equal(20)
-  //     expect(orderBookAsks['101123']).to.equal(5)
-  //     expect(orderBookAsks['101000']).to.equal(5)
-  //     expect(orderBookAsks['100000']).to.equal(5)
-  //     expect(orderBookBids['99000']).to.equal(10)
-  //     expect(orderBookBids['98000']).to.equal(5)
-  //     expect(orderBookBids['97000']).to.equal(5)
-  //   });
-
-  //   it("-ve should reject cancelation of a non-existent order", async () => {
-  //     let messageId;
-
-  //     let order = JSON.parse(JSON.stringify(limitOrders[0]));
-  //     // set the order id
-  //     order.uid = orderIds[1]
-  //     // cancel order by setting size to zero
-  //     order.size = 0
-
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const errorMessage_ = Messages[0].Data
-
-  //     expect(action_).to.equal("Process-Order-Error")
-  //     expect(errorMessage_).to.equal("Invalid order id")
-  //   })
-
-  //   it("+ve [metrics] should retrieve orderbook metrics (no change after non-cancelation)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
-  //     const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
-
-  //     let orderBookBids = {}
-  //     let orderBookAsks = {}
-
-  //     for (let i = 0; i < priceLevelsBids.length; i++) {
-  //       let priceLevel = priceLevelsBids[i]
-  //       if (orderBookBids[priceLevel.price] === undefined) {
-  //         orderBookBids[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookBids[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     for (let i = 0; i < priceLevelsAsks.length; i++) {
-  //       let priceLevel = priceLevelsAsks[i]
-  //       if (orderBookAsks[priceLevel.price] === undefined) {
-  //         orderBookAsks[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookAsks[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('99000')
-  //     expect(data_.bestAsk).to.equal('100000')
-  //     expect(Number(data_.spread)).to.equal(1000)
-  //     expect(Number(data_.midPrice)).to.equal(99500)
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6030.615)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4065.615)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 5 priceLevels
-  //     expect(orderBookAsks['103000']).to.equal(5)
-  //     expect(orderBookAsks['102000']).to.equal(20)
-  //     expect(orderBookAsks['101123']).to.equal(5)
-  //     expect(orderBookAsks['101000']).to.equal(5)
-  //     expect(orderBookAsks['100000']).to.equal(5)
-  //     expect(orderBookBids['99000']).to.equal(10)
-  //     expect(orderBookBids['98000']).to.equal(5)
-  //     expect(orderBookBids['97000']).to.equal(5)
-  //   });
-
-  //   it("+ve should fill an order (bid)", async () => {
-  //     let order = {
-  //       'isBid' : true, 
-  //       'size' : 5, 
-  //       'price' : 101
-  //     }
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-  //     const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
-  //     const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
-  //     const executedTrades_ = JSON.parse(Messages[0].Data)
-
-  //     expect(action_).to.equal("Order-Processed")
-  //     expect(success_).to.equal('true')
-  //     expect(typeof(orderId_)).to.equal('string')
-  //     expect(orderId_).to.not.equal('')
-
-  //     expect(executedTrades_[0].size).to.equal(order.size)
-  //     expect(orderSize_).to.equal((order.size - executedTrades_[0].size).toString())
-  //   })
-
-  //   it("+ve [metrics] should retrieve orderbook metrics (after trade / filled order)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
-  //     const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
-
-  //     let orderBookBids = {}
-  //     let orderBookAsks = {}
-
-  //     for (let i = 0; i < priceLevelsBids.length; i++) {
-  //       let priceLevel = priceLevelsBids[i]
-  //       if (orderBookBids[priceLevel.price] === undefined) {
-  //         orderBookBids[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookBids[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     for (let i = 0; i < priceLevelsAsks.length; i++) {
-  //       let priceLevel = priceLevelsAsks[i]
-  //       if (orderBookAsks[priceLevel.price] === undefined) {
-  //         orderBookAsks[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookAsks[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     // TRADE of 5 shares at 100.000
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('99000')
-  //     expect(data_.bestAsk).to.equal('101000')
-  //     expect(Number(data_.spread)).to.equal(2000)
-  //     expect(Number(data_.midPrice)).to.equal(100000)
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(5530.615)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(3565.615)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // priceLevels
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(4) // priceLevels
-  //     expect(orderBookAsks['103000']).to.equal(5)
-  //     expect(orderBookAsks['102000']).to.equal(20)
-  //     expect(orderBookAsks['101123']).to.equal(5)
-  //     expect(orderBookAsks['101000']).to.equal(5)
-  //     expect(orderBookBids['99000']).to.equal(10)
-  //     expect(orderBookBids['98000']).to.equal(5)
-  //     expect(orderBookBids['97000']).to.equal(5)
-  //   });
-
-  //   it("+ve should fill an order across multiple orders (bid)", async () => {
-  //     let order = {
-  //       'isBid' : true, 
-  //       'size' : 10, 
-  //       'price' : 102
-  //     }
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
-  //     const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-  //     const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
-  //     const executedTrades_ = JSON.parse(Messages[0].Data)
-
-  //     expect(action_).to.equal("Order-Processed")
-  //     expect(success_).to.equal('true')
-  //     expect(typeof(orderId_)).to.equal('string')
-  //     expect(orderId_).to.not.equal('')
-
-  //     expect(executedTrades_.length).to.equal(2)
-  //     expect(executedTrades_[0].size).to.equal(5)
-  //     expect(executedTrades_[1].size).to.equal(5)
-  //     expect(executedTrades_[0].price).to.equal('101000')
-  //     expect(executedTrades_[1].price).to.equal('101123')
-  //     expect(orderSize_).to.equal('0')
-  //     expect(orderSize_).to.equal((order.size - executedTrades_[0].size - executedTrades_[1].size).toString())
-  //   })
-
-  //   it("+ve [metrics] should retrieve orderbook metrics (after trade across orders)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
-  //     const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
-
-  //     let orderBookBids = {}
-  //     let orderBookAsks = {}
-
-  //     for (let i = 0; i < priceLevelsBids.length; i++) {
-  //       let priceLevel = priceLevelsBids[i]
-  //       if (orderBookBids[priceLevel.price] === undefined) {
-  //         orderBookBids[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookBids[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     for (let i = 0; i < priceLevelsAsks.length; i++) {
-  //       let priceLevel = priceLevelsAsks[i]
-  //       if (orderBookAsks[priceLevel.price] === undefined) {
-  //         orderBookAsks[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookAsks[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     // TRADE matches asks of 5 shares at 101.000 + 5 shares at 101.123
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('99000')
-  //     expect(data_.bestAsk).to.equal('102000')
-  //     expect(Number(data_.spread)).to.equal(3000)
-  //     expect(Number(data_.midPrice)).to.equal(100500)
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(4520)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(2555)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // priceLevels
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(2) // priceLevels
-  //     expect(orderBookAsks['103000']).to.equal(5)
-  //     expect(orderBookAsks['102000']).to.equal(20)
-  //     expect(orderBookBids['99000']).to.equal(10)
-  //     expect(orderBookBids['98000']).to.equal(5)
-  //     expect(orderBookBids['97000']).to.equal(5)
-  //   });
-
-  //   it("+ve should fill an order across different price levels (ask)", async () => {
-  //     let order = {
-  //       'isBid' : false, 
-  //       'size' : 12, 
-  //       'price' : 96.5
-  //     }
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
-  //     const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-  //     const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
-  //     const executedTrades_ = JSON.parse(Messages[0].Data)
-
-  //     expect(action_).to.equal("Order-Processed")
-  //     expect(success_).to.equal('true')
-  //     expect(typeof(orderId_)).to.equal('string')
-  //     expect(orderId_).to.not.equal('')
-
-  //     expect(executedTrades_.length).to.equal(3)
-  //     expect(executedTrades_[0].size).to.equal(5)
-  //     expect(executedTrades_[1].size).to.equal(5)
-  //     expect(executedTrades_[2].size).to.equal(2)
-  //     expect(executedTrades_[0].price).to.equal('99000')
-  //     expect(executedTrades_[1].price).to.equal('99000')
-  //     expect(executedTrades_[2].price).to.equal('98000')
-  //     expect(orderSize_).to.equal('0')
-  //     expect(orderSize_).to.equal((order.size - executedTrades_[0].size - executedTrades_[1].size - executedTrades_[2].size).toString())
-  //   })
-
-  //   it("+ve [metrics] should retrieve orderbook metrics (after ask order filled at diff levels)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
-  //     const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
-
-  //     let orderBookBids = {}
-  //     let orderBookAsks = {}
-
-  //     for (let i = 0; i < priceLevelsBids.length; i++) {
-  //       let priceLevel = priceLevelsBids[i]
-  //       if (orderBookBids[priceLevel.price] === undefined) {
-  //         orderBookBids[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookBids[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     for (let i = 0; i < priceLevelsAsks.length; i++) {
-  //       let priceLevel = priceLevelsAsks[i]
-  //       if (orderBookAsks[priceLevel.price] === undefined) {
-  //         orderBookAsks[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookAsks[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     // ORDER is ask of 2 shares at 96.500
-  //     // TRADE matches bids of 10 shares at 99.000 
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('98000')
-  //     expect(data_.bestAsk).to.equal('102000')
-  //     expect(Number(data_.spread)).to.equal(4000)
-  //     expect(Number(data_.midPrice)).to.equal(100000)
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(3334)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(779)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(2555)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(2) // 3 priceLevels
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(2) // 5 priceLevels
-  //     expect(orderBookAsks['103000']).to.equal(5)
-  //     expect(orderBookAsks['102000']).to.equal(20)
-  //     expect(orderBookBids['98000']).to.equal(3)
-  //     expect(orderBookBids['97000']).to.equal(5)
-  //   });
-
-  //   it("+ve should partially fill an order and create a new position (ask)", async () => {
-  //     let order = {
-  //       'isBid' : false, 
-  //       'size' : 13, 
-  //       'price' : 96.5
-  //     }
-
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Process-Order" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: JSON.stringify(order),
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
-  //     const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
-  //     const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
-  //     const executedTrades_ = JSON.parse(Messages[0].Data)
-
-  //     expect(action_).to.equal("Order-Processed")
-  //     expect(success_).to.equal('true')
-  //     expect(typeof(orderId_)).to.equal('string')
-  //     expect(orderId_).to.not.equal('')
-
-  //     expect(executedTrades_.length).to.equal(2)
-  //     expect(executedTrades_[0].size).to.equal(3)
-  //     expect(executedTrades_[1].size).to.equal(5)
-  //     expect(executedTrades_[0].price).to.equal('98000')
-  //     expect(executedTrades_[1].price).to.equal('97000')
-  //     expect(orderSize_).to.equal('5')
-  //     expect(orderSize_).to.equal((order.size - executedTrades_[0].size - executedTrades_[1].size).toString())
-  //   })
-
-  //   it("+ve [metrics] should retrieve orderbook metrics (after all bids matched)", async () => {
-  //     let messageId;
-  //     await message({
-  //       process: dlob,
-  //       tags: [
-  //         { name: "Action", value: "Get-Order-Book-Metrics" },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: dlob,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-  //     const data_ = JSON.parse(Messages[0].Data)
-
-  //     const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
-  //     const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
-
-  //     let orderBookBids = {}
-  //     let orderBookAsks = {}
-
-  //     for (let i = 0; i < priceLevelsBids.length; i++) {
-  //       let priceLevel = priceLevelsBids[i]
-  //       if (orderBookBids[priceLevel.price] === undefined) {
-  //         orderBookBids[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookBids[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     for (let i = 0; i < priceLevelsAsks.length; i++) {
-  //       let priceLevel = priceLevelsAsks[i]
-  //       if (orderBookAsks[priceLevel.price] === undefined) {
-  //         orderBookAsks[priceLevel.price] = priceLevel.levelSize
-  //       } else {
-  //         orderBookAsks[priceLevel.price] += priceLevel.levelSize
-  //       }
-  //     }
-
-  //     // ORDER is ask of 5 shares at 96.500
-  //     // TRADE matches bids of 3 and 5 shares at 98.000 and 97.000, respectively
-
-  //     expect(action_).to.equal("Order-Book-Metrics")
-  //     expect(data_.bestBid).to.equal('nil')
-  //     expect(data_.bestAsk).to.equal('96500')
-  //     expect(data_.spread).to.equal('nil')
-  //     expect(data_.midPrice).to.equal('nil')
-  //     expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(3037.5)
-  //     expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(0)
-  //     expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(3037.5)
-  //     expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0) // priceLevels
-  //     expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(3) // priceLevels
-  //     expect(orderBookAsks['103000']).to.equal(5)
-  //     expect(orderBookAsks['102000']).to.equal(20)
-  //     expect(orderBookAsks['96500']).to.equal(5)
-  //   });
-  // })
+  /************************************************************************ 
+  * Order Processing & Management
+  ************************************************************************/
+  describe("Order Processing & Management", function () {
+    it("+ve [metrics] should retrieve orderbook metrics (where no orders exists)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('nil')
+      expect(data_.bestAsk).to.equal('nil')
+      expect(data_.spread).to.equal('nil')
+      expect(data_.midPrice).to.equal('nil')
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(0)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(0)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(0)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0)
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(0)
+    });
+
+    it("+ve should add a new bid order", async () => {
+      let order = limitOrders[limitOrders.length - 1]
+      expect(order.isBid).to.be.equal(true)
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
+      const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
+      const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
+      const executedTrades_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Processed")
+      expect(success_).to.equal('true')
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+      expect(orderSize_).to.equal(order.size.toString())
+      expect(executedTrades_.length).to.equal(0)
+
+      orderIds.push(orderId_)
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (where bid exists)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const liquidity = limitOrders[limitOrders.length - 1].size * limitOrders[limitOrders.length - 1].price
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('97000')
+      expect(data_.bestAsk).to.equal('nil')
+      expect(data_.spread).to.equal('nil')
+      expect(data_.midPrice).to.equal('nil')
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(liquidity)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(liquidity)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(0)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(1)
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(0)
+    });
+
+    it("+ve should add a new ask order", async () => {
+      let order = limitOrders[0]
+      expect(order.isBid).to.be.equal(false)
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
+      const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
+      const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
+      const executedTrades_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Processed")
+      expect(success_).to.equal('true')
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+      expect(orderSize_).to.equal(order.size.toString())
+      expect(executedTrades_.length).to.equal(0)
+
+      orderIds.push(orderId_)
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (where bid & ask exist)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const bidLiquidity = limitOrders[limitOrders.length - 1].size * limitOrders[limitOrders.length - 1].price
+      const askLiquidity = limitOrders[0].size * limitOrders[0].price
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('97000')
+      expect(data_.bestAsk).to.equal('101000')
+      expect(Number(data_.spread)).to.equal(4000)
+      expect(Number(data_.midPrice)).to.equal(99000)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(bidLiquidity + askLiquidity)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(bidLiquidity)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(askLiquidity)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(1)
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(1)
+    });
+
+    it("+ve should add orders at different price levels", async () => {
+      // add remaining limitOrders
+      let orders = limitOrders.slice(1, limitOrders.length - 1);
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Orders" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(orders),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const successes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Successes').value)
+      const orderIds_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrderIds').value)
+      const orderSizes_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'OrderSizes').value)
+      const executedtradesList_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Orders-Processed")
+      for (let i = 0; i < orders.length; i++) {
+        expect(successes_[i]).to.equal(true)
+        expect(orderIds_[i]).to.not.equal('')
+        expect(orderSizes_[i]).to.equal(orders[i].size)
+        expect(executedtradesList_[i].length).to.equal(0)
+        expect(orderSizes_[i]).to.equal(orders[i].size)
+
+        orderIds.push(orderIds_[i])
+      }
+    });
+
+    it("+ve [metrics] should retrieve orderbook metrics (after multiple orders w/o matching)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('99000')
+      expect(data_.bestAsk).to.equal('100000')
+      expect(Number(data_.spread)).to.equal(1000)
+      expect(Number(data_.midPrice)).to.equal(99500)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6030)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4065)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(4) // 4 priceLevels
+      expect(orderBookAsks['103000']).to.equal(5)
+      expect(orderBookAsks['102000']).to.equal(20)
+      expect(orderBookAsks['101000']).to.equal(10)
+      expect(orderBookAsks['100000']).to.equal(5)
+      expect(orderBookBids['99000']).to.equal(10)
+      expect(orderBookBids['98000']).to.equal(5)
+      expect(orderBookBids['97000']).to.equal(5)
+    });
+
+    it("-ve should reject an order with invalid (non-integer) size", async () => {
+      // non-integer size
+      let order = {'isBid' : false, 
+        'size' : 5.1, 
+        'price' : 101
+      }
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const errorMessage_ = Messages[0].Data
+
+      expect(action_).to.equal("Process-Order-Error")
+      expect(errorMessage_).to.equal("Invalid size precision")
+    })
+
+    it("-ve should reject an order with invalid (negative) size", async () => {
+      // negative size
+      let order = {'isBid' : false, 
+        'size' : -1, 
+        'price' : 101
+      }
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const errorMessage_ = Messages[0].Data
+
+      expect(action_).to.equal("Process-Order-Error")
+      expect(errorMessage_).to.equal("Invalid size")
+    })
+
+    it("-ve should reject an order with invalid (negative) price", async () => {
+      // negative price
+      let order = {'isBid' : false, 
+        'size' : 5, 
+        'price' : -101
+      }
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const errorMessage_ = Messages[0].Data
+
+      expect(action_).to.equal("Process-Order-Error")
+      expect(errorMessage_).to.equal("Invalid price")
+    })
+
+    it("-ve should reject an order with invalid (zero) price", async () => {
+      // negative price
+      let order = {'isBid' : false, 
+        'size' : 5, 
+        'price' : 0
+      }
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const errorMessage_ = Messages[0].Data
+
+      expect(action_).to.equal("Process-Order-Error")
+      expect(errorMessage_).to.equal("Invalid price")
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (same after rejected orders)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('99000')
+      expect(data_.bestAsk).to.equal('100000')
+      expect(Number(data_.spread)).to.equal(1000)
+      expect(Number(data_.midPrice)).to.equal(99500)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6030)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4065)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(4) // 4 priceLevels
+      expect(orderBookAsks['103000']).to.equal(5)
+      expect(orderBookAsks['102000']).to.equal(20)
+      expect(orderBookAsks['101000']).to.equal(10)
+      expect(orderBookAsks['100000']).to.equal(5)
+      expect(orderBookBids['99000']).to.equal(10)
+      expect(orderBookBids['98000']).to.equal(5)
+      expect(orderBookBids['97000']).to.equal(5)
+    });
+
+    it("+ve should accept an order with 3dp precision price", async () => {
+      // negative price
+      let order = {'isBid' : false, 
+        'size' : 5, 
+        'price' : 101.123
+      }
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
+      const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
+      const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
+      const executedTrades_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Processed")
+      expect(success_).to.equal('true')
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+      expect(orderSize_).to.equal(order.size.toString())
+      expect(executedTrades_.length).to.equal(0)
+
+      orderIds.push(orderId_)
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (including new 3dp bid)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('99000')
+      expect(data_.bestAsk).to.equal('100000')
+      expect(Number(data_.spread)).to.equal(1000)
+      expect(Number(data_.midPrice)).to.equal(99500)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6535.615)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4570.615)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
+      expect(orderBookAsks['103000']).to.equal(5)
+      expect(orderBookAsks['102000']).to.equal(20)
+      expect(orderBookAsks['101123']).to.equal(5)
+      expect(orderBookAsks['101000']).to.equal(10)
+      expect(orderBookAsks['100000']).to.equal(5)
+      expect(orderBookBids['99000']).to.equal(10)
+      expect(orderBookBids['98000']).to.equal(5)
+      expect(orderBookBids['97000']).to.equal(5)
+    });
+
+    it("-ve should reject an order with invalid (>3dp) price", async () => {
+      // negative price
+      let order = {'isBid' : false, 
+        'size' : 5, 
+        'price' : 201.1234
+      }
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const errorMessage_ = Messages[0].Data
+
+      expect(action_).to.equal("Process-Order-Error")
+      expect(errorMessage_).to.equal("Invalid price precision")
+    })
+
+    it("+ve should update an existing order (size)", async () => {
+      let messageId;
+
+      let order = JSON.parse(JSON.stringify(limitOrders[0]));
+      // set the order id
+      order.uid = orderIds[1]
+      // update the order size
+      order.size *= 2
+
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
+      const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
+      const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
+      const executedTrades_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Processed")
+      expect(success_).to.equal('true')
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+      expect(orderSize_).to.equal(order.size.toString())
+      expect(executedTrades_.length).to.equal(0)
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (after updated order)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('99000')
+      expect(data_.bestAsk).to.equal('100000')
+      expect(Number(data_.spread)).to.equal(1000)
+      expect(Number(data_.midPrice)).to.equal(99500)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(7040.615)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(5075.615)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
+      expect(orderBookAsks['103000']).to.equal(5)
+      expect(orderBookAsks['102000']).to.equal(20)
+      expect(orderBookAsks['101123']).to.equal(5)
+      expect(orderBookAsks['101000']).to.equal(15)
+      expect(orderBookAsks['100000']).to.equal(5)
+      expect(orderBookBids['99000']).to.equal(10)
+      expect(orderBookBids['98000']).to.equal(5)
+      expect(orderBookBids['97000']).to.equal(5)
+    });
+
+    it("+ve should reject an update to existing order (isBid)", async () => {
+      let messageId;
+
+      let order = JSON.parse(JSON.stringify(limitOrders[0]));
+      // set the order id
+      order.uid = orderIds[1]
+      // update the order direction
+      order.isBid = !order.isBid
+
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const errorMessage_ = Messages[0].Data
+
+      expect(action_).to.equal("Process-Order-Error")
+      expect(errorMessage_).to.equal("Invalid isBid")
+    })
+
+    it("+ve should reject an update to existing order (price)", async () => {
+      let messageId;
+
+      let order = JSON.parse(JSON.stringify(limitOrders[0]));
+      // set the order id
+      order.uid = orderIds[1]
+      // update the order price
+      order.price = order.price + 1
+
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const errorMessage_ = Messages[0].Data
+
+      expect(action_).to.equal("Process-Order-Error")
+      expect(errorMessage_).to.equal("Invalid price")
+    })
+
+    it("+ve should cancel an existing order", async () => {
+      let messageId;
+
+      let order = JSON.parse(JSON.stringify(limitOrders[0]));
+      // set the order id
+      order.uid = orderIds[1]
+      // cancel order by setting size to zero
+      order.size = 0
+
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
+      const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
+      const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
+      const executedTrades_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Processed")
+      expect(success_).to.equal('true')
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+      expect(orderSize_).to.equal('0')
+      expect(executedTrades_.length).to.equal(0)
+      expect(orderSize_).to.equal(order.size.toString())
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (after canceled order)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('99000')
+      expect(data_.bestAsk).to.equal('100000')
+      expect(Number(data_.spread)).to.equal(1000)
+      expect(Number(data_.midPrice)).to.equal(99500)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6030.615)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4065.615)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
+      expect(orderBookAsks['103000']).to.equal(5)
+      expect(orderBookAsks['102000']).to.equal(20)
+      expect(orderBookAsks['101123']).to.equal(5)
+      expect(orderBookAsks['101000']).to.equal(5)
+      expect(orderBookAsks['100000']).to.equal(5)
+      expect(orderBookBids['99000']).to.equal(10)
+      expect(orderBookBids['98000']).to.equal(5)
+      expect(orderBookBids['97000']).to.equal(5)
+    });
+
+    it("-ve should reject cancelation of a non-existent order", async () => {
+      let messageId;
+
+      let order = JSON.parse(JSON.stringify(limitOrders[0]));
+      // set the order id
+      order.uid = orderIds[1]
+      // cancel order by setting size to zero
+      order.size = 0
+
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const errorMessage_ = Messages[0].Data
+
+      expect(action_).to.equal("Process-Order-Error")
+      expect(errorMessage_).to.equal("Invalid order id")
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (no change after non-cancelation)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('99000')
+      expect(data_.bestAsk).to.equal('100000')
+      expect(Number(data_.spread)).to.equal(1000)
+      expect(Number(data_.midPrice)).to.equal(99500)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(6030.615)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(4065.615)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 5 priceLevels
+      expect(orderBookAsks['103000']).to.equal(5)
+      expect(orderBookAsks['102000']).to.equal(20)
+      expect(orderBookAsks['101123']).to.equal(5)
+      expect(orderBookAsks['101000']).to.equal(5)
+      expect(orderBookAsks['100000']).to.equal(5)
+      expect(orderBookBids['99000']).to.equal(10)
+      expect(orderBookBids['98000']).to.equal(5)
+      expect(orderBookBids['97000']).to.equal(5)
+    });
+
+    it("+ve should fill an order (bid)", async () => {
+      let order = {
+        'isBid' : true, 
+        'size' : 5, 
+        'price' : 101
+      }
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
+      const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
+      const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
+      const executedTrades_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Processed")
+      expect(success_).to.equal('true')
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+
+      expect(executedTrades_[0].size).to.equal(order.size)
+      expect(orderSize_).to.equal((order.size - executedTrades_[0].size).toString())
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (after trade / filled order)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      // TRADE of 5 shares at 100.000
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('99000')
+      expect(data_.bestAsk).to.equal('101000')
+      expect(Number(data_.spread)).to.equal(2000)
+      expect(Number(data_.midPrice)).to.equal(100000)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(5530.615)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(3565.615)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(4) // priceLevels
+      expect(orderBookAsks['103000']).to.equal(5)
+      expect(orderBookAsks['102000']).to.equal(20)
+      expect(orderBookAsks['101123']).to.equal(5)
+      expect(orderBookAsks['101000']).to.equal(5)
+      expect(orderBookBids['99000']).to.equal(10)
+      expect(orderBookBids['98000']).to.equal(5)
+      expect(orderBookBids['97000']).to.equal(5)
+    });
+
+    it("+ve should fill an order across multiple orders (bid)", async () => {
+      let order = {
+        'isBid' : true, 
+        'size' : 10, 
+        'price' : 102
+      }
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
+      const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
+      const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
+      const executedTrades_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Processed")
+      expect(success_).to.equal('true')
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+
+      expect(executedTrades_.length).to.equal(2)
+      expect(executedTrades_[0].size).to.equal(5)
+      expect(executedTrades_[1].size).to.equal(5)
+      expect(executedTrades_[0].price).to.equal('101000')
+      expect(executedTrades_[1].price).to.equal('101123')
+      expect(orderSize_).to.equal('0')
+      expect(orderSize_).to.equal((order.size - executedTrades_[0].size - executedTrades_[1].size).toString())
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (after trade across orders)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      // TRADE matches asks of 5 shares at 101.000 + 5 shares at 101.123
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('99000')
+      expect(data_.bestAsk).to.equal('102000')
+      expect(Number(data_.spread)).to.equal(3000)
+      expect(Number(data_.midPrice)).to.equal(100500)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(4520)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(2555)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(2) // priceLevels
+      expect(orderBookAsks['103000']).to.equal(5)
+      expect(orderBookAsks['102000']).to.equal(20)
+      expect(orderBookBids['99000']).to.equal(10)
+      expect(orderBookBids['98000']).to.equal(5)
+      expect(orderBookBids['97000']).to.equal(5)
+    });
+
+    it("+ve should fill an order across different price levels (ask)", async () => {
+      let order = {
+        'isBid' : false, 
+        'size' : 12, 
+        'price' : 96.5
+      }
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
+      const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
+      const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
+      const executedTrades_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Processed")
+      expect(success_).to.equal('true')
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+
+      expect(executedTrades_.length).to.equal(3)
+      expect(executedTrades_[0].size).to.equal(5)
+      expect(executedTrades_[1].size).to.equal(5)
+      expect(executedTrades_[2].size).to.equal(2)
+      expect(executedTrades_[0].price).to.equal('99000')
+      expect(executedTrades_[1].price).to.equal('99000')
+      expect(executedTrades_[2].price).to.equal('98000')
+      expect(orderSize_).to.equal('0')
+      expect(orderSize_).to.equal((order.size - executedTrades_[0].size - executedTrades_[1].size - executedTrades_[2].size).toString())
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (after ask order filled at diff levels)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      // ORDER is ask of 2 shares at 96.500
+      // TRADE matches bids of 10 shares at 99.000 
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('98000')
+      expect(data_.bestAsk).to.equal('102000')
+      expect(Number(data_.spread)).to.equal(4000)
+      expect(Number(data_.midPrice)).to.equal(100000)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(3334)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(779)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(2555)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(2) // 3 priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(2) // 5 priceLevels
+      expect(orderBookAsks['103000']).to.equal(5)
+      expect(orderBookAsks['102000']).to.equal(20)
+      expect(orderBookBids['98000']).to.equal(3)
+      expect(orderBookBids['97000']).to.equal(5)
+    });
+
+    it("+ve should partially fill an order and create a new position (ask)", async () => {
+      let order = {
+        'isBid' : false, 
+        'size' : 13, 
+        'price' : 96.5
+      }
+
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const orderId_ = Messages[0].Tags.find(t => t.name === 'OrderId').value
+      const success_ = Messages[0].Tags.find(t => t.name === 'Success').value
+      const orderSize_ = Messages[0].Tags.find(t => t.name === 'OrderSize').value
+      const executedTrades_ = JSON.parse(Messages[0].Data)
+
+      expect(action_).to.equal("Order-Processed")
+      expect(success_).to.equal('true')
+      expect(typeof(orderId_)).to.equal('string')
+      expect(orderId_).to.not.equal('')
+
+      expect(executedTrades_.length).to.equal(2)
+      expect(executedTrades_[0].size).to.equal(3)
+      expect(executedTrades_[1].size).to.equal(5)
+      expect(executedTrades_[0].price).to.equal('98000')
+      expect(executedTrades_[1].price).to.equal('97000')
+      expect(orderSize_).to.equal('5')
+      expect(orderSize_).to.equal((order.size - executedTrades_[0].size - executedTrades_[1].size).toString())
+    })
+
+    it("+ve [metrics] should retrieve orderbook metrics (after all bids matched)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      // ORDER is ask of 5 shares at 96.500
+      // TRADE matches bids of 3 and 5 shares at 98.000 and 97.000, respectively
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('nil')
+      expect(data_.bestAsk).to.equal('96500')
+      expect(data_.spread).to.equal('nil')
+      expect(data_.midPrice).to.equal('nil')
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(3037.5)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(0)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(3037.5)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(0) // priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(3) // priceLevels
+      expect(orderBookAsks['103000']).to.equal(5)
+      expect(orderBookAsks['102000']).to.equal(20)
+      expect(orderBookAsks['96500']).to.equal(5)
+    });
+  })
 
   // /************************************************************************ 
   // * Order Book Metrics & Queries

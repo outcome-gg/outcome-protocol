@@ -187,7 +187,7 @@ function LimitOrderBookMethods:executeTrade(order, matchedOrder)
   return {
     buyer = order.isBid and order.sender or matchedOrder.sender,
     seller = order.isBid and matchedOrder.sender or order.sender,
-    price = tonumber(matchedOrder.price) / 1000, -- Convert back to decimal
+    price = matchedOrder.price,
     size = tradeSize,
     buyOrder = order.isBid and order.uid or matchedOrder.uid,
     sellOrder = order.isBid and matchedOrder.uid or order.uid

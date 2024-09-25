@@ -151,7 +151,8 @@ local function unlockTradedAssets(executedTrades)
   local successes = {}
   local messages = {}
   for i = 1, #executedTrades do
-    local success, message = BalanceManager:settleTrade(executedTrades[i]['buyer'], executedTrades[i]['seller'], executedTrades[i]['price'], executedTrades[i]['size'])
+    local price = tonumber(executedTrades[i]['price']) / 1000
+    local success, message = BalanceManager:settleTrade(executedTrades[i]['buyer'], executedTrades[i]['seller'], price, executedTrades[i]['size'])
     table.insert(successes, success)
     table.insert(messages, message)
   end
