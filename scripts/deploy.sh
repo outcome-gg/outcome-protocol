@@ -53,7 +53,7 @@ if [ "$1" == "test" ]; then
     create_or_update_process TEST_MARKET_FOUNDRY4 src/core/marketFoundry.lua --sqlite
     # Deploy market contracts
     create_or_update_process TEST_AMM3 src/market/amm.lua
-    create_or_update_process TEST_CONDITIONAL_TOKENS src/market/conditionalTokens.lua
+    create_or_update_process TEST_CONDITIONAL_TOKENS src/core/conditionalTokens.lua
     create_or_update_process TEST_DLOB src/market/dlob.lua
     # Deploy mock contracts
     create_or_update_process TEST_COLLATERAL_TOKEN src/mock/token.lua
@@ -65,7 +65,7 @@ elif [ "$1" == "prod" ]; then
     create_or_update_process PROD_MARKET_FOUNDRY4 src/core/marketFoundry.lua --sqlite
     # Deploy market contracts
     create_or_update_process PROD_AMM3 src/market/amm.lua
-    create_or_update_process PROD_CONDITIONAL_TOKENS src/market/conditionalTokens.lua
+    create_or_update_process PROD_CONDITIONAL_TOKENS src/core/conditionalTokens.lua
     create_or_update_process PROD_DLOB src/market/dlob.lua
 else
     echo "Usage: $0 {test|prod}"

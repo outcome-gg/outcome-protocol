@@ -1,5 +1,5 @@
 local deque = require('modules.deque')
-
+local json = require('json')
 local LimitOrderBook = {}
 local LimitOrderBookMethods = {}
 
@@ -20,7 +20,6 @@ end
 -- Add an order to the book
 function LimitOrderBookMethods:add(order)
   local orderType = order.isBid and "bids" or "asks"
-  local oppositeOrderType = order.isBid and "asks" or "bids"
   local price = tostring(order.price)
   local executedTrades = {}
 
@@ -149,7 +148,7 @@ end
 function LimitOrderBookMethods:matchOrders(order)
   local executedTrades = {}
   local remainingSize = tonumber(order.size) or 0
-  local bestLevel = order.isBid and self.bestAsk or self.bestBid
+  local bestLevel = order.isBid and self.bestAsk or (not order.isBid and self.bestBid or nil)
   local matchComparison = order.isBid and (function(a, b) return a <= b end) or (function(a, b) return a >= b end)
 
   while bestLevel and remainingSize > 0 and matchComparison(tonumber(bestLevel.price), tonumber(order.price)) do
@@ -159,7 +158,7 @@ function LimitOrderBookMethods:matchOrders(order)
       table.insert(executedTrades, trade)
       remainingSize = remainingSize - trade.size
     end
-    bestLevel = order.isBid and self:getNextBestAsk() or self:getNextBestBid()
+    bestLevel = order.isBid and self:getNextBestAsk() or (not order.isBid and self:getNextBestBid() or nil)
   end
 
   order.size = remainingSize
@@ -186,10 +185,12 @@ function LimitOrderBookMethods:executeTrade(order, matchedOrder)
   end
 
   return {
-    buyer = order.isBid and order.uid or matchedOrder.uid,
-    seller = order.isBid and matchedOrder.uid or order.uid,
-    price = matchedOrder.price,
-    size = tradeSize
+    buyer = order.isBid and order.sender or matchedOrder.sender,
+    seller = order.isBid and matchedOrder.sender or order.sender,
+    price = tonumber(matchedOrder.price) / 1000, -- Convert back to decimal
+    size = tradeSize,
+    buyOrder = order.isBid and order.uid or matchedOrder.uid,
+    sellOrder = order.isBid and matchedOrder.uid or order.uid
   }
 end
 

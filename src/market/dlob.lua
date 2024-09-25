@@ -11,7 +11,7 @@ local balanceManager = require('modules.balanceManager')
 ]]
 ResetState = true
 Version = "1.0.1"
-Initialized = false
+if not Initialized or ResetState then Initialized = false end
 
 --[[
     DLOB
@@ -28,22 +28,55 @@ if not Name or ResetState then Name = 'DLOB-v' .. Version end
 --[[
     NOTICES
 ]]
-local function initNotice(conditionalTokens, conditionalTokensId, collateralToken)
+local function initNotice(collateralToken, conditionalTokens, conditionalTokensId)
   ao.send({
     Target = DataIndex,
-    Action = "Init-DLOB-Notice",
+    Action = 'Init-DLOB-Notice',
+    CollateralToken = collateralToken,
     ConditionalTokens = conditionalTokens,
     ConditionalTokensId = conditionalTokensId,
-    CollateralToken = collateralToken
+    Data = 'Successfully initialized DLOB'
   })
 end
 
 local function processOrderNotice() end
 local function processOrdersNotice() end
-local function addFundsNotice() end
-local function addSharesNotice() end
-local function removeFundsNotice() end
-local function removeSharesNotice() end
+
+local function addFundsNotice(from, quantity)
+  ao.send({
+    Target = from,
+    Action = 'Add-Funds-Notice',
+    Quantity = quantity,
+    Data = 'Successfully added funds'
+  })
+end
+
+local function addSharesNotice(from, quantity)
+  ao.send({
+    Target = from,
+    Action = 'Add-Shares-Notice',
+    Quantity = quantity,
+    Data = 'Successfully added shares'
+  })
+end
+
+local function withdrawFundsNotice(from, quantity, message)
+  ao.send({
+    Target = from,
+    Action = 'Withdraw-Funds-Notice',
+    Quantity = quantity,
+    Data = message
+  })
+end
+
+local function withdrawSharesNotice(from, quantity, message)
+  ao.send({
+    Target = from,
+    Action = 'Withdraw-Shares-Notice',
+    Quantity = quantity,
+    Data = message
+  })
+end
 
 --[[
     FUNCTIONS
@@ -72,8 +105,8 @@ end
 
 local function isAddShares(msg)
   local res = false
-  if  msg.From == ConditionalTokens and msg.Action == "Credit-Single-Notice" then
-    res = msg.Tags.TokenIds == ConditionalTokensId
+  if msg.From == ConditionalTokens and msg.Action == "Credit-Single-Notice" then
+    res = msg.Tags.TokenId == ConditionalTokensId
   elseif msg.From == ConditionalTokens and msg.Action == "Credit-Batch-Notice" then
     local tokenIds = json.decode(msg.Tags.TokenIds)
     res = true
@@ -86,22 +119,61 @@ local function isAddShares(msg)
   return res
 end
 
+local function validateUserAssetBalance(from, orders)
+  local totalFundQuantity = 0
+  local totalShareQuantity = 0
+
+  for i = 1, #orders do
+    if orders[i].isBid then
+      totalFundQuantity = totalFundQuantity + orders[i].size * orders[i].price
+    else
+      totalShareQuantity = totalShareQuantity + orders[i].size
+    end
+  end
+
+  local availableFunds = tonumber(BalanceManager:getAvailableFunds(from))
+  local availableShares = tonumber(BalanceManager:getAvailableShares(from))
+
+  return totalFundQuantity <= availableFunds and totalShareQuantity <= availableShares
+end
+
+local function lockOrderedAssets(from, orders)
+  for i = 1, #orders do
+    if orders[i].isBid then
+      BalanceManager:lockFunds(from, orders[i].size * orders[i].price)
+    else
+      BalanceManager:lockShares(from, orders[i].size)
+    end
+  end
+end
+
+local function unlockTradedAssets(executedTrades)
+  local successes = {}
+  local messages = {}
+  for i = 1, #executedTrades do
+    local success, message = BalanceManager:settleTrade(executedTrades[i]['buyer'], executedTrades[i]['seller'], executedTrades[i]['price'], executedTrades[i]['size'])
+    table.insert(successes, success)
+    table.insert(messages, message)
+  end
+  return successes, messages
+end
+
 --[[
     Order Processing & Management
 ]]
 -- @returns success, orderId, positionSize, executedTrades
-local function processOrder(order, msgId, i)
+local function processOrder(order, sender, msgId, i)
   order.uid = order.uid or msgId .. '_' .. i
-  order = limitOrderBookOrder:new(order.uid, order.isBid, order.size, order.price)
+  order = limitOrderBookOrder:new(order.uid, order.isBid, order.size, order.price, sender)
   local success, orderSize, executedTrades = LimitOrderBook:process(order)
   return success, order.uid, orderSize, executedTrades
 end
 
 -- @returns lists of successes, orderIds, positionSizes, executedTrades
-local function processOrders(orders, msgId)
+local function processOrders(orders, sender, msgId)
   local successList, orderIdList, positionSizeList, executedTradesList = {}, {}, {}, {}
   for i = 1, #orders do
-    local success, orderId, positionSize, executedTrades = processOrder(orders[i], msgId, i)
+    local success, orderId, positionSize, executedTrades = processOrder(orders[i], sender, msgId, i)
     table.insert(successList, success)
     table.insert(orderIdList, orderId)
     table.insert(positionSizeList, positionSize)
@@ -170,43 +242,104 @@ end
     Init
 ]]
 Handlers.add('Init', Handlers.utils.hasMatchingTag("Action", "Init"), function(msg)
-  assert(Initialized == false, "DLOB already initialized!")
+  assert(msg.Tags.CollateralToken, "CollateralToken is required!")
   assert(msg.Tags.ConditionalTokens, "ConditionalTokens is required!")
   assert(msg.Tags.ConditionalTokensId, "ConditionalTokensId is required!")
-  assert(msg.Tags.CollateralToken, "CollateralToken is required!")
   assert(msg.Tags.DataIndex, "DataIndex is required!")
 
-  -- Initialized
-  Initialized = true
-
-  -- Send notice
-  initNotice(msg.Tags.ConditionalToken, msg.Tags.ConditionalTokensId, msg.Tags.CollateralToken)
+  if Initialized then
+    ao.send(
+      {
+        Target = msg.From,
+        Action = 'Init-DLOB-Error',
+        Data = 'DLOB already initialized!'
+      }
+    )
+  else
+    Initialized = true
+    CollateralToken = msg.Tags.CollateralToken
+    ConditionalTokens = msg.Tags.ConditionalTokens
+    ConditionalTokensId = msg.Tags.ConditionalTokensId
+    DataIndex = msg.Tags.DataIndex
+    initNotice(msg.Tags.CollateralToken, msg.Tags.ConditionalTokens, msg.Tags.ConditionalTokensId)
+  end
 end)
 
 --[[
     Fund Management
 ]]
 Handlers.add('Add-Funds', isAddFunds, function(msg)
+  assert(Initialized, 'DLOB not initialized!')
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
-  assert(msg.Tags['X-Sender'], 'X-Sender is required!')
+  assert(msg.Tags.Sender, 'Sender is required!')
 
-  BalanceManager:addFunds(msg.Tags['X-Sender'], msg.Tags.Quantity)
+  BalanceManager:addFunds(msg.Tags.Sender, msg.Tags.Quantity)
+
+  addFundsNotice(msg.From, msg.Tags.Quantity)
+
+  -- Forward Order(s)
+  if msg.Tags['X-Action'] and msg.Tags['X-Data'] then
+    if msg.Tags['X-Action'] == 'Process-Order' then
+      ao.send({
+        Target = ao.id,
+        Action = 'Process-Order',
+        Sender = msg.Tags.Sender,
+        Data = msg.Tags['X-Data']
+      })
+    elseif msg.Tags['X-Action'] == 'Process-Orders' and msg.Tags['X-Data'] then
+      ao.send({
+        Target = ao.id,
+        Action = 'Process-Orders',
+        Sender = msg.Tags.Sender,
+        Data = msg.Tags['X-Data']
+      })
+    end
+  end
 end)
 
 Handlers.add('Add-Shares', isAddShares, function(msg)
+  assert(Initialized, 'DLOB not initialized!')
   assert(msg.Tags.Quantity or msg.Tags.Quantities, 'Quantity or Quantities is required!')
-  local quantity = msg.Tags.Quantities and json.decod(msg.Tags.Quantities)[1] or msg.Tags.Quantity
+  local quantity = msg.Tags.Quantities and json.decode(msg.Tags.Quantities)[1] or msg.Tags.Quantity
   assert(bint.__lt(0, bint(quantity)), 'quantity must be greater than zero!')
-  assert(msg.Tags['X-Sender'], 'X-Sender is required!')
+  assert(msg.Tags.Sender, 'Sender is required!')
+  BalanceManager:addShares(msg.Tags.Sender, msg.Tags.Quantity)
 
-  BalanceManager:addShares(msg.Tags['X-Sender'], msg.Tags.Quantity)
+  addSharesNotice(msg.Tags.Sender, msg.Tags.Quantity)
+
+  -- Forward Order(s)
+  if msg.Tags['X-Action'] and msg.Tags['X-Data'] then
+    if msg.Tags['X-Action'] == 'Process-Order' then
+      ao.send({
+        Target = ao.id,
+        Action = 'Process-Order',
+        Sender = msg.Tags.Sender,
+        Data = msg.Tags['X-Data']
+      })
+    elseif msg.Tags['X-Action'] == 'Process-Orders' and msg.Tags['X-Data'] then
+      ao.send({
+        Target = ao.id,
+        Action = 'Process-Orders',
+        Sender = msg.Tags.Sender,
+        Data = msg.Tags['X-Data']
+      })
+    end
+  end
 end)
 
-Handlers.add('Remove-Funds', Handlers.utils.hasMatchingTag('Action', 'Remove-Funds'), function(msg)
+Handlers.add('Withdraw-Funds', Handlers.utils.hasMatchingTag('Action', 'Withdraw-Funds'), function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
-  local fundBalance = BalanceManager:getAvailableFunds(msg.Tags['X-Sender'])
-  assert(bint.__le(bint(msg.Tags.Quantity), bint(fundBalance)), "Insufficient fund balance")
+  local success, message = BalanceManager:withdrawFunds(msg.From, msg.Tags.Quantity)
+
+  if not success then
+    ao.send({
+      Target = msg.From,
+      Action = 'Withdraw-Funds-Error',
+      Data = message
+    })
+    return
+  end
 
   ao.send({
     Target = CollateralToken,
@@ -214,12 +347,22 @@ Handlers.add('Remove-Funds', Handlers.utils.hasMatchingTag('Action', 'Remove-Fun
     Recipient = msg.From,
     Quantity = msg.Tags.Quantity
   })
+
+  withdrawFundsNotice(msg.From, msg.Tags.Quantity, message)
 end)
 
-Handlers.add('Remove-Shares', Handlers.utils.hasMatchingTag('Action', 'Remove-Shares'), function(msg)
+Handlers.add('Withdraw-Shares', Handlers.utils.hasMatchingTag('Action', 'Withdraw-Shares'), function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
-  local shareBalance = BalanceManager:getAvailableShares(msg.Tags['X-Sender'])
-  assert(bint.__le(bint(msg.Tags.Quantity), bint(shareBalance)), "Insufficient share balance")
+  local success, message = BalanceManager:withdrawShares(msg.From, msg.Tags.Quantity)
+
+  if not success then
+    ao.send({
+      Target = msg.From,
+      Action = 'Withdraw-Shares-Error',
+      Data = message
+    })
+    return
+  end
 
   ao.send({
     Target = ConditionalTokens,
@@ -228,19 +371,21 @@ Handlers.add('Remove-Shares', Handlers.utils.hasMatchingTag('Action', 'Remove-Sh
     TokenId = ConditionalTokensId,
     Quantity = msg.Tags.Quantity
   })
+
+  withdrawSharesNotice(msg.From, msg.Tags.Quantity, message)
 end)
 
 Handlers.add('Get-Balance-Info', Handlers.utils.hasMatchingTag('Action', 'Get-Balance-Info'), function(msg)
-  local availableFunds = BalanceManager:getAvailableFunds()
-  local availableShares = BalanceManager:getAvailableShares()
-  local lockedFunds = BalanceManager:getLockedFunds()
-  local lockedShares = BalanceManager:getLockedShares()
+  local availableFunds = BalanceManager:getAvailableFunds(msg.From)
+  local availableShares = BalanceManager:getAvailableShares(msg.From)
+  local lockedFunds = BalanceManager:getLockedFunds(msg.From)
+  local lockedShares = BalanceManager:getLockedShares(msg.From)
 
   local balanceInfo = {
-    availableFunds = availableFunds,
-    availableShares = availableShares,
-    lockedFunds = lockedFunds,
-    lockedShares = lockedShares
+    availableFunds = tonumber(availableFunds),
+    availableShares = tonumber(availableShares),
+    lockedFunds = tonumber(lockedFunds),
+    lockedShares = tonumber(lockedShares)
   }
 
   ao.send({
@@ -254,23 +399,37 @@ end)
     Order Processing & Management
 ]]
 Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-Order'), function(msg)
-  local order = json.decode(msg.Data)
+  assert(Initialized, 'DLOB not initialized!')
+  local sender = msg.From == ao.id and msg.Tags.Sender or msg.From
+  local data = msg.From == ao.id and msg.Tags['X-Data'] or msg.Data
+  local order = json.decode(data)
   -- validate order
   local isValidOrder, orderValidityMessage = LimitOrderBook:checkOrderValidity(order)
+  -- validate user balance
+  local orders = {}
+  orders[1] = order
+  local hasSufficientBalance = validateUserAssetBalance(sender, orders)
   if not isValidOrder then
     ao.send({
-      Target = msg.From,
+      Target = sender,
       Action = 'Process-Order-Error',
       Data = orderValidityMessage
     })
+  elseif not hasSufficientBalance then
+    ao.send({
+      Target = sender,
+      Action = 'Process-Order-Error',
+      Data = 'Insufficient available balance'
+    })
   else
+    lockOrderedAssets(sender, orders)
     local priceString = assertMaxDp(order.price, 3)
     order.price = priceString
-
-    local success, orderId, orderSize, executedTrades = processOrder(order, msg.Id, 1)
+    local success, orderId, orderSize, executedTrades = processOrder(order, sender, msg.Id, 1)
+    unlockTradedAssets(executedTrades)
 
     ao.send({
-      Target = msg.From,
+      Target = sender,
       Action = 'Order-Processed',
       Success = tostring(success),
       OrderId = orderId,
@@ -281,18 +440,31 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
 end)
 
 Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-Orders'), function(msg)
-  local orders = json.decode(msg.Data)
+  assert(Initialized, 'DLOB not initialized!')
+  local sender = msg.From == ao.id and msg.Tags.Sender or msg.From
+  local data = msg.From == ao.id and msg.Tags['X-Data'] or msg.Data
+  local orders = json.decode(data)
+  -- validate orders
   for i = 1, #orders do
     local isValidOrder, orderValidityMessage = LimitOrderBook:checkOrderValidity(orders[i])
     assert(isValidOrder, 'order ' .. tostring(i) .. ': ' .. orderValidityMessage)
     local priceString = assertMaxDp(orders[i].price, 3)
     orders[i].price = priceString
   end
+  -- validate user balance
+  local hasSufficientBalance = validateUserAssetBalance(sender, orders)
+  assert(hasSufficientBalance, 'Insufficient available balance')
 
-  local successList, orderIds, orderSizes, executedTradesList = processOrders(orders, msg.Id)
+  lockOrderedAssets(sender, orders)
+  local successList, orderIds, orderSizes, executedTradesList = processOrders(orders, sender, msg.Id)
+
+  -- settle trades
+  for i = 1, #executedTradesList do
+    unlockTradedAssets(executedTradesList[i])
+  end
 
   ao.send({
-    Target = msg.From,
+    Target = sender,
     Action = 'Orders-Processed',
     Successes = json.encode(successList),
     OrderIds = json.encode(orderIds),

@@ -3,13 +3,14 @@ local Order = {}
 local OrderMethods = {}
 
 -- Constructor
-function Order:new(uid, isBid, size, price)
+function Order:new(uid, isBid, size, price, sender)
   -- Create a new object and set the metatable to OrderMethods directly
   local obj = {
     uid = uid,
     isBid = isBid,
     size = size,
-    price = price
+    price = price,
+    sender = sender
   }
   -- Set the metatable to OrderMethods for method lookup
   setmetatable(obj, { __index = OrderMethods })
@@ -27,7 +28,8 @@ function OrderMethods:toString()
     uid = self.uid,
     isBid = self.isBid,
     size = self.size,
-    price = self.price
+    price = self.price,
+    sender = self.sender
   })
 end
 

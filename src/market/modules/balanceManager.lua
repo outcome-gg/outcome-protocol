@@ -1,4 +1,5 @@
 local bint = require('.bint')(256)
+local json = require('json')
 
 local BalanceManager = {}
 local BalanceManagerMethods = {}
@@ -26,6 +27,28 @@ end
 function BalanceManagerMethods:addShares(userId, amount)
   self.shareBalances[userId] = self.shareBalances[userId] or '0'
   self.shareBalances[userId] = tostring(bint.__add(bint(self.shareBalances[userId]), bint(amount)))
+end
+
+-- Withdraw collateral funds from the user's available balance
+function BalanceManagerMethods:withdrawFunds(userId, amount)
+  self.fundBalances[userId] = self.fundBalances[userId] or '0'
+  if not bint.__le(bint(amount), bint(self.fundBalances[userId])) then
+    return false, 'Insufficient fund balance'
+  end
+
+  self.fundBalances[userId] = tostring(bint.__sub(bint(self.fundBalances[userId]), bint(amount)))
+  return true, 'Withdraw funds succeeded'
+end
+
+-- Withdraw conditional tokens (shares) from the user's available balance
+function BalanceManagerMethods:withdrawShares(userId, amount)
+  self.shareBalances[userId] = self.shareBalances[userId] or '0'
+  if not bint.__le(bint(amount), bint(self.shareBalances[userId])) then
+    return false, 'Insufficient share balance'
+  end
+
+  self.shareBalances[userId] = tostring(bint.__sub(bint(self.shareBalances[userId]), bint(amount)))
+  return true, 'Withdraw shares succeeded'
 end
 
 -- Lock collateral funds for an order
@@ -68,6 +91,29 @@ function BalanceManagerMethods:releaseShares(userId, amount)
   -- Move from locked to available
   self.lockedShares[userId] = tostring(bint.__sub(bint(self.lockedShares[userId]), bint(amount)))
   self.shareBalances[userId] = tostring(bint.__add(bint(self.shareBalances[userId]), bint(amount)))
+end
+
+function BalanceManagerMethods:settleTrade(buyerId, sellerId, price, amount)
+  self.fundBalances[buyerId] = self.fundBalances[buyerId] or '0'
+  self.fundBalances[sellerId] = self.fundBalances[sellerId] or '0'
+  self.shareBalances[buyerId] = self.shareBalances[buyerId] or '0'
+  self.shareBalances[sellerId] = self.shareBalances[sellerId] or '0'
+
+  local fundAmount = tostring(math.floor(price * amount))
+
+  if not bint.__le(bint(fundAmount), bint(self.fundBalances[buyerId])) then
+    return false, 'Insufficient buyer fund balance'
+  elseif not bint.__le(bint(amount), bint(self.shareBalances[sellerId])) then
+    return false, 'Insufficient seller share balance'
+  end
+
+  -- Move funds from buyer (locked) to seller (available)
+  self.lockedFunds[buyerId] = tostring(bint.__sub(bint(self.lockedFunds[buyerId]), bint(fundAmount)))
+  self.fundBalances[sellerId] = tostring(bint.__add(bint(self.fundBalances[sellerId]), bint(fundAmount)))
+  -- Move shares from seller (locked) to buyer (available)
+  self.lockedShares[sellerId] = tostring(bint.__sub(bint(self.lockedShares[sellerId]), bint(amount)))
+  self.shareBalances[buyerId] = tostring(bint.__add(bint(self.shareBalances[buyerId]), bint(amount)))
+  return true, 'Settlement succeeded'
 end
 
 -- Get user's available collateral balance

@@ -5,23 +5,39 @@ local bint = require('.bint')(256)
 local utils = require(".utils")
 local crypto = require('.crypto')
 
-_DATA_INDEX = ''
+--[[
+    GLOBALS
+]]
+ResetState = true
+Version = "1.0.1"
+
+--[[
+    CTF
+]]
+if Name ~= 'CFT-v' .. Version or ResetState then Name = 'CFT-v' .. Version  end
+if Ticker ~= 'CFT' or ResetState then Ticker = 'CFT' end
+if Denomination ~= 12 or ResetState then Denomination = 12 end
+if not BalancesOf or ResetState then BalancesOf = {} end
+
+-- @dev Mapping key is an condition ID. Value represents numerators of the payout vector associated with the condition. 
+-- This array is initialized with a length equal to the outcome slot count. E.g. Condition with 3 outcomes [A, B, C] and two of those correct [0.5, 0.5, 0]. 
+-- @dev Note from source: In Ethereum there are no decimal values, so here, 0.5 is represented by fractions like 1/2 == 0.5. That's why we need numerator and denominator values. Payout numerators are also used as a check of initialization. If the numerators array is empty (has length zero), the condition was not created/prepared. See getOutcomeSlotCount.
+if not PayoutNumerators or ResetState then PayoutNumerators = {} end
+
+-- @dev Denominator is also used for checking if the condition has been resolved. If the denominator is non-zero, then the condition has been resolved.
+if not PayoutDenominator or ResetState then PayoutDenominator = {} end
+
+if not Logo or ResetState then Logo = '' end
+
+if not DataIndex or ResetState then DataIndex = '' end
 
 --[[
     NOTICES
-  ]]
---
+]]
 
 --[[
     Semi-Fungible Token Notices
-  ]]
---
-
--- event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value);
-
--- event TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values);
-
-
+]]
 local function mintSingleNotice(recipient, id, quantity)
   ao.send({
     Target = recipient,
@@ -129,9 +145,7 @@ end
 
 --[[
     Conditional Token Notices
-  ]]
---
-
+]]
 -- @dev Emitted upon the successful preparation of a condition.
 -- @param sender The address of the account that prepared the condition.
 -- @param conditionId The condition's ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(questionId, resolutionAgent, outcomeSlotCount))``.
@@ -151,7 +165,7 @@ end
 
 local function conditionResolutionNotice(conditionId, resolutionAgent, questionId, outcomesSlotCount, payoutNumerators)
   ao.send({
-    Target = _DATA_INDEX,
+    Target = DataIndex,
     Action = "Condition-Resolution-Notice",
     Process = ao.id,
     ConditionId = conditionId,
@@ -174,7 +188,7 @@ end
 
 local function payoutRedemptionNotice(redeemer, collateralToken, parentCollectionId, conditionId, indexSets, payout)
   ao.send({
-    Target = _DATA_INDEX,
+    Target = DataIndex,
     Action = "Payout-Redemption-Notice",
     Process = ao.id,
     Redeemer = redeemer,
@@ -187,39 +201,12 @@ local function payoutRedemptionNotice(redeemer, collateralToken, parentCollectio
 end
 
 --[[
-    GLOBALS
-  ]]
---
--- @dev used to reset state between integration tests
-ResetState = true
-
-Version = "1.0.0"
-
-if Name ~= 'CFT-v' .. Version or ResetState then Name = 'CFT-v' .. Version  end
-if Ticker ~= 'CFT' or ResetState then Ticker = 'CFT' end
-if Denomination ~= 12 or ResetState then Denomination = 12 end
-if not BalancesOf or ResetState then BalancesOf = {} end
-
--- @dev Mapping key is an condition ID. Value represents numerators of the payout vector associated with the condition. 
--- This array is initialized with a length equal to the outcome slot count. E.g. Condition with 3 outcomes [A, B, C] and two of those correct [0.5, 0.5, 0]. 
--- @dev Note from source: In Ethereum there are no decimal values, so here, 0.5 is represented by fractions like 1/2 == 0.5. That's why we need numerator and denominator values. Payout numerators are also used as a check of initialization. If the numerators array is empty (has length zero), the condition was not created/prepared. See getOutcomeSlotCount.
-if not PayoutNumerators or ResetState then PayoutNumerators = {} end
-
--- @dev Denominator is also used for checking if the condition has been resolved. If the denominator is non-zero, then the condition has been resolved.
-if not PayoutDenominator or ResetState then PayoutDenominator = {} end
-
-if not Logo or ResetState then Logo = '' end
-
---[[
     FUNCTIONS
-  ]]
---
+]]
 
 --[[
     Helper Functions
-  ]]
---
-
+]]
 -- @dev Constructs a condition ID from a resolutionAgent, a question ID, and the outcome slot count for the question.
 -- @param ResolutionAgent The process assigned to report the result for the prepared condition.
 -- @param QuestionId An identifier for the question to be answered by the resolutionAgent.
@@ -270,7 +257,6 @@ local function getCollectionId(parentCollectionId, conditionId, indexSet)
   return result
 end
 
-
 -- @dev Constructs a position ID from a collateral token and an outcome collection. These IDs are used as the ERC-1155 ID for this contract.
 -- @param collateralToken Collateral token which backs the position.
 -- @param collectionId ID of the outcome collection associated with this position.
@@ -280,9 +266,7 @@ end
 
 --[[
     Semi-Fungible Token Functions
-  ]]
---
-
+]]
 -- @dev Internal function to mint an amount of a token with the given ID
 -- @param to The address that will own the minted token
 -- @param id ID of the token to be minted
@@ -381,10 +365,9 @@ local function transferSingle(from, recipient, id, quantity, cast, msg)
     BalancesOf[id][recipient] = tostring(bint.__add(BalancesOf[id][recipient], qty))
 
     --[[
-         Only send the notifications to the Sender and Recipient
-         if the Cast tag is not set on the Transfer message
-       ]]
-    --
+        Only send the notifications to the Sender and Recipient
+        if the Cast tag is not set on the Transfer message
+    ]]
     if not cast then
       transferSingleNotices(from, recipient, id, quantity, msg)
     end
@@ -416,10 +399,9 @@ local function transferBatch(from, recipient, ids, quantities, cast, msgId)
   end
 
   --[[
-        Only send the notifications to the Sender and Recipient
-        if the Cast tag is not set on the Transfer message
-      ]]
-  --
+      Only send the notifications to the Sender and Recipient
+      if the Cast tag is not set on the Transfer message
+  ]]
   if not cast then
     if #ids_ == 1 then
       transferSingleNotices(from, recipient, ids_[1], quantities_[1])
@@ -431,15 +413,12 @@ end
 
 --[[
     Conditional Token Functions
-  ]]
---
-
+]]
 -- @dev This function prepares a condition by initializing a payout vector associated with the condition.
 -- @param resolutionAgent The process assigned to report the result for the prepared condition.
 -- @param questionId An identifier for the question to be answered by the resolutionAgent.
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
 local function prepareCondition(msg)
-  print("prepareCondition 0 ")
   local data = json.decode(msg.Data)
   assert(data.resolutionAgent, "resolutionAgent is required!")
   assert(data.questionId, "questionId is required!")
@@ -721,9 +700,8 @@ local function getOutcomeSlotCount(msg)
 end
 
 --[[
-    HANDLERS
-  ]]
---
+    Handler Functions
+]]
 local function isMergeOrderCompletion(msg)
   if (msg.From == CollateralToken and msg.Action == "Debit-Notice" and msg["X-Action"] == "Positions-Merge-Completion") or
   (msg.From == ao.id and msg.Action == "Positions-Merge-Completion") then
@@ -733,15 +711,6 @@ local function isMergeOrderCompletion(msg)
   end
 end
 
-
-Handlers.add("Prepare-Condition", Handlers.utils.hasMatchingTag("Action", "Prepare-Condition"), function(msg)
-  prepareCondition(msg)
-end)
-
-Handlers.add("Report-Payouts", Handlers.utils.hasMatchingTag("Action", "Report-Payouts"), function(msg)
-  reportPayouts(msg)
-end)
-
 local function isCreatePosition(msg)
   if msg.Action == "Credit-Notice" and msg["X-Action"] == "Create-Position" then
       return true
@@ -749,6 +718,17 @@ local function isCreatePosition(msg)
       return false
   end
 end
+
+--[[
+    HANDLERS
+]]
+Handlers.add("Prepare-Condition", Handlers.utils.hasMatchingTag("Action", "Prepare-Condition"), function(msg)
+  prepareCondition(msg)
+end)
+
+Handlers.add("Report-Payouts", Handlers.utils.hasMatchingTag("Action", "Report-Payouts"), function(msg)
+  reportPayouts(msg)
+end)
 
 Handlers.add("Create-Position",
   isCreatePosition,
