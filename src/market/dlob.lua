@@ -140,7 +140,8 @@ end
 local function lockOrderedAssets(from, orders)
   for i = 1, #orders do
     if orders[i].isBid then
-      BalanceManager:lockFunds(from, orders[i].size * orders[i].price)
+      local fundAmount = math.ceil(orders[i].size * orders[i].price)
+      BalanceManager:lockFunds(from, fundAmount)
     else
       BalanceManager:lockShares(from, orders[i].size)
     end
@@ -404,12 +405,15 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
   local sender = msg.From == ao.id and msg.Tags.Sender or msg.From
   local data = msg.From == ao.id and msg.Tags['X-Data'] or msg.Data
   local order = json.decode(data)
+
   -- validate order
   local isValidOrder, orderValidityMessage = LimitOrderBook:checkOrderValidity(order)
+
   -- validate user balance
   local orders = {}
   orders[1] = order
   local hasSufficientBalance = validateUserAssetBalance(sender, orders)
+
   if not isValidOrder then
     ao.send({
       Target = sender,
@@ -424,8 +428,11 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
     })
   else
     lockOrderedAssets(sender, orders)
+
+    -- format price to 3 decimal place string
     local priceString = assertMaxDp(order.price, 3)
     order.price = priceString
+
     local success, orderId, orderSize, executedTrades = processOrder(order, sender, msg.Id, 1)
     unlockTradedAssets(executedTrades)
 
