@@ -2262,7 +2262,47 @@ describe("dlob.integration.test", function () {
       expect(errorMessage_).to.equal("Invalid price precision")
     })
 
-    it("+ve should update an existing order (size)", async () => {
+    it("-ve should fail to update an existing order (not from sender: size)", async () => {
+      let messageId;
+
+      let order = JSON.parse(JSON.stringify(limitOrders[0]));
+      // set the order id
+      order.uid = orderIds[1]
+      // update the order size
+      order.size *= 2
+
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet2), // not the original sender
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const errorMessage_ = Messages[0].Data
+
+      expect(action_).to.equal("Process-Order-Error")
+      expect(errorMessage_).to.equal("Sender not authorized")
+    })
+
+    it("+ve should update an existing order (from sender: size)", async () => {
       let messageId;
 
       let order = JSON.parse(JSON.stringify(limitOrders[0]));
@@ -2529,7 +2569,47 @@ describe("dlob.integration.test", function () {
       expect(orderBookBids['97000']).to.equal(5)
     });
 
-    it("+ve should cancel an existing order", async () => {
+    it("-ve should fail to cancel an existing order (not from sender)", async () => {
+      let messageId;
+
+      let order = JSON.parse(JSON.stringify(limitOrders[0]));
+      // set the order id
+      order.uid = orderIds[1]
+      // cancel order by setting size to zero
+      order.size = 0
+
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Process-Order" },
+        ],
+        signer: createDataItemSigner(wallet2), // not the sender
+        data: JSON.stringify(order),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const errorMessage_ = Messages[0].Data
+
+      expect(action_).to.equal("Process-Order-Error")
+      expect(errorMessage_).to.equal("Sender not authorized")
+    })
+
+    it("+ve should cancel an existing order (from sender)", async () => {
       let messageId;
 
       let order = JSON.parse(JSON.stringify(limitOrders[0]));

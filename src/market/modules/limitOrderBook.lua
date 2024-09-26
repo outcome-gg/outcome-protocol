@@ -60,7 +60,7 @@ function LimitOrderBookMethods:update(order)
   local existingOrder = self.orders[order.uid]
 
   if not existingOrder then
-    return false, 0  -- Return failure if the order does not exist
+    return false, 0, {}  -- Return failure if the order does not exist
   end
 
   -- Store the old size before updating
@@ -210,7 +210,7 @@ function LimitOrderBookMethods:executeTrade(order, matchedOrder)
 end
 
 -- Check if an order is valid
-function LimitOrderBookMethods:checkOrderValidity(order)
+function LimitOrderBookMethods:checkOrderValidity(sender, order)
   -- check for existing order
   local isCancel = order.size == 0
   local isUpdate = self.orders[order.uid] and true or false
@@ -252,6 +252,10 @@ function LimitOrderBookMethods:checkOrderValidity(order)
 
   if order.size ~= roundedSize then
     return false, "Invalid size precision"
+  end
+
+  if isUpdate and sender ~= self.orders[order.uid].sender then
+    return false, "Sender not authorized"
   end
 
   return true, "Order is valid"

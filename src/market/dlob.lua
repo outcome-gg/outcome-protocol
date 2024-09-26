@@ -407,7 +407,7 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
   local order = json.decode(data)
 
   -- validate order
-  local isValidOrder, orderValidityMessage = LimitOrderBook:checkOrderValidity(order)
+  local isValidOrder, orderValidityMessage = LimitOrderBook:checkOrderValidity(sender, order)
 
   -- validate user balance
   local orders = {}
@@ -454,7 +454,7 @@ Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-
   local orders = json.decode(data)
   -- validate orders
   for i = 1, #orders do
-    local isValidOrder, orderValidityMessage = LimitOrderBook:checkOrderValidity(orders[i])
+    local isValidOrder, orderValidityMessage = LimitOrderBook:checkOrderValidity(sender, orders[i])
     assert(isValidOrder, 'order ' .. tostring(i) .. ': ' .. orderValidityMessage)
     local priceString = assertMaxDp(orders[i].price, 3)
     orders[i].price = priceString
@@ -597,7 +597,7 @@ end)
 
 Handlers.add('Check-Order-Validity', Handlers.utils.hasMatchingTag('Action', 'Check-Order-Validity'), function(msg)
   local order = json.decode(msg.Data)
-  local isValid, message = LimitOrderBook:checkOrderValidity(order)
+  local isValid, message = LimitOrderBook:checkOrderValidity(msg.From, order)
 
   ao.send({
     Target = msg.From,
