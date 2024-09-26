@@ -4,7 +4,7 @@ local DequeMethods = {}
 
 -- Constructor
 function Deque:new()
-  local obj = { head = 1, tail = 0, levelSize = 0, data = {} }
+  local obj = { head = 1, tail = 0, data = {}, levelSize = 0 }
   setmetatable(obj, { __index = DequeMethods })
   return obj
 end
@@ -13,7 +13,6 @@ end
 function DequeMethods:pushTail(value)
   self.tail = self.tail + 1
   self.data[self.tail] = value
-  self.levelSize = self.levelSize + value.size
 end
 
 -- Remove from the head (dequeue)
@@ -22,7 +21,6 @@ function DequeMethods:popHead()
   local value = self.data[self.head]
   self.data[self.head] = nil -- Free memory
   self.head = self.head + 1
-  self.levelSize = self.levelSize - value.size
   return value
 end
 
@@ -30,7 +28,6 @@ end
 function DequeMethods:popByUid(uid)
   for i = self.head, self.tail do
     if self.data[i].uid == uid then
-      self.levelSize = self.levelSize - self.data[i].size
       self.tail = self.tail - 1
       table.remove(self.data, i)
       return true

@@ -36,6 +36,10 @@ function LimitOrderBookMethods:add(order)
     -- Enqueue the order into the price level deque
     self[orderType][price]:pushTail(order)
 
+    -- Update the levelSize of the price level
+    local priceLevel = self[orderType][price]
+    self[orderType][price].levelSize = priceLevel.levelSize + order.size
+
     -- Store the order for fast lookup
     self.orders[order.uid] = order
 
@@ -64,6 +68,12 @@ function LimitOrderBookMethods:update(order)
 
   -- Update the order size using the method from order.lua
   existingOrder:updateSize(order.size)
+
+  -- Update the levelSize of the price level
+  local priceLevel = self[existingOrder.isBid and "bids" or "asks"][tostring(existingOrder.price)]
+  if priceLevel then
+    priceLevel.levelSize = priceLevel.levelSize - oldSize + existingOrder.size
+  end
 
   -- If the size is now 0, remove the order
   if order.size == 0 then
@@ -178,6 +188,11 @@ function LimitOrderBookMethods:executeTrade(order, matchedOrder)
   local tradeSize = math.min(order.size, matchedOrder.size)
   matchedOrder.size = matchedOrder.size - tradeSize
   order.size = order.size - tradeSize
+
+  -- Update the levelSize of the price level
+  local orderType = matchedOrder.isBid and "bids" or "asks"
+  local priceLevel = self[orderType][matchedOrder.price]
+  self[orderType][matchedOrder.price].levelSize = priceLevel.levelSize - tradeSize
 
   -- If the matched order's size is 0, remove it from the book
   if matchedOrder.size == 0 then
@@ -318,23 +333,15 @@ function LimitOrderBookMethods:getMarketDepth()
 
   -- Collect bid levels
   for price, priceLevel in pairs(self.bids) do
-    local levelSize = 0
-    for _, order in ipairs(priceLevel.data) do
-      levelSize = levelSize + order.size
-    end
-    if levelSize > 0 then
-      table.insert(marketDepth.bids, { price = price, levelSize = levelSize })
+    if priceLevel.levelSize > 0 then
+      table.insert(marketDepth.bids, { price = price, levelSize = priceLevel.levelSize })
     end
   end
 
   -- Collect ask levels
   for price, priceLevel in pairs(self.asks) do
-    local levelSize = 0
-    for _, order in ipairs(priceLevel.data) do
-      levelSize = levelSize + order.size
-    end
-    if levelSize > 0 then
-      table.insert(marketDepth.asks, { price = price, levelSize = levelSize })
+    if priceLevel.levelSize > 0 then
+      table.insert(marketDepth.asks, { price = price, levelSize = priceLevel.levelSize })
     end
   end
 

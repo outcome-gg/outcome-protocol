@@ -2381,7 +2381,7 @@ describe("dlob.integration.test", function () {
       expect(orderBookBids['97000']).to.equal(5)
     });
 
-    it("+ve should reject an update to existing order (isBid)", async () => {
+    it("-ve should reject an update to existing order (isBid)", async () => {
       let messageId;
 
       let order = JSON.parse(JSON.stringify(limitOrders[0]));
@@ -2419,7 +2419,7 @@ describe("dlob.integration.test", function () {
       expect(errorMessage_).to.equal("Invalid isBid")
     })
 
-    it("+ve should reject an update to existing order (price)", async () => {
+    it("-ve should reject an update to existing order (price)", async () => {
       let messageId;
 
       let order = JSON.parse(JSON.stringify(limitOrders[0]));
@@ -2456,6 +2456,78 @@ describe("dlob.integration.test", function () {
       expect(action_).to.equal("Process-Order-Error")
       expect(errorMessage_).to.equal("Invalid price")
     })
+
+    it("+ve [metrics] should retrieve orderbook metrics (unchanged after invalid orders)", async () => {
+      let messageId;
+      await message({
+        process: dlob,
+        tags: [
+          { name: "Action", value: "Get-Order-Book-Metrics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: dlob,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+
+      const priceLevelsBids = JSON.parse(data_.marketDepth)['bids']
+      const priceLevelsAsks = JSON.parse(data_.marketDepth)['asks']
+
+      let orderBookBids = {}
+      let orderBookAsks = {}
+
+      for (let i = 0; i < priceLevelsBids.length; i++) {
+        let priceLevel = priceLevelsBids[i]
+        if (orderBookBids[priceLevel.price] === undefined) {
+          orderBookBids[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookBids[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      for (let i = 0; i < priceLevelsAsks.length; i++) {
+        let priceLevel = priceLevelsAsks[i]
+        if (orderBookAsks[priceLevel.price] === undefined) {
+          orderBookAsks[priceLevel.price] = priceLevel.levelSize
+        } else {
+          orderBookAsks[priceLevel.price] += priceLevel.levelSize
+        }
+      }
+
+      expect(action_).to.equal("Order-Book-Metrics")
+      expect(data_.bestBid).to.equal('99000')
+      expect(data_.bestAsk).to.equal('100000')
+      expect(Number(data_.spread)).to.equal(1000)
+      expect(Number(data_.midPrice)).to.equal(99500)
+      expect(JSON.parse(data_.totalLiquidity)['total']).to.equal(7040.615)
+      expect(JSON.parse(data_.totalLiquidity)['bids']).to.equal(1965)
+      expect(JSON.parse(data_.totalLiquidity)['asks']).to.equal(5075.615)
+      expect(JSON.parse(data_.marketDepth)['bids'].length).to.equal(3) // 3 priceLevels
+      expect(JSON.parse(data_.marketDepth)['asks'].length).to.equal(5) // 4 priceLevels
+      expect(orderBookAsks['103000']).to.equal(5)
+      expect(orderBookAsks['102000']).to.equal(20)
+      expect(orderBookAsks['101123']).to.equal(5)
+      expect(orderBookAsks['101000']).to.equal(15)
+      expect(orderBookAsks['100000']).to.equal(5)
+      expect(orderBookBids['99000']).to.equal(10)
+      expect(orderBookBids['98000']).to.equal(5)
+      expect(orderBookBids['97000']).to.equal(5)
+    });
 
     it("+ve should cancel an existing order", async () => {
       let messageId;
