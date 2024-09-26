@@ -124,7 +124,7 @@ describe("dlob.integration.test", function () {
   /************************************************************************ 
   * ConditionalTokens.Setup
   ************************************************************************/
-  describe("dlob.ConditionalTokens.Setup", function () {
+  describe("ConditionalTokens.Setup", function () {
     it("+ve should get conditionId", async () => {
       let messageId;
       await message({
@@ -476,7 +476,7 @@ describe("dlob.integration.test", function () {
   /************************************************************************ 
   * Initialization and Setup
   ************************************************************************/
-  describe("dlob.Init", function () {
+  describe("Init", function () {
     it("+ve should init dlob", async () => {
       let messageId;
       await message({
@@ -558,7 +558,7 @@ describe("dlob.integration.test", function () {
   /************************************************************************ 
   * Fund Management
   ************************************************************************/
-  describe("dlob.Fund Management", function () {
+  describe("Fund Management", function () {
     it("+ve should get balance info (no balances)", async () => {
       let messageId;
       await message({
@@ -774,7 +774,7 @@ describe("dlob.integration.test", function () {
       const quantity_ = Messages[1].Tags.find(t => t.name === 'Quantity').value
       const message_ = Messages[1].Data
 
-      expect(action_).to.equal("Withdraw-Funds-Notice")
+      expect(action_).to.equal("Funds-Withdrawn")
       expect(quantity_).to.equal("50000000000")
       expect(message_).to.equal("Withdraw funds succeeded")
     })
@@ -844,7 +844,7 @@ describe("dlob.integration.test", function () {
       const quantity_ = Messages[1].Tags.find(t => t.name === 'Quantity').value
       const message_ = Messages[1].Data
 
-      expect(action_).to.equal("Withdraw-Shares-Notice")
+      expect(action_).to.equal("Shares-Withdrawn")
       expect(quantity_).to.equal("50000000000")
       expect(message_).to.equal("Withdraw shares succeeded")
     })
@@ -914,7 +914,7 @@ describe("dlob.integration.test", function () {
       const quantity_ = Messages[1].Tags.find(t => t.name === 'Quantity').value
       const message_ = Messages[1].Data
 
-      expect(action_).to.equal("Withdraw-Funds-Notice")
+      expect(action_).to.equal("Funds-Withdrawn")
       expect(quantity_).to.equal("50000000000")
       expect(message_).to.equal("Withdraw funds succeeded")
     })
@@ -950,7 +950,7 @@ describe("dlob.integration.test", function () {
       const quantity_ = Messages[1].Tags.find(t => t.name === 'Quantity').value
       const message_ = Messages[1].Data
 
-      expect(action_).to.equal("Withdraw-Shares-Notice")
+      expect(action_).to.equal("Shares-Withdrawn")
       expect(quantity_).to.equal("50000000000")
       expect(message_).to.equal("Withdraw shares succeeded")
     })

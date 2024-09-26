@@ -39,45 +39,6 @@ local function initNotice(collateralToken, conditionalTokens, conditionalTokensI
   })
 end
 
-local function processOrderNotice() end
-local function processOrdersNotice() end
-
-local function addFundsNotice(from, quantity)
-  ao.send({
-    Target = from,
-    Action = 'Add-Funds-Notice',
-    Quantity = quantity,
-    Data = 'Successfully added funds'
-  })
-end
-
-local function addSharesNotice(from, quantity)
-  ao.send({
-    Target = from,
-    Action = 'Add-Shares-Notice',
-    Quantity = quantity,
-    Data = 'Successfully added shares'
-  })
-end
-
-local function withdrawFundsNotice(from, quantity, message)
-  ao.send({
-    Target = from,
-    Action = 'Withdraw-Funds-Notice',
-    Quantity = quantity,
-    Data = message
-  })
-end
-
-local function withdrawSharesNotice(from, quantity, message)
-  ao.send({
-    Target = from,
-    Action = 'Withdraw-Shares-Notice',
-    Quantity = quantity,
-    Data = message
-  })
-end
-
 --[[
     FUNCTIONS
 ]]
@@ -135,6 +96,121 @@ local function validateUserAssetBalance(from, orders)
   local availableShares = tonumber(BalanceManager:getAvailableShares(from))
 
   return totalFundQuantity <= availableFunds and totalShareQuantity <= availableShares
+end
+
+local function addFunds(sender, quantity, xAction, xData)
+  BalanceManager:addFunds(sender, quantity)
+
+  ao.send({
+    Target = sender,
+    Action = 'Funds-Added',
+    Quantity = quantity,
+    Data = 'Successfully added funds'
+  })
+
+  -- Forward Order(s)
+  if xAction and xData then
+    if xAction == 'Process-Order' then
+      ao.send({
+        Target = ao.id,
+        Action = 'Process-Order',
+        Sender = sender,
+        Data = xData
+      })
+    elseif xAction == 'Process-Orders' and xData then
+      ao.send({
+        Target = ao.id,
+        Action = 'Process-Orders',
+        Sender = sender,
+        Data = xData
+      })
+    end
+  end
+end
+
+local function addShares(sender, quantity, xAction, xData)
+  BalanceManager:addShares(sender, quantity)
+
+  ao.send({
+    Target = sender,
+    Action = 'Shares-Added',
+    Quantity = quantity,
+    Data = 'Successfully added shares'
+  })
+
+  -- Forward Order(s)
+  if xAction and xData then
+    if xAction == 'Process-Order' then
+      ao.send({
+        Target = ao.id,
+        Action = 'Process-Order',
+        Sender = sender,
+        Data = xData
+      })
+    elseif xAction == 'Process-Orders' and xData then
+      ao.send({
+        Target = ao.id,
+        Action = 'Process-Orders',
+        Sender = sender,
+        Data = xData
+      })
+    end
+  end
+end
+
+local function withdrawFunds(sender, quantity)
+  local success, message = BalanceManager:withdrawFunds(sender, quantity)
+
+  if not success then
+    ao.send({
+      Target = sender,
+      Action = 'Withdraw-Funds-Error',
+      Data = message
+    })
+    return
+  end
+
+  ao.send({
+    Target = CollateralToken,
+    Action = 'Transfer',
+    Recipient = sender,
+    Quantity = quantity
+  })
+
+  ao.send({
+    Target = sender,
+    Action = 'Funds-Withdrawn',
+    Quantity = quantity,
+    Data = message
+  })
+end
+
+local function withdrawShares(sender, quantity)
+  local success, message = BalanceManager:withdrawShares(sender, quantity)
+
+  if not success then
+    ao.send({
+      Target = sender,
+      Action = 'Withdraw-Shares-Error',
+      Data = message
+    })
+    return
+  end
+
+  ao.send({
+    Target = ConditionalTokens,
+    Action = 'Transfer-Single',
+    Recipient = sender,
+    TokenId = ConditionalTokensId,
+    Quantity = quantity
+  })
+
+  ao.send({
+    Target = sender,
+    Action = 'Shares-Withdrawn',
+    Quantity = quantity,
+    Data = message
+  })
 end
 
 local function lockOrderedAssets(from, orders)
@@ -276,28 +352,7 @@ Handlers.add('Add-Funds', isAddFunds, function(msg)
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
   assert(msg.Tags.Sender, 'Sender is required!')
 
-  BalanceManager:addFunds(msg.Tags.Sender, msg.Tags.Quantity)
-
-  addFundsNotice(msg.From, msg.Tags.Quantity)
-
-  -- Forward Order(s)
-  if msg.Tags['X-Action'] and msg.Tags['X-Data'] then
-    if msg.Tags['X-Action'] == 'Process-Order' then
-      ao.send({
-        Target = ao.id,
-        Action = 'Process-Order',
-        Sender = msg.Tags.Sender,
-        Data = msg.Tags['X-Data']
-      })
-    elseif msg.Tags['X-Action'] == 'Process-Orders' and msg.Tags['X-Data'] then
-      ao.send({
-        Target = ao.id,
-        Action = 'Process-Orders',
-        Sender = msg.Tags.Sender,
-        Data = msg.Tags['X-Data']
-      })
-    end
-  end
+  addFunds(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
 end)
 
 Handlers.add('Add-Shares', isAddShares, function(msg)
@@ -306,75 +361,18 @@ Handlers.add('Add-Shares', isAddShares, function(msg)
   local quantity = msg.Tags.Quantities and json.decode(msg.Tags.Quantities)[1] or msg.Tags.Quantity
   assert(bint.__lt(0, bint(quantity)), 'quantity must be greater than zero!')
   assert(msg.Tags.Sender, 'Sender is required!')
-  BalanceManager:addShares(msg.Tags.Sender, msg.Tags.Quantity)
 
-  addSharesNotice(msg.Tags.Sender, msg.Tags.Quantity)
-
-  -- Forward Order(s)
-  if msg.Tags['X-Action'] and msg.Tags['X-Data'] then
-    if msg.Tags['X-Action'] == 'Process-Order' then
-      ao.send({
-        Target = ao.id,
-        Action = 'Process-Order',
-        Sender = msg.Tags.Sender,
-        Data = msg.Tags['X-Data']
-      })
-    elseif msg.Tags['X-Action'] == 'Process-Orders' and msg.Tags['X-Data'] then
-      ao.send({
-        Target = ao.id,
-        Action = 'Process-Orders',
-        Sender = msg.Tags.Sender,
-        Data = msg.Tags['X-Data']
-      })
-    end
-  end
+  addShares(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
 end)
 
 Handlers.add('Withdraw-Funds', Handlers.utils.hasMatchingTag('Action', 'Withdraw-Funds'), function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
-  local success, message = BalanceManager:withdrawFunds(msg.From, msg.Tags.Quantity)
-
-  if not success then
-    ao.send({
-      Target = msg.From,
-      Action = 'Withdraw-Funds-Error',
-      Data = message
-    })
-    return
-  end
-
-  ao.send({
-    Target = CollateralToken,
-    Action = 'Transfer',
-    Recipient = msg.From,
-    Quantity = msg.Tags.Quantity
-  })
-
-  withdrawFundsNotice(msg.From, msg.Tags.Quantity, message)
+  withdrawFunds(msg.From, msg.Tags.Quantity)
 end)
 
 Handlers.add('Withdraw-Shares', Handlers.utils.hasMatchingTag('Action', 'Withdraw-Shares'), function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
-  local success, message = BalanceManager:withdrawShares(msg.From, msg.Tags.Quantity)
-
-  if not success then
-    ao.send({
-      Target = msg.From,
-      Action = 'Withdraw-Shares-Error',
-      Data = message
-    })
-    return
-  end
-
-  ao.send({
-    Target = ConditionalTokens,
-    Action = 'Transfer-Single',
-    Recipient = msg.From,
-    TokenId = ConditionalTokensId,
-    Quantity = msg.Tags.Quantity
-  })
-
-  withdrawSharesNotice(msg.From, msg.Tags.Quantity, message)
+  withdrawShares(msg.From, msg.Tags.Quantity)
 end)
 
 Handlers.add('Get-Balance-Info', Handlers.utils.hasMatchingTag('Action', 'Get-Balance-Info'), function(msg)
