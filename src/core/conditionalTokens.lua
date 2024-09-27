@@ -152,9 +152,9 @@ end
 -- @param resolutionAgent The process assigned to report the result for the prepared condition.
 -- @param questionId An identifier for the question to be answered by the resolutionAgent.
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
-local function conditionPreparationNotice(sender, conditionId, resolutionAgent, questionId, outcomesSlotCount)
+local function conditionPreparationNotice(conditionId, resolutionAgent, questionId, outcomesSlotCount)
   ao.send({
-    Target = "NLph98HoV0dzFLP-q0H1doDwMhI3VDwhc8BFOgpxZlI",
+    Target = DataIndex,
     Action = "Condition-Preparation-Notice",
     ConditionId = conditionId,
     ResolutionAgent = resolutionAgent,
@@ -438,7 +438,7 @@ local function prepareCondition(msg)
   -- Initialize the denominator to zero to indicate that the condition has not been resolved.
   PayoutDenominator[conditionId] = 0
   -- Send the condition preparation notice.
-  conditionPreparationNotice(msg.From, conditionId, data.resolutionAgent, data.questionId, data.outcomeSlotCount)
+  conditionPreparationNotice(conditionId, data.resolutionAgent, data.questionId, data.outcomeSlotCount)
 end
 
 -- @dev Called by the resolutionAgent for reporting results of conditions. Will set the payout vector for the condition with the ID `keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount))`, 
@@ -747,7 +747,7 @@ Handlers.add("Split-Position", Handlers.utils.hasMatchingTag("Action", "Split-Po
   assert(data.conditionId, "conditionId is required!")
   assert(data.partition, "partition is required!")
   assert(data.quantity, "quantity is required!")
-  splitPosition(msg.Sender, data.collateralToken, data.parentCollectionId, data.conditionId, data.partition, data.quantity, false, msg)
+  splitPosition(msg.From, data.collateralToken, data.parentCollectionId, data.conditionId, data.partition, data.quantity, false, msg)
 end)
 
 Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-Positions"), function(msg)

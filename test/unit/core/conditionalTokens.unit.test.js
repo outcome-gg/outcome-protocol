@@ -11,7 +11,7 @@ const genRanHex = size => [...Array(size)].map(() => Math.floor(Math.random() * 
  * LOAD MODULE
  */
 test('load conditionalTokens module', async () => {
-  const code = fs.readFileSync('./src/market/conditionalTokens.lua', 'utf-8')
+  const code = fs.readFileSync('./src/core/conditionalTokens.lua', 'utf-8')
   const result = await Send({
     Action: 'Eval',
     Data: `
@@ -131,6 +131,25 @@ test('Prepare-Condition: should send a Condition-Preparation-Notice', async () =
   assert.equal(outcomeSlotCount_, outcomeSlotCount)
 })
 
+test('Prepare-Condition: should not be able to prepare the same condition more than once', async () => {
+  const resolutionAgent = '123';
+  // non-random questionId
+  const questionId = 'NON-RANDOM';
+  const outcomeSlotCount = 9;
+
+  const result = await Send({
+    From: "1234",
+    Action: 'Prepare-Condition',
+    Data: JSON.stringify({
+      resolutionAgent: resolutionAgent,
+      questionId: questionId,
+      outcomeSlotCount: outcomeSlotCount
+    })
+  })
+
+  assert.match(result, /condition already prepared/)
+})
+
 test('Prepare-Condition: should make outcome slot count available via Get-Outcome-Slot-Count', async () => {
   const resolutionAgent = '123';
   // non-randomized questionId
@@ -178,25 +197,6 @@ test('Prepare-Condition: should leave payout denominator unset', async () => {
   assert.equal(conditionId_, conditionId)
   // should be zero / unset
   assert.equal(denominator_, 0)
-})
-
-test('Prepare-Condition: should not be able to prepare the same condition more than once', async () => {
-  const resolutionAgent = '123';
-  // non-random questionId
-  const questionId = 'NON-RANDOM';
-  const outcomeSlotCount = 9;
-
-  const result = await Send({
-    From: "1234",
-    Action: 'Prepare-Condition',
-    Data: JSON.stringify({
-      resolutionAgent: resolutionAgent,
-      questionId: questionId,
-      outcomeSlotCount: outcomeSlotCount
-    })
-  })
-
-  assert.match(result, /condition already prepared/)
 })
 
 /* 
@@ -378,7 +378,7 @@ test('Split-Position: should transfer split collateral from trader with a Positi
   assert.equal(collateralToken_, collateralToken)
   assert.equal(parentCollectionId_, parentCollectionId)
   assert.equal(conditionId_, conditionId)
-  assert.equal(JSON.stringify(partition_), JSON.stringify(partition))
+  assert.equal(partition_, JSON.stringify(partition))
   assert.equal(quantity_, quantity)
 })
 
@@ -501,6 +501,16 @@ test('Split-Position: New Prepare-Condition: should send a Condition-Preparation
   assert.equal(outcomeSlotCount_, outcomeSlotCount)
 })
 
+test('Split-Position: [balanceOf] should have a balance of tokenId 4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532', async () => {
+  const result = await Send({
+    From: "9876",
+    Action: 'Balance-Of',
+    TokenId: '4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532'
+  })
+
+  console.log("balanceOf result", result.Messages[0].Tags)
+})
+
 test('Split-Position: should split from a parentCollection from the same condition and send a Position-Split-Notice', async () => {
   const resolutionAgent = "123";
   // non-random questionId
@@ -531,6 +541,8 @@ test('Split-Position: should split from a parentCollection from the same conditi
       quantity: quantity
     })
   })
+
+  console.log("result", result)
 
   // burn notice
   const action_0 = result.Messages[0].Tags.find(t => t.name === 'Action').value
