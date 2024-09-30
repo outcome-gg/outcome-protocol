@@ -1417,7 +1417,7 @@ describe("conditionalTokens.integration.test", function () {
       expect(balances_["a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485"][walletAddress]).to.equal("18") // +15+3
     })
 
-    it("+ve should verify updated collateral balance (conditionalTokens +/-0)", async () => {
+    it("+ve should verify unchanged collateral balance (conditionalTokens +/-0)", async () => {
       let messageId;
       await message({
         process: collateralToken,
@@ -1450,42 +1450,529 @@ describe("conditionalTokens.integration.test", function () {
   /************************************************************************ 
   * Merge Positions
   ************************************************************************/
-  // describe("Merge Positions", function () {
-  //   it("-ve should not merge (amount exceed balances in to-be-merged positions)", async () => {
-  //   })
+  describe("Merge Positions", function () {
+    it("-ve should not merge (amount exceed balances in to-be-merged positions)", async () => {
+      const outcomeSlotCount = 2
+      const conditionId = keccak256(resolutionAgent + questionId2 + outcomeSlotCount.toString()).toString('hex')
+      const parentCollectionId = collectionIds[0] // collectionId for indexSet condition 1 0b111000000: A
+      const partition = [0b01, 0b10] // disjoint set IN, OUT
 
-  //   it("+ve should merge (deeper-level positions and send notice)", async () => {
-  //   })
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Merge-Positions" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify({
+          collateralToken: collateralToken,
+          conditionId: conditionId,
+          partition: partition,
+          parentCollectionId: parentCollectionId,
+          quantity: "4" // balance is 3
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
-  //   it("+ve should merge (lower-level positions and send notice)", async () => {
-  //   })
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
 
-  //   it("+ve should merge (first-level positions and send notice)", async () => {
-  //   })
+      // Error: User must have sufficient tokens!
+      expect(Messages.length).to.be.equal(0)
+    })
 
-  //   it("+ve should verify positions are burned (post merge)", async () => {
-  //   })
-  // })
+    it("+ve should merge (to non-collateral-parent and send notice)", async () => {
+      const outcomeSlotCount = 2
+      const conditionId = keccak256(resolutionAgent + questionId2 + outcomeSlotCount.toString()).toString('hex')
+      const parentCollectionId = collectionIds[0] // collectionId for indexSet condition 1 0b111000000: A
+      const partition = [0b01, 0b10] // disjoint set IN, OUT
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Merge-Positions" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify({
+          collateralToken: collateralToken,
+          conditionId: conditionId,
+          partition: partition,
+          parentCollectionId: parentCollectionId,
+          quantity: "2" // balance is 3
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(3)
+
+      // conditional-token notice
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const tokenIds_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'TokenIds').value)
+      const quantities_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'Quantities').value)
+      const outcomeBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'OutcomeBalances').value)
+
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const tokenId_1 = Messages[1].Tags.find(t => t.name === 'TokenId').value
+      const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
+
+      const action_2 = Messages[2].Tags.find(t => t.name === 'Action').value
+      const conditionId_2 = Messages[2].Tags.find(t => t.name === 'ConditionId').value
+      const quantity_2 = Messages[2].Tags.find(t => t.name === 'Quantity').value
+      const partition_2 = JSON.parse(Messages[2].Tags.find(t => t.name === 'Partition').value)
+      const collateralToken_2 = Messages[2].Tags.find(t => t.name === 'CollateralToken').value
+      const parentCollectionId_2 = Messages[2].Tags.find(t => t.name === 'ParentCollectionId').value
+
+      expect(action_0).to.equal("Burn-Batch-Notice")
+      expect(tokenIds_0[0]).to.equal("a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485")
+      expect(tokenIds_0[1]).to.equal("b1078a54de03ee4ca6970e2f2e2d878b43aec8c411e083a46543e13e3d42683a")
+      expect(quantities_0[0]).to.equal("2")
+      expect(quantities_0[1]).to.equal("2")
+      expect(outcomeBalances_0[0]).to.equal("16")
+      expect(outcomeBalances_0[1]).to.equal("1")
+
+      expect(action_1).to.equal("Mint-Single-Notice")
+      expect(tokenId_1).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(quantity_1).to.equal("2")
+
+      expect(action_2).to.equal("Positions-Merge-Notice")
+      expect(conditionId_2).to.equal("c696ccc93ba9275d17c93fb9581cfa08bb7a02299fe0599c12e0ae8cf1d7425c")
+      expect(quantity_2).to.equal("2")
+      expect(partition_2[0]).to.equal(1) // 0b01
+      expect(partition_2[1]).to.equal(2) // 0b10
+      expect(collateralToken_2).to.equal(collateralToken)
+      expect(parentCollectionId_2).to.equal(parentCollectionId)
+    })
+
+    it("+ve should verify merges (via balances)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+
+      // A,B,C split from collateral
+      expect(balances_["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"][walletAddress]).to.equal("79") // +2
+      expect(balances_["a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3"][walletAddress]).to.equal("100")
+      expect(balances_["210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d"][walletAddress]).to.equal("100")
+      // IN, OUT split from collateral
+      expect(balances_["57eb31d9b46ae3959d8fc5df467552bd1bb3b6f5554162c77beed49648699ba8"][walletAddress]).to.equal("100")
+      expect(balances_["cd0aa400e245543a80795533ed5d75e416e0e78b347965fe6097cfb55421b16a"][walletAddress]).to.equal("85") 
+      // A&HI, A&LO split from A
+      expect(balances_["be6063e1fcab5e2bf2bf27830a1b94a7efb504d232480a7cf0fd324f74682e30"][walletAddress]).to.equal("20")
+      expect(balances_["4314febbea54043b317c4ec77794eab1f262a278d84db8f73589bf5c1e66b770"][walletAddress]).to.equal("20")
+      // B&IN, C&IN split from IN
+      expect(balances_["eb5a50032b2d6662e0e5f89c2fc45fbacbdfa8cfdacce260e272b0df56780c50"][walletAddress]).to.equal("15") 
+      expect(balances_["1b428749c3b62e80cc4dcf72f47cac0f73ccf0a54c3c8a35d810c98b8830d516"][walletAddress]).to.equal("15") 
+      // A&OUT split from A
+      expect(balances_["b1078a54de03ee4ca6970e2f2e2d878b43aec8c411e083a46543e13e3d42683a"][walletAddress]).to.equal("1") // -2
+      // A&IN split from IN and A
+      expect(balances_["a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485"][walletAddress]).to.equal("16") // -2
+    })
+
+    it("+ve should verify unchanged collateral balance (conditionalTokens +/-0)", async () => {
+      let messageId;
+      await message({
+        process: collateralToken,
+        tags: [
+          { name: "Action", value: "Balance" },
+          { name: "Recipient", value: conditionalTokens },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: collateralToken,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balance_ = JSON.parse(Messages[0].Data)
+
+      expect(balance_).to.equal(200)
+    })
+
+    it("+ve should merge (to collateral-parent and send notice)", async () => {
+      const outcomeSlotCount = 9
+      const conditionId = keccak256(resolutionAgent + questionId1 + outcomeSlotCount.toString()).toString('hex')
+      const parentCollectionId = "" // merge to collateral
+      const partition = [0b111000000, 0b000111000, 0b000000111] // disjoint set A, B, C
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Merge-Positions" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify({
+          collateralToken: collateralToken,
+          conditionId: conditionId,
+          partition: partition,
+          parentCollectionId: parentCollectionId,
+          quantity: "70" // min balance is 79
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      
+      console.log("Messages.length", Messages.length)
+
+      console.log("Messages[0].Tags", Messages[0].Tags)
+      console.log("Messages[1].Tags", Messages[1].Tags)
+
+
+      expect(Messages.length).to.be.equal(2)
+
+      // conditional-token notice
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const tokenIds_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'TokenIds').value)
+      const quantities_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'Quantities').value)
+      const outcomeBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'OutcomeBalances').value)
+
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
+      const recipient_1 = Messages[1].Tags.find(t => t.name === 'Recipient').value
+      const xAction_1 = Messages[1].Tags.find(t => t.name === 'X-Action').value
+      const xConditionId_1 = Messages[1].Tags.find(t => t.name === 'X-ConditionId').value
+      const xCollateralToken_1 = Messages[1].Tags.find(t => t.name === 'X-CollateralToken').value 
+      const xParentCollectionId_1 = Messages[1].Tags.find(t => t.name === 'X-ParentCollectionId').value
+      const xPartition_1 = JSON.parse(Messages[1].Tags.find(t => t.name === 'X-Partition').value)
+
+      expect(action_0).to.equal("Burn-Batch-Notice")
+      expect(tokenIds_0[0]).to.equal("a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3")
+      expect(tokenIds_0[1]).to.equal("210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d")
+      expect(tokenIds_0[2]).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(quantities_0[0]).to.equal("70")
+      expect(quantities_0[1]).to.equal("70")
+      expect(quantities_0[2]).to.equal("70")
+      expect(outcomeBalances_0[0]).to.equal("30")
+      expect(outcomeBalances_0[1]).to.equal("30")
+      expect(outcomeBalances_0[2]).to.equal("9")
+
+      expect(action_1).to.equal("Transfer")
+      expect(quantity_1).to.equal("70")
+      expect(recipient_1).to.equal(walletAddress)
+      expect(xAction_1).to.equal("Positions-Merge-Completion")
+      expect(xConditionId_1).to.equal("a78dfbe0312214db9e0949b363d5543134046461d00a61feef498584e9c31ca3")
+      expect(xCollateralToken_1).to.equal(collateralToken)
+      expect(xParentCollectionId_1).to.equal(parentCollectionId)
+      expect(xPartition_1[0]).to.equal(448) // 0b000000111
+      expect(xPartition_1[1]).to.equal(56) // 0b000111000
+      expect(xPartition_1[2]).to.equal(7) // 0b111000000
+    })
+
+    it("+ve should verify positions are burned (post merge)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+
+      // A,B,C split from collateral
+      expect(balances_["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"][walletAddress]).to.equal("9") // -70
+      expect(balances_["a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3"][walletAddress]).to.equal("30") // -70
+      expect(balances_["210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d"][walletAddress]).to.equal("30") // -70
+      // IN, OUT split from collateral
+      expect(balances_["57eb31d9b46ae3959d8fc5df467552bd1bb3b6f5554162c77beed49648699ba8"][walletAddress]).to.equal("100")
+      expect(balances_["cd0aa400e245543a80795533ed5d75e416e0e78b347965fe6097cfb55421b16a"][walletAddress]).to.equal("85") 
+      // A&HI, A&LO split from A
+      expect(balances_["be6063e1fcab5e2bf2bf27830a1b94a7efb504d232480a7cf0fd324f74682e30"][walletAddress]).to.equal("20")
+      expect(balances_["4314febbea54043b317c4ec77794eab1f262a278d84db8f73589bf5c1e66b770"][walletAddress]).to.equal("20")
+      // B&IN, C&IN split from IN
+      expect(balances_["eb5a50032b2d6662e0e5f89c2fc45fbacbdfa8cfdacce260e272b0df56780c50"][walletAddress]).to.equal("15") 
+      expect(balances_["1b428749c3b62e80cc4dcf72f47cac0f73ccf0a54c3c8a35d810c98b8830d516"][walletAddress]).to.equal("15") 
+      // A&OUT split from A
+      expect(balances_["b1078a54de03ee4ca6970e2f2e2d878b43aec8c411e083a46543e13e3d42683a"][walletAddress]).to.equal("1") 
+      // A&IN split from IN and A
+      expect(balances_["a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485"][walletAddress]).to.equal("16") 
+    })
+
+    it("+ve should verify collateral tokens are returned (post merge)", async () => {
+      let messageId;
+      await message({
+        process: collateralToken,
+        tags: [
+          { name: "Action", value: "Balance" },
+          { name: "Recipient", value: conditionalTokens },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: collateralToken,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balance_ = JSON.parse(Messages[0].Data)
+
+      expect(balance_).to.equal(130) // -70
+    })
+  })
 
   /************************************************************************ 
   * Transfer Position
   ************************************************************************/
-  // describe("Prepare Condition", function () {
-  //   it("+ve should get balance-of", async () => {
-  //   })
+  describe("Prepare Condition", function () {
+    it("+ve should get balance-of", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balance-Of" },
+          { name: "TokenId", value: "2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
-  //   it("-ve should not send single transfer (more than split balance)", async () => {
-  //   })
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
 
-  //   it("+ve should send single transfer (with notice)", async () => {
-  //   })
+      expect(Messages.length).to.be.equal(1)
 
-  //   it("-ve should not send batch transfer (more than split balance)", async () => {
-  //   })
+      const balance_ = JSON.parse(Messages[0].Data)
 
-  //   it("+ve should send batch transfer (with notice)", async () => {
-  //   })
-  // })
+      expect(balance_).to.equal(9) // -70
+    })
+
+    it("-ve should not send single transfer (more than split balance)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Transfer-Single" },
+          { name: "TokenId", value: "2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06" },
+          { name: "Quantity", value: "10" },
+          { name: "Recipient", value: walletAddress2 }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
+      const tokenId_ = Messages[0].Tags.find(t => t.name === 'Token-Id').value
+
+      expect(action_).to.equal("Transfer-Error")
+      expect(error_).to.equal("Insufficient Balance!")
+      expect(tokenId_).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+    })
+
+    it("+ve should send single transfer (with notice)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Transfer-Single" },
+          { name: "TokenId", value: "2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06" },
+          { name: "Quantity", value: "5" },
+          { name: "Recipient", value: walletAddress2 }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(2)
+
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const quantity_0 = Messages[0].Tags.find(t => t.name === 'Quantity').value
+      const tokenId_0 = Messages[0].Tags.find(t => t.name === 'TokenId').value
+      const recipient_0 = Messages[0].Tags.find(t => t.name === 'Recipient').value
+    
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
+      const tokenId_1 = Messages[1].Tags.find(t => t.name === 'TokenId').value
+      const sender_1 = Messages[1].Tags.find(t => t.name === 'Sender').value
+    
+      expect(action_0).to.equal("Debit-Single-Notice")
+      expect(quantity_0).to.equal("5")
+      expect(tokenId_0).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(recipient_0).to.equal(walletAddress2)
+
+      expect(action_1).to.equal("Credit-Single-Notice")
+      expect(quantity_1).to.equal("5")
+      expect(tokenId_1).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(sender_1).to.equal(walletAddress)
+    })
+
+    it("-ve should not send batch transfer (more than split balance)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Transfer-Batch" },
+          { name: "TokenIds", value: JSON.stringify(["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"]) },
+          { name: "Quantities", value: JSON.stringify(['5']) },
+          { name: "Recipient", value: walletAddress2 }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
+      const tokenId_ = Messages[0].Tags.find(t => t.name === 'Token-Id').value
+
+      expect(action_).to.equal("Transfer-Error")
+      expect(error_).to.equal("Insufficient Balance!")
+      expect(tokenId_).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+    })
+
+    it("+ve should send batch transfer (with notice)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Transfer-Batch" },
+          { name: "TokenIds", value: JSON.stringify(["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"]) },
+          { name: "Quantities", value: JSON.stringify(['4']) },
+          { name: "Recipient", value: walletAddress2 }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(2)
+
+      console.log("Messages[0].Tags", Messages[0].Tags)
+      console.log("Messages[1].Tags", Messages[1].Tags)
+
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const quantities_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'Quantities').value)
+      const tokenIds_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'TokenIds').value)
+      const recipient_0 = Messages[0].Tags.find(t => t.name === 'Recipient').value
+    
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const quantities_1 = JSON.parse(Messages[1].Tags.find(t => t.name === 'Quantities').value)
+      const tokenIds_1 = JSON.parse(Messages[1].Tags.find(t => t.name === 'TokenIds').value)
+      const sender_1 = Messages[1].Tags.find(t => t.name === 'Sender').value
+    
+      expect(action_0).to.equal("Debit-Batch-Notice")
+      expect(quantities_0[0]).to.equal("4")
+      expect(tokenIds_0[0]).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(recipient_0).to.equal(walletAddress2)
+
+      expect(action_1).to.equal("Credit-Batch-Notice")
+      expect(quantities_1[0]).to.equal("4")
+      expect(tokenIds_1[0]).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(sender_1).to.equal(walletAddress)
+    })
+  })
 
   /************************************************************************ 
   * Reporting

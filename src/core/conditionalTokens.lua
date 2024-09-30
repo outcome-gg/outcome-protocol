@@ -376,7 +376,7 @@ local function transferSingle(from, recipient, id, quantity, cast, msg)
   end
 end
 
-local function transferBatch(from, recipient, ids, quantities, cast, msgId)
+local function transferBatch(from, recipient, ids, quantities, cast, msg)
   -- Track successful id transfers
   local ids_ = {}
   local quantities_ = {}
@@ -394,7 +394,7 @@ local function transferBatch(from, recipient, ids, quantities, cast, msgId)
       table.insert(ids_, ids[i])
       table.insert(quantities_, quantities[i])
     else
-      transferErrorNotice(from, ids[i], msgId)
+      transferErrorNotice(from, ids[i], msg.id)
     end
   end
 
@@ -402,12 +402,8 @@ local function transferBatch(from, recipient, ids, quantities, cast, msgId)
       Only send the notifications to the Sender and Recipient
       if the Cast tag is not set on the Transfer message
   ]]
-  if not cast then
-    if #ids_ == 1 then
-      transferSingleNotices(from, recipient, ids_[1], quantities_[1])
-    elseif #ids_ > 1 then
-      transferBatchNotices(from, recipient, ids_, quantities_)
-    end
+  if not cast and #ids_ > 0 then
+    transferBatchNotices(from, recipient, ids_, quantities_)
   end
 end
 
@@ -544,6 +540,20 @@ local function splitPosition(from, collateralToken, parentCollectionId, conditio
   positionSplitNotice(notice)
 end
 
+local function mergePositionsCompletion(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
+  local notice = {
+    Target = from,
+    Action = "Positions-Merge-Notice",
+    CollateralToken = collateralToken,
+    ParentCollectionId = parentCollectionId,
+    ConditionId = conditionId,
+    Partition = json.encode(partition),
+    Quantity = quantity
+  }
+
+  positionsMergeNotice(notice)
+end
+
 local function mergePositions(from, collateralToken, parentCollectionId, conditionId, partition, quantity, msg)
   assert(#partition > 1, "got empty or singleton partition")
   assert(PayoutNumerators[conditionId] and #PayoutNumerators[conditionId] > 0, "condition not prepared yet")
@@ -583,15 +593,7 @@ local function mergePositions(from, collateralToken, parentCollectionId, conditi
         ['X-CollateralToken'] = collateralToken,
         ['X-ParentCollectionId'] = parentCollectionId,
         ['X-ConditionId'] = conditionId,
-        ['X-Partition'] = json.encode(partition),
-        ['X-Quantity'] = quantity,
-        ['X-Sender'] = msg.Tags['X-Sender'],
-        ['X-ReturnAmount'] = msg.Tags['X-ReturnAmount'],
-        ['X-OutcomeTokensToSell'] = msg.Tags['X-OutcomeTokensToSell'],
-        ['X-TokenId'] = positionIds[tonumber(msg.Tags['X-OutcomeIndex'])],
-        ['X-OutcomeIndex'] = msg.Tags['X-OutcomeIndex'],
-        ['X-Quantities'] = json.encode(quantities),
-        ['X-Message'] = json.encode(msg)
+        ['X-Partition'] = json.encode(partition)
       })
     else
       mint(from, getPositionId(collateralToken, parentCollectionId), quantity)
@@ -601,46 +603,11 @@ local function mergePositions(from, collateralToken, parentCollectionId, conditi
   end
 
   if not mergeToCollateral then
-    ao.send({
-      Target = ao.id,
-      Action = "Positions-Merge-Completion",
-      ['X-From'] = from,
-      ['X-CollateralToken'] = collateralToken,
-      ['X-ParentCollectionId'] = parentCollectionId,
-      ['X-ConditionId'] = conditionId,
-      ['X-Partition'] = json.encode(partition),
-      ['X-Quantity'] = quantity,
-      ['X-Sender'] = msg.Tags['X-Sender'],
-      ['X-ReturnAmount'] = msg.Tags['X-ReturnAmount'],
-      ['X-OutcomeTokensToSell'] = msg.Tags['X-OutcomeTokensToSell'],
-      ['X-TokenId'] = positionIds[msg.Tags['X-OutcomeIndex']],
-      ['X-OutcomeIndex'] =msg.Tags['X-OutcomeIndex'],
-      ['X-Quantities'] = json.encode(quantities),
-      ['X-Message'] = json.encode(msg)
-    })
+    mergePositionsCompletion(from, collateralToken, parentCollectionId, conditionId, partition, quantity, msg)
   end
 end
 
-local function mergePositionsCompletion(from, collateralToken, parentCollectionId, conditionId, partition, quantity, msg)
-  local notice = {
-    Target = from,
-    Action = "Positions-Merge-Notice",
-    CollateralToken = collateralToken,
-    ParentCollectionId = parentCollectionId,
-    ConditionId = conditionId,
-    Partition = json.encode(partition),
-    Quantity = quantity
-  }
 
-  for tagName, tagValue in pairs(msg) do
-    -- Tags beginning with "X-" are forwarded
-    if string.sub(tagName, 1, 2) == "X-" then
-      notice[tagName] = tagValue
-    end
-  end
-
-  positionsMergeNotice(notice)
-end
 
 local function redeemPositions(from, collateralToken, parentCollectionId, conditionId, indexSets)
   local den = PayoutDenominator[conditionId]
@@ -703,7 +670,7 @@ end
     Handler Functions
 ]]
 local function isMergeOrderCompletion(msg)
-  if (msg.From == CollateralToken and msg.Action == "Debit-Notice" and msg["X-Action"] == "Positions-Merge-Completion") or
+  if (msg.From ~= ao.id and msg.Action == "Debit-Notice" and msg["X-Action"] == "Positions-Merge-Completion") or
   (msg.From == ao.id and msg.Action == "Positions-Merge-Completion") then
     return true
   else
@@ -761,7 +728,7 @@ Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-P
 end)
 
 Handlers.add("Merge-Positions-Completion", isMergeOrderCompletion, function(msg)
-  mergePositionsCompletion(msg.Tags['X-From'],msg.Tags['X-CollateralToken'], msg.Tags['X-ParentCollectionId'], msg.Tags['X-ConditionId'], msg.Tags['X-Partition'], msg.Tags['X-Quantity'], msg.Tags['X-Msg'])
+  mergePositionsCompletion(msg.Tags['Recipient'], msg.Tags['X-CollateralToken'], msg.Tags['X-ParentCollectionId'], msg.Tags['X-ConditionId'], msg.Tags['X-Partition'], msg.Tags['Quantity'])
 end)
 
 Handlers.add("Redeem-Positions", Handlers.utils.hasMatchingTag("Action", "Redeem-Positions"), function(msg)

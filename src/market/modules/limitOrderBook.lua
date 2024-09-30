@@ -1,5 +1,4 @@
 local deque = require('modules.deque')
-local json = require('json')
 local LimitOrderBook = {}
 local LimitOrderBookMethods = {}
 
