@@ -1659,13 +1659,6 @@ describe("conditionalTokens.integration.test", function () {
         process: conditionalTokens,
       });
 
-      
-      console.log("Messages.length", Messages.length)
-
-      console.log("Messages[0].Tags", Messages[0].Tags)
-      console.log("Messages[1].Tags", Messages[1].Tags)
-
-
       expect(Messages.length).to.be.equal(2)
 
       // conditional-token notice
@@ -1931,7 +1924,7 @@ describe("conditionalTokens.integration.test", function () {
         tags: [
           { name: "Action", value: "Transfer-Batch" },
           { name: "TokenIds", value: JSON.stringify(["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"]) },
-          { name: "Quantities", value: JSON.stringify(['4']) },
+          { name: "Quantities", value: JSON.stringify(['2']) },
           { name: "Recipient", value: walletAddress2 }
         ],
         signer: createDataItemSigner(wallet),
@@ -1949,9 +1942,6 @@ describe("conditionalTokens.integration.test", function () {
 
       expect(Messages.length).to.be.equal(2)
 
-      console.log("Messages[0].Tags", Messages[0].Tags)
-      console.log("Messages[1].Tags", Messages[1].Tags)
-
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
       const quantities_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'Quantities').value)
       const tokenIds_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'TokenIds').value)
@@ -1963,12 +1953,12 @@ describe("conditionalTokens.integration.test", function () {
       const sender_1 = Messages[1].Tags.find(t => t.name === 'Sender').value
     
       expect(action_0).to.equal("Debit-Batch-Notice")
-      expect(quantities_0[0]).to.equal("4")
+      expect(quantities_0[0]).to.equal("2")
       expect(tokenIds_0[0]).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
       expect(recipient_0).to.equal(walletAddress2)
 
       expect(action_1).to.equal("Credit-Batch-Notice")
-      expect(quantities_1[0]).to.equal("4")
+      expect(quantities_1[0]).to.equal("2")
       expect(tokenIds_1[0]).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
       expect(sender_1).to.equal(walletAddress)
     })
@@ -1977,42 +1967,390 @@ describe("conditionalTokens.integration.test", function () {
   /************************************************************************ 
   * Reporting
   ************************************************************************/
-  // describe("Prepare Condition", function () {
-  //   it("-ve should not allow reporting (incorrect resolution agent)", async () => {
-  //   })
+  describe("Prepare Condition", function () {
+    it("-ve should not allow reporting (incorrect resolution agent)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+        ],
+        signer: createDataItemSigner(wallet), // not resolution agent
+        data: JSON.stringify({
+          questionId: questionId1,
+          payouts: [1, 1, 1, 0, 0, 0, 0, 0, 0], // A wins
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
-  //   it("-ve should not allow reporting (incorrect question id)", async () => {
-  //   })
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
 
-  //   it("-ve should not allow reporting (no slots)", async () => {
-  //   })
+      // Error: condition not prepared or found (resolution agent id contained within hash)
+      expect(Messages.length).to.be.equal(0)
+    })
 
-  //   it("-ve should not allow reporting (wrong number of slots)", async () => {
-  //   })
+    it("-ve should not allow reporting (incorrect question id)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+        ],
+        signer: createDataItemSigner(wallet2), // resolution agent
+        data: JSON.stringify({
+          questionId: "foo", // incorrect question id
+          payouts: [1, 1, 1, 0, 0, 0, 0, 0, 0], // A wins
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
-  //   it("-ve should not allow reporting (zero payouts in all slots)", async () => {
-  //   })
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
 
-  //   it("+ve should allow reporting (and send notice)", async () => {
-  //   })
+      // Error: condition not prepared or found
+      expect(Messages.length).to.be.equal(0)
+    })
 
-  //   it("+ve should get payout numerators (post reporting)", async () => {
-  //   })
+    it("-ve should not allow reporting (no slots)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: JSON.stringify({
+          questionId: questionId1,
+          payouts: [], // no slots
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
-  //   it("+ve should get payout denominator (post reporting)", async () => {
-  //   })
-  // })
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      // Error: there should be more than one outcome slot
+      expect(Messages.length).to.be.equal(0)
+    })
+
+    it("-ve should not allow reporting (wrong number of slots)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: JSON.stringify({
+          questionId: questionId1,
+          payouts: [1, 0], // wrong number of slots
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      // Error: condition not prepared or found
+      expect(Messages.length).to.be.equal(0)
+    })
+
+    it("-ve should not allow reporting (zero payouts in all slots)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: JSON.stringify({
+          questionId: questionId1,
+          payouts: [0, 0, 0, 0, 0, 0, 0, 0, 0], // no winner
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      // Error: payout is all zeros
+      expect(Messages.length).to.be.equal(0)
+    })
+
+    it("+ve should allow reporting (and send notice)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: JSON.stringify({
+          questionId: questionId1,
+          payouts: [1, 1, 1, 0, 0, 0, 0, 0, 0], // A wins
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const resolutionAgent_ = Messages[0].Tags.find(t => t.name === 'ResolutionAgent').value
+      const outcomeSlotCount_ = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
+      const questionId_ = Messages[0].Tags.find(t => t.name === 'QuestionId').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const payoutNumerators_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'PayoutNumerators').value)
+
+      expect(action_).to.equal("Condition-Resolution-Notice")
+      expect(resolutionAgent_).to.equal(resolutionAgent)
+      expect(outcomeSlotCount_).to.equal(9)
+      expect(questionId_).to.equal(questionId1)
+      expect(conditionId_).to.equal(keccak256(resolutionAgent + questionId1 + '9').toString('hex'))
+      expect(payoutNumerators_[0]).to.equal(1)
+      expect(payoutNumerators_[1]).to.equal(1)
+      expect(payoutNumerators_[2]).to.equal(1)
+      expect(payoutNumerators_[3]).to.equal(0)
+      expect(payoutNumerators_[4]).to.equal(0)
+      expect(payoutNumerators_[5]).to.equal(0)
+      expect(payoutNumerators_[6]).to.equal(0)
+      expect(payoutNumerators_[7]).to.equal(0)
+      expect(payoutNumerators_[8]).to.equal(0)
+    })
+
+    it("+ve should get payout numerators (post reporting)", async () => {
+      const conditionId = keccak256(resolutionAgent + questionId1 + '9').toString('hex')
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Get-Payout-Numerators" },
+          { name: "ConditionId", value: conditionId },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const payoutNumerators_ = Messages[0].Tags.find(t => t.name === 'PayoutNumerators').value
+
+      expect(action_).to.equal("Payout-Numerators")
+      expect(conditionId_).to.equal(conditionId)
+      expect(payoutNumerators_).to.equal(JSON.stringify([1,1,1,0,0,0,0,0,0]))
+    })
+
+    it("+ve should get payout denominator (post reporting)", async () => {
+      const conditionId = keccak256(resolutionAgent + questionId1 + '9').toString('hex')
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Get-Payout-Denominator" },
+          { name: "ConditionId", value: conditionId },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const payoutDenominator_ = Messages[0].Tags.find(t => t.name === 'PayoutDenominator').value
+    
+      expect(action_).to.equal("Payout-Denominator")
+      expect(conditionId_).to.equal(conditionId)
+      expect(payoutDenominator_).to.equal("3")
+    })
+  })
 
   /************************************************************************ 
   * Redeeming
   ************************************************************************/
-  // describe("Redeeming", function () {
-  //   it("+ve should redeem (and send notice)", async () => {
-  //   })
+  describe("Redeeming", function () {
+    it("+ve should redeem (and send notice)", async () => {
+      const conditionId = keccak256(resolutionAgent + questionId1 + '9').toString('hex')
 
-  //   it("+ve should verify zerod-out redeemed positions (and not affect others)", async () => {
-  //   })
-  // })
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Redeem-Positions" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify({
+          collateralToken: collateralToken,
+          parentCollectionId: "", 
+          conditionId: conditionId,
+          indexSets: [0b000000111, 0b000111000, 0b111000000], // disjoint set A, B, C
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      console.log("Messages[0].Tags", Messages[0].Tags)
+      console.log("Messages[1].Tags", Messages[1].Tags)
+      console.log("Messages[2].Tags", Messages[2].Tags)
+      console.log("Messages[3].Tags", Messages[3].Tags)
+      console.log("Messages[4].Tags", Messages[4].Tags)
+
+      expect(Messages.length).to.be.equal(5)
+
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const tokenId_0 = Messages[0].Tags.find(t => t.name === 'TokenId').value
+      const quantity_0 = Messages[0].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const tokenId_1 = Messages[1].Tags.find(t => t.name === 'TokenId').value
+      const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_2 = Messages[2].Tags.find(t => t.name === 'Action').value
+      const tokenId_2 = Messages[2].Tags.find(t => t.name === 'TokenId').value
+      const quantity_2 = Messages[2].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_3 = Messages[3].Tags.find(t => t.name === 'Action').value
+      const recipient_3 = Messages[3].Tags.find(t => t.name === 'Recipient').value
+      const quantity_3 = Messages[3].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_4 = Messages[4].Tags.find(t => t.name === 'Action').value
+      const redeemer_4 = Messages[4].Tags.find(t => t.name === 'Redeemer').value
+      const payout_4 = Messages[4].Tags.find(t => t.name === 'Payout').value
+      const collateralToken_4 = Messages[4].Tags.find(t => t.name === 'CollateralToken').value
+      const indexSets_4 = Messages[4].Tags.find(t => t.name === 'IndexSets').value
+      const conditionId_4 = Messages[4].Tags.find(t => t.name === 'ConditionId').value
+
+      expect(action_0).to.equal("Burn-Single-Notice")
+      expect(tokenId_0).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(quantity_0).to.equal("2")
+
+      expect(action_1).to.equal("Burn-Single-Notice")
+      expect(tokenId_1).to.equal("210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d")
+      expect(quantity_1).to.equal("30")
+  
+      expect(action_2).to.equal("Burn-Single-Notice")
+      expect(tokenId_2).to.equal("a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3")
+      expect(quantity_2).to.equal("30")
+    
+      expect(action_3).to.equal("Transfer")
+      expect(recipient_3).to.equal(walletAddress)
+      expect(quantity_3).to.equal("2.0")
+
+      expect(action_4).to.equal("Payout-Redemption-Notice")
+      expect(redeemer_4).to.equal(walletAddress)
+      expect(payout_4).to.equal("2.0")
+      expect(collateralToken_4).to.equal(collateralToken)
+      expect(indexSets_4).to.equal(JSON.stringify([7,56,448]))
+      expect(conditionId_4).to.equal(conditionId)
+    })
+
+    it("+ve should verify zerod-out redeemed positions (and not affect others)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+
+      // A,B,C split from collateral
+      expect(balances_["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"][walletAddress]).to.equal("0") // redeemed
+      expect(balances_["a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3"][walletAddress]).to.equal("0") // redeemed
+      expect(balances_["210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d"][walletAddress]).to.equal("0") // redeemed
+      //wallet address 2
+      expect(balances_["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"][walletAddress2]).to.equal("7") // not redeemed
+      // IN, OUT split from collateral
+      expect(balances_["57eb31d9b46ae3959d8fc5df467552bd1bb3b6f5554162c77beed49648699ba8"][walletAddress]).to.equal("100")
+      expect(balances_["cd0aa400e245543a80795533ed5d75e416e0e78b347965fe6097cfb55421b16a"][walletAddress]).to.equal("85") 
+      // A&HI, A&LO split from A
+      expect(balances_["be6063e1fcab5e2bf2bf27830a1b94a7efb504d232480a7cf0fd324f74682e30"][walletAddress]).to.equal("20")
+      expect(balances_["4314febbea54043b317c4ec77794eab1f262a278d84db8f73589bf5c1e66b770"][walletAddress]).to.equal("20")
+      // B&IN, C&IN split from IN
+      expect(balances_["eb5a50032b2d6662e0e5f89c2fc45fbacbdfa8cfdacce260e272b0df56780c50"][walletAddress]).to.equal("15") 
+      expect(balances_["1b428749c3b62e80cc4dcf72f47cac0f73ccf0a54c3c8a35d810c98b8830d516"][walletAddress]).to.equal("15") 
+      // A&OUT split from A
+      expect(balances_["b1078a54de03ee4ca6970e2f2e2d878b43aec8c411e083a46543e13e3d42683a"][walletAddress]).to.equal("1") 
+      // A&IN split from IN and A
+      expect(balances_["a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485"][walletAddress]).to.equal("16") 
+    })
+  })
   /************************************************************************ 
   * Parlays
   ************************************************************************/

@@ -463,7 +463,7 @@ local function reportPayouts(msg)
   assert(den > 0, "payout is all zeroes")
   PayoutDenominator[conditionId] = den
   -- Send the condition resolution notice.
-  conditionResolutionNotice(conditionId, msg.From, data.questionId, outcomeSlotCount, PayoutNumerators[conditionId])
+  conditionResolutionNotice(conditionId, msg.From, data.questionId, outcomeSlotCount, json.encode(PayoutNumerators[conditionId]))
 end
 
 -- @dev This function splits a position. If splitting from the collateral, this contract will attempt to transfer `amount` collateral from the message sender to itself. 
