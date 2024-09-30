@@ -33,16 +33,10 @@ let walletAddress2;
 let resolutionAgent;
 let questionId1;
 let questionId2;
-// let conditionId
-// let outcomeSlotCount;
-// let parentCollectionId;
-// let indexSetIN;
-// let indexSetOUT;
-// let collectionIdIN;
-// let collectionIdOUT;
-// let positionIdIN;
-// let positionIdOUT;
+let parlayQuestionId1;
+let parlayQuestionId2;
 let collectionIds;
+let parlayCollectionIds;
 
 /* 
 * Tests
@@ -64,10 +58,16 @@ describe("conditionalTokens.integration.test", function () {
     // to get conditionId
     questionId1 = 'trump-becomes-the-47th-president-of-the-usa',
     questionId2 = 'biden-becomes-the-47th-president-of-the-usa',
+
+    // quarter-finals
+    parlayQuestionId1 = 'bulls-beat-the-pistons-in-the-nba-quarter-finals',
+    parlayQuestionId2 = 'lakers-beat-the-celtics-in-the-nba-quarter-finals',
+  
     resolutionAgent = walletAddress2,
 
     // to track collectionIds
-    collectionIds = []
+    collectionIds = [],
+    parlayCollectionIds = []
 
     // // to get collectionId
     // parentCollectionId = "", // from collateral
@@ -962,8 +962,6 @@ describe("conditionalTokens.integration.test", function () {
       const outcomeSlotCount = 9;
       const conditionId = keccak256(resolutionAgent + questionId1 + outcomeSlotCount.toString()).toString('hex')
       const parentCollectionId = "" // split from collateral
-      const partition = [0b000000111, 0b000111000, 0b111000000] // Binary decimals labelled A, B, C
-      const quantity = "100"
 
       let messageId;
       await message({
@@ -2251,12 +2249,6 @@ describe("conditionalTokens.integration.test", function () {
         process: conditionalTokens,
       });
 
-      console.log("Messages[0].Tags", Messages[0].Tags)
-      console.log("Messages[1].Tags", Messages[1].Tags)
-      console.log("Messages[2].Tags", Messages[2].Tags)
-      console.log("Messages[3].Tags", Messages[3].Tags)
-      console.log("Messages[4].Tags", Messages[4].Tags)
-
       expect(Messages.length).to.be.equal(5)
 
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
@@ -2296,11 +2288,11 @@ describe("conditionalTokens.integration.test", function () {
     
       expect(action_3).to.equal("Transfer")
       expect(recipient_3).to.equal(walletAddress)
-      expect(quantity_3).to.equal("2.0")
+      expect(quantity_3).to.equal("2")
 
       expect(action_4).to.equal("Payout-Redemption-Notice")
       expect(redeemer_4).to.equal(walletAddress)
-      expect(payout_4).to.equal("2.0")
+      expect(payout_4).to.equal("2")
       expect(collateralToken_4).to.equal(collateralToken)
       expect(indexSets_4).to.equal(JSON.stringify([7,56,448]))
       expect(conditionId_4).to.equal(conditionId)
@@ -2354,20 +2346,1015 @@ describe("conditionalTokens.integration.test", function () {
   /************************************************************************ 
   * Parlays
   ************************************************************************/
-  // describe("Parlays", function () {
-  //   it("+ve should create 2-way parlay", async () => {
-  //   })
+  describe("Parlays", function () {
+    it("+ve should prepare a condition (quarter: bulls-beat-pistons)", async () => {
+      const outcomeSlotCount = 2;
+      const questionId = parlayQuestionId1;
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Prepare-Condition" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify({
+          resolutionAgent: resolutionAgent,
+          questionId: questionId,
+          outcomeSlotCount: parseInt(outcomeSlotCount)
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
-  //   it("+ve should create 2-way parlay", async () => {
-  //   })
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
 
-  //   it("+ve should verify 3-way parlay", async () => {
-  //   })
+      if (Error) {
+        console.log(Error)
+      }
 
-  //   it("+ve should verify 5-way parlay", async () => {
-  //   })
+      expect(Messages.length).to.be.equal(1)
 
-  //   it("+ve should verify 7-way parlay", async () => {
-  //   })
-  // })
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const questionId_ = Messages[0].Tags.find(t => t.name === 'QuestionId').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const resolutionAgent_ = Messages[0].Tags.find(t => t.name === 'ResolutionAgent').value
+      const outcomeSlotCount_ = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
+    
+      expect(action_).to.equal("Condition-Preparation-Notice")
+      expect(questionId_).to.equal(questionId)
+      expect(conditionId_).to.equal(keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex'))
+      expect(resolutionAgent_).to.equal(resolutionAgent)
+      expect(outcomeSlotCount_).to.equal(outcomeSlotCount.toString())
+    })
+
+    it("+ve should prepare a condition (quarter: lakers-beat-celtics)", async () => {
+      const outcomeSlotCount = 2;
+      const questionId = parlayQuestionId2;
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Prepare-Condition" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify({
+          resolutionAgent: resolutionAgent,
+          questionId: questionId,
+          outcomeSlotCount: parseInt(outcomeSlotCount)
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const questionId_ = Messages[0].Tags.find(t => t.name === 'QuestionId').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const resolutionAgent_ = Messages[0].Tags.find(t => t.name === 'ResolutionAgent').value
+      const outcomeSlotCount_ = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
+    
+      expect(action_).to.equal("Condition-Preparation-Notice")
+      expect(questionId_).to.equal(questionId)
+      expect(conditionId_).to.equal(keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex'))
+      expect(resolutionAgent_).to.equal(resolutionAgent)
+      expect(outcomeSlotCount_).to.equal(outcomeSlotCount.toString())
+    })
+
+    it("+ve should get collection id (bulls-beat-pistons: IN)", async () => {
+      // same values as original test
+      const outcomeSlotCount = 2;
+      const questionId = parlayQuestionId1
+      const conditionId = keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex')
+      const parentCollectionId = "" // split from collateral
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Get-Collection-Id" },
+          { name: "ParentCollectionId", value: parentCollectionId },
+          { name: "ConditionId", value: conditionId },
+          { name: "IndexSet", value: "1" }, // 0b01 == 1
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const parentCollectionId_ = Messages[0].Tags.find(t => t.name === 'ParentCollectionId').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const indexSet_ = Messages[0].Tags.find(t => t.name === 'IndexSet').value
+      const collectionId_ = Messages[0].Tags.find(t => t.name === 'CollectionId').value
+
+      expect(action_).to.equal("Collection-Id")
+      expect(parentCollectionId_).to.equal(parentCollectionId)
+      expect(conditionId_).to.equal(conditionId)
+      expect(indexSet_).to.equal("1") // 0b01 == 1
+      expect(collectionId_).to.equal("5b7b6bd2bdd3fb012a4cccbb918c5bb541f999b07d27ed0460944ad9a03d5c52")
+
+      parlayCollectionIds.push(collectionId_)
+    })
+
+    it("+ve should get collection id (lakers-beat-celtics: IN)", async () => {
+      // same values as original test
+      const outcomeSlotCount = 2;
+      const questionId = parlayQuestionId2
+      const conditionId = keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex')
+      const parentCollectionId = "" // split from collateral
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Get-Collection-Id" },
+          { name: "ParentCollectionId", value: parentCollectionId },
+          { name: "ConditionId", value: conditionId },
+          { name: "IndexSet", value: "1" }, // 0b01 == 1
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const parentCollectionId_ = Messages[0].Tags.find(t => t.name === 'ParentCollectionId').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const indexSet_ = Messages[0].Tags.find(t => t.name === 'IndexSet').value
+      const collectionId_ = Messages[0].Tags.find(t => t.name === 'CollectionId').value
+
+      expect(action_).to.equal("Collection-Id")
+      expect(parentCollectionId_).to.equal(parentCollectionId)
+      expect(conditionId_).to.equal(conditionId)
+      expect(indexSet_).to.equal("1") // 0b01 == 1
+      expect(collectionId_).to.equal("e636bb0cf13d0cb41a486f3e0a9b8e8bde2b7821ffbc9a8a60ee6e9a736bc4ef")
+
+      parlayCollectionIds.push(collectionId_)
+    })
+
+    it("+ve should create leg-one of 2-way parlay (bulls-beat-pistons)", async () => {
+      const outcomeSlotCount = 2;
+      const conditionId = keccak256(resolutionAgent + parlayQuestionId1 + outcomeSlotCount.toString()).toString('hex')
+      const parentCollectionId = ""
+      const partition = [0b01, 0b10] // IN, OUT
+      const quantity = "1000"
+
+      let messageId;
+      await message({
+        process: collateralToken,
+        tags: [
+          { name: "Action", value: "Transfer" },
+          { name: "Recipient", value: conditionalTokens },
+          { name: "Quantity", value: quantity },
+          { name: "X-Action", value: "Create-Position" },
+          { name: "X-ParentCollectionId", value: parentCollectionId },
+          { name: "X-ConditionId", value: conditionId },
+          { name: "X-Partition", value: JSON.stringify(partition) },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: collateralToken,
+      });
+
+      expect(Messages.length).to.be.equal(2)
+      
+      // conditional-token notice
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+
+      expect(action_0).to.equal("Debit-Notice")
+      expect(action_1).to.equal("Credit-Notice")
+    })
+
+    it("+ve should verify leg-one of 2-way parlay (bulls-beat-pistons)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+
+      // Leg-one of 2-way parlay
+      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("1000")
+      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("1000") 
+    })
+
+    it("+ve should create 2-way parlay (bulls-beat-pistons + lakers-beat-celtics)", async () => {
+      const outcomeSlotCount = 2;
+      const conditionId = keccak256(resolutionAgent + parlayQuestionId2 + outcomeSlotCount.toString()).toString('hex')
+      const parentCollectionId = parlayCollectionIds[0]
+      const partition = [0b01, 0b10] // IN, OUT
+      const quantity = "500" // half of original stake
+
+      let messageId;
+      await message({
+        process: collateralToken,
+        tags: [
+          { name: "Action", value: "Transfer" },
+          { name: "Recipient", value: conditionalTokens },
+          { name: "Quantity", value: quantity },
+          { name: "X-Action", value: "Create-Position" },
+          { name: "X-ParentCollectionId", value: parentCollectionId },
+          { name: "X-ConditionId", value: conditionId },
+          { name: "X-Partition", value: JSON.stringify(partition) },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: collateralToken,
+      });
+
+      expect(Messages.length).to.be.equal(2)
+      
+      // conditional-token notice
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+
+      expect(action_0).to.equal("Debit-Notice")
+      expect(action_1).to.equal("Credit-Notice")
+    })
+
+    it("+ve should verify 2-way parlay (bulls-beat-pistons + lakers-beat-celtics)", async () => {
+      await new Promise(r => setTimeout(r, 1000));
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+
+      // Leg one of 2-way parlay
+      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("500") // IN: split
+      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("1000") // OUT
+      
+      // Two-way parlay
+      expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("500") 
+      expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("500") 
+    })
+
+    it("+ve should create leg-one of 2-way parlay in reverse (lakers-beat-celtics)", async () => {
+      const outcomeSlotCount = 2;
+      const conditionId = keccak256(resolutionAgent + parlayQuestionId2 + outcomeSlotCount.toString()).toString('hex')
+      const parentCollectionId = ""
+      const partition = [0b01, 0b10] // IN, OUT
+      const quantity = "2000"
+
+      let messageId;
+      await message({
+        process: collateralToken,
+        tags: [
+          { name: "Action", value: "Transfer" },
+          { name: "Recipient", value: conditionalTokens },
+          { name: "Quantity", value: quantity },
+          { name: "X-Action", value: "Create-Position" },
+          { name: "X-ParentCollectionId", value: parentCollectionId },
+          { name: "X-ConditionId", value: conditionId },
+          { name: "X-Partition", value: JSON.stringify(partition) },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: collateralToken,
+      });
+
+      expect(Messages.length).to.be.equal(2)
+      
+      // conditional-token notice
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+
+      expect(action_0).to.equal("Debit-Notice")
+      expect(action_1).to.equal("Credit-Notice")
+    })
+
+    it("+ve should verify leg-one 2-way parlay in reverse (lakers-beat-celtics)", async () => {
+      await new Promise(r => setTimeout(r, 1000));
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+
+     // Leg one of 2-way parlay
+     expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("500") // IN: split
+     expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("1000") // OUT
+     
+      // Leg one of 2-way parlay (reverse)
+      expect(balances_["69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7"][walletAddress]).to.equal("2000") 
+      expect(balances_["bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657"][walletAddress]).to.equal("2000") 
+
+     // Two-way parlay
+     expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("500") 
+     expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("500") 
+    })
+
+    it("+ve should create same 2-way parlay in reverse (lakers-beat-celtics + bulls-beat-pistons)", async () => {
+      const outcomeSlotCount = 2;
+      const conditionId = keccak256(resolutionAgent + parlayQuestionId1 + outcomeSlotCount.toString()).toString('hex')
+      const parentCollectionId = parlayCollectionIds[1]
+      const partition = [0b01, 0b10] // IN, OUT
+      const quantity = "1200" 
+
+      let messageId;
+      await message({
+        process: collateralToken,
+        tags: [
+          { name: "Action", value: "Transfer" },
+          { name: "Recipient", value: conditionalTokens },
+          { name: "Quantity", value: quantity },
+          { name: "X-Action", value: "Create-Position" },
+          { name: "X-ParentCollectionId", value: parentCollectionId },
+          { name: "X-ConditionId", value: conditionId },
+          { name: "X-Partition", value: JSON.stringify(partition) },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: collateralToken,
+      });
+
+      expect(Messages.length).to.be.equal(2)
+      
+      // conditional-token notice
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+
+      expect(action_0).to.equal("Debit-Notice")
+      expect(action_1).to.equal("Credit-Notice")
+    })
+
+    it("+ve should verify same 2-way parlay in reverse (lakers-beat-celtics + bulls-beat-pistons)", async () => {
+      await new Promise(r => setTimeout(r, 1000));
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+
+      // Leg one of 2-way parlay
+      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("500") // IN: split 
+      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("1000") // OUT
+     
+      // Leg one of 2-way parlay (reverse)
+      expect(balances_["bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657"][walletAddress]).to.equal("800") // IN: split 
+      expect(balances_["69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7"][walletAddress]).to.equal("2000") // OUT
+
+      // Two-way parlay
+      expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("1700") // Lakers-beat-celtics + bulls-beat-pistons
+      expect(balances_["e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196"][walletAddress]).to.equal("1200") // Lakers-beat-celtics + pistons-beat-bulls
+      expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("500") // bulls-beat-pistons + celts-beat-lakers
+    })
+
+    it("+ve should allow reporting (on leg-one of 2-way parlay)", async () => {
+      const questionId = parlayQuestionId1
+      const outcomeSlotCount = 2
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: JSON.stringify({
+          questionId: questionId,
+          payouts: [1, 0], // IN wins
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const resolutionAgent_ = Messages[0].Tags.find(t => t.name === 'ResolutionAgent').value
+      const outcomeSlotCount_ = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
+      const questionId_ = Messages[0].Tags.find(t => t.name === 'QuestionId').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const payoutNumerators_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'PayoutNumerators').value)
+
+      expect(action_).to.equal("Condition-Resolution-Notice")
+      expect(resolutionAgent_).to.equal(resolutionAgent)
+      expect(outcomeSlotCount_).to.equal(outcomeSlotCount)
+      expect(questionId_).to.equal(questionId)
+      expect(conditionId_).to.equal(keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex'))
+      expect(payoutNumerators_[0]).to.equal(1)
+      expect(payoutNumerators_[1]).to.equal(0)
+    })
+
+    it("+ve should redeem (leg-one of 2-way parlay)", async () => {
+      const conditionId = keccak256(resolutionAgent + parlayQuestionId1 + '2').toString('hex')
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Redeem-Positions" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify({
+          collateralToken: collateralToken,
+          parentCollectionId: "", 
+          conditionId: conditionId,
+          indexSets: [0b01, 0b10], // IN, OUT
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(4)
+
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const tokenId_0 = Messages[0].Tags.find(t => t.name === 'TokenId').value
+      const quantity_0 = Messages[0].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const tokenId_1 = Messages[1].Tags.find(t => t.name === 'TokenId').value
+      const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_2 = Messages[2].Tags.find(t => t.name === 'Action').value
+      const recipient_2 = Messages[2].Tags.find(t => t.name === 'Recipient').value
+      const quantity_2 = Messages[2].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_3 = Messages[3].Tags.find(t => t.name === 'Action').value
+      const redeemer_3 = Messages[3].Tags.find(t => t.name === 'Redeemer').value
+      const payout_3 = Messages[3].Tags.find(t => t.name === 'Payout').value
+      const collateralToken_3 = Messages[3].Tags.find(t => t.name === 'CollateralToken').value
+      const indexSets_3 = Messages[3].Tags.find(t => t.name === 'IndexSets').value
+      const conditionId_3 = Messages[3].Tags.find(t => t.name === 'ConditionId').value
+
+      expect(action_0).to.equal("Burn-Single-Notice")
+      expect(tokenId_0).to.equal("536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277")
+      expect(quantity_0).to.equal("500")
+
+      expect(action_1).to.equal("Burn-Single-Notice")
+      expect(tokenId_1).to.equal("b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243")
+      expect(quantity_1).to.equal("1000")
+    
+      expect(action_2).to.equal("Transfer")
+      expect(recipient_2).to.equal(walletAddress)
+      expect(quantity_2).to.equal("500")
+
+      expect(action_3).to.equal("Payout-Redemption-Notice")
+      expect(redeemer_3).to.equal(walletAddress)
+      expect(payout_3).to.equal("500")
+      expect(collateralToken_3).to.equal(collateralToken)
+      expect(indexSets_3).to.equal(JSON.stringify([1,2]))
+      expect(conditionId_3).to.equal(conditionId)
+    })
+
+    it("+ve should verify 2-way parlay (after reporting bulls-beat-pistons -> IN)", async () => {
+      await new Promise(r => setTimeout(r, 1000));
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+     
+      // Leg one of 2-way parlay
+      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("0") // Redeemed
+      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("0") // Redeemed
+     
+      // Leg one of 2-way parlay (reverse)
+      expect(balances_["bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657"][walletAddress]).to.equal("800") // Unchanged
+      expect(balances_["69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7"][walletAddress]).to.equal("2000") // Unchanged
+
+      // Two-way parlay
+      expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("1700") // Unchanged: Lakers-beat-celtics + bulls-beat-pistons
+      expect(balances_["e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196"][walletAddress]).to.equal("1200") // Unchanged: Lakers-beat-celtics + pistons-beat-bulls
+      expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("500") // Unchanged: bulls-beat-pistons + celts-beat-lakers
+    })
+
+    it("+ve should allow reporting (on leg-two of 2-way parlay)", async () => {
+      const questionId = parlayQuestionId2
+      const outcomeSlotCount = 2
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: JSON.stringify({
+          questionId: questionId,
+          payouts: [1, 0], // IN wins
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const resolutionAgent_ = Messages[0].Tags.find(t => t.name === 'ResolutionAgent').value
+      const outcomeSlotCount_ = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
+      const questionId_ = Messages[0].Tags.find(t => t.name === 'QuestionId').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const payoutNumerators_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'PayoutNumerators').value)
+
+      expect(action_).to.equal("Condition-Resolution-Notice")
+      expect(resolutionAgent_).to.equal(resolutionAgent)
+      expect(outcomeSlotCount_).to.equal(outcomeSlotCount)
+      expect(questionId_).to.equal(questionId)
+      expect(conditionId_).to.equal(keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex'))
+      expect(payoutNumerators_[0]).to.equal(1)
+      expect(payoutNumerators_[1]).to.equal(0)
+    })
+
+    it("+ve should redeem (leg-two of 2-way parlay)", async () => {
+      const conditionId = keccak256(resolutionAgent + parlayQuestionId2 + '2').toString('hex')
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Redeem-Positions" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify({
+          collateralToken: collateralToken,
+          parentCollectionId: "", 
+          conditionId: conditionId,
+          indexSets: [0b01, 0b10], // IN, OUT
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(4)
+
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const tokenId_0 = Messages[0].Tags.find(t => t.name === 'TokenId').value
+      const quantity_0 = Messages[0].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const tokenId_1 = Messages[1].Tags.find(t => t.name === 'TokenId').value
+      const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_2 = Messages[2].Tags.find(t => t.name === 'Action').value
+      const recipient_2 = Messages[2].Tags.find(t => t.name === 'Recipient').value
+      const quantity_2 = Messages[2].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_3 = Messages[3].Tags.find(t => t.name === 'Action').value
+      const redeemer_3 = Messages[3].Tags.find(t => t.name === 'Redeemer').value
+      const payout_3 = Messages[3].Tags.find(t => t.name === 'Payout').value
+      const collateralToken_3 = Messages[3].Tags.find(t => t.name === 'CollateralToken').value
+      const indexSets_3 = Messages[3].Tags.find(t => t.name === 'IndexSets').value
+      const conditionId_3 = Messages[3].Tags.find(t => t.name === 'ConditionId').value
+
+      expect(action_0).to.equal("Burn-Single-Notice")
+      expect(tokenId_0).to.equal("bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657")
+      expect(quantity_0).to.equal("800")
+
+      expect(action_1).to.equal("Burn-Single-Notice")
+      expect(tokenId_1).to.equal("69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7")
+      expect(quantity_1).to.equal("2000")
+    
+      expect(action_2).to.equal("Transfer")
+      expect(recipient_2).to.equal(walletAddress)
+      expect(quantity_2).to.equal("800")
+
+      expect(action_3).to.equal("Payout-Redemption-Notice")
+      expect(redeemer_3).to.equal(walletAddress)
+      expect(payout_3).to.equal("800")
+      expect(collateralToken_3).to.equal(collateralToken)
+      expect(indexSets_3).to.equal(JSON.stringify([1,2]))
+      expect(conditionId_3).to.equal(conditionId)
+    })
+
+    it("+ve should verify 2-way parlay (after reporting lakers-beat-celtics -> IN)", async () => {
+      await new Promise(r => setTimeout(r, 1000));
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+      
+      // Leg one of 2-way parlay
+      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("0") // (Redeemed)
+      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("0") // (Redeemed)
+     
+      // Leg one of 2-way parlay (reverse)
+      expect(balances_["bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657"][walletAddress]).to.equal("0") // Redeemed
+      expect(balances_["69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7"][walletAddress]).to.equal("0") // Redeemed
+
+      // Two-way parlay
+      expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("1700") // Unchanged: Lakers-beat-celtics + bulls-beat-pistons
+      expect(balances_["e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196"][walletAddress]).to.equal("1200") // Unchanged: Lakers-beat-celtics + pistons-beat-bulls
+      expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("500") // Unchanged: bulls-beat-pistons + celts-beat-lakers
+    })
+
+    it("+ve should merge (winning parlay with parent: bulls-beat-pistons)", async () => {
+      const outcomeSlotCount = 2
+      const conditionId = keccak256(resolutionAgent + parlayQuestionId2 + outcomeSlotCount.toString()).toString('hex')
+      const parentCollectionId = parlayCollectionIds[0] 
+      const partition = [0b01, 0b10] 
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Merge-Positions" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify({
+          collateralToken: collateralToken,
+          conditionId: conditionId,
+          partition: partition,
+          parentCollectionId: parentCollectionId,
+          quantity: "500" // min balance
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(3)
+
+      // conditional-token notice
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const tokenIds_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'TokenIds').value)
+      const quantities_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'Quantities').value)
+      const outcomeBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'OutcomeBalances').value)
+
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const tokenId_1 = Messages[1].Tags.find(t => t.name === 'TokenId').value
+      const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
+
+      const action_2 = Messages[2].Tags.find(t => t.name === 'Action').value
+      const conditionId_2 = Messages[2].Tags.find(t => t.name === 'ConditionId').value
+      const quantity_2 = Messages[2].Tags.find(t => t.name === 'Quantity').value
+      const partition_2 = JSON.parse(Messages[2].Tags.find(t => t.name === 'Partition').value)
+      const collateralToken_2 = Messages[2].Tags.find(t => t.name === 'CollateralToken').value
+      const parentCollectionId_2 = Messages[2].Tags.find(t => t.name === 'ParentCollectionId').value
+
+      expect(action_0).to.equal("Burn-Batch-Notice")
+      expect(tokenIds_0[0]).to.equal("e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7")
+      expect(tokenIds_0[1]).to.equal("cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e")
+      expect(quantities_0[0]).to.equal("500")
+      expect(quantities_0[1]).to.equal("500")
+      expect(outcomeBalances_0[0]).to.equal("1200")
+      expect(outcomeBalances_0[1]).to.equal("0")
+
+      expect(action_1).to.equal("Mint-Single-Notice")
+      expect(tokenId_1).to.equal("536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277")
+      expect(quantity_1).to.equal("500")
+
+      expect(action_2).to.equal("Positions-Merge-Notice")
+      expect(conditionId_2).to.equal("29af3b452b0f8bdcc0f08eaafcb65943f51addb38101dd45e2940f435d1fa159")
+      expect(quantity_2).to.equal("500")
+      expect(partition_2[0]).to.equal(1) // 0b01
+      expect(partition_2[1]).to.equal(2) // 0b10
+      expect(collateralToken_2).to.equal(collateralToken)
+      expect(parentCollectionId_2).to.equal(parentCollectionId)
+    })
+
+    it("+ve should verify merge (of leg-two)", async () => {
+      await new Promise(r => setTimeout(r, 1000));
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+      
+      // Leg one of 2-way parlay
+      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("500") // Merged
+      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("0") // (Redeemed)
+     
+      // Leg one of 2-way parlay (reverse)
+      expect(balances_["bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657"][walletAddress]).to.equal("0") // (Redeemed)
+      expect(balances_["69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7"][walletAddress]).to.equal("0") // (Redeemed)
+
+      // Two-way parlay
+      expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("1200") // -500: Lakers-beat-celtics + bulls-beat-pistons
+      expect(balances_["e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196"][walletAddress]).to.equal("1200") // Unchanged: Lakers-beat-celtics + pistons-beat-bulls
+      expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("0") // -500: bulls-beat-pistons + celts-beat-lakers
+    })
+
+    it("+ve should merge (winning parlay with parent: lakers-beat-celtics)", async () => {
+      const outcomeSlotCount = 2
+      const conditionId = keccak256(resolutionAgent + parlayQuestionId1 + outcomeSlotCount.toString()).toString('hex')
+      const parentCollectionId = parlayCollectionIds[1] 
+      const partition = [0b01, 0b10] 
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Merge-Positions" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: JSON.stringify({
+          collateralToken: collateralToken,
+          conditionId: conditionId,
+          partition: partition,
+          parentCollectionId: parentCollectionId,
+          quantity: "1200" // min balance
+        }),
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(3)
+
+      // conditional-token notice
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const tokenIds_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'TokenIds').value)
+      const quantities_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'Quantities').value)
+      const outcomeBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'OutcomeBalances').value)
+
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const tokenId_1 = Messages[1].Tags.find(t => t.name === 'TokenId').value
+      const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
+
+      const action_2 = Messages[2].Tags.find(t => t.name === 'Action').value
+      const conditionId_2 = Messages[2].Tags.find(t => t.name === 'ConditionId').value
+      const quantity_2 = Messages[2].Tags.find(t => t.name === 'Quantity').value
+      const partition_2 = JSON.parse(Messages[2].Tags.find(t => t.name === 'Partition').value)
+      const collateralToken_2 = Messages[2].Tags.find(t => t.name === 'CollateralToken').value
+      const parentCollectionId_2 = Messages[2].Tags.find(t => t.name === 'ParentCollectionId').value
+
+      expect(action_0).to.equal("Burn-Batch-Notice")
+      expect(tokenIds_0[0]).to.equal("e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7")
+      expect(tokenIds_0[1]).to.equal("e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196")
+      expect(quantities_0[0]).to.equal("1200")
+      expect(quantities_0[1]).to.equal("1200")
+      expect(outcomeBalances_0[0]).to.equal("0")
+      expect(outcomeBalances_0[1]).to.equal("0")
+
+      expect(action_1).to.equal("Mint-Single-Notice")
+      expect(tokenId_1).to.equal("bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657")
+      expect(quantity_1).to.equal("1200")
+
+      expect(action_2).to.equal("Positions-Merge-Notice")
+      expect(conditionId_2).to.equal("32b4874aeba62c889d6d7896e33b8cc1e6ac36d6abb749d3374b24f6f1410502")
+      expect(quantity_2).to.equal("1200")
+      expect(partition_2[0]).to.equal(1) // 0b01
+      expect(partition_2[1]).to.equal(2) // 0b10
+      expect(collateralToken_2).to.equal(collateralToken)
+      expect(parentCollectionId_2).to.equal(parentCollectionId)
+    })
+
+    it("+ve should verify merge (of leg-two)", async () => {
+      await new Promise(r => setTimeout(r, 1000));
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+      
+      // Leg one of 2-way parlay
+      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("500") // (Merged)
+      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("0") // (Redeemed)
+     
+      // Leg one of 2-way parlay (reverse)
+      expect(balances_["bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657"][walletAddress]).to.equal("1200") // Merged
+      expect(balances_["69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7"][walletAddress]).to.equal("0") // (Redeemed)
+
+      // Two-way parlay
+      expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("0") // -1200: Lakers-beat-celtics + bulls-beat-pistons
+      expect(balances_["e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196"][walletAddress]).to.equal("0") // -1200: Lakers-beat-celtics + pistons-beat-bulls
+      expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("0") // Unchanged: bulls-beat-pistons + celts-beat-lakers
+    })
+  })
 })

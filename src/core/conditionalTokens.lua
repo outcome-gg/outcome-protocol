@@ -303,7 +303,7 @@ end
 -- @param quantity Quantity of the token to be burned
 local function burn(from, id, quantity)
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
-  assert(BalancesOf[id], 'Id must exist! ' ..  id)
+  assert(BalancesOf[id], 'Id must exist!! ' ..  id)
   assert(BalancesOf[id][from], 'User must hold token! :: ' .. id)
   assert(bint.__le(quantity, BalancesOf[id][from]), 'User must have sufficient tokens! ' .. id)
   -- Burn tokens
@@ -322,7 +322,7 @@ local function batchBurn(from, ids, quantities, msg)
   -- Validate batch input
   for i = 1, #ids do
     assert(bint.__lt(0, quantities[i]), 'Quantity must be greater than zero!')
-    assert(BalancesOf[ids[i]], 'Id must exist!')
+    assert(BalancesOf[ids[i]], 'Id must exist! ' .. ids[i])
     assert(BalancesOf[ids[i]][from], 'User must hold token! ' .. i .. " ".. ids[i])
     assert(bint.__le(quantities[i], BalancesOf[ids[i]][from]), 'User must have sufficient tokens!')
   end
@@ -641,6 +641,7 @@ local function redeemPositions(from, collateralToken, parentCollectionId, condit
   end
 
   if totalPayout > 0 then
+    totalPayout = math.floor(totalPayout)
     if parentCollectionId == "" then
       -- TODO: assert that this passes before sending merge notice ("could not transfer payout to message sender")
       ao.send({
