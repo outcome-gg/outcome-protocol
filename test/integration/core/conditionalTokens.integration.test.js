@@ -1521,7 +1521,7 @@ describe("conditionalTokens.integration.test", function () {
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
       const tokenIds_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'TokenIds').value)
       const quantities_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'Quantities').value)
-      const outcomeBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'OutcomeBalances').value)
+      const remainingBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'RemainingBalances').value)
 
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
       const tokenId_1 = Messages[1].Tags.find(t => t.name === 'TokenId').value
@@ -1539,8 +1539,8 @@ describe("conditionalTokens.integration.test", function () {
       expect(tokenIds_0[1]).to.equal("b1078a54de03ee4ca6970e2f2e2d878b43aec8c411e083a46543e13e3d42683a")
       expect(quantities_0[0]).to.equal("2")
       expect(quantities_0[1]).to.equal("2")
-      expect(outcomeBalances_0[0]).to.equal("16")
-      expect(outcomeBalances_0[1]).to.equal("1")
+      expect(remainingBalances_0[0]).to.equal("16")
+      expect(remainingBalances_0[1]).to.equal("1")
 
       expect(action_1).to.equal("Mint-Single-Notice")
       expect(tokenId_1).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
@@ -1663,7 +1663,7 @@ describe("conditionalTokens.integration.test", function () {
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
       const tokenIds_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'TokenIds').value)
       const quantities_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'Quantities').value)
-      const outcomeBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'OutcomeBalances').value)
+      const remainingBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'RemainingBalances').value)
 
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
       const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
@@ -1681,9 +1681,9 @@ describe("conditionalTokens.integration.test", function () {
       expect(quantities_0[0]).to.equal("70")
       expect(quantities_0[1]).to.equal("70")
       expect(quantities_0[2]).to.equal("70")
-      expect(outcomeBalances_0[0]).to.equal("30")
-      expect(outcomeBalances_0[1]).to.equal("30")
-      expect(outcomeBalances_0[2]).to.equal("9")
+      expect(remainingBalances_0[0]).to.equal("30")
+      expect(remainingBalances_0[1]).to.equal("30")
+      expect(remainingBalances_0[2]).to.equal("9")
 
       expect(action_1).to.equal("Transfer")
       expect(quantity_1).to.equal("70")
@@ -3174,7 +3174,7 @@ describe("conditionalTokens.integration.test", function () {
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
       const tokenIds_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'TokenIds').value)
       const quantities_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'Quantities').value)
-      const outcomeBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'OutcomeBalances').value)
+      const remainingBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'RemainingBalances').value)
 
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
       const tokenId_1 = Messages[1].Tags.find(t => t.name === 'TokenId').value
@@ -3192,8 +3192,8 @@ describe("conditionalTokens.integration.test", function () {
       expect(tokenIds_0[1]).to.equal("cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e")
       expect(quantities_0[0]).to.equal("500")
       expect(quantities_0[1]).to.equal("500")
-      expect(outcomeBalances_0[0]).to.equal("1200")
-      expect(outcomeBalances_0[1]).to.equal("0")
+      expect(remainingBalances_0[0]).to.equal("1200")
+      expect(remainingBalances_0[1]).to.equal("0")
 
       expect(action_1).to.equal("Mint-Single-Notice")
       expect(tokenId_1).to.equal("536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277")
@@ -3284,7 +3284,7 @@ describe("conditionalTokens.integration.test", function () {
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
       const tokenIds_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'TokenIds').value)
       const quantities_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'Quantities').value)
-      const outcomeBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'OutcomeBalances').value)
+      const remainingBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'RemainingBalances').value)
 
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
       const tokenId_1 = Messages[1].Tags.find(t => t.name === 'TokenId').value
@@ -3302,8 +3302,8 @@ describe("conditionalTokens.integration.test", function () {
       expect(tokenIds_0[1]).to.equal("e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196")
       expect(quantities_0[0]).to.equal("1200")
       expect(quantities_0[1]).to.equal("1200")
-      expect(outcomeBalances_0[0]).to.equal("0")
-      expect(outcomeBalances_0[1]).to.equal("0")
+      expect(remainingBalances_0[0]).to.equal("0")
+      expect(remainingBalances_0[1]).to.equal("0")
 
       expect(action_1).to.equal("Mint-Single-Notice")
       expect(tokenId_1).to.equal("bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657")

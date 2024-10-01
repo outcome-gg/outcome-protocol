@@ -327,18 +327,18 @@ local function batchBurn(from, ids, quantities, msg)
     assert(bint.__le(quantities[i], BalancesOf[ids[i]][from]), 'User must have sufficient tokens!')
   end
 
-  local outcomeBalances = {}
+  local remainingBalances = {}
   -- Burn batch
   for i = 1, #ids do
     BalancesOf[ids[i]][from] = tostring(bint.__sub(BalancesOf[ids[i]][from], quantities[i]))
-    outcomeBalances[i] = BalancesOf[ids[i]][from]
+    remainingBalances[i] = BalancesOf[ids[i]][from]
   end
 
   local notice = {
     Target = from,
     TokenIds = json.encode(ids),
     Quantities = json.encode(quantities),
-    OutcomeBalances = json.encode(outcomeBalances),
+    RemainingBalances = json.encode(remainingBalances),
     Action = 'Burn-Batch-Notice',
     Data = "Successfully burned batch"
   }
