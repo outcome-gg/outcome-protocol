@@ -68,18 +68,6 @@ describe("conditionalTokens.integration.test", function () {
     // to track collectionIds
     collectionIds = [],
     parlayCollectionIds = []
-
-    // // to get collectionId
-    // parentCollectionId = "", // from collateral
-    // indexSetIN = "1", // 1 for IN, 2 for OUT
-    // indexSetOUT = "2", // 1 for IN, 2 for OUT
-    
-    // // Expected:
-    // conditionId = "2d175f731624549c34fe14840990e92d610d63ea205028af076ec5cbef4e231c",
-    // collectionIdIN = "45f9415be8dff7be6a906246c469f46730bccd9984486f4ad316cf90eb2e951d",
-    // collectionIdOUT = "4c028af9b5b5f60457c96be27af32080a9adce728390919566bb2fcbd03d65f9",
-    // positionIdIN = "c142089dc805ae34099deb85df86d1b7ed1350416d6b95f7b6f714c7a47d21ee",
-    // positionIdOUT = "1cea0591a5ef57897cb99c865e7e9101ae8dbf23bb520595bc301cbf09f9be66"
   ))
 
   /************************************************************************ 
