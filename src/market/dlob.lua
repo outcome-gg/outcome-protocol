@@ -5,13 +5,12 @@ local bint = require('.bint')(256)
 local limitOrderBook = require('modules.limitOrderBook')
 local limitOrderBookOrder = require('modules.order')
 local balanceManager = require('modules.balanceManager')
+local config = require('config')
 
 --[[
     GLOBALS
 ]]
-ResetState = true
-Version = "1.0.1"
-if not Initialized or ResetState then Initialized = false end
+if not Initialized or config.ResetState then Initialized = false end
 
 --[[
     DLOB
@@ -19,11 +18,11 @@ if not Initialized or ResetState then Initialized = false end
 LimitOrderBook = limitOrderBook:new()
 BalanceManager = balanceManager:new()
 
-if not ConditionalTokens or ResetState then ConditionalTokens = '' end
-if not ConditionalTokensId or ResetState then ConditionalTokensId = '' end
-if not CollateralToken or ResetState then CollateralToken = '' end
-if not DataIndex or ResetState then DataIndex = '' end
-if not Name or ResetState then Name = 'DLOB-v' .. Version end
+if not ConditionalTokens or config.ResetState then ConditionalTokens = '' end
+if not ConditionalTokensId or config.ResetState then ConditionalTokensId = '' end
+if not CollateralToken or config.ResetState then CollateralToken = '' end
+if not DataIndex or config.ResetState then DataIndex = '' end
+if not Name or config.ResetState then Name = config.DLOB.Name end
 
 --[[
     NOTICES
