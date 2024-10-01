@@ -4,6 +4,7 @@ local bint = require('.bint')(256)
 local limitOrderBook = require('modules.limitOrderBook')
 local limitOrderBookOrder = require('modules.order')
 local balanceManager = require('modules.balanceManager')
+local dlobHelpers = require('modules.dlobHelpers')
 
 local DLOB = {}
 local DLOBMethods = {}
@@ -15,6 +16,18 @@ function DLOB:new()
     balanceManager = balanceManager:new()
   }
   setmetatable(obj, { __index = DLOBMethods })
+  -- Set metatable for method lookups from DLOBMethods, and dlobHelpers
+  setmetatable(obj, {
+    __index = function(t, k)
+      -- First, look up the key in DLOBMethods
+      if DLOBMethods[k] then
+        return DLOBMethods[k]
+      -- Then, check in dlobHelpers
+      elseif dlobHelpers[k] then
+        return dlobHelpers[k]
+      end
+    end
+  })
   return obj
 end
 
@@ -23,37 +36,9 @@ end
 ]]
 
 --[[
-    Helper Functions
-]]
-function DLOBMethods:assertMaxDp(value, maxDp)
-  local factor = 10 ^ maxDp
-  local roundedValue = math.floor(value * factor + 0.5) / factor
-  assert(value == roundedValue, "Value has more than " .. maxDp .. " decimal places")
-  return tostring(math.floor(value * factor))
-end
-
-function DLOBMethods:validateUserAssetBalance(from, orders)
-  local totalFundQuantity = 0
-  local totalShareQuantity = 0
-
-  for i = 1, #orders do
-    if orders[i].isBid then
-      totalFundQuantity = totalFundQuantity + orders[i].size * orders[i].price
-    else
-      totalShareQuantity = totalShareQuantity + orders[i].size
-    end
-  end
-
-  local availableFunds = tonumber(BalanceManager:getAvailableFunds(from))
-  local availableShares = tonumber(BalanceManager:getAvailableShares(from))
-
-  return totalFundQuantity <= availableFunds and totalShareQuantity <= availableShares
-end
-
---[[
     Fund Management
 ]]
-function DLOBMethods:addFunds(sender, quantity, xAction, xData)
+function DLOBMethods.addFunds(sender, quantity, xAction, xData)
   BalanceManager:addFunds(sender, quantity)
 
   ao.send({
@@ -83,7 +68,7 @@ function DLOBMethods:addFunds(sender, quantity, xAction, xData)
   end
 end
 
-function DLOBMethods:addShares(sender, quantity, xAction, xData)
+function DLOBMethods.addShares(sender, quantity, xAction, xData)
   BalanceManager:addShares(sender, quantity)
 
   ao.send({
@@ -113,7 +98,7 @@ function DLOBMethods:addShares(sender, quantity, xAction, xData)
   end
 end
 
-function DLOBMethods:withdrawFunds(sender, quantity)
+function DLOBMethods.withdrawFunds(sender, quantity)
   local success, message = BalanceManager:withdrawFunds(sender, quantity)
 
   if not success then
@@ -140,7 +125,7 @@ function DLOBMethods:withdrawFunds(sender, quantity)
   })
 end
 
-function DLOBMethods:withdrawShares(sender, quantity)
+function DLOBMethods.withdrawShares(sender, quantity)
   local success, message = BalanceManager:withdrawShares(sender, quantity)
 
   if not success then
@@ -168,7 +153,7 @@ function DLOBMethods:withdrawShares(sender, quantity)
   })
 end
 
-function DLOBMethods:lockOrderedAssets(from, orders)
+function DLOBMethods.lockOrderedAssets(from, orders)
   for i = 1, #orders do
     if orders[i].isBid then
       local fundAmount = math.ceil(orders[i].size * orders[i].price)
@@ -179,7 +164,7 @@ function DLOBMethods:lockOrderedAssets(from, orders)
   end
 end
 
-function DLOBMethods:unlockTradedAssets(executedTrades)
+function DLOBMethods.unlockTradedAssets(executedTrades)
   local successes = {}
   local messages = {}
   for i = 1, #executedTrades do
@@ -195,7 +180,7 @@ end
     Order Processing & Management
 ]]
 -- @returns success, orderId, positionSize, executedTrades
-function DLOBMethods:processOrder(order, sender, msgId, i)
+function DLOBMethods.processOrder(order, sender, msgId, i)
   order.uid = order.uid or msgId .. '_' .. i
   order = limitOrderBookOrder:new(order.uid, order.isBid, order.size, order.price, sender)
   local success, orderSize, executedTrades = LimitOrderBook:process(order)
@@ -206,7 +191,7 @@ end
 function DLOBMethods:processOrders(orders, sender, msgId)
   local successList, orderIdList, positionSizeList, executedTradesList = {}, {}, {}, {}
   for i = 1, #orders do
-    local success, orderId, positionSize, executedTrades = self:processOrder(orders[i], sender, msgId, i)
+    local success, orderId, positionSize, executedTrades = self.processOrder(orders[i], sender, msgId, i)
     table.insert(successList, success)
     table.insert(orderIdList, orderId)
     table.insert(positionSizeList, positionSize)
@@ -219,7 +204,7 @@ end
     Order Book Metrics & Queries
 ]]
 -- @returns best Bid/Ask, spread, midPrice, totalVolume, marketDepth
-function DLOBMethods:getOrderBookMetrics()
+function DLOBMethods.getOrderBookMetrics()
   local bestBid = LimitOrderBook:getBestBid()
   local bestAsk = LimitOrderBook:getBestAsk()
   local spread = LimitOrderBook:getSpread()
@@ -240,18 +225,18 @@ end
 --[[
     Order Details Queries
 ]]
-function DLOBMethods:getOrderDetails(orderId)
+function DLOBMethods.getOrderDetails(orderId)
   return LimitOrderBook:getOrderDetails(orderId)
 end
 
-function DLOBMethods:getOrderPrice(orderId)
+function DLOBMethods.getOrderPrice(orderId)
   return LimitOrderBook:getOrderPrice(orderId)
 end
 
 --[[
     Price Benchmarking & Risk Functions
 ]]
-function DLOBMethods:getRiskMetrics()
+function DLOBMethods.getRiskMetrics()
   local vwap = LimitOrderBook:getVWAP()
   local bidExposure = LimitOrderBook:getBidExposure()
   local askExposure = LimitOrderBook:getAskExposure()

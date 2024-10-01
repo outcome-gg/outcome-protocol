@@ -37,7 +37,6 @@ function ConditionalTokens:new(name, ticker, denomination, logo)
       -- Lastly, look up the key in the semiFungibleInstance methods
       elseif SemiFungibleTokens[k] then
         return SemiFungibleTokens[k]
-
       end
     end
   })

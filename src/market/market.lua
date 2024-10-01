@@ -115,7 +115,7 @@ Handlers.add('Add-Funds', isAddFunds, function(msg)
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
   assert(msg.Tags.Sender, 'Sender is required!')
 
-  DLOB:addFunds(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
+  DLOB.addFunds(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
 end)
 
 Handlers.add('Add-Shares', isAddShares, function(msg)
@@ -125,17 +125,17 @@ Handlers.add('Add-Shares', isAddShares, function(msg)
   assert(bint.__lt(0, bint(quantity)), 'quantity must be greater than zero!')
   assert(msg.Tags.Sender, 'Sender is required!')
 
-  DLOB:addShares(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
+  DLOB.addShares(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
 end)
 
 Handlers.add('Withdraw-Funds', Handlers.utils.hasMatchingTag('Action', 'Withdraw-Funds'), function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
-  DLOB:withdrawFunds(msg.From, msg.Tags.Quantity)
+  DLOB.withdrawFunds(msg.From, msg.Tags.Quantity)
 end)
 
 Handlers.add('Withdraw-Shares', Handlers.utils.hasMatchingTag('Action', 'Withdraw-Shares'), function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
-  DLOB:withdrawShares(msg.From, msg.Tags.Quantity)
+  DLOB.withdrawShares(msg.From, msg.Tags.Quantity)
 end)
 
 Handlers.add('Get-Balance-Info', Handlers.utils.hasMatchingTag('Action', 'Get-Balance-Info'), function(msg)
@@ -173,7 +173,7 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
   -- validate user balance
   local orders = {}
   orders[1] = order
-  local hasSufficientBalance = DLOB:validateUserAssetBalance(sender, orders)
+  local hasSufficientBalance = DLOB.validateUserAssetBalance(sender, orders)
 
   if not isValidOrder then
     ao.send({
@@ -188,14 +188,14 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
       Data = 'Insufficient available balance'
     })
   else
-    DLOB:lockOrderedAssets(sender, orders)
+    DLOB.lockOrderedAssets(sender, orders)
 
     -- format price to 3 decimal place string
     local priceString = assertMaxDp(order.price, 3)
     order.price = priceString
 
-    local success, orderId, orderSize, executedTrades = DLOB:processOrder(order, sender, msg.Id, 1)
-    DLOB:unlockTradedAssets(executedTrades)
+    local success, orderId, orderSize, executedTrades = DLOB.processOrder(order, sender, msg.Id, 1)
+    DLOB.unlockTradedAssets(executedTrades)
 
     ao.send({
       Target = sender,
@@ -221,15 +221,15 @@ Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-
     orders[i].price = priceString
   end
   -- validate user balance
-  local hasSufficientBalance = DLOB:validateUserAssetBalance(sender, orders)
+  local hasSufficientBalance = DLOB.validateUserAssetBalance(sender, orders)
   assert(hasSufficientBalance, 'Insufficient available balance')
 
-  DLOB:lockOrderedAssets(sender, orders)
+  DLOB.lockOrderedAssets(sender, orders)
   local successList, orderIds, orderSizes, executedTradesList = DLOB:processOrders(orders, sender, msg.Id)
 
   -- settle trades
   for i = 1, #executedTradesList do
-    DLOB:unlockTradedAssets(executedTradesList[i])
+    DLOB.unlockTradedAssets(executedTradesList[i])
   end
 
   ao.send({
@@ -246,7 +246,7 @@ end)
     Order Book Metrics & Queries
 ]]
 Handlers.add('Get-Order-Book-Metrics', Handlers.utils.hasMatchingTag('Action', 'Get-Order-Book-Metrics'), function(msg)
-  local metrics = DLOB:getOrderBookMetrics()
+  local metrics = DLOB.getOrderBookMetrics()
 
   ao.send({
     Target = msg.From,
@@ -319,7 +319,7 @@ end)
     Order Details Queries
 ]]
 Handlers.add('Get-Order-Details', Handlers.utils.hasMatchingTag('Action', 'Get-Order-Details'), function(msg)
-  local order = DLOB:getOrderDetails(msg.Tags.OrderId)
+  local order = DLOB.getOrderDetails(msg.Tags.OrderId)
 
   if not order then
     ao.send({
@@ -338,7 +338,7 @@ Handlers.add('Get-Order-Details', Handlers.utils.hasMatchingTag('Action', 'Get-O
 end)
 
 Handlers.add('Get-Order-Price', Handlers.utils.hasMatchingTag('Action', 'Get-Order-Price'), function(msg)
-  local price = DLOB:getOrderPrice(msg.Tags.OrderId)
+  local price = DLOB.getOrderPrice(msg.Tags.OrderId)
 
   if not price then
     ao.send({
@@ -372,7 +372,7 @@ end)
     Price Benchmarking & Risk Functions
 ]]
 Handlers.add('Get-Risk-Metrics', Handlers.utils.hasMatchingTag('Action', 'Get-Risk-Metrics'), function(msg)
-  local metrics = DLOB:getRiskMetrics()
+  local metrics = DLOB.getRiskMetrics()
 
   ao.send({
     Target = msg.From,
