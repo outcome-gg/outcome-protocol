@@ -1,28 +1,24 @@
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
+local dlob = require('modules.dlob')
+local config = require('modules.config')
 
-local limitOrderBook = require('modules.limitOrderBook')
-local limitOrderBookOrder = require('modules.order')
-local balanceManager = require('modules.balanceManager')
-local config = require('config')
-
---[[
-    GLOBALS
-]]
-if not Initialized or config.ResetState then Initialized = false end
 
 --[[
     DLOB
 ]]
-LimitOrderBook = limitOrderBook:new()
-BalanceManager = balanceManager:new()
-
+if not DLOB or config.ResetState then DLOB = dlob:new() end
+if not Initialized or config.ResetState then Initialized = false end
 if not ConditionalTokens or config.ResetState then ConditionalTokens = '' end
 if not ConditionalTokensId or config.ResetState then ConditionalTokensId = '' end
 if not CollateralToken or config.ResetState then CollateralToken = '' end
 if not DataIndex or config.ResetState then DataIndex = '' end
 if not Name or config.ResetState then Name = config.DLOB.Name end
+
+-- @dev Link expected namespace variables
+LimitOrderBook = DLOB.limitOrderBook
+BalanceManager = DLOB.balanceManager
 
 --[[
     NOTICES
@@ -53,7 +49,7 @@ local function assertMaxDp(value, maxDp)
 end
 
 --[[
-    Fund Management
+    MATCHING HELPERS
 ]]
 local function isAddFunds(msg)
   if msg.From == CollateralToken  and msg.Action == "Credit-Notice" then
@@ -77,238 +73,6 @@ local function isAddShares(msg)
     end
   end
   return res
-end
-
-local function validateUserAssetBalance(from, orders)
-  local totalFundQuantity = 0
-  local totalShareQuantity = 0
-
-  for i = 1, #orders do
-    if orders[i].isBid then
-      totalFundQuantity = totalFundQuantity + orders[i].size * orders[i].price
-    else
-      totalShareQuantity = totalShareQuantity + orders[i].size
-    end
-  end
-
-  local availableFunds = tonumber(BalanceManager:getAvailableFunds(from))
-  local availableShares = tonumber(BalanceManager:getAvailableShares(from))
-
-  return totalFundQuantity <= availableFunds and totalShareQuantity <= availableShares
-end
-
-local function addFunds(sender, quantity, xAction, xData)
-  BalanceManager:addFunds(sender, quantity)
-
-  ao.send({
-    Target = sender,
-    Action = 'Funds-Added',
-    Quantity = quantity,
-    Data = 'Successfully added funds'
-  })
-
-  -- Forward Order(s)
-  if xAction and xData then
-    if xAction == 'Process-Order' then
-      ao.send({
-        Target = ao.id,
-        Action = 'Process-Order',
-        Sender = sender,
-        Data = xData
-      })
-    elseif xAction == 'Process-Orders' and xData then
-      ao.send({
-        Target = ao.id,
-        Action = 'Process-Orders',
-        Sender = sender,
-        Data = xData
-      })
-    end
-  end
-end
-
-local function addShares(sender, quantity, xAction, xData)
-  BalanceManager:addShares(sender, quantity)
-
-  ao.send({
-    Target = sender,
-    Action = 'Shares-Added',
-    Quantity = quantity,
-    Data = 'Successfully added shares'
-  })
-
-  -- Forward Order(s)
-  if xAction and xData then
-    if xAction == 'Process-Order' then
-      ao.send({
-        Target = ao.id,
-        Action = 'Process-Order',
-        Sender = sender,
-        Data = xData
-      })
-    elseif xAction == 'Process-Orders' and xData then
-      ao.send({
-        Target = ao.id,
-        Action = 'Process-Orders',
-        Sender = sender,
-        Data = xData
-      })
-    end
-  end
-end
-
-local function withdrawFunds(sender, quantity)
-  local success, message = BalanceManager:withdrawFunds(sender, quantity)
-
-  if not success then
-    ao.send({
-      Target = sender,
-      Action = 'Withdraw-Funds-Error',
-      Data = message
-    })
-    return
-  end
-
-  ao.send({
-    Target = CollateralToken,
-    Action = 'Transfer',
-    Recipient = sender,
-    Quantity = quantity
-  })
-
-  ao.send({
-    Target = sender,
-    Action = 'Funds-Withdrawn',
-    Quantity = quantity,
-    Data = message
-  })
-end
-
-local function withdrawShares(sender, quantity)
-  local success, message = BalanceManager:withdrawShares(sender, quantity)
-
-  if not success then
-    ao.send({
-      Target = sender,
-      Action = 'Withdraw-Shares-Error',
-      Data = message
-    })
-    return
-  end
-
-  ao.send({
-    Target = ConditionalTokens,
-    Action = 'Transfer-Single',
-    Recipient = sender,
-    TokenId = ConditionalTokensId,
-    Quantity = quantity
-  })
-
-  ao.send({
-    Target = sender,
-    Action = 'Shares-Withdrawn',
-    Quantity = quantity,
-    Data = message
-  })
-end
-
-local function lockOrderedAssets(from, orders)
-  for i = 1, #orders do
-    if orders[i].isBid then
-      local fundAmount = math.ceil(orders[i].size * orders[i].price)
-      BalanceManager:lockFunds(from, fundAmount)
-    else
-      BalanceManager:lockShares(from, orders[i].size)
-    end
-  end
-end
-
-local function unlockTradedAssets(executedTrades)
-  local successes = {}
-  local messages = {}
-  for i = 1, #executedTrades do
-    local price = tonumber(executedTrades[i]['price']) / 1000
-    local success, message = BalanceManager:settleTrade(executedTrades[i]['buyer'], executedTrades[i]['seller'], price, executedTrades[i]['size'])
-    table.insert(successes, success)
-    table.insert(messages, message)
-  end
-  return successes, messages
-end
-
---[[
-    Order Processing & Management
-]]
--- @returns success, orderId, positionSize, executedTrades
-local function processOrder(order, sender, msgId, i)
-  order.uid = order.uid or msgId .. '_' .. i
-  order = limitOrderBookOrder:new(order.uid, order.isBid, order.size, order.price, sender)
-  local success, orderSize, executedTrades = LimitOrderBook:process(order)
-  return success, order.uid, orderSize, executedTrades
-end
-
--- @returns lists of successes, orderIds, positionSizes, executedTrades
-local function processOrders(orders, sender, msgId)
-  local successList, orderIdList, positionSizeList, executedTradesList = {}, {}, {}, {}
-  for i = 1, #orders do
-    local success, orderId, positionSize, executedTrades = processOrder(orders[i], sender, msgId, i)
-    table.insert(successList, success)
-    table.insert(orderIdList, orderId)
-    table.insert(positionSizeList, positionSize)
-    table.insert(executedTradesList, executedTrades)
-  end
-  return successList, orderIdList, positionSizeList, executedTradesList
-end
-
---[[
-    Order Book Metrics & Queries
-]]
--- @returns best Bid/Ask, spread, midPrice, totalVolume, marketDepth
-local function getOrderBookMetrics()
-  local bestBid = LimitOrderBook:getBestBid()
-  local bestAsk = LimitOrderBook:getBestAsk()
-  local spread = LimitOrderBook:getSpread()
-  local midPrice = LimitOrderBook:getMidPrice()
-  local marketDepth = LimitOrderBook:getMarketDepth()
-  local totalLiquidity = LimitOrderBook:getTotalLiquidity()
-
-  return {
-    bestBid = tostring(bestBid),
-    bestAsk = tostring(bestAsk),
-    spread = tostring(spread),
-    midPrice = tostring(midPrice),
-    marketDepth = json.encode(marketDepth),
-    totalLiquidity = json.encode(totalLiquidity)
-  }
-end
-
---[[
-    Order Details Queries
-]]
-local function getOrderDetails(orderId)
-  return LimitOrderBook:getOrderDetails(orderId)
-end
-
-local function getOrderPrice(orderId)
-  return LimitOrderBook:getOrderPrice(orderId)
-end
-
---[[
-    Price Benchmarking & Risk Functions
-]]
-local function getRiskMetrics()
-  local vwap = LimitOrderBook:getVWAP()
-  local bidExposure = LimitOrderBook:getBidExposure()
-  local askExposure = LimitOrderBook:getAskExposure()
-  local netExposure = LimitOrderBook:getNetExposure()
-
-  return {
-    vwap = vwap,
-    exposure = {
-      bid = bidExposure,
-      ask = askExposure,
-      net = netExposure
-    }
-  }
 end
 
 --[[
@@ -351,7 +115,7 @@ Handlers.add('Add-Funds', isAddFunds, function(msg)
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
   assert(msg.Tags.Sender, 'Sender is required!')
 
-  addFunds(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
+  DLOB:addFunds(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
 end)
 
 Handlers.add('Add-Shares', isAddShares, function(msg)
@@ -361,17 +125,17 @@ Handlers.add('Add-Shares', isAddShares, function(msg)
   assert(bint.__lt(0, bint(quantity)), 'quantity must be greater than zero!')
   assert(msg.Tags.Sender, 'Sender is required!')
 
-  addShares(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
+  DLOB:addShares(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
 end)
 
 Handlers.add('Withdraw-Funds', Handlers.utils.hasMatchingTag('Action', 'Withdraw-Funds'), function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
-  withdrawFunds(msg.From, msg.Tags.Quantity)
+  DLOB:withdrawFunds(msg.From, msg.Tags.Quantity)
 end)
 
 Handlers.add('Withdraw-Shares', Handlers.utils.hasMatchingTag('Action', 'Withdraw-Shares'), function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
-  withdrawShares(msg.From, msg.Tags.Quantity)
+  DLOB:withdrawShares(msg.From, msg.Tags.Quantity)
 end)
 
 Handlers.add('Get-Balance-Info', Handlers.utils.hasMatchingTag('Action', 'Get-Balance-Info'), function(msg)
@@ -409,7 +173,7 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
   -- validate user balance
   local orders = {}
   orders[1] = order
-  local hasSufficientBalance = validateUserAssetBalance(sender, orders)
+  local hasSufficientBalance = DLOB:validateUserAssetBalance(sender, orders)
 
   if not isValidOrder then
     ao.send({
@@ -424,14 +188,14 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
       Data = 'Insufficient available balance'
     })
   else
-    lockOrderedAssets(sender, orders)
+    DLOB:lockOrderedAssets(sender, orders)
 
     -- format price to 3 decimal place string
     local priceString = assertMaxDp(order.price, 3)
     order.price = priceString
 
-    local success, orderId, orderSize, executedTrades = processOrder(order, sender, msg.Id, 1)
-    unlockTradedAssets(executedTrades)
+    local success, orderId, orderSize, executedTrades = DLOB:processOrder(order, sender, msg.Id, 1)
+    DLOB:unlockTradedAssets(executedTrades)
 
     ao.send({
       Target = sender,
@@ -457,15 +221,15 @@ Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-
     orders[i].price = priceString
   end
   -- validate user balance
-  local hasSufficientBalance = validateUserAssetBalance(sender, orders)
+  local hasSufficientBalance = DLOB:validateUserAssetBalance(sender, orders)
   assert(hasSufficientBalance, 'Insufficient available balance')
 
-  lockOrderedAssets(sender, orders)
-  local successList, orderIds, orderSizes, executedTradesList = processOrders(orders, sender, msg.Id)
+  DLOB:lockOrderedAssets(sender, orders)
+  local successList, orderIds, orderSizes, executedTradesList = DLOB:processOrders(orders, sender, msg.Id)
 
   -- settle trades
   for i = 1, #executedTradesList do
-    unlockTradedAssets(executedTradesList[i])
+    DLOB:unlockTradedAssets(executedTradesList[i])
   end
 
   ao.send({
@@ -482,7 +246,7 @@ end)
     Order Book Metrics & Queries
 ]]
 Handlers.add('Get-Order-Book-Metrics', Handlers.utils.hasMatchingTag('Action', 'Get-Order-Book-Metrics'), function(msg)
-  local metrics = getOrderBookMetrics()
+  local metrics = DLOB:getOrderBookMetrics()
 
   ao.send({
     Target = msg.From,
@@ -555,7 +319,7 @@ end)
     Order Details Queries
 ]]
 Handlers.add('Get-Order-Details', Handlers.utils.hasMatchingTag('Action', 'Get-Order-Details'), function(msg)
-  local order = getOrderDetails(msg.Tags.OrderId)
+  local order = DLOB:getOrderDetails(msg.Tags.OrderId)
 
   if not order then
     ao.send({
@@ -574,7 +338,7 @@ Handlers.add('Get-Order-Details', Handlers.utils.hasMatchingTag('Action', 'Get-O
 end)
 
 Handlers.add('Get-Order-Price', Handlers.utils.hasMatchingTag('Action', 'Get-Order-Price'), function(msg)
-  local price = getOrderPrice(msg.Tags.OrderId)
+  local price = DLOB:getOrderPrice(msg.Tags.OrderId)
 
   if not price then
     ao.send({
@@ -608,7 +372,7 @@ end)
     Price Benchmarking & Risk Functions
 ]]
 Handlers.add('Get-Risk-Metrics', Handlers.utils.hasMatchingTag('Action', 'Get-Risk-Metrics'), function(msg)
-  local metrics = getRiskMetrics()
+  local metrics = DLOB:getRiskMetrics()
 
   ao.send({
     Target = msg.From,
