@@ -2135,7 +2135,7 @@ describe("conditionalTokens.integration.test", function () {
 
       expect(action_).to.equal("Condition-Resolution-Notice")
       expect(resolutionAgent_).to.equal(resolutionAgent)
-      expect(outcomeSlotCount_).to.equal(9)
+      expect(outcomeSlotCount_).to.equal('9')
       expect(questionId_).to.equal(questionId1)
       expect(conditionId_).to.equal(keccak256(resolutionAgent + questionId1 + '9').toString('hex'))
       expect(payoutNumerators_[0]).to.equal(1)
@@ -2343,6 +2343,7 @@ describe("conditionalTokens.integration.test", function () {
       expect(balances_["a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485"][walletAddress]).to.equal("16") 
     })
   })
+
   /************************************************************************ 
   * Parlays
   ************************************************************************/
@@ -2873,7 +2874,7 @@ describe("conditionalTokens.integration.test", function () {
 
       expect(action_).to.equal("Condition-Resolution-Notice")
       expect(resolutionAgent_).to.equal(resolutionAgent)
-      expect(outcomeSlotCount_).to.equal(outcomeSlotCount)
+      expect(outcomeSlotCount_).to.equal(outcomeSlotCount.toString())
       expect(questionId_).to.equal(questionId)
       expect(conditionId_).to.equal(keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex'))
       expect(payoutNumerators_[0]).to.equal(1)
@@ -3023,7 +3024,7 @@ describe("conditionalTokens.integration.test", function () {
 
       expect(action_).to.equal("Condition-Resolution-Notice")
       expect(resolutionAgent_).to.equal(resolutionAgent)
-      expect(outcomeSlotCount_).to.equal(outcomeSlotCount)
+      expect(outcomeSlotCount_).to.equal(outcomeSlotCount.toString())
       expect(questionId_).to.equal(questionId)
       expect(conditionId_).to.equal(keccak256(resolutionAgent + questionId + outcomeSlotCount.toString()).toString('hex'))
       expect(payoutNumerators_[0]).to.equal(1)
