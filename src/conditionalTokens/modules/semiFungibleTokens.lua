@@ -173,4 +173,28 @@ function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantitie
   end
 end
 
+function SemiFungibleTokensMethods:getBalanceOf(from, recipient, tokenId)
+  local bal = '0'
+  -- If Id is found then cointinue
+  if self.balancesOf[tokenId] then
+    -- If not Recipient is provided, then return the Senders balance
+    if (recipient and self.balancesOf[tokenId][recipient]) then
+      bal = self.balancesOf[tokenId][recipient]
+    elseif self.balancesOf[tokenId][from] then
+      bal = self.balancesOf[tokenId][from]
+    end
+  end
+  -- return balance
+  return bal
+end
+
+function SemiFungibleTokensMethods:getBalancesOf(from, tokenId)
+  local bals = {}
+  if self.balancesOf[tokenId] then
+    bals = self.balancesOf[tokenId]
+  end
+  -- return balances
+  return bals
+end
+
 return SemiFungibleTokens

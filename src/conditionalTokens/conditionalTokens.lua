@@ -64,17 +64,7 @@ end)
 ]]
 Handlers.add("Balance-Of", Handlers.utils.hasMatchingTag("Action", "Balance-Of"), function(msg)
   assert(msg.Tags.TokenId, "TokenId is required!")
-  local bal = '0'
-
-  -- If Id is found then cointinue
-  if BalancesOf[msg.Tags.TokenId] then
-    -- If not Recipient is provided, then return the Senders balance
-    if (msg.Tags.Recipient and BalancesOf[msg.Tags.TokenId][msg.Tags.Recipient]) then
-      bal = BalancesOf[msg.Tags.TokenId][msg.Tags.Recipient]
-    elseif BalancesOf[msg.Tags.TokenId][msg.From] then
-      bal = BalancesOf[msg.Tags.TokenId][msg.From]
-    end
-  end
+  local bal = ConditionalTokens:getBalanceOf(msg.From, msg.Tags.Recipient, msg.Tags.TokenId)
 
   ao.send({
     Target = msg.From,
@@ -86,10 +76,10 @@ Handlers.add("Balance-Of", Handlers.utils.hasMatchingTag("Action", "Balance-Of")
   })
 end)
 
--- TODO: Decide if we want to return the balances of all ids or a single id
 Handlers.add('Balances-Of', Handlers.utils.hasMatchingTag('Action', 'Balances-Of'), function(msg)
   assert(msg.Tags.TokenId, "TokenId is required!")
-  ao.send({ Target = msg.From, Data = json.encode(BalancesOf[msg.Tags.TokenId]) })
+  local bals = ConditionalTokens:getBalancesOf(msg.From, msg.Tags.TokenId)
+  ao.send({ Target = msg.From, Data = json.encode(bals) })
 end)
 
 Handlers.add('Balances-All', Handlers.utils.hasMatchingTag('Action', 'Balances-All'), function(msg)
