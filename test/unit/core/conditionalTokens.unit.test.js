@@ -337,7 +337,7 @@ test('Split-Position: should not split if given an incomplete singleton partitio
   assert.match(result, /got empty or singleton partition/)
 })
 
-test('Split-Position: should transfer split collateral from trader with a Position-Split-Notice', async () => {
+test('Split-Position: should transfer split collateral from trader with a Split-Position-Notice', async () => {
   const resolutionAgent = "123";
   // non-random questionId
   const questionId = 'NON-RANDOM';
@@ -373,7 +373,7 @@ test('Split-Position: should transfer split collateral from trader with a Positi
   const conditionId_ = result.Messages[1].Tags.find(t => t.name === 'ConditionId').value
   const partition_ = result.Messages[1].Tags.find(t => t.name === 'Partition').value
   const quantity_ = result.Messages[1].Tags.find(t => t.name === 'Quantity').value
-  assert.equal(action_, "Position-Split-Notice")
+  assert.equal(action_, "Split-Position-Notice")
   assert.equal(stakeholder_, "9876")
   assert.equal(collateralToken_, collateralToken)
   assert.equal(parentCollectionId_, parentCollectionId)
@@ -511,7 +511,7 @@ test('Split-Position: [balanceOf] should have a balance of tokenId 4e9dd43eec444
   console.log("balanceOf result", result.Messages[0].Tags)
 })
 
-test('Split-Position: should split from a parentCollection from the same condition and send a Position-Split-Notice', async () => {
+test('Split-Position: should split from a parentCollection from the same condition and send a Split-Position-Notice', async () => {
   const resolutionAgent = "123";
   // non-random questionId
   const questionId = 'NON-RANDOM';
@@ -562,7 +562,7 @@ test('Split-Position: should split from a parentCollection from the same conditi
   assert.equal(JSON.parse(tokenIds_1)[0], "35d5963221eb06230aaeaa7085f67a8e9354855c4042e7785b22cd52eb2fae01")
   assert.equal(JSON.parse(tokenIds_1)[1], "b61eeb7f086dfe73683a4f5a9040adf112fa8bda1cf41bf995d3b890e9f15335")
 
-  //position-split notice
+  //split-position notice
   const action_2 = result.Messages[2].Tags.find(t => t.name === 'Action').value
   const stakeholder_2 = result.Messages[2].Tags.find(t => t.name === 'Stakeholder').value
   const collateralToken_2 = result.Messages[2].Tags.find(t => t.name === 'CollateralToken').value
@@ -570,7 +570,7 @@ test('Split-Position: should split from a parentCollection from the same conditi
   const conditionId_2 = result.Messages[2].Tags.find(t => t.name === 'ConditionId').value
   const partition_2 = result.Messages[2].Tags.find(t => t.name === 'Partition').value
   const quantity_2 = result.Messages[2].Tags.find(t => t.name === 'Quantity').value
-  assert.equal(action_2, "Position-Split-Notice")
+  assert.equal(action_2, "Split-Position-Notice")
   assert.equal(stakeholder_2, "9876")
   assert.equal(collateralToken_2, collateralToken)
   assert.equal(parentCollectionId_2, parentCollectionId)
@@ -595,7 +595,7 @@ test('Split-Position: should return updated balances', async () => {
   assert.equal(balances["35d5963221eb06230aaeaa7085f67a8e9354855c4042e7785b22cd52eb2fae01"]["9876"], '20')
 })
 
-test('Split-Position: should transfer LO/HI split collateral from trader with a Position-Split-Notice', async () => {
+test('Split-Position: should transfer LO/HI split collateral from trader with a Split-Position-Notice', async () => {
   // non-randomized questionId
   const questionId = 'NEW-NON-RANDOM';
   const outcomeSlotCount = 2;
@@ -631,7 +631,7 @@ test('Split-Position: should transfer LO/HI split collateral from trader with a 
   const conditionId_ = result.Messages[1].Tags.find(t => t.name === 'ConditionId').value
   const partition_ = result.Messages[1].Tags.find(t => t.name === 'Partition').value
   const quantity_ = result.Messages[1].Tags.find(t => t.name === 'Quantity').value
-  assert.equal(action_, "Position-Split-Notice")
+  assert.equal(action_, "Split-Position-Notice")
   assert.equal(stakeholder_, "9876")
   assert.equal(collateralToken_, collateralToken)
   assert.equal(parentCollectionId_, parentCollectionId)
@@ -692,7 +692,7 @@ test('Split-Position: should Get-Collection-Id for LO vs HI', async () => {
 
 //@dev ref: https://docs.gnosis.io/conditionaltokens/docs/devguide05
 //@dev this is the same as LO -> LO&A, LO&B, LO&C
-test('Split-Position: should split from a parentCollection from a different condition and send a Position-Split-Notice', async () => {
+test('Split-Position: should split from a parentCollection from a different condition and send a Split-Position-Notice', async () => {
   // non-random questionId
   const questionId = 'NON-RANDOM';
   const outcomeSlotCount = 9;
@@ -742,7 +742,7 @@ test('Split-Position: should split from a parentCollection from a different cond
   assert.equal(JSON.parse(tokenIds_1)[1], "6c1be55b038998072fa6e6a98a1028ea66fe172cdd93010c0d21eca6c287d81c")
   assert.equal(JSON.parse(tokenIds_1)[2], "1a5202803de9ab4467ea8d52abfa9da36ac433bdce3afd97930b11553ec53a0b")
 
-  //position-split notice
+  //split-position notice
   const action_2 = result.Messages[2].Tags.find(t => t.name === 'Action').value
   const stakeholder_2 = result.Messages[2].Tags.find(t => t.name === 'Stakeholder').value
   const collateralToken_2 = result.Messages[2].Tags.find(t => t.name === 'CollateralToken').value
@@ -750,7 +750,7 @@ test('Split-Position: should split from a parentCollection from a different cond
   const conditionId_2 = result.Messages[2].Tags.find(t => t.name === 'ConditionId').value
   const partition_2 = result.Messages[2].Tags.find(t => t.name === 'Partition').value
   const quantity_2 = result.Messages[2].Tags.find(t => t.name === 'Quantity').value
-  assert.equal(action_2, "Position-Split-Notice")
+  assert.equal(action_2, "Split-Position-Notice")
   assert.equal(stakeholder_2, "9876")
   assert.equal(collateralToken_2, collateralToken)
   assert.equal(parentCollectionId_2, parentCollectionId)
@@ -841,7 +841,7 @@ test('Split-Position: the chaining of conditionals should be communicative', asy
   assert.equal(JSON.parse(tokenIds_1)[0], "1a5202803de9ab4467ea8d52abfa9da36ac433bdce3afd97930b11553ec53a0b")
   assert.equal(JSON.parse(tokenIds_1)[1], "0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1")
 
-  //position-split notice
+  //split-position notice
   const action_2 = result.Messages[2].Tags.find(t => t.name === 'Action').value
   const stakeholder_2 = result.Messages[2].Tags.find(t => t.name === 'Stakeholder').value
   const collateralToken_2 = result.Messages[2].Tags.find(t => t.name === 'CollateralToken').value
@@ -849,7 +849,7 @@ test('Split-Position: the chaining of conditionals should be communicative', asy
   const conditionId_2 = result.Messages[2].Tags.find(t => t.name === 'ConditionId').value
   const partition_2 = result.Messages[2].Tags.find(t => t.name === 'Partition').value
   const quantity_2 = result.Messages[2].Tags.find(t => t.name === 'Quantity').value
-  assert.equal(action_2, "Position-Split-Notice")
+  assert.equal(action_2, "Split-Position-Notice")
   assert.equal(stakeholder_2, "9876")
   assert.equal(collateralToken_2, collateralToken)
   assert.equal(parentCollectionId_2, parentCollectionId)
@@ -923,7 +923,7 @@ test('Merge-Position: should not merge if amount exceeds balances in to-be-merge
 })
 
 //@dev inputs to marge split from previous "split" unit test
-test('Merge-Position: should merge deeper-level positions and send a Positions-Merge-Notice', async () => {
+test('Merge-Position: should merge deeper-level positions and send a Merge-Positions-Notice', async () => {
   // non-randomized questionId
   const questionId = 'NEW-NON-RANDOM';
   const outcomeSlotCount = 2;
@@ -981,7 +981,7 @@ test('Merge-Position: should merge deeper-level positions and send a Positions-M
   const conditionId_2 = result.Messages[2].Tags.find(t => t.name === 'ConditionId').value
   const partition_2 = result.Messages[2].Tags.find(t => t.name === 'Partition').value
   const quantity_2 = result.Messages[2].Tags.find(t => t.name === 'Quantity').value
-  assert.equal(action_2, "Positions-Merge-Notice")
+  assert.equal(action_2, "Merge-Positions-Notice")
   assert.equal(stakeholder_2, "9876")
   assert.equal(collateralToken_2, collateralToken)
   assert.equal(parentCollectionId_2, parentCollectionId)
@@ -1019,7 +1019,7 @@ test('Merge-Position: should return lower-level position tokens to the trader', 
 })
 
 //@dev inputs to marge split from first "split" unit test
-test('Merge-Position: should merge first-level positions and send a Positions-Merge-Notice', async () => {
+test('Merge-Position: should merge first-level positions and send a Merge-Positions-Notice', async () => {
   // non-randomized questionId
   const questionId = 'NON-RANDOM';
   const outcomeSlotCount = 9;
@@ -1080,7 +1080,7 @@ test('Merge-Position: should merge first-level positions and send a Positions-Me
   const conditionId_2 = result.Messages[2].Tags.find(t => t.name === 'ConditionId').value
   const partition_2 = result.Messages[2].Tags.find(t => t.name === 'Partition').value
   const quantity_2 = result.Messages[2].Tags.find(t => t.name === 'Quantity').value
-  assert.equal(action_2, "Positions-Merge-Notice")
+  assert.equal(action_2, "Merge-Positions-Notice")
   assert.equal(stakeholder_2, "9876")
   assert.equal(collateralToken_2, collateralToken)
   assert.equal(parentCollectionId_2, parentCollectionId)

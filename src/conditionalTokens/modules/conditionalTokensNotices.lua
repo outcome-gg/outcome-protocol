@@ -39,15 +39,54 @@ function ConditionalTokensNotices:conditionResolutionNotice(conditionId, resolut
 end
 
 -- @dev Emitted when a position is successfully split.
--- @param notice The prepared notice to be sent
-function ConditionalTokensNotices:positionSplitNotice(notice)
+-- @param from The address of the account that split the position.
+-- @param collateralToken The address of the collateral token.
+-- @param parentCollectionId The parent collection ID.
+-- @param conditionId The condition ID.
+-- @param partition The partition.
+-- @param quantity The quantity.
+-- @param msg For sending X-Tags
+function ConditionalTokensNotices:positionSplitNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity, msg)
+  local notice = {
+    Target = from,
+    Action = "Split-Position-Notice",
+    Process = ao.id,
+    Stakeholder = from,
+    CollateralToken = collateralToken,
+    ParentCollectionId = parentCollectionId,
+    ConditionId = conditionId,
+    Partition = json.encode(partition),
+    Quantity = quantity
+  }
+  -- Forward tags
+  for tagName, tagValue in pairs(msg) do
+    -- Tags beginning with "X-" are forwarded
+    if string.sub(tagName, 1, 2) == "X-" then
+      notice[tagName] = tagValue
+    end
+  end
+  -- Send notice
   ao.send(notice)
 end
 
+
 -- @dev Emitted when positions are successfully merged.
--- @param notice The prepared notice to be sent
-function ConditionalTokensNotices:positionsMergeNotice(notice)
-  ao.send(notice)
+-- @param from The address of the account that merged the positions.
+-- @param collateralToken The address of the collateral token.
+-- @param parentCollectionId The parent collection ID.
+-- @param conditionId The condition ID.
+-- @param partition The partition.
+-- @param quantity The quantity.
+function ConditionalTokensNotices:positionsMergeNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
+  ao.send({
+    Target = from,
+    Action = "Merge-Positions-Notice",
+    CollateralToken = collateralToken,
+    ParentCollectionId = parentCollectionId,
+    ConditionId = conditionId,
+    Partition = json.encode(partition),
+    Quantity = quantity
+  })
 end
 
 -- @dev Emitted when a position is successfully redeemed.

@@ -151,42 +151,7 @@ function ConditionalTokensMethods:splitPosition(from, collateralToken, parentCol
 
   SemiFungibleTokens:batchMint(from, positionIds, quantities)
 
-  local notice = {
-    Target = from,
-    Action = "Position-Split-Notice",
-    Process = ao.id,
-    Stakeholder = from,
-    CollateralToken = collateralToken,
-    ParentCollectionId = parentCollectionId,
-    ConditionId = conditionId,
-    Partition = json.encode(partition),
-    Quantity = quantity
-  }
-
-  for tagName, tagValue in pairs(msg) do
-    -- Tags beginning with "X-" are forwarded
-    if string.sub(tagName, 1, 2) == "X-" then
-      notice[tagName] = tagValue
-    end
-  end
-
-  self:positionSplitNotice(notice)
-end
-
--- @dev TODO: remove this function to avoid redundancy
--- Should call positionsMergeNotice directly
-function ConditionalTokensMethods:mergePositionsCompletion(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
-  local notice = {
-    Target = from,
-    Action = "Positions-Merge-Notice",
-    CollateralToken = collateralToken,
-    ParentCollectionId = parentCollectionId,
-    ConditionId = conditionId,
-    Partition = json.encode(partition),
-    Quantity = quantity
-  }
-
-  self:positionsMergeNotice(notice)
+  self:positionSplitNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity, msg)
 end
 
 -- @dev This function merges positions. If merging to the collateral, this contract will attempt to transfer `quantity` collateral to the message sender.
@@ -234,7 +199,7 @@ function ConditionalTokensMethods:mergePositions(from, collateralToken, parentCo
         Action = "Transfer",
         Recipient = from,
         Quantity = tostring(quantity),
-        ['X-Action'] = "Positions-Merge-Completion",
+        ['X-Action'] = "Merge-Positions-Completion",
         ['X-CollateralToken'] = collateralToken,
         ['X-ParentCollectionId'] = parentCollectionId,
         ['X-ConditionId'] = conditionId,
@@ -248,7 +213,7 @@ function ConditionalTokensMethods:mergePositions(from, collateralToken, parentCo
   end
 
   if not mergeToCollateral then
-    self:mergePositionsCompletion(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
+    self:positionsMergeNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
   end
 end
 
@@ -294,19 +259,26 @@ function ConditionalTokensMethods:redeemPositions(from, collateralToken, parentC
   if totalPayout > 0 then
     totalPayout = math.floor(totalPayout)
     if parentCollectionId == "" then
-      -- TODO: assert that this passes before sending merge notice ("could not transfer payout to message sender")
+      -- Transfer debit receipt to trigger payoutRedemptionNotice
       ao.send({
         Target = collateralToken,
         Action = "Transfer",
         Recipient = from,
-        Quantity = tostring(totalPayout)
+        Quantity = tostring(totalPayout),
+        ['X-Action'] = "Redeem-Positions-Completion",
+        ['X-CollateralToken'] = collateralToken,
+        ['X-ParentCollectionId'] = parentCollectionId,
+        ['X-ConditionId'] = conditionId,
+        ['X-IndexSets'] = json.encode(indexSets),
+        ['X-TotalPayout'] = json.encode(totalPayout)
       })
+      return
     else
       SemiFungibleTokens:mint(from, self.getPositionId(collateralToken, parentCollectionId), totalPayout)
     end
   end
 
-  ConditionalTokensMethods:payoutRedemptionNotice(from, collateralToken, parentCollectionId, conditionId, indexSets, totalPayout)
+  self:payoutRedemptionNotice(from, collateralToken, parentCollectionId, conditionId, indexSets, totalPayout)
 end
 
 -- @dev Gets the outcome slot count of a condition.

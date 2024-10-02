@@ -1092,7 +1092,7 @@ describe("conditionalTokens.integration.test", function () {
       expect(quantities_1[0]).to.equal("20")
       expect(quantities_1[1]).to.equal("20")
 
-      expect(action_2).to.equal("Position-Split-Notice")
+      expect(action_2).to.equal("Split-Position-Notice")
       expect(conditionId_2).to.equal("a78dfbe0312214db9e0949b363d5543134046461d00a61feef498584e9c31ca3")
       expect(stakeholder_2).to.equal(walletAddress)
       expect(quantity_2).to.equal("20")
@@ -1275,7 +1275,7 @@ describe("conditionalTokens.integration.test", function () {
       expect(quantities_1[1]).to.equal("15")
       expect(quantities_1[2]).to.equal("15")
 
-      expect(action_2).to.equal("Position-Split-Notice")
+      expect(action_2).to.equal("Split-Position-Notice")
       expect(conditionId_2).to.equal("a78dfbe0312214db9e0949b363d5543134046461d00a61feef498584e9c31ca3")
       expect(stakeholder_2).to.equal(walletAddress)
       expect(quantity_2).to.equal("15")
@@ -1347,7 +1347,7 @@ describe("conditionalTokens.integration.test", function () {
       expect(quantities_1[0]).to.equal("3")
       expect(quantities_1[1]).to.equal("3")
 
-      expect(action_2).to.equal("Position-Split-Notice")
+      expect(action_2).to.equal("Split-Position-Notice")
       expect(conditionId_2).to.equal("c696ccc93ba9275d17c93fb9581cfa08bb7a02299fe0599c12e0ae8cf1d7425c")
       expect(stakeholder_2).to.equal(walletAddress)
       expect(quantity_2).to.equal("3")
@@ -1534,7 +1534,7 @@ describe("conditionalTokens.integration.test", function () {
       expect(tokenId_1).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
       expect(quantity_1).to.equal("2")
 
-      expect(action_2).to.equal("Positions-Merge-Notice")
+      expect(action_2).to.equal("Merge-Positions-Notice")
       expect(conditionId_2).to.equal("c696ccc93ba9275d17c93fb9581cfa08bb7a02299fe0599c12e0ae8cf1d7425c")
       expect(quantity_2).to.equal("2")
       expect(partition_2[0]).to.equal(1) // 0b01
@@ -1676,7 +1676,7 @@ describe("conditionalTokens.integration.test", function () {
       expect(action_1).to.equal("Transfer")
       expect(quantity_1).to.equal("70")
       expect(recipient_1).to.equal(walletAddress)
-      expect(xAction_1).to.equal("Positions-Merge-Completion")
+      expect(xAction_1).to.equal("Merge-Positions-Completion")
       expect(xConditionId_1).to.equal("a78dfbe0312214db9e0949b363d5543134046461d00a61feef498584e9c31ca3")
       expect(xCollateralToken_1).to.equal(collateralToken)
       expect(xParentCollectionId_1).to.equal(parentCollectionId)
@@ -3188,7 +3188,7 @@ describe("conditionalTokens.integration.test", function () {
       expect(tokenId_1).to.equal("536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277")
       expect(quantity_1).to.equal("500")
 
-      expect(action_2).to.equal("Positions-Merge-Notice")
+      expect(action_2).to.equal("Merge-Positions-Notice")
       expect(conditionId_2).to.equal("29af3b452b0f8bdcc0f08eaafcb65943f51addb38101dd45e2940f435d1fa159")
       expect(quantity_2).to.equal("500")
       expect(partition_2[0]).to.equal(1) // 0b01
@@ -3298,7 +3298,7 @@ describe("conditionalTokens.integration.test", function () {
       expect(tokenId_1).to.equal("bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657")
       expect(quantity_1).to.equal("1200")
 
-      expect(action_2).to.equal("Positions-Merge-Notice")
+      expect(action_2).to.equal("Merge-Positions-Notice")
       expect(conditionId_2).to.equal("32b4874aeba62c889d6d7896e33b8cc1e6ac36d6abb749d3374b24f6f1410502")
       expect(quantity_2).to.equal("1200")
       expect(partition_2[0]).to.equal(1) // 0b01

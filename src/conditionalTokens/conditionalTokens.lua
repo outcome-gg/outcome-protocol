@@ -25,20 +25,29 @@ DataIndex = config.DataIndex
 --[[
     MATCHING HELPERS
 ]]
+local function isCreatePosition(msg)
+  if msg.Action == "Credit-Notice" and msg["X-Action"] == "Create-Position" then
+      return true
+  else
+      return false
+  end
+end
+
 local function isMergeOrderCompletion(msg)
-  if (msg.From ~= ao.id and msg.Action == "Debit-Notice" and msg["X-Action"] == "Positions-Merge-Completion") or
-  (msg.From == ao.id and msg.Action == "Positions-Merge-Completion") then
+  if (msg.From ~= ao.id and msg.Action == "Debit-Notice" and msg["X-Action"] == "Merge-Positions-Completion") or
+  (msg.From == ao.id and msg.Action == "Merge-Positions-Completion") then
     return true
   else
     return false
   end
 end
 
-local function isCreatePosition(msg)
-  if msg.Action == "Credit-Notice" and msg["X-Action"] == "Create-Position" then
-      return true
+local function isRedeemOrderCompletion(msg)
+  if (msg.From ~= ao.id and msg.Action == "Debit-Notice" and msg["X-Action"] == "Redeem-Positions-Completion") or
+  (msg.From == ao.id and msg.Action == "Redeem-Positions-Completion") then
+    return true
   else
-      return false
+    return false
   end
 end
 
@@ -146,7 +155,7 @@ Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-P
 end)
 
 Handlers.add("Merge-Positions-Completion", isMergeOrderCompletion, function(msg)
-  ConditionalTokens:mergePositionsCompletion(msg.Tags['Recipient'], msg.Tags['X-CollateralToken'], msg.Tags['X-ParentCollectionId'], msg.Tags['X-ConditionId'], msg.Tags['X-Partition'], msg.Tags['Quantity'])
+  ConditionalTokens:positionsMergeNotice(msg.Tags['Recipient'], msg.Tags['X-CollateralToken'], msg.Tags['X-ParentCollectionId'], msg.Tags['X-ConditionId'], msg.Tags['X-Partition'], msg.Tags['Quantity'])
 end)
 
 Handlers.add("Redeem-Positions", Handlers.utils.hasMatchingTag("Action", "Redeem-Positions"), function(msg)
@@ -157,6 +166,11 @@ Handlers.add("Redeem-Positions", Handlers.utils.hasMatchingTag("Action", "Redeem
   assert(ConditionalTokens.payoutDenominator[data.conditionId], "ConditionId must be valid!")
   assert(data.indexSets, "IndexSets is required!")
   ConditionalTokens:redeemPositions(msg.From, data.collateralToken, data.parentCollectionId, data.conditionId, data.indexSets)
+end)
+
+
+Handlers.add("Redeem-Positions-Completion", isRedeemOrderCompletion, function(msg)
+  ConditionalTokens:payoutRedemptionNotice(msg.Tags['Recipient'], msg.Tags['X-CollateralToken'], msg.Tags['X-ParentCollectionId'], msg.Tags['X-ConditionId'], msg.Tags['X-IndexSets'], msg.Tags['X-TotalPayout'])
 end)
 
 Handlers.add("Get-Outcome-Slot-Count", Handlers.utils.hasMatchingTag("Action", "Get-Outcome-Slot-Count"), function(msg)
