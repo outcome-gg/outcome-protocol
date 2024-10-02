@@ -7,7 +7,7 @@ local balanceManager = require('modules.balanceManager')
 local dlobHelpers = require('modules.dlobHelpers')
 
 local DLOB = {}
-local DLOBMethods = {}
+local DLOBMethods = require('modules.dlobNotices')
 
 -- Constructor for DLOB
 function DLOB:new()
@@ -38,119 +38,43 @@ end
 --[[
     Fund Management
 ]]
-function DLOBMethods.addFunds(sender, quantity, xAction, xData)
+function DLOBMethods:addFunds(sender, quantity, xAction, xData)
   BalanceManager:addFunds(sender, quantity)
-
-  ao.send({
-    Target = sender,
-    Action = 'Funds-Added',
-    Quantity = quantity,
-    Data = 'Successfully added funds'
-  })
-
-  -- Forward Order(s)
-  if xAction and xData then
-    if xAction == 'Process-Order' then
-      ao.send({
-        Target = ao.id,
-        Action = 'Process-Order',
-        Sender = sender,
-        Data = xData
-      })
-    elseif xAction == 'Process-Orders' and xData then
-      ao.send({
-        Target = ao.id,
-        Action = 'Process-Orders',
-        Sender = sender,
-        Data = xData
-      })
-    end
-  end
+  self.addFundsNotice(sender, quantity, xAction, xData)
 end
 
-function DLOBMethods.addShares(sender, quantity, xAction, xData)
+function DLOBMethods:addShares(sender, quantity, xAction, xData)
   BalanceManager:addShares(sender, quantity)
-
-  ao.send({
-    Target = sender,
-    Action = 'Shares-Added',
-    Quantity = quantity,
-    Data = 'Successfully added shares'
-  })
-
-  -- Forward Order(s)
-  if xAction and xData then
-    if xAction == 'Process-Order' then
-      ao.send({
-        Target = ao.id,
-        Action = 'Process-Order',
-        Sender = sender,
-        Data = xData
-      })
-    elseif xAction == 'Process-Orders' and xData then
-      ao.send({
-        Target = ao.id,
-        Action = 'Process-Orders',
-        Sender = sender,
-        Data = xData
-      })
-    end
-  end
+  self.addSharesNotice(sender, quantity, xAction, xData)
 end
 
-function DLOBMethods.withdrawFunds(sender, quantity)
+function DLOBMethods:withdrawFunds(sender, quantity)
   local success, message = BalanceManager:withdrawFunds(sender, quantity)
-
-  if not success then
+  if success then
+    -- Transfer funds
     ao.send({
-      Target = sender,
-      Action = 'Withdraw-Funds-Error',
-      Data = message
+      Target = CollateralToken,
+      Action = 'Transfer',
+      Recipient = sender,
+      Quantity = quantity
     })
-    return
   end
-
-  ao.send({
-    Target = CollateralToken,
-    Action = 'Transfer',
-    Recipient = sender,
-    Quantity = quantity
-  })
-
-  ao.send({
-    Target = sender,
-    Action = 'Funds-Withdrawn',
-    Quantity = quantity,
-    Data = message
-  })
+  self.withdrawFundsNotice(sender, quantity, success, message)
 end
 
-function DLOBMethods.withdrawShares(sender, quantity)
+function DLOBMethods:withdrawShares(sender, quantity)
   local success, message = BalanceManager:withdrawShares(sender, quantity)
-
-  if not success then
+  if success then
+    -- Transfer shares
     ao.send({
-      Target = sender,
-      Action = 'Withdraw-Shares-Error',
-      Data = message
+      Target = ConditionalTokens,
+      Action = 'Transfer-Single',
+      Recipient = sender,
+      TokenId = ConditionalTokensId,
+      Quantity = quantity
     })
-    return
   end
-
-  ao.send({
-    Target = ConditionalTokens,
-    Action = 'Transfer-Single',
-    Recipient = sender,
-    TokenId = ConditionalTokensId,
-    Quantity = quantity
-  })
-
-  ao.send({
-    Target = sender,
-    Action = 'Shares-Withdrawn',
-    Quantity = quantity,
-    Data = message
-  })
+  self.withdrawSharesNotice(sender, quantity, success, message)
 end
 
 function DLOBMethods.lockOrderedAssets(from, orders)

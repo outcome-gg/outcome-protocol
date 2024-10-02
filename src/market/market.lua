@@ -4,7 +4,6 @@ local bint = require('.bint')(256)
 local dlob = require('modules.dlob')
 local config = require('modules.config')
 
-
 --[[
     DLOB
 ]]
@@ -115,7 +114,7 @@ Handlers.add('Add-Funds', isAddFunds, function(msg)
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
   assert(msg.Tags.Sender, 'Sender is required!')
 
-  DLOB.addFunds(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
+  DLOB:addFunds(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
 end)
 
 Handlers.add('Add-Shares', isAddShares, function(msg)
@@ -125,17 +124,17 @@ Handlers.add('Add-Shares', isAddShares, function(msg)
   assert(bint.__lt(0, bint(quantity)), 'quantity must be greater than zero!')
   assert(msg.Tags.Sender, 'Sender is required!')
 
-  DLOB.addShares(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
+  DLOB:addShares(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
 end)
 
 Handlers.add('Withdraw-Funds', Handlers.utils.hasMatchingTag('Action', 'Withdraw-Funds'), function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
-  DLOB.withdrawFunds(msg.From, msg.Tags.Quantity)
+  DLOB:withdrawFunds(msg.From, msg.Tags.Quantity)
 end)
 
 Handlers.add('Withdraw-Shares', Handlers.utils.hasMatchingTag('Action', 'Withdraw-Shares'), function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
-  DLOB.withdrawShares(msg.From, msg.Tags.Quantity)
+  DLOB:withdrawShares(msg.From, msg.Tags.Quantity)
 end)
 
 Handlers.add('Get-Balance-Info', Handlers.utils.hasMatchingTag('Action', 'Get-Balance-Info'), function(msg)
