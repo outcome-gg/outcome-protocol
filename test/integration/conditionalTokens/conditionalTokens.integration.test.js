@@ -1761,7 +1761,7 @@ describe("conditionalTokens.integration.test", function () {
   * Transfer Position
   ************************************************************************/
   describe("Prepare Condition", function () {
-    it("+ve should get balance-of", async () => {
+    it("+ve  [balance] should get balance-of", async () => {
       let messageId;
       await message({
         process: conditionalTokens,

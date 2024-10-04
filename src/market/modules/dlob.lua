@@ -10,10 +10,11 @@ local DLOB = {}
 local DLOBMethods = require('modules.dlobNotices')
 
 -- Constructor for DLOB
-function DLOB:new()
+function DLOB:new(decimals)
   local obj = {
     limitOrderBook = limitOrderBook:new(),
-    balanceManager = balanceManager:new()
+    balanceManager = balanceManager:new(decimals),
+    decimals = decimals
   }
   setmetatable(obj, { __index = DLOBMethods })
   -- Set metatable for method lookups from DLOBMethods, and dlobHelpers
@@ -77,25 +78,57 @@ function DLOBMethods:withdrawShares(sender, quantity)
   self.withdrawSharesNotice(sender, quantity, success, message)
 end
 
-function DLOBMethods.lockOrderedAssets(from, orders)
+function DLOBMethods:lockOrderedAssets(from, orders)
   for i = 1, #orders do
+    local existingOrder = self.limitOrderBook.orders[orders[i].uid] or nil
     if orders[i].isBid then
-      local fundAmount = math.ceil(orders[i].size * orders[i].price)
-      BalanceManager:lockFunds(from, fundAmount)
+      local fundAmount = tostring(bint.__mul(orders[i].size, bint(orders[i].price)))
+      if existingOrder then
+        -- Cancel / Update Order: adjust locked funds
+        local existingOrderFundAmount = tostring(bint.__mul(existingOrder.size, bint(existingOrder.price)))
+        if fundAmount > existingOrderFundAmount then
+          BalanceManager:lockFunds(from, fundAmount - existingOrderFundAmount)
+        else
+          BalanceManager:releaseFunds(from, existingOrderFundAmount - fundAmount)
+        end
+      else
+        -- Add Order:  lock funds
+        BalanceManager:lockFunds(from, fundAmount)
+      end
     else
-      BalanceManager:lockShares(from, orders[i].size)
+      local shareAmount = orders[i].size
+      if existingOrder then
+        -- Cancel / Update Order: adjust locked shares
+        local existingOrderShareAmount = existingOrder.size
+        if shareAmount > existingOrderShareAmount then
+          BalanceManager:lockShares(from, shareAmount - existingOrderShareAmount)
+        else
+          BalanceManager:releaseShares(from, existingOrderShareAmount - shareAmount)
+        end
+      else
+        -- Add Order: lock shares
+        BalanceManager:lockShares(from, orders[i].size)
+      end
     end
   end
 end
 
-function DLOBMethods.unlockTradedAssets(executedTrades)
+function DLOBMethods:unlockTradedAssets(executedTrades, overcommittedFunds)
   local successes = {}
   local messages = {}
+  -- Settle trades
   for i = 1, #executedTrades do
-    local price = tonumber(executedTrades[i]['price']) / 1000
-    local success, message = BalanceManager:settleTrade(executedTrades[i]['buyer'], executedTrades[i]['seller'], price, executedTrades[i]['size'])
+    local success, message = BalanceManager:settleTrade(executedTrades[i]['buyer'], executedTrades[i]['seller'], executedTrades[i]['price'], executedTrades[i]['size'])
     table.insert(successes, success)
     table.insert(messages, message)
+  end
+  -- Unlock over-spends
+  if overcommittedFunds then
+    for userId, amount in pairs(overcommittedFunds) do
+      local success, message = BalanceManager:unlockOvercommittedFunds(userId, amount)
+      table.insert(successes, success)
+      table.insert(messages, message)
+    end
   end
   return successes, messages
 end
@@ -104,24 +137,26 @@ end
     Order Processing & Management
 ]]
 -- @returns success, orderId, positionSize, executedTrades
-function DLOBMethods.processOrder(order, sender, msgId, i)
+function DLOBMethods:processOrder(order, sender, msgId, i)
   order.uid = order.uid or msgId .. '_' .. i
   order = limitOrderBookOrder:new(order.uid, order.isBid, order.size, order.price, sender)
-  local success, orderSize, executedTrades = LimitOrderBook:process(order)
-  return success, order.uid, orderSize, executedTrades
+  local success, orderSize, executedTrades, overcommitedFunds = LimitOrderBook:process(order)
+  return success, order.uid, orderSize, executedTrades, overcommitedFunds
 end
 
 -- @returns lists of successes, orderIds, positionSizes, executedTrades
 function DLOBMethods:processOrders(orders, sender, msgId)
-  local successList, orderIdList, positionSizeList, executedTradesList = {}, {}, {}, {}
+  local successList, orderIdList, positionSizeList, executedTradesList, overcommitedFundsList = {}, {}, {}, {}, {}
+
   for i = 1, #orders do
-    local success, orderId, positionSize, executedTrades = self.processOrder(orders[i], sender, msgId, i)
+    local success, orderId, positionSize, executedTrades, overcommitedFunds = self:processOrder(orders[i], sender, msgId, i)
     table.insert(successList, success)
     table.insert(orderIdList, orderId)
     table.insert(positionSizeList, positionSize)
     table.insert(executedTradesList, executedTrades)
+    table.insert(overcommitedFundsList, overcommitedFunds)
   end
-  return successList, orderIdList, positionSizeList, executedTradesList
+  return successList, orderIdList, positionSizeList, executedTradesList, overcommitedFundsList
 end
 
 --[[

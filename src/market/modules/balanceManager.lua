@@ -5,13 +5,14 @@ local BalanceManager = {}
 local BalanceManagerMethods = {}
 
 -- Constructor for BalanceManager 
-function BalanceManager:new()
+function BalanceManager:new(decimals)
   -- This will store user balances for both available and locked collateral and conditional tokens
   local obj = {
     fundBalances = {},  -- { userId -> balance of available collateral tokens }
     shareBalances = {}, -- { userId -> balance of available conditional tokens (shares) }
     lockedFunds = {},   -- { userId -> balance of locked collateral tokens (e.g., tied to orders) }
-    lockedShares = {}   -- { userId -> balance of locked conditional tokens (e.g., tied to orders) }
+    lockedShares = {},  -- { userId -> balance of locked conditional tokens (e.g., tied to orders) }
+    decimals = decimals -- used for handling decimal precision
   }
   setmetatable(obj, { __index = BalanceManagerMethods })
   return obj
@@ -20,7 +21,7 @@ end
 -- Add collateral funds to the user's available balance
 function BalanceManagerMethods:addFunds(userId, amount)
   self.fundBalances[userId] = self.fundBalances[userId] or '0'
-  self.fundBalances[userId] = tostring(bint.__add(bint(self.fundBalances[userId]), bint(amount)))
+  self.fundBalances[userId] = tostring(bint.__add(bint(self.fundBalances[userId]), bint(amount * 10^self.decimals)))
 end
 
 -- Add conditional tokens (shares) to the user's available balance
@@ -32,11 +33,11 @@ end
 -- Withdraw collateral funds from the user's available balance
 function BalanceManagerMethods:withdrawFunds(userId, amount)
   self.fundBalances[userId] = self.fundBalances[userId] or '0'
-  if not bint.__le(bint(amount), bint(self.fundBalances[userId])) then
+  if not bint.__le(bint(amount * 10^self.decimals), bint(self.fundBalances[userId])) then
     return false, 'Insufficient fund balance'
   end
 
-  self.fundBalances[userId] = tostring(bint.__sub(bint(self.fundBalances[userId]), bint(amount)))
+  self.fundBalances[userId] = tostring(bint.__sub(bint(self.fundBalances[userId]), bint(amount * 10^self.decimals)))
   return true, 'Withdraw funds succeeded'
 end
 
@@ -101,9 +102,9 @@ function BalanceManagerMethods:settleTrade(buyerId, sellerId, price, amount)
 
   local fundAmount = tostring(math.floor(price * amount))
 
-  if not bint.__le(bint(fundAmount), bint(self.fundBalances[buyerId])) then
+  if not bint.__le(bint(fundAmount), bint(self.lockedFunds[buyerId])) then
     return false, 'Insufficient buyer fund balance'
-  elseif not bint.__le(bint(amount), bint(self.shareBalances[sellerId])) then
+  elseif not bint.__le(bint(amount), bint(self.lockedShares[sellerId])) then
     return false, 'Insufficient seller share balance'
   end
 
@@ -116,24 +117,35 @@ function BalanceManagerMethods:settleTrade(buyerId, sellerId, price, amount)
   return true, 'Settlement succeeded'
 end
 
+function BalanceManagerMethods:unlockOvercommittedFunds(userId, amount)
+  if not self.lockedFunds[userId] then
+    return false, 'No locked funds'
+  elseif not bint.__le(bint(amount * 10^self.decimals), self.lockedFunds[userId])  then
+    return false, 'Insufficient locked funds to release'
+  end
+
+  self:releaseFunds(userId, amount * 10^self.decimals)
+  return true, 'Unlock succeeded'
+end
+
 -- Get user's available collateral balance
 function BalanceManagerMethods:getAvailableFunds(userId)
-  return self.fundBalances[userId] or '0'
+  return self.fundBalances[userId] and self.fundBalances[userId] / 10^self.decimals or 0
 end
 
 -- Get user's available conditional token (shares) balance
 function BalanceManagerMethods:getAvailableShares(userId)
-  return self.shareBalances[userId] or '0'
+  return self.shareBalances[userId] or 0
 end
 
 -- Get user's locked collateral balance
 function BalanceManagerMethods:getLockedFunds(userId)
-  return self.lockedFunds[userId] or '0'
+  return self.lockedFunds[userId] and self.lockedFunds[userId] / 10^self.decimals or 0
 end
 
 -- Get user's locked conditional token (shares) balance
 function BalanceManagerMethods:getLockedShares(userId)
-  return self.lockedShares[userId] or '0'
+  return self.lockedShares[userId] or 0
 end
 
 return BalanceManager

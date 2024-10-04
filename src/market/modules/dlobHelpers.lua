@@ -1,5 +1,6 @@
 local crypto = require('.crypto')
 local bint = require('.bint')(256)
+local json = require('json')
 
 local DLOBHelpers = {}
 

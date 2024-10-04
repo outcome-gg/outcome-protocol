@@ -1,6 +1,7 @@
 local deque = require('modules.deque')
 local LimitOrderBook = {}
 local LimitOrderBookMethods = {}
+local json = require('json')
 
 -- Constructor
 function LimitOrderBook:new()
@@ -21,9 +22,10 @@ function LimitOrderBookMethods:add(order)
   local orderType = order.isBid and "bids" or "asks"
   local price = tostring(order.price)
   local executedTrades = {}
+  local overcommitedFunds = {}
 
   -- First, try to match the order with opposite orders
-  executedTrades = self:matchOrders(order)
+  executedTrades, overcommitedFunds = self:matchOrders(order)
 
   -- If there's any remaining size of the order, add it to the order book
   if order.size > 0 then
@@ -50,7 +52,7 @@ function LimitOrderBookMethods:add(order)
     end
   end
 
-  return true, order.size, executedTrades
+  return true, order.size, executedTrades, overcommitedFunds
 end
 
 
@@ -156,17 +158,24 @@ end
 -- Match and execute orders
 function LimitOrderBookMethods:matchOrders(order)
   local executedTrades = {}
+  local overcommitedFunds = {}
   local remainingSize = tonumber(order.size) or 0
   local bestLevel = order.isBid and self.bestAsk or (not order.isBid and self.bestBid or nil)
   local matchComparison = order.isBid and (function(a, b) return a <= b end) or (function(a, b) return a >= b end)
 
   while bestLevel and remainingSize > 0 and matchComparison(tonumber(bestLevel.price), tonumber(order.price)) do
     -- Handle trade logic
-    local trade = self:executeTrade(order, bestLevel)
+    local trade, surplusFunding, userId = self:executeTrade(order, bestLevel)
+    -- Add trade to executed trades
     if trade then
       table.insert(executedTrades, trade)
       remainingSize = remainingSize - trade.size
     end
+    -- Add surplusFunding to overcommitedFunds
+    if surplusFunding > 0 then
+      overcommitedFunds[userId] = (overcommitedFunds[userId] or 0) + surplusFunding
+    end
+    -- Update bestLevel
     bestLevel = order.isBid and self:getNextBestAsk() or (not order.isBid and self:getNextBestBid() or nil)
   end
 
@@ -179,7 +188,7 @@ function LimitOrderBookMethods:matchOrders(order)
     self.bestBid = bestLevel
   end
 
-  return executedTrades
+  return executedTrades, overcommitedFunds
 end
 
 -- Execute trade
@@ -198,14 +207,30 @@ function LimitOrderBookMethods:executeTrade(order, matchedOrder)
     self:remove(matchedOrder)
   end
 
-  return {
+  -- Account for any surplusFunding (to release locked funds)
+  local surplusFunding = 0
+  local userId = ''
+  if matchedOrder.price ~= order.price then
+    if matchedOrder.isBid then
+      surplusFunding = tradeSize * (matchedOrder.price - order.price) / 1000
+      userId = order.sender
+    else
+      surplusFunding = tradeSize * (order.price - matchedOrder.price) / 1000
+      userId = matchedOrder.sender
+    end
+  end
+
+
+  local trade = {
     buyer = order.isBid and order.sender or matchedOrder.sender,
     seller = order.isBid and matchedOrder.sender or order.sender,
-    price = matchedOrder.price,
+    price = order.isBid and matchedOrder.price or order.price,
     size = tradeSize,
     buyOrder = order.isBid and order.uid or matchedOrder.uid,
     sellOrder = order.isBid and matchedOrder.uid or order.uid
   }
+
+  return trade, surplusFunding, userId
 end
 
 -- Check if an order is valid

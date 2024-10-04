@@ -7,7 +7,8 @@ local config = require('modules.config')
 --[[
     DLOB
 ]]
-if not DLOB or config.ResetState then DLOB = dlob:new() end
+if not Decimals or config.ResetState then Decimals = 3 end
+if not DLOB or config.ResetState then DLOB = dlob:new(Decimals) end
 if not Initialized or config.ResetState then Initialized = false end
 if not ConditionalTokens or config.ResetState then ConditionalTokens = '' end
 if not ConditionalTokensId or config.ResetState then ConditionalTokensId = '' end
@@ -40,10 +41,10 @@ end
 --[[
     Helper Functions
 ]]
-local function assertMaxDp(value, maxDp)
-  local factor = 10 ^ maxDp
+local function assertMaxDp(value)
+  local factor = 10 ^ Decimals
   local roundedValue = math.floor(value * factor + 0.5) / factor
-  assert(value == roundedValue, "Value has more than " .. maxDp .. " decimal places")
+  assert(value == roundedValue, "Value has more than 3 decimal places")
   return tostring(math.floor(value * factor))
 end
 
@@ -113,7 +114,6 @@ Handlers.add('Add-Funds', isAddFunds, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
   assert(msg.Tags.Sender, 'Sender is required!')
-
   DLOB:addFunds(msg.Tags.Sender, msg.Tags.Quantity, msg.Tags['X-Action'], msg.Tags['X-Data'])
 end)
 
@@ -129,6 +129,7 @@ end)
 
 Handlers.add('Withdraw-Funds', Handlers.utils.hasMatchingTag('Action', 'Withdraw-Funds'), function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
+  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
   DLOB:withdrawFunds(msg.From, msg.Tags.Quantity)
 end)
 
@@ -143,10 +144,10 @@ Handlers.add('Get-Balance-Info', Handlers.utils.hasMatchingTag('Action', 'Get-Ba
   local lockedFunds = BalanceManager:getLockedFunds(msg.From)
   local lockedShares = BalanceManager:getLockedShares(msg.From)
 
-  local balanceInfo = {
+  local balanceInfo = { 
     availableFunds = tonumber(availableFunds),
-    availableShares = tonumber(availableShares),
     lockedFunds = tonumber(lockedFunds),
+    availableShares = tonumber(availableShares),
     lockedShares = tonumber(lockedShares)
   }
 
@@ -187,14 +188,12 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
       Data = 'Insufficient available balance'
     })
   else
-    DLOB.lockOrderedAssets(sender, orders)
-
     -- format price to 3 decimal place string
-    local priceString = assertMaxDp(order.price, 3)
+    local priceString = assertMaxDp(order.price)
     order.price = priceString
-
-    local success, orderId, orderSize, executedTrades = DLOB.processOrder(order, sender, msg.Id, 1)
-    DLOB.unlockTradedAssets(executedTrades)
+    DLOB:lockOrderedAssets(sender, orders)
+    local success, orderId, orderSize, executedTrades, overcommittedFunds = DLOB:processOrder(order, sender, msg.Id, 1)
+    DLOB:unlockTradedAssets(executedTrades, overcommittedFunds)
 
     ao.send({
       Target = sender,
@@ -216,19 +215,18 @@ Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-
   for i = 1, #orders do
     local isValidOrder, orderValidityMessage = LimitOrderBook:checkOrderValidity(sender, orders[i])
     assert(isValidOrder, 'order ' .. tostring(i) .. ': ' .. orderValidityMessage)
-    local priceString = assertMaxDp(orders[i].price, 3)
+    local priceString = assertMaxDp(orders[i].price)
     orders[i].price = priceString
   end
   -- validate user balance
   local hasSufficientBalance = DLOB.validateUserAssetBalance(sender, orders)
   assert(hasSufficientBalance, 'Insufficient available balance')
 
-  DLOB.lockOrderedAssets(sender, orders)
-  local successList, orderIds, orderSizes, executedTradesList = DLOB:processOrders(orders, sender, msg.Id)
-
+  DLOB:lockOrderedAssets(sender, orders)
+  local successList, orderIds, orderSizes, executedTradesList, overcommittedFundsList = DLOB:processOrders(orders, sender, msg.Id)
   -- settle trades
   for i = 1, #executedTradesList do
-    DLOB.unlockTradedAssets(executedTradesList[i])
+    DLOB:unlockTradedAssets(executedTradesList[i], overcommittedFundsList[i])
   end
 
   ao.send({
