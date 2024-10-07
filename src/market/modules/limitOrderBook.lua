@@ -211,20 +211,16 @@ function LimitOrderBookMethods:executeTrade(order, matchedOrder)
   local surplusFunding = 0
   local userId = ''
   if matchedOrder.price ~= order.price then
-    if matchedOrder.isBid then
-      surplusFunding = tradeSize * (matchedOrder.price - order.price) / 1000
-      userId = order.sender
-    else
+    if order.isBid then
       surplusFunding = tradeSize * (order.price - matchedOrder.price) / 1000
       userId = matchedOrder.sender
     end
   end
 
-
   local trade = {
     buyer = order.isBid and order.sender or matchedOrder.sender,
     seller = order.isBid and matchedOrder.sender or order.sender,
-    price = order.isBid and matchedOrder.price or order.price,
+    price = matchedOrder.price,
     size = tradeSize,
     buyOrder = order.isBid and order.uid or matchedOrder.uid,
     sellOrder = order.isBid and matchedOrder.uid or order.uid

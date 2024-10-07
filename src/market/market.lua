@@ -169,41 +169,44 @@ Handlers.add('Process-Order', Handlers.utils.hasMatchingTag('Action', 'Process-O
 
   -- validate order
   local isValidOrder, orderValidityMessage = LimitOrderBook:checkOrderValidity(sender, order)
-
-  -- validate user balance
-  local orders = {}
-  orders[1] = order
-  local hasSufficientBalance = DLOB.validateUserAssetBalance(sender, orders)
-
   if not isValidOrder then
     ao.send({
       Target = sender,
       Action = 'Process-Order-Error',
       Data = orderValidityMessage
     })
-  elseif not hasSufficientBalance then
+    return
+  end
+
+  -- validate user balance
+  local orders = {}
+  orders[1] = order
+  local hasSufficientBalance = DLOB.validateUserAssetBalance(sender, orders)
+  if not hasSufficientBalance then
     ao.send({
       Target = sender,
       Action = 'Process-Order-Error',
       Data = 'Insufficient available balance'
     })
-  else
-    -- format price to 3 decimal place string
-    local priceString = assertMaxDp(order.price)
-    order.price = priceString
-    DLOB:lockOrderedAssets(sender, orders)
-    local success, orderId, orderSize, executedTrades, overcommittedFunds = DLOB:processOrder(order, sender, msg.Id, 1)
-    DLOB:unlockTradedAssets(executedTrades, overcommittedFunds)
-
-    ao.send({
-      Target = sender,
-      Action = 'Order-Processed',
-      Success = tostring(success),
-      OrderId = orderId,
-      OrderSize = tostring(orderSize),
-      Data = json.encode(executedTrades)
-    })
+    return
   end
+
+  -- format price to 3 decimal place string
+  local priceString = assertMaxDp(order.price)
+  order.price = priceString
+  DLOB:lockOrderedAssets(sender, orders)
+  local success, orderId, orderSize, executedTrades, overcommittedFunds = DLOB:processOrder(order, sender, msg.Id, 1)
+  DLOB:unlockTradedAssets(executedTrades, overcommittedFunds)
+
+  ao.send({
+    Target = sender,
+    Action = 'Order-Processed',
+    Success = tostring(success),
+    OrderId = orderId,
+    OrderSize = tostring(orderSize),
+    Data = json.encode(executedTrades)
+  })
+
 end)
 
 Handlers.add('Process-Orders', Handlers.utils.hasMatchingTag('Action', 'Process-Orders'), function(msg)
