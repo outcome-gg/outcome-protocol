@@ -56,6 +56,8 @@ if [ "$1" == "test" ]; then
     create_or_update_process TEST_DLOB src/market/market.lua
     # Deploy mock contracts
     create_or_update_process TEST_COLLATERAL_TOKEN src/mock/token.lua
+    # Deploy agents
+    create_or_update_process TEST_DATA_AGENT src/agents/dataAgent0rbit.lua
     
 elif [ "$1" == "prod" ]; then
     echo "Running in PROD mode..."
