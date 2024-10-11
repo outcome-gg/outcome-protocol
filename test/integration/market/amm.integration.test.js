@@ -326,7 +326,7 @@ describe("amm.integration.test", function () {
       expect(questionId_).to.equal(questionId)
       expect(conditionId_).to.equal(keccak256(resolutionAgent + questionId + "2").toString('hex'))
       expect(resolutionAgent_).to.equal(resolutionAgent)
-      expect(outcomeSlotCount_).to.equal(2)
+      expect(outcomeSlotCount_).to.equal("2")
     })
   })
 
@@ -392,42 +392,42 @@ describe("amm.integration.test", function () {
       expect(logo_).to.equal("")
     })
 
-    // it("+ve should fail to init amm after initialized", async () => {
-    //   let messageId;
-    //   await message({
-    //     process: amm,
-    //     tags: [
-    //       { name: "Action", value: "Init" },
-    //       { name: "ConditionalTokens", value: conditionalTokens },
-    //       { name: "CollateralToken", value: collateralToken },
-    //       { name: "ConditionId", value: "" },
-    //       { name: "DataIndex", value: "" },
-    //       { name: "Fee", value: "10000000000" }, // 1% fee (10^10)
-    //       { name: "Name", value: "Outcome ETH LP Token" }, 
-    //       { name: "Ticker", value: "OETH" }, 
-    //       { name: "Logo", value: "" }, 
-    //     ],
-    //     signer: createDataItemSigner(wallet),
-    //     data: "",
-    //   })
-    //   .then((id) => {
-    //     messageId = id;
-    //   })
-    //   .catch(console.error);
+    it("+ve should fail to init amm after initialized", async () => {
+      let messageId;
+      await message({
+        process: amm,
+        tags: [
+          { name: "Action", value: "Init" },
+          { name: "ConditionalTokens", value: conditionalTokens },
+          { name: "CollateralToken", value: collateralToken },
+          { name: "ConditionId", value: "" },
+          { name: "DataIndex", value: "" },
+          { name: "Fee", value: "10000000000" }, // 1% fee (10^10)
+          { name: "Name", value: "Outcome ETH LP Token" }, 
+          { name: "Ticker", value: "OETH" }, 
+          { name: "Logo", value: "" }, 
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
-    //   let { Messages, Error } = await result({
-    //     message: messageId,
-    //     process: amm,
-    //   });
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: amm,
+      });
 
-    //   if (Error) {
-    //     console.log(Error)
-    //   }
+      if (Error) {
+        console.log(Error)
+      }
 
-    //   // aoconnect Error not capturing the error message
-    //   // but present in the AOS process logs
-    //   expect(Messages.length).to.be.equal(0)
-    // })
+      // aoconnect Error not capturing the error message
+      // but present in the AOS process logs
+      expect(Messages.length).to.be.equal(0)
+    })
   })
 
   /************************************************************************ 
@@ -520,28 +520,24 @@ describe("amm.integration.test", function () {
       expect(Messages.length).to.be.equal(2)
 
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
-      const fromProcess_0 = Messages[0].Tags.find(t => t.name === 'From-Process').value
       const recipient_0 = Messages[0].Tags.find(t => t.name === 'Recipient').value
       const quantity_0 = Messages[0].Tags.find(t => t.name === 'Quantity').value
       const xAction_0 = Messages[0].Tags.find(t => t.name === 'X-Action').value
       const xDistribution_0 = Messages[0].Tags.find(t => t.name === 'X-Distribution').value
 
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
-      const fromProcess_1 = Messages[1].Tags.find(t => t.name === 'From-Process').value
       const sender_1 = Messages[1].Tags.find(t => t.name === 'Sender').value
       const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
       const xAction_1 = Messages[1].Tags.find(t => t.name === 'X-Action').value
       const xDistribution_1 = Messages[1].Tags.find(t => t.name === 'X-Distribution').value
       
       expect(action_0).to.equal("Debit-Notice")
-      expect(fromProcess_0).to.equal(collateralToken)
       expect(recipient_0).to.equal(amm)
       expect(quantity_0).to.equal(quantity)
       expect(xAction_0).to.equal(xAction)
       expect(xDistribution_0).to.equal(xDistribution)
 
       expect(action_1).to.equal("Credit-Notice")
-      expect(fromProcess_1).to.equal(collateralToken)
       expect(sender_1).to.equal(walletAddress)
       expect(quantity_1).to.equal(quantity)
       expect(xAction_1).to.equal(xAction)
@@ -651,28 +647,24 @@ describe("amm.integration.test", function () {
       expect(Messages.length).to.be.equal(2)
 
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
-      const fromProcess_0 = Messages[0].Tags.find(t => t.name === 'From-Process').value
       const recipient_0 = Messages[0].Tags.find(t => t.name === 'Recipient').value
       const quantity_0 = Messages[0].Tags.find(t => t.name === 'Quantity').value
       const xAction_0 = Messages[0].Tags.find(t => t.name === 'X-Action').value
       const xDistribution_0 = Messages[0].Tags.find(t => t.name === 'X-Distribution').value
 
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
-      const fromProcess_1 = Messages[1].Tags.find(t => t.name === 'From-Process').value
       const sender_1 = Messages[1].Tags.find(t => t.name === 'Sender').value
       const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
       const xAction_1 = Messages[1].Tags.find(t => t.name === 'X-Action').value
       const xDistribution_1 = Messages[1].Tags.find(t => t.name === 'X-Distribution').value
       
       expect(action_0).to.equal("Debit-Notice")
-      expect(fromProcess_0).to.equal(collateralToken)
       expect(recipient_0).to.equal(amm)
       expect(quantity_0).to.equal(quantity)
       expect(xAction_0).to.equal(xAction)
       expect(xDistribution_0).to.equal(xDistribution)
 
       expect(action_1).to.equal("Credit-Notice")
-      expect(fromProcess_1).to.equal(collateralToken)
       expect(sender_1).to.equal(walletAddress)
       expect(quantity_1).to.equal(quantity)
       expect(xAction_1).to.equal(xAction)

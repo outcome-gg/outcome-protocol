@@ -203,7 +203,9 @@ function ConditionalTokensMethods:mergePositions(from, collateralToken, parentCo
         ['X-CollateralToken'] = collateralToken,
         ['X-ParentCollectionId'] = parentCollectionId,
         ['X-ConditionId'] = conditionId,
-        ['X-Partition'] = json.encode(partition)
+        ['X-Partition'] = json.encode(partition),
+        ['X-Sender'] = msg.Tags['X-Sender'], -- for amm
+        ['X-ReturnAmount'] = msg.Tags['X-ReturnAmount'], -- for amm
       })
     else
       SemiFungibleTokens:mint(from, self.getPositionId(collateralToken, parentCollectionId), quantity)

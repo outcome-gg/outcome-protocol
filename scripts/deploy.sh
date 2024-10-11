@@ -54,6 +54,7 @@ if [ "$1" == "test" ]; then
     # Deploy market contracts
     create_or_update_process TEST_CONDITIONAL_TOKENS src/conditionalTokens/conditionalTokens.lua
     create_or_update_process TEST_DLOB src/market/market.lua
+    create_or_update_process TEST_AMM3 src/market/amm.lua
     # Deploy mock contracts
     create_or_update_process TEST_COLLATERAL_TOKEN src/mock/token.lua
     # Deploy agents
