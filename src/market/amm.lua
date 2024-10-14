@@ -417,9 +417,16 @@ local function addFunding(from, addedFunds, distributionHint)
   end
 
   -- splitPosition(from, 0, addedFunds)
-  Send({ Target=ao.id, Action = "CollateralToken.CreatePosition", Sender=from, OutcomeIndex="0", Quantity=addedFunds})
+  ao.send({ Target=ao.id, Action = "CollateralToken.CreatePosition", Sender=from, OutcomeIndex="0", Quantity=addedFunds})
 
   mint(from, mintAmount)
+
+  -- Send back amounts
+  for i = 1, #sendBackAmounts do
+    if sendBackAmounts[i] > 0 then
+      ao.send({ Target=ConditionalTokens, Action = "Transfer-Single", TokenId = PositionIds[i], Recipient=from, Quantity=sendBackAmounts[i]})
+    end
+  end
 
   -- Transform sendBackAmounts to array of amounts added
   for i = 1, #sendBackAmounts do
