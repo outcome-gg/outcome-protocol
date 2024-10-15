@@ -185,7 +185,7 @@ Handlers.add('transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), fu
   else
     ao.send({
       Target = msg.From,
-      Action = 'Transfer-Error',
+      Action = 'Transfer-ErrorMock',
       ['Message-Id'] = msg.Id,
       Error = 'Insufficient Balance!'
     })

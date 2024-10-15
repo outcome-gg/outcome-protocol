@@ -375,6 +375,7 @@ describe("amm.integration.test", function () {
       const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
       const conditionalTokens_ = Messages[0].Tags.find(t => t.name === 'ConditionalTokens').value
       const collateralToken_ = Messages[0].Tags.find(t => t.name === 'CollateralToken').value
+      const collectionIds_ = Messages[0].Tags.find(t => t.name === 'CollectionIds').value
       const positionIds_ = Messages[0].Tags.find(t => t.name === 'PositionIds').value
       const fee_ = Messages[0].Tags.find(t => t.name === 'Fee').value
       const name_ = Messages[0].Tags.find(t => t.name === 'Name').value
@@ -385,6 +386,7 @@ describe("amm.integration.test", function () {
       expect(conditionId_).to.equal(conditionId)
       expect(conditionalTokens_).to.equal(conditionalTokens)
       expect(collateralToken_).to.equal(collateralToken)
+      expect(collectionIds_).to.equal(JSON.stringify([collectionIdIN, collectionIdOUT]))
       expect(positionIds_).to.equal(JSON.stringify([positionIdIN, positionIdOUT]))
       expect(fee_).to.equal("10000000000")
       expect(name_).to.equal("Outcome ETH LP Token 2")
@@ -401,6 +403,8 @@ describe("amm.integration.test", function () {
           { name: "ConditionalTokens", value: conditionalTokens },
           { name: "CollateralToken", value: collateralToken },
           { name: "ConditionId", value: "" },
+          { name: "CollectionIds", value: JSON.stringify([collectionIdIN, collectionIdOUT]) },
+          { name: "PositionIds", value: JSON.stringify([positionIdIN, positionIdOUT]) },
           { name: "DataIndex", value: "" },
           { name: "Fee", value: "10000000000" }, // 1% fee (10^10)
           { name: "Name", value: "Outcome ETH LP Token" }, 
