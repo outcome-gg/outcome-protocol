@@ -579,11 +579,11 @@ end)
   ]]
 --
 Handlers.add('transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), function(msg)
-  assert(type(msg.Recipient) == 'string', 'Recipient is required!')
-  assert(type(msg.Quantity) == 'string', 'Quantity is required!')
-  assert(bint.__lt(0, bint(msg.Quantity)), 'Quantity must be greater than 0')
+  assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
+  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
+  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than 0')
 
-  AMM.tokens:transfer(msg.From, msg.Recipient, msg.Quantity, msg.Cast, msg.Tags, msg.Id)
+  AMM.tokens:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg.Tags, msg.Id)
 end)
 
 --[[
@@ -591,18 +591,18 @@ end)
   ]]
 --
 Handlers.add('mint', Handlers.utils.hasMatchingTag('Action', 'Mint'), function(msg)
-  assert(type(msg.Quantity) == 'string', 'Quantity is required!')
-  assert(bint(0) < bint(msg.Quantity), 'Quantity must be greater than zero!')
+  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
+  assert(bint(0) < bint(msg.Tags.Quantity), 'Quantity must be greater than zero!')
 
   if not AMM.tokens.balances[ao.id] then AMM.tokens.balances[ao.id] = "0" end
 
   if msg.From == ao.id then
     -- Add tokens to the token pool, according to Quantity
-    AMM.tokens.balances[msg.From] = utils.add(AMM.tokens.balances[msg.From], msg.Quantity)
-    AMM.tokens.totalSupply = utils.add(AMM.tokens.totalSupply, msg.Quantity)
+    AMM.tokens.balances[msg.From] = utils.add(AMM.tokens.balances[msg.From], msg.Tags.Quantity)
+    AMM.tokens.totalSupply = utils.add(AMM.tokens.totalSupply, msg.Tags.Quantity)
     ao.send({
       Target = msg.From,
-      Data = Colors.gray .. "Successfully minted " .. Colors.blue .. msg.Quantity .. Colors.reset
+      Data = Colors.gray .. "Successfully minted " .. Colors.blue .. msg.Tags.Quantity .. Colors.reset
     })
   else
     ao.send({
@@ -634,15 +634,15 @@ end)
   ]]
 --
 Handlers.add('burn', Handlers.utils.hasMatchingTag('Action', 'Burn'), function(msg)
-  assert(type(msg.Quantity) == 'string', 'Quantity is required!')
-  assert(bint(msg.Quantity) <= bint(Balances[msg.From]), 'Quantity must be less than or equal to the current balance!')
+  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
+  assert(bint(msg.Tags.Quantity) <= bint(Balances[msg.From]), 'Quantity must be less than or equal to the current balance!')
 
-  AMM.tokens.balances[msg.From] = utils.subtract(AMM.tokens.balances[msg.From], msg.Quantity)
-  AMM.tokens.totalSupply = utils.subtract(AMM.tokens.totalSupply, msg.Quantity)
+  AMM.tokens.balances[msg.From] = utils.subtract(AMM.tokens.balances[msg.From], msg.Tags.Quantity)
+  AMM.tokens.totalSupply = utils.subtract(AMM.tokens.totalSupply, msg.Tags.Quantity)
 
   ao.send({
     Target = msg.From,
-    Data = Colors.gray .. "Successfully burned " .. Colors.blue .. msg.Quantity .. Colors.reset
+    Data = Colors.gray .. "Successfully burned " .. Colors.blue .. msg.Tags.Quantity .. Colors.reset
   })
 end)
 
@@ -664,10 +664,10 @@ end
   ]]
 --
 Handlers.add('mintBatchNotice', isMintBatchNotice, function(msg)
-  assert(type(msg.TokenIds) == 'string', 'TokenIds is required!')
-  assert(type(msg.Quantities) == 'string', 'Quantities is required!')
-  local tokenIds = json.decode(msg.TokenIds)
-  local quantities = json.decode(msg.Quantities)
+  assert(type(msg.Tags.TokenIds) == 'string', 'TokenIds is required!')
+  assert(type(msg.Tags.Quantities) == 'string', 'Quantities is required!')
+  local tokenIds = json.decode(msg.Tags.TokenIds)
+  local quantities = json.decode(msg.Tags.Quantities)
   assert(#tokenIds == #quantities, 'Quantities / TokenIds length mismatch')
 
   for i = 1, #AMM.positionIds do
@@ -678,7 +678,7 @@ Handlers.add('mintBatchNotice', isMintBatchNotice, function(msg)
         quantity = quantities[j]
       end
     end
-    local poolBalance = tostring(bint.__add(bint(AMM.poolBalances[i]), quantity))
+    local poolBalance = tostring(bint.__add(bint(AMM.poolBalances[i]), bint(quantity)))
     AMM.poolBalances[i] = poolBalance
   end
 end)

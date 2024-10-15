@@ -100,8 +100,8 @@ function AMMMethods:transfer(from, recipient, quantity, cast, msgId)
 end
 
 -- Collected fees
-function AMMMethods.CollectedFees()
-  return FeePoolWeight - TotalWithdrawnFees
+function AMMMethods:collectedFees()
+  return self.feePoolWeight - self.totalWithdrawnFees
 end
 
 -- Fees withdrawable by an account
