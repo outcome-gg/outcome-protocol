@@ -53,7 +53,16 @@ function AMMNotices.buyNotice(from, investmentAmount, feeAmount, outcomeIndex, o
   })
 end
 
-function AMMNotices.sellNotice()
+function AMMNotices.sellNotice(from, returnAmount, feeAmount, outcomeIndex, outcomeTokensToSell)
+  ao.send({
+    Target = from,
+    Action = "Sell-Notice",
+    ReturnAmount = tostring(returnAmount),
+    FeeAmount = tostring(feeAmount),
+    OutcomeIndex = tostring(outcomeIndex),
+    OutcomeTokensToSell = tostring(outcomeTokensToSell),
+    Data = "Successfully sell order"
+  })
 end
 
 return AMMNotices

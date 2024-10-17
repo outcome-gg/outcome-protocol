@@ -131,7 +131,7 @@ Handlers.add("Create-Position", isCreatePosition, function(msg)
   assert(msg.Tags["X-ParentCollectionId"], "X-ParentCollectionId is required!")
   assert(msg.Tags["X-ConditionId"], "X-ConditionId is required!")
   assert(msg.Tags["X-Partition"], "X-Partition is required!")
-  ConditionalTokens:splitPosition(msg.Sender, msg.From, msg.Tags["X-ParentCollectionId"], msg.Tags["X-ConditionId"], json.decode(msg.Tags["X-Partition"]), msg.Quantity, true, msg)
+  ConditionalTokens:splitPosition(msg.Tags.Sender, msg.From, msg.Tags["X-ParentCollectionId"], msg.Tags["X-ConditionId"], json.decode(msg.Tags["X-Partition"]), msg.Tags.Quantity, true, msg)
 end)
 
 Handlers.add("Split-Position", Handlers.utils.hasMatchingTag("Action", "Split-Position"), function(msg)

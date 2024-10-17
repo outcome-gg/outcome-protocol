@@ -52,11 +52,11 @@ if [ "$1" == "test" ]; then
     create_or_update_process TEST_DATA_INDEX4 src/core/dataIndex.lua --sqlite
     create_or_update_process TEST_MARKET_FOUNDRY4 src/core/marketFoundry.lua --sqlite
     # Deploy market contracts
-    create_or_update_process TEST_CONDITIONAL_TOKENS src/conditionalTokens/conditionalTokens.lua
+    create_or_update_process TEST_CONDITIONAL_TOKENS2 src/conditionalTokens/conditionalTokens.lua
     create_or_update_process TEST_DLOB src/market/market.lua
-    create_or_update_process TEST_AMM3 src/market/amm.lua
+    create_or_update_process TEST_AMM4 src/market/amm.lua
     # Deploy mock contracts
-    create_or_update_process TEST_COLLATERAL_TOKEN src/mock/token.lua
+    create_or_update_process TEST_COLLATERAL_TOKEN2 src/mock/token.lua
     # Deploy agents
     create_or_update_process TEST_DATA_AGENT src/agents/dataAgent0rbit.lua
     

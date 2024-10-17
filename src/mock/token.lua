@@ -61,6 +61,7 @@ ResetState = true
    ]]
 --
 Variant = "0.0.3"
+Denomination = 12
 
 if not Balances or ResetState then Balances = { 
   [ao.id] = utils.toBalanceValue(10000 * 10 ^ Denomination),
@@ -110,8 +111,7 @@ Handlers.add('balance', Handlers.utils.hasMatchingTag('Action', 'Balance'), func
     bal = Balances[msg.From]
   end
 
-  ao.send({
-    Target = msg.From,
+  msg.reply({
     Balance = bal,
     Ticker = Ticker,
     Account = msg.Tags.Recipient or msg.From,
@@ -124,7 +124,7 @@ end)
    ]]
 --
 Handlers.add('balances', Handlers.utils.hasMatchingTag('Action', 'Balances'),
-  function(msg) ao.send({ Target = msg.From, Data = json.encode(Balances) }) end)
+  function(msg) msg.reply({ Target = msg.From, Data = json.encode(Balances) }) end)
 
 --[[
      Transfer

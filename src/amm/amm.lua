@@ -16,86 +16,16 @@ if not AMM or config.ResetState then AMM = amm:new() end
   ]]
 --
 
---[[
-    Collateral Token 
-  ]]
---
--- Handlers.add("Greeting-Name", Handlers.utils.hasMatchingTag('Action', 'Greeting'), function (msg)
---   msg.reply({Data = "Hello " .. msg.Data or "bob"})
---   print('server: replied to ' .. msg.Data or "bob")
--- end)
-
--- Handlers.add('CollateralToken.balance', Handlers.utils.hasMatchingTag('Action', 'CollateralToken.Balance'), function(msg) 
---   local greeting = Send({Target = ao.id, Action = "Greeting", Data = "George"}).receive().Data
---   print("client: " .. greeting)
--- end)
-
--- Handlers.add('CollateralToken.balance', Handlers.utils.hasMatchingTag('Action', 'CollateralToken.Balance2'), function(msg) 
---   local balance = Send({Target = CollateralToken, Action = "Balance"}).receive()
---   print("BALANCE: " .. json.encode(balance))
--- end)
-
---[[
-    Internal 
-  ]]
---
-
-Handlers.add('CollateralToken.createPosition', Handlers.utils.hasMatchingTag('Action', 'CollateralToken.CreatePosition'), function(msg)
-  assert(msg.From == ao.id, "Internal use only")
-  assert(msg.Tags.Sender, "Sender is required!")
-  assert(msg.Tags.OutcomeIndex, "OutcomeIndex is required!")
-  assert(msg.Tags.Quantity, "Quantity is required!")
-
-  local partition = AMM.generateBasicPartition()
-
-  ao.send({
-    Target = AMM.collateralToken,
-    Action = "Transfer",
-    Quantity = msg.Tags.Quantity,
-    Recipient = AMM.conditionalTokens,
-    ['X-Action'] = "Create-Position",
-    ['X-ParentCollectionId'] = "",
-    ['X-ConditionId'] = AMM.conditionId,
-    ['X-Partition'] = json.encode(partition),
-    ['X-OutcomeIndex'] = msg.Tags.OutcomeIndex,
-    ['X-OutcomeTokensToBuy'] = msg.Tags.OutcomeTokensToBuy,
-    ['X-Sender'] = msg.Tags.Sender
-  })
-end)
-
-Handlers.add('ConditionalTokens.mergePositions', Handlers.utils.hasMatchingTag('Action', 'ConditionalTokens.MergePositions'), function(msg)
-  assert(msg.From == ao.id, "Internal use only")
-  assert(msg.Tags['X-Sender'], "X-Sender is required!")
-  assert(msg.Tags['X-OutcomeIndex'], "X-OutcomeIndex is required!")
-  assert(msg.Tags['X-OutcomeTokensToSell'], "X-OutcomeTokensToSell is required!")
-  assert(msg.Tags.Quantity, "Quantity is required!")
-
-  local data = {
-    collateralToken = AMM.collateralToken,
-    parentCollectionId = "",
-    conditionId = AMM.conditionId,
-    partition = AMM.generateBasicPartition(),
-    quantity = msg.Tags.Quantity,
-  }
-
-  ao.send({
-    Target = AMM.conditionalTokens,
-    Action = "Merge-Positions",
-    ['X-Sender'] = msg.Tags['X-Sender'],
-    ['X-ReturnAmount'] = msg.Tags['X-ReturnAmount'],
-    ['X-OutcomeIndex'] = msg.Tags['X-OutcomeIndex'],
-    ['X-OutcomeTokensToSell'] = msg.Tags['X-OutcomeTokensToSell'],
-    Data = json.encode(data)
-  })
-end)
-
---[[
-    Core 
-  ]]
---
-
 local function isAddFunding(msg)
   if msg.From == AMM.collateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
+    return true
+  else
+    return false
+  end
+end
+
+local function isAddFundingPosition(msg)
+  if msg.From == AMM.conditionalTokens  and msg.Action == "Split-Position-Notice" and  msg.Tags["X-OutcomeIndex"] == "0" then
     return true
   else
     return false
@@ -142,7 +72,7 @@ local function isSell(msg)
   end
 end
 
-local function isSellOrderCompletion(msg)
+local function isSellOrderCompletionCollateralToken(msg)
   if msg.From == AMM.collateralToken and msg.Action == "Credit-Notice" and msg["X-Action"] == "Merge-Positions-Completion" then
     return true
   else
@@ -150,7 +80,7 @@ local function isSellOrderCompletion(msg)
   end
 end
 
-local function isSellOrderConditionalTokenCompletion(msg)
+local function isSellOrderCompletionConditionalTokens(msg)
   if msg.From == AMM.conditionalTokens and msg.Action == "Burn-Batch-Notice" then
     return true
   else
@@ -215,53 +145,24 @@ end)
 Handlers.add('Add-Funding', isAddFunding, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
+  assert(msg.Tags['X-Distribution'], 'X-Distribution is required!')
+  local distribution = json.decode(msg.Tags['X-Distribution'])
 
-  local error = false
-  local errorMessage = ''
-
-  -- Add to CollateralBalance
-  AMM.collateralBalance = tostring(bint.__add(bint(AMM.collateralBalance), bint(msg.Tags.Quantity)))
-  -- Ensure distribution
-  local distribution = {}
-  if not msg.Tags['X-Distribution'] then
-    error = true
-    errorMessage = 'X-Distribution is required!'
-  else
-    distribution = json.decode(msg.Tags['X-Distribution'])
-  end
-
-  if not error then
-    if bint.iszero(bint(AMM.tokens.totalSupply)) then
-      -- Ensure distribution is set across all position ids
-      if #distribution ~= #AMM.positionIds then
-        error = true
-        errorMessage = "Distribution length off"
-      end
-    else
-      -- Ensure distribution set only for initial funding
-      if bint.__lt(0, #distribution) then
-        error = true
-        errorMessage = "Cannot specify distribution after initial funding " .. json.encode(distribution)
-      end
-    end
-  end
-
-  if error then
-    -- Return funds and assert error
-    ao.send({
-      Target = AMM.collateralToken,
-      Action = 'Transfer',
-      Recipient = msg.Tags.Sender,
-      Quantity = msg.Tags.Quantity,
-      Error = 'Add-Funding Error: ' .. errorMessage
-    })
-
-    -- Assert Error
-    assert(false, errorMessage)
-  else
-    -- Add funding
+  if AMM:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
     AMM:addFunding(msg.Tags["Sender"], msg.Tags['Quantity'], distribution)
   end
+end)
+
+Handlers.add('Add-Funding-Position', isAddFundingPosition, function(msg)
+  assert(msg.Tags.Quantity, 'Quantity is required!')
+  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
+  assert(msg.Tags['X-Sender'], 'X-Sender is required!')
+  assert(msg.Tags['X-LPTokensMintAmount'], 'X-LPTokensMintAmount is required!')
+  assert(bint.__lt(0, bint(msg.Tags['X-LPTokensMintAmount'])), 'X-LPTokensMintAmount must be greater than zero!')
+  assert(msg.Tags['X-SendBackAmounts'], 'X-SendBackAmounts is required!')
+  local sendBackAmounts = json.decode(msg.Tags['X-SendBackAmounts'])
+
+  AMM:addFundingPosition(msg.Tags["X-Sender"], msg.Tags['Quantity'],  msg.Tags['X-LPTokensMintAmount'], sendBackAmounts)
 end)
 
 --[[
@@ -272,25 +173,7 @@ Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
 
-  local error = false
-  local errorMessage = ''
-
-  if not bint.__lt(bint(msg.Tags.Quantity), bint(AMM.collateralBalance)) then
-    error = true
-    errorMessage = 'Quantity must be less than balance! ' .. msg.Tags.Quantity .. " " .. AMM.collateralBalance
-  end
-
-  if error then
-    -- Return funds and assert error
-    ao.send({
-      Target = ao.id,
-      Action = 'Transfer',
-      Recipient = msg.Tags.Sender,
-      Quantity = msg.Tags.Quantity,
-      ['X-Error'] = 'Remove-Funding Error: ' .. errorMessage
-    })
-    assert(false, errorMessage)
-  else
+  if AMM:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
     AMM:removeFunding(msg.Tags.Sender, msg.Tags.Quantity)
   end
 end)
@@ -299,13 +182,13 @@ end)
     Collateral Balance Management
   ]]
 --
--- @dev TODO: Refactor / remove
-Handlers.add("Collateral-Debit-Notice", isCollateralDebitNotice, function(msg)
-  assert(msg.Tags.Quantity, 'Quantity is required!')
-  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
+-- -- @dev TODO: Refactor / remove
+-- Handlers.add("Collateral-Debit-Notice", isCollateralDebitNotice, function(msg)
+--   assert(msg.Tags.Quantity, 'Quantity is required!')
+--   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
 
-  AMM.collateralBalance = tostring(bint.__sub(bint(AMM.collateralBalance), bint(msg.Tags.Quantity)))
-end)
+--   AMM.collateralBalance = tostring(bint.__sub(bint(AMM.collateralBalance), bint(msg.Tags.Quantity)))
+-- end)
 
 --[[
     Calc Buy Amount
@@ -403,8 +286,6 @@ Handlers.add("BuyOrderCompletion", isBuyOrderCompletion, function(msg)
 
   -- Update Pool Balances
   AMM.poolBalances[tonumber(msg.Tags['X-OutcomeIndex'])] = tostring(bint.__sub(AMM.poolBalances[tonumber(msg.Tags['X-OutcomeIndex'])], bint(msg.Tags["X-OutcomeTokensToBuy"])))
-
-  -- buyNotice(from, investmentAmount, feeAmount, outcomeIndex, outcomeTokensToBuy)
 end)
 
 --[[
@@ -456,7 +337,7 @@ Handlers.add("Sell", isSell, function(msg)
   end
 end)
 
-Handlers.add("SellOrderCompletion", isSellOrderCompletion, function(msg)
+Handlers.add("SellOrderCompletionCollateralToken", isSellOrderCompletionCollateralToken, function(msg)
   assert(msg.Tags.Quantity, "Quantity is required!")
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
   assert(msg.Tags['X-Sender'], "X-Sender is required!")
@@ -478,7 +359,8 @@ Handlers.add("SellOrderCompletion", isSellOrderCompletion, function(msg)
   })
 end)
 
-Handlers.add("SellOrderConditionalTokenCompletion", isSellOrderConditionalTokenCompletion, function(msg)
+-- @dev on sell order merge success send return amount to user. fees retained within process. 
+Handlers.add("SellOrderCompletionConditionalTokens", isSellOrderCompletionConditionalTokens, function(msg)
   assert(msg.Tags.Quantities, "Quantities must exist!")
   assert(msg.Tags.RemainingBalances, "RemainingBalances must exist!")
   assert(msg.Tags['X-Sender'], "X-Sender must exist!")

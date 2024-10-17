@@ -11,9 +11,9 @@ import exp from "constants";
 
 dotenv.config();
 
-const amm = process.env.TEST_AMM3;
-const collateralToken = process.env.TEST_COLLATERAL_TOKEN;
-const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS;
+const amm = process.env.TEST_AMM4;
+const collateralToken = process.env.TEST_COLLATERAL_TOKEN3;
+const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS2;
 
 console.log("AMM: ", amm)
 console.log("COLLATERAL TOKEN: ", collateralToken)
@@ -74,8 +74,8 @@ describe("amm.integration.test", function () {
     conditionId = "2d175f731624549c34fe14840990e92d610d63ea205028af076ec5cbef4e231c",
     collectionIdIN = "45f9415be8dff7be6a906246c469f46730bccd9984486f4ad316cf90eb2e951d",
     collectionIdOUT = "4c028af9b5b5f60457c96be27af32080a9adce728390919566bb2fcbd03d65f9",
-    positionIdIN = "c142089dc805ae34099deb85df86d1b7ed1350416d6b95f7b6f714c7a47d21ee",
-    positionIdOUT = "1cea0591a5ef57897cb99c865e7e9101ae8dbf23bb520595bc301cbf09f9be66"
+    positionIdIN = "35ba13152a8b2086a40393fb611dae5c74a8ada28a80effda1e58381b9edc2f4",
+    positionIdOUT = "b52a990678dd524169490cfaa7300fc1c58bc3f06e0bd252e837cda920b93101"
   ))
 
   /************************************************************************ 
@@ -548,6 +548,43 @@ describe("amm.integration.test", function () {
       expect(xDistribution_1).to.equal(xDistribution)
     })
 
+    it("+ve should have transferred CollateralTokens to ConditionalTokens as per previous step", async () => {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      let messageId;
+      await message({
+        process: collateralToken,
+        tags: [
+          { name: "Action", value: "Balance" },
+          { name: "Recipient", value: conditionalTokens },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: collateralToken,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const account_ = Messages[0].Tags.find(t => t.name === 'Account').value
+      const balance_ = Messages[0].Tags.find(t => t.name === 'Balance').value
+      const ticker_ = Messages[0].Tags.find(t => t.name === 'Ticker').value
+      
+      expect(account_).to.equal(conditionalTokens)
+      expect(balance_).to.equal(parseAmount(100, 12))
+      expect(ticker_).to.equal("PNTS")
+    })
+
     it("+ve should have minted LP tokens as per previous step's x-action", async () => {
       await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
@@ -676,6 +713,7 @@ describe("amm.integration.test", function () {
     })
 
     it("+ve should have minted more LP tokens as per previous step's x-action", async () => {
+      await new Promise(resolve => setTimeout(resolve, 7000));
       let messageId;
       await message({
         process: amm,
@@ -924,6 +962,8 @@ describe("amm.integration.test", function () {
       ammBalanceBefore = await getBalance(amm, amm);
 
       let Messages = await removeFunding();
+
+      await new Promise(resolve => setTimeout(resolve, 5000));
 
       userBalanceAfter = await getBalance(amm, walletAddress);
       ammBalanceAfter = await getBalance(amm, amm);
@@ -1197,6 +1237,8 @@ describe("amm.integration.test", function () {
         if (Error) {
           console.log(Error)
         }
+
+        console.log(Messages[0].Tags)
       }
 
       async function getBalanceOf(token, tokenId, recipient) {
@@ -1231,7 +1273,7 @@ describe("amm.integration.test", function () {
       await buy(investmentAmount, outcomeIndex, buyAmount.toString());
 
       // wait for the buy to be processed
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 7000));
       const balanceOfAfter = await getBalanceOf(conditionalTokens, positionId, walletAddress);
 
       expect(buyAmount).to.be.equal((balanceOfAfter - balanceOfBefore).toString())

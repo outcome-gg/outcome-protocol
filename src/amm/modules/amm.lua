@@ -32,7 +32,7 @@ function AMM:new()
     withdrawnFees = config.AMM.WithdrawnFees,
     outcomeSlotCounts = config.AMM.OutcomeSlotCounts,
     poolBalances = config.AMM.PoolBalances,
-    collateralBalance = config.AMM.CollateralBalance,
+    -- collateralBalance = config.AMM.CollateralBalance,
     ONE = config.AMM.ONE
   }
 
@@ -156,11 +156,13 @@ function AMMMethods:addFunding(from, addedFunds, distributionHint)
 
   local sendBackAmounts = {}
   local poolShareSupply = self.tokens.totalSupply
-  local mintAmount = 0
+  local mintAmount = '0'
 
   if bint.__lt(0, bint(poolShareSupply)) then
+
     assert(#distributionHint == 0, "cannot use distribution hint after initial funding")
     local poolWeight = 0
+
     for i = 1, #self.poolBalances do
       local balance = self.poolBalances[i]
       if bint.__lt(poolWeight, bint(balance)) then
@@ -173,7 +175,7 @@ function AMMMethods:addFunding(from, addedFunds, distributionHint)
       sendBackAmounts[i] = addedFunds - remaining
     end
 
-    mintAmount = (addedFunds * poolShareSupply) / poolWeight
+    mintAmount = tostring(bint(bint.__div(bint.__mul(addedFunds, poolShareSupply), poolWeight)))
   else
     if #distributionHint > 0 then
       local maxHint = 0
@@ -191,26 +193,22 @@ function AMMMethods:addFunding(from, addedFunds, distributionHint)
       end
     end
 
-    mintAmount = addedFunds
+    mintAmount = tostring(addedFunds)
   end
+  -- @dev awaits via handlers before running AMMMethods:addFundingPosition
+  self:createPosition(from, addedFunds, '0', '0', mintAmount, sendBackAmounts)
+end
 
-  -- splitPosition(from, 0, addedFunds)
-  ao.send({ Target=ao.id, Action = "CollateralToken.CreatePosition", Sender=from, OutcomeIndex="0", Quantity=addedFunds})
-
+-- @dev Run on completion of self:createPosition external call
+function AMMMethods:addFundingPosition(from, addedFunds, mintAmount, sendBackAmounts)
   self.tokens:mint(from, mintAmount)
-
-  -- Send back amounts
-  for i = 1, #sendBackAmounts do
-    if sendBackAmounts[i] > 0 then
-      ao.send({ Target=self.conditionalTokens, Action = "Transfer-Single", TokenId = self.positionIds[i], Recipient=from, Quantity=sendBackAmounts[i]})
-    end
-  end
-
+  -- Send back conditional tokens should there be an uneven distribution
+  ao.send({ Target=self.conditionalTokens, Action = "Transfer-Batch", Recipient=from, TokenIds = self.positionIds, Quantities=sendBackAmounts})
   -- Transform sendBackAmounts to array of amounts added
   for i = 1, #sendBackAmounts do
     sendBackAmounts[i] = addedFunds - sendBackAmounts[i]
   end
-
+  -- Send notice with amounts added
   self.fundingAddedNotice(from, sendBackAmounts, mintAmount)
 end
 
@@ -220,18 +218,21 @@ end
 --
 function AMMMethods:removeFunding(from, sharesToBurn)
   assert(bint.__lt(0, bint(sharesToBurn)), "funding must be non-zero")
-
+  -- Calculate conditionalTokens amounts
   local sendAmounts = {}
-  local poolShareSupply = self.tokens.totalSupply
-
   for i = 1, #self.poolBalances do
-    sendAmounts[i] = (self.poolBalances[i] * sharesToBurn) / poolShareSupply
+    sendAmounts[i] = (self.poolBalances[i] * sharesToBurn) / self.tokens.totalSupply
   end
-
-  local collateralRemovedFromFeePool = self.collateralBalance
+  -- Calculate collateralRemovedFromFeePool
+  local poolFeeBalance = ao.send({Target = self.collateralToken, Action = 'Balance'}).receive().Data
   self.tokens:burn(from, sharesToBurn)
-  collateralRemovedFromFeePool = collateralRemovedFromFeePool - self.collateralBalance
-
+  local collateralRemovedFromFeePool = ao.send({Target = self.collateralToken, Action = 'Balance'}).receive().Data
+  collateralRemovedFromFeePool = poolFeeBalance - collateralRemovedFromFeePool
+  -- Send collateralRemovedFromFeePool
+  ao.send({ Target=self.collateralToken, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
+  -- Send conditionalTokens amounts
+  ao.send({ Target=self.conditionalTokens, Action = "Transfer-Batch", Recipient=from, TokenIds = self.positionIds, Quantities=sendAmounts})
+  -- Send notice
   self.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
 end
 
@@ -282,7 +283,7 @@ function AMMMethods:calcSellAmount(returnAmount, outcomeIndex)
   assert(bint.__lt(0, returnAmount), 'ReturnAmount must be greater than zero!')
   assert(bint.__lt(0, outcomeIndex), 'OutcomeIndex must be greater than zero!')
   assert(bint.__le(outcomeIndex, #self.positionIds), 'OutcomeIndex must be less than or equal to PositionIds length!')
-  
+
   local returnAmountPlusFees = AMMHelpers.ceildiv(tonumber(returnAmount * self.ONE), tonumber(self.ONE - self.fee))
   local sellTokenPoolBalance = self.poolBalances[outcomeIndex]
   local endingOutcomeBalance = sellTokenPoolBalance * self.ONE
@@ -308,11 +309,11 @@ function AMMMethods:buy(from, investmentAmount, outcomeIndex, minOutcomeTokensTo
 
   local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(investmentAmount, self.fee), self.ONE)))
   self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
-
   local investmentAmountMinusFees = tostring(bint.__sub(investmentAmount, bint(feeAmount)))
   -- Split position through all conditions
-  ao.send({ Target = ao.id, Action = "CollateralToken.CreatePosition", Sender=from, Quantity=investmentAmountMinusFees, OutcomeIndex=tostring(outcomeIndex), OutcomeTokensToBuy=tostring(outcomeTokensToBuy)})
-  -- Process continued within "BuyOrderCompletion"
+  self:createPosition(from, investmentAmountMinusFees, outcomeIndex, outcomeTokensToBuy, 0, {})
+  -- Send notice (Process continued via "BuyOrderCompletion" handler)
+  self.buyNotice(from, investmentAmount, feeAmount, outcomeIndex, outcomeTokensToBuy)
 end
 
 --[[
@@ -323,22 +324,16 @@ function AMMMethods:sell(from, returnAmount, outcomeIndex, maxOutcomeTokensToSel
   local outcomeTokensToSell = self:calcSellAmount(returnAmount, outcomeIndex)
   assert(bint.__le(bint(outcomeTokensToSell), bint(maxOutcomeTokensToSell)), "Maximum sell amount exceeded!")
 
-  -- local feeAmount = ceildiv(returnAmount * Fee, ONE - Fee)
   local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(returnAmount, self.fee), bint.__sub(self.ONE, self.fee))))
   self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
   local returnAmountPlusFees = tostring(bint.__add(returnAmount, bint(feeAmount)))
-
-  -- check sufficient liquidity in process or revert
-  assert(bint.__le(bint(returnAmountPlusFees), bint(self.collateralBalance)), "Insufficient liquidity!")
-
-  -- merge positions through all conditions
-  ao.send({ Target = ao.id, Action = "ConditionalTokens.MergePositions", Quantity=returnAmountPlusFees, ['X-Sender']=from, ['X-ReturnAmount']=returnAmount, ['X-OutcomeIndex']=tostring(outcomeIndex), ['X-OutcomeTokensToSell']=tostring(outcomeTokensToSell)})
-
-  -- on success send return amount to user. fees retained within process. 
-
-  -- assert(CollateralToken.transfer(msg.sender, returnAmount), "return transfer failed")
-
-  -- emit FPMMSell(msg.sender, returnAmount, feeAmount, outcomeIndex, outcomeTokensToSell)
+  -- Check sufficient liquidity in the conditional tokens process or revert
+  local collataralBalance = ao.send({Target = self.collateralToken, Recipient = self.conditionalTokens, Action = "Balance"}).receive().Data
+  assert(bint.__le(bint(returnAmountPlusFees), bint(collataralBalance)), "Insufficient liquidity!")
+  -- Merge positions through all conditions
+  self:mergePositions(from, returnAmount, returnAmountPlusFees, outcomeIndex, outcomeTokensToSell)
+  -- Send notice (Process continued via "SellOrderCompletionCollateralToken" and "SellOrderCompletionConditionalTokens" handlers)
+  self.sellNotice(from, returnAmount, feeAmount, outcomeIndex, outcomeTokensToSell)
 end
 
 return AMM

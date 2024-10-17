@@ -32,7 +32,7 @@ config.AMM = {
   CollectionIds = {},                   -- Collection IDs
   PositionIds = {},                     -- Position IDs
   PoolBalances = {},                    -- Pool Balances
-  CollateralBalance = '0',              -- Collateral Balance
+  -- CollateralBalance = '0',              -- Collateral Balance
   ONE = 10^config.LPToken.Denomination  -- E.g. 1e12
 }
 
