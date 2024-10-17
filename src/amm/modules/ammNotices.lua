@@ -3,7 +3,7 @@ local json = require('json')
 
 local AMMNotices = {}
 
-function AMMNotices.newMarketNotice(collateralToken, conditionalTokens, conditionId, collectionIds, positionIds, fee, name, ticker, logo)
+function AMMNotices.newMarketNotice(collateralToken, conditionalTokens, conditionId, collectionIds, positionIds, name, ticker, logo)
   ao.send({
     Target = DataIndex,
     Action = "New-Market-Notice",
@@ -12,7 +12,6 @@ function AMMNotices.newMarketNotice(collateralToken, conditionalTokens, conditio
     CollateralToken = collateralToken,
     CollectionIds = json.encode(collectionIds),
     PositionIds = json.encode(positionIds),
-    Fee = fee,
     Name = name,
     Ticker = ticker,
     Logo = logo,

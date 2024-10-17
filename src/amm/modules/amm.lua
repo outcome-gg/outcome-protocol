@@ -59,14 +59,13 @@ end
   ]]
 --
 
-function AMMMethods:init(collateralToken, conditionalTokens, conditionId, collectionIds, positionIds, fee, name, ticker, logo)
+function AMMMethods:init(collateralToken, conditionalTokens, conditionId, collectionIds, positionIds, name, ticker, logo)
   -- Set AMM vars
   self.conditionId = conditionId
   self.conditionalTokens = conditionalTokens
   self.collateralToken = collateralToken
   self.collectionIds = collectionIds
   self.positionIds = positionIds
-  self.fee = fee
 
   -- Set LP Token vars
   self.tokens.name = name
@@ -76,7 +75,7 @@ function AMMMethods:init(collateralToken, conditionalTokens, conditionId, collec
   -- Initialized
   self.initialized = true
 
-  self.newMarketNotice(collateralToken, conditionalTokens, conditionId, collectionIds, positionIds, fee, name, ticker, logo)
+  self.newMarketNotice(collateralToken, conditionalTokens, conditionId, collectionIds, positionIds, name, ticker, logo)
 end
 
 --[[

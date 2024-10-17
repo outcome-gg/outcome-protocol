@@ -1,3 +1,5 @@
+local bint = require('.bint')(256)
+
 local config = {}
 
 -- General
@@ -20,19 +22,19 @@ config.LPToken = {
 
 -- AMM
 config.AMM = {
-  Initialized = false,                  -- AMM Initialization Status
-  CollateralToken = '',                 -- Process ID of Collateral Token 
-  ConditionalTokens = '',               -- Process ID of Conditional Tokens
-  ConditionId = '',                     -- Condition ID
-  Fee = 0,                              -- Fee Percentage
-  FeePoolWeight = 0,                    -- Fee Pool Weight
-  TotalWithdrawnFees = 0,               -- Total Withdrawn Fees
-  WithdrawnFees = {},                   -- Withdrawn Fees
-  OutomeSlotCounts = {},                -- Outcome Slot Counts
-  CollectionIds = {},                   -- Collection IDs
-  PositionIds = {},                     -- Position IDs
-  PoolBalances = {},                    -- Pool Balances
-  ONE = 10^config.LPToken.Denomination  -- E.g. 1e12
+  Initialized = false,                                                                -- AMM Initialization Status
+  CollateralToken = '',                                                               -- Process ID of Collateral Token 
+  ConditionalTokens = '',                                                             -- Process ID of Conditional Tokens
+  ConditionId = '',                                                                   -- Condition ID
+  Fee = tostring(bint(bint.__div(bint.__pow(10, config.LPToken.Denomination), 100))), -- Fee Percentage, i.e. 1%
+  FeePoolWeight = 0,                                                                  -- Fee Pool Weight
+  TotalWithdrawnFees = 0,                                                             -- Total Withdrawn Fees
+  WithdrawnFees = {},                                                                 -- Withdrawn Fees
+  OutomeSlotCounts = {},                                                              -- Outcome Slot Counts
+  CollectionIds = {},                                                                 -- Collection IDs
+  PositionIds = {},                                                                   -- Position IDs
+  PoolBalances = {},                                                                  -- Pool Balances
+  ONE = tostring(bint.__pow(10, config.LPToken.Denomination))                         -- E.g. 1e12
 }
 
 -- Derived

@@ -346,7 +346,6 @@ describe("amm.integration.test", function () {
           { name: "CollectionIds", value: JSON.stringify([collectionIdIN, collectionIdOUT]) },
           { name: "PositionIds", value: JSON.stringify([positionIdIN, positionIdOUT]) },
           { name: "DataIndex", value: "" },
-          { name: "Fee", value: "10000000000" }, // 1% fee (10^10)
           { name: "Name", value: "Outcome ETH LP Token 2" }, 
           { name: "Ticker", value: "OETH1" }, 
           { name: "Logo", value: "" }, 
@@ -377,7 +376,6 @@ describe("amm.integration.test", function () {
       const collateralToken_ = Messages[0].Tags.find(t => t.name === 'CollateralToken').value
       const collectionIds_ = Messages[0].Tags.find(t => t.name === 'CollectionIds').value
       const positionIds_ = Messages[0].Tags.find(t => t.name === 'PositionIds').value
-      const fee_ = Messages[0].Tags.find(t => t.name === 'Fee').value
       const name_ = Messages[0].Tags.find(t => t.name === 'Name').value
       const ticker_ = Messages[0].Tags.find(t => t.name === 'Ticker').value
       const logo_ = Messages[0].Tags.find(t => t.name === 'Logo').value
@@ -388,7 +386,6 @@ describe("amm.integration.test", function () {
       expect(collateralToken_).to.equal(collateralToken)
       expect(collectionIds_).to.equal(JSON.stringify([collectionIdIN, collectionIdOUT]))
       expect(positionIds_).to.equal(JSON.stringify([positionIdIN, positionIdOUT]))
-      expect(fee_).to.equal("10000000000")
       expect(name_).to.equal("Outcome ETH LP Token 2")
       expect(ticker_).to.equal("OETH1")
       expect(logo_).to.equal("")
@@ -406,7 +403,6 @@ describe("amm.integration.test", function () {
           { name: "CollectionIds", value: JSON.stringify([collectionIdIN, collectionIdOUT]) },
           { name: "PositionIds", value: JSON.stringify([positionIdIN, positionIdOUT]) },
           { name: "DataIndex", value: "" },
-          { name: "Fee", value: "10000000000" }, // 1% fee (10^10)
           { name: "Name", value: "Outcome ETH LP Token" }, 
           { name: "Ticker", value: "OETH" }, 
           { name: "Logo", value: "" }, 
@@ -851,7 +847,7 @@ describe("amm.integration.test", function () {
 
     it("-ve should fail add negative funding", async () => {
       let messageId;
-      const quantity = (-1000000000000).toString()
+      const quantity = (-1000000000001).toString()
       const xDistribution = JSON.stringify([])
       const xAction = "Add-Funding"
       await message({

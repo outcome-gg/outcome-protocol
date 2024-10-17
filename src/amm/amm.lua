@@ -104,14 +104,11 @@ Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(m
   assert(msg.Tags.PositionIds, "PositionIds is required!")
   local positionIds = json.decode(msg.Tags.PositionIds)
   assert(#positionIds == 2, "Must have two positionIds!")
-  assert(msg.Tags.Fee, "Fee is required!")
   assert(msg.Tags.Name, "Name is required!")
   assert(msg.Tags.Ticker, "Ticker is required!")
   assert(msg.Tags.Logo, "Logo is required!")
-  assert(bint.__lt(0, bint(msg.Tags.Fee)), "Fee must be greater than zero!")
-  assert(bint.__lt(bint(msg.Tags.Fee), AMM.ONE), "Fee must be less than one!")
 
-  AMM:init(msg.Tags.CollateralToken, msg.Tags.ConditionalTokens, msg.Tags.ConditionId, collectionIds, positionIds, msg.Tags.Fee, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo)
+  AMM:init(msg.Tags.CollateralToken, msg.Tags.ConditionalTokens, msg.Tags.ConditionId, collectionIds, positionIds, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo)
 end)
 
 --[[
