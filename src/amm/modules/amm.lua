@@ -32,7 +32,6 @@ function AMM:new()
     withdrawnFees = config.AMM.WithdrawnFees,
     outcomeSlotCounts = config.AMM.OutcomeSlotCounts,
     poolBalances = config.AMM.PoolBalances,
-    -- collateralBalance = config.AMM.CollateralBalance,
     ONE = config.AMM.ONE
   }
 

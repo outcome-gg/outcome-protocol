@@ -40,14 +40,6 @@ local function isRemoveFunding(msg)
   end
 end
 
-local function isCollateralDebitNotice(msg)
-  if msg.From == AMM.collateralToken  and msg.Action == "Debit-Notice" and msg.Recipient == ao.id then
-    return true
-  else
-    return false
-  end
-end
-
 local function isBuy(msg)
   if msg.From == AMM.collateralToken and msg.Action == "Credit-Notice" and msg["X-Action"] == "Buy" then
     return true
@@ -177,18 +169,6 @@ Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
     AMM:removeFunding(msg.Tags.Sender, msg.Tags.Quantity)
   end
 end)
-
---[[
-    Collateral Balance Management
-  ]]
---
--- -- @dev TODO: Refactor / remove
--- Handlers.add("Collateral-Debit-Notice", isCollateralDebitNotice, function(msg)
---   assert(msg.Tags.Quantity, 'Quantity is required!')
---   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
-
---   AMM.collateralBalance = tostring(bint.__sub(bint(AMM.collateralBalance), bint(msg.Tags.Quantity)))
--- end)
 
 --[[
     Calc Buy Amount
