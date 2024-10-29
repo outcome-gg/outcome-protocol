@@ -44,6 +44,7 @@ function TokensMethods:burn(from, quantity)
   assert(bint.__le(quantity, self.balances[ao.id]), 'Must have sufficient tokens!')
   -- Burn tokens
   self.balances[ao.id] = tostring(bint.__sub(self.balances[ao.id], quantity))
+  self.totalSupply = tostring(bint.__sub(bint(self.totalSupply), quantity))
   -- Send notice
   self.burnNotice(from, quantity)
 end

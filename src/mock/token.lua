@@ -124,7 +124,8 @@ end)
    ]]
 --
 Handlers.add('balances', Handlers.utils.hasMatchingTag('Action', 'Balances'),
-  function(msg) msg.reply({ Target = msg.From, Data = json.encode(Balances) }) end)
+  function(msg) msg.reply({ Target = msg.From, Data = json.encode(Balances) })
+end)
 
 --[[
      Transfer
@@ -183,11 +184,10 @@ Handlers.add('transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), fu
       ao.send(creditNotice)
     end
   else
-    ao.send({
-      Target = msg.From,
+    msg.reply({
       Action = 'Transfer-ErrorMock',
       ['Message-Id'] = msg.Id,
-      Error = 'Insufficient Balance!'
+      Error = 'Insufficient Balance! ' .. Balances[msg.From] .. ' < ' .. msg.Quantity
     })
   end
 end)

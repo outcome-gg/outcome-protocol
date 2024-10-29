@@ -101,6 +101,7 @@ Handlers.add('Transfer-Single', Handlers.utils.hasMatchingTag('Action', 'Transfe
   assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than 0')
   ConditionalTokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.TokenId, msg.Tags.Quantity, msg.Tags.Cast, msg)
+  msg.reply({Data = {Success = true}})
 end)
 
 Handlers.add('Transfer-Batch', Handlers.utils.hasMatchingTag('Action', 'Transfer-Batch'), function(msg)
@@ -114,6 +115,7 @@ Handlers.add('Transfer-Batch', Handlers.utils.hasMatchingTag('Action', 'Transfer
     assert(bint.__lt(0, bint(quantities[i])), 'Quantity must be greater than 0')
   end
   ConditionalTokens:transferBatch(msg.From, msg.Tags.Recipient, tokenIds, quantities, msg.Tags.Cast, msg)
+  msg.reply({Data = {Success = true}})
 end)
 
 --[[

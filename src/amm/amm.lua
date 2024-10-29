@@ -12,10 +12,8 @@ if not AMM or config.ResetState then AMM = amm:new() end
 
 
 --[[
-    HANDLERS
-  ]]
---
-
+    MATCHING
+]]
 local function isAddFunding(msg)
   if msg.From == AMM.collateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
     return true
@@ -88,11 +86,22 @@ local function isSellReturnUnburned(msg)
   end
 end
 
+local function isMintBatchNotice(msg)
+  if msg.From == AMM.conditionalTokens and msg.Action == "Mint-Batch-Notice" then
+      return true
+  else
+      return false
+  end
+end
+
+--[[
+    HANDLERS
+]]
+
 --[[
     Init
-  ]]
---
--- @dev only enable shallow markets on launch, i.e. where parentCollectionId = ""
+]]
+-- @dev to only enable shallow markets on launch, i.e. where parentCollectionId = ""
 Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(msg)
   assert(AMM.initialized == false, "Market already initialized!")
   assert(msg.Tags.ConditionId, "ConditionId is required!")
@@ -113,8 +122,7 @@ end)
 
 --[[
     Info
-  ]]
---
+]]
 Handlers.add("Market.Info", Handlers.utils.hasMatchingTag("Action", "Market-Info"), function(msg)
   ao.send({
     Target = msg.From,
@@ -122,8 +130,8 @@ Handlers.add("Market.Info", Handlers.utils.hasMatchingTag("Action", "Market-Info
     ConditionalTokens = AMM.conditionalTokens,
     CollateralToken = AMM.collateralToken,
     ConditionId = AMM.conditionId,
-    Fee = tostring(AMM.fee),
-    FeePoolWeight = tostring(AMM.feePoolWeight)
+    Fee = AMM.fee,
+    FeePoolWeight = AMM.feePoolWeight
   })
 end)
 
@@ -131,6 +139,7 @@ end)
     Add Funding
   ]]
 --
+-- @dev called on credit-notice from collateralToken with X-Action == 'Add-Funding'
 Handlers.add('Add-Funding', isAddFunding, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
@@ -142,6 +151,7 @@ Handlers.add('Add-Funding', isAddFunding, function(msg)
   end
 end)
 
+-- @dev called on split-position-notice from conditionalTokens with X-OutcomeIndex == '0'
 Handlers.add('Add-Funding-Position', isAddFundingPosition, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
@@ -156,12 +166,11 @@ end)
 
 --[[
     Remove Funding
-  ]]
---
+]]
+-- @dev called on credit-notice from ao.id with X-Action == 'Remove-Funding'
 Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
-
   if AMM:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
     AMM:removeFunding(msg.Tags.Sender, msg.Tags.Quantity)
   end
@@ -169,8 +178,7 @@ end)
 
 --[[
     Calc Buy Amount
-  ]]
---
+]]
 Handlers.add("Calc-Buy-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Buy-Amount"), function(msg)
   assert(msg.Tags.InvestmentAmount, 'InvestmentAmount is required!')
   assert(msg.Tags.OutcomeIndex, 'OutcomeIndex is required!')
@@ -187,8 +195,7 @@ end)
 
 --[[
     Calc Sell Amount
-  ]]
---
+]]
 Handlers.add("Calc-Sell-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Sell-Amount"), function(msg)
   assert(msg.Tags.ReturnAmount, 'ReturnAmount is required!')
   assert(msg.Tags.OutcomeIndex, 'OutcomeIndex is required!')
@@ -205,8 +212,8 @@ end)
 
 --[[
     Buy
-  ]]
---
+]]
+-- @dev called on credit-notice from collateralToken with X-Action == 'Buy'
 Handlers.add("Buy", isBuy, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
@@ -245,6 +252,7 @@ Handlers.add("Buy", isBuy, function(msg)
   end
 end)
 
+-- @dev called on split-position-notice from conditionalTokens with X-OutcomeIndex ~= '0'
 Handlers.add("BuyOrderCompletion", isBuyOrderCompletion, function(msg)
   assert(msg.Tags.Quantity, "Quantity is required!")
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
@@ -267,9 +275,8 @@ end)
 
 --[[
     Sell
-  ]]
---
---@dev TODO: return difference between maxOutcomeTokensToSell and those actually sold
+]]
+-- @dev called on credit-single-notice from conditionalTokens with X-Action == 'Sell'
 Handlers.add("Sell", isSell, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
@@ -314,6 +321,7 @@ Handlers.add("Sell", isSell, function(msg)
   end
 end)
 
+-- @dev called on credit-notice from collateralToken with X-Action == 'Merge-Positions-Completion'
 Handlers.add("SellOrderCompletionCollateralToken", isSellOrderCompletionCollateralToken, function(msg)
   assert(msg.Tags.Quantity, "Quantity is required!")
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
@@ -337,6 +345,7 @@ Handlers.add("SellOrderCompletionCollateralToken", isSellOrderCompletionCollater
 end)
 
 -- @dev on sell order merge success send return amount to user. fees retained within process. 
+-- @dev called on burn-batch-notice from conditionalTokens
 Handlers.add("SellOrderCompletionConditionalTokens", isSellOrderCompletionConditionalTokens, function(msg)
   assert(msg.Tags.Quantities, "Quantities must exist!")
   assert(msg.Tags.RemainingBalances, "RemainingBalances must exist!")
@@ -362,6 +371,7 @@ Handlers.add("SellOrderCompletionConditionalTokens", isSellOrderCompletionCondit
   })
 end)
 
+-- @dev called on debit-single-notice from conditionalTokens with X-Action == 'Return-Unburned'
 Handlers.add("SellReturnUnburned", isSellReturnUnburned, function(msg)
   assert(msg.Tags.Quantity, "Quantity is required!")
   assert(msg.Tags.TokenId, "TokenId is required!")
@@ -376,13 +386,11 @@ end)
 
 --[[
     LP Token  
-  ]]
---
+]]
 
 --[[
     Info
-  ]]
---
+]]
 Handlers.add('Token.info', Handlers.utils.hasMatchingTag('Action', 'Token-Info'), function(msg)
   ao.send({
     Target = msg.From,
@@ -393,15 +401,14 @@ Handlers.add('Token.info', Handlers.utils.hasMatchingTag('Action', 'Token-Info')
     ConditionId = AMM.conditionId,
     CollateralToken = AMM.collateralToken,
     ConditionalTokens = AMM.conditionalTokens,
-    FeePoolWeight = tostring(AMM.feePoolWeight),
-    Fee = tostring(AMM.fee)
+    FeePoolWeight = AMM.feePoolWeight,
+    Fee = AMM.fee
   })
 end)
 
 --[[
     Balance
-  ]]
---
+]]
 Handlers.add('balance', Handlers.utils.hasMatchingTag('Action', 'Balance'), function(msg)
   local bal = '0'
 
@@ -427,56 +434,44 @@ end)
 
 --[[
     Balances
-  ]]
---
+]]
 Handlers.add('balances', Handlers.utils.hasMatchingTag('Action', 'Balances'),
   function(msg) ao.send({ Target = msg.From, Data = json.encode(AMM.tokens.balances) })
 end)
 
 --[[
     Transfer
-  ]]
---
+]]
 Handlers.add('transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), function(msg)
   assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
   assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than 0')
-
-  AMM.tokens:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg.Tags, msg.Id)
+  AMM:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg.Tags, msg.Id)
 end)
 
---[[
-  Mint
-  ]]
---
-Handlers.add('mint', Handlers.utils.hasMatchingTag('Action', 'Mint'), function(msg)
-  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
-  assert(bint(0) < bint(msg.Tags.Quantity), 'Quantity must be greater than zero!')
+-- --[[
+--   Mint
+-- ]]
+-- Handlers.add('mint', Handlers.utils.hasMatchingTag('Action', 'Mint'), function(msg)
+--   assert(msg.Tags.Quantity, 'Quantity is required!')
+--   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
 
-  if not AMM.tokens.balances[ao.id] then AMM.tokens.balances[ao.id] = "0" end
-
-  if msg.From == ao.id then
-    -- Add tokens to the token pool, according to Quantity
-    AMM.tokens.balances[msg.From] = utils.add(AMM.tokens.balances[msg.From], msg.Tags.Quantity)
-    AMM.tokens.totalSupply = utils.add(AMM.tokens.totalSupply, msg.Tags.Quantity)
-    ao.send({
-      Target = msg.From,
-      Data = Colors.gray .. "Successfully minted " .. Colors.blue .. msg.Tags.Quantity .. Colors.reset
-    })
-  else
-    ao.send({
-      Target = msg.From,
-      Action = 'Mint-Error',
-      ['Message-Id'] = msg.Id,
-      Error = 'Only the Process Id can mint new ' .. AMM.ticker .. ' tokens!'
-    })
-  end
-end)
+--   if msg.From == ao.id then
+--     -- Add tokens to the token pool, according to Quantity
+--     AMM.tokens:mint(msg.From, msg.Tags.Quantity)
+--   else
+--     ao.send({
+--       Target = msg.From,
+--       Action = 'Mint-Error',
+--       ['Message-Id'] = msg.Id,
+--       Error = 'Only the Process Id can mint new ' .. AMM.ticker .. ' tokens!'
+--     })
+--   end
+-- end)
 
 --[[
     Total Supply
-  ]]
---
+]]
 Handlers.add('totalSupply', Handlers.utils.hasMatchingTag('Action', 'Total-Supply'), function(msg)
   assert(msg.From ~= ao.id, 'Cannot call Total-Supply from the same process!')
 
@@ -488,40 +483,25 @@ Handlers.add('totalSupply', Handlers.utils.hasMatchingTag('Action', 'Total-Suppl
   })
 end)
 
---[[
-    Burn
-  ]]
---
-Handlers.add('burn', Handlers.utils.hasMatchingTag('Action', 'Burn'), function(msg)
-  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
-  assert(bint(msg.Tags.Quantity) <= bint(Balances[msg.From]), 'Quantity must be less than or equal to the current balance!')
+-- --[[
+--     Burn
+-- ]]
+-- Handlers.add('burn', Handlers.utils.hasMatchingTag('Action', 'Burn'), function(msg)
+--   assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
+--   assert(bint(msg.Tags.Quantity) <= bint(Balances[msg.From]), 'Quantity must be less than or equal to the current balance!')
 
-  AMM.tokens.balances[msg.From] = utils.subtract(AMM.tokens.balances[msg.From], msg.Tags.Quantity)
-  AMM.tokens.totalSupply = utils.subtract(AMM.tokens.totalSupply, msg.Tags.Quantity)
+--   AMM.tokens.balances[msg.From] = utils.subtract(AMM.tokens.balances[msg.From], msg.Tags.Quantity)
+--   AMM.tokens.totalSupply = utils.subtract(AMM.tokens.totalSupply, msg.Tags.Quantity)
 
-  ao.send({
-    Target = msg.From,
-    Data = Colors.gray .. "Successfully burned " .. Colors.blue .. msg.Tags.Quantity .. Colors.reset
-  })
-end)
-
---[[
-    Conditional Token Reply Handlers
-  ]]
---
-
-local function isMintBatchNotice(msg)
-  if msg.From == AMM.conditionalTokens and msg.Action == "Mint-Batch-Notice" then
-      return true
-  else
-      return false
-  end
-end
+--   ao.send({
+--     Target = msg.From,
+--     Data = Colors.gray .. "Successfully burned " .. Colors.blue .. msg.Tags.Quantity .. Colors.reset
+--   })
+-- end)
 
 --[[
     Batch Mint Notice
-  ]]
---
+]]
 Handlers.add('mintBatchNotice', isMintBatchNotice, function(msg)
   assert(type(msg.Tags.TokenIds) == 'string', 'TokenIds is required!')
   assert(type(msg.Tags.Quantities) == 'string', 'Quantities is required!')

@@ -58,7 +58,6 @@ end
     Init
   ]]
 --
-
 function AMMMethods:init(collateralToken, conditionalTokens, conditionId, collectionIds, positionIds, name, ticker, logo)
   -- Set AMM vars
   self.conditionId = conditionId
@@ -79,76 +78,10 @@ function AMMMethods:init(collateralToken, conditionalTokens, conditionId, collec
 end
 
 --[[
-    LP Token
-]]
-
--- @dev See tokensMethods:mint
-function AMMMethods:mint(to, quantity)
-  self.tokens.mint(to, quantity)
-end
-
--- @dev See tokenMethods:burn
-function AMMMethods:burn(from, quantity)
-  self.tokens.burn(from, quantity)
-end
-
--- @dev See tokenMethods:transfer
-function AMMMethods:transfer(from, recipient, quantity, cast, msgId)
-  self.tokens.transfer(from, recipient, quantity, cast, msgId)
-end
-
--- Collected fees
-function AMMMethods:collectedFees()
-  return self.feePoolWeight - self.totalWithdrawnFees
-end
-
--- Fees withdrawable by an account
-local function feesWithdrawableBy(account)
-  -- local rawAmount = (FeePoolWeight * BalanceOf(account)) / TotalSupply()
-  -- return rawAmount - (WithdrawnFees[account] or 0)
-end
-
--- Withdraw fees
-local function withdrawFees(account)
-  -- local rawAmount = (FeePoolWeight * BalanceOf(account)) / TotalSupply()
-  -- local withdrawableAmount = rawAmount - (WithdrawnFees[account] or 0)
-  -- if withdrawableAmount > 0 then
-  --   WithdrawnFees[account] = rawAmount
-  --   TotalWithdrawnFees = TotalWithdrawnFees + withdrawableAmount
-  --   assert(CollateralToken.transfer(account, withdrawableAmount), "withdrawal transfer failed")
-  -- end
-end
-
--- Before token transfer
--- function _beforeTokenTransfer(from, to, amount)
---   if from ~= nil then
---     withdrawFees(from)
---   end
-
---   local totalSupply = TotalSupply()
---   local withdrawnFeesTransfer = totalSupply == 0 and amount or (FeePoolWeight * amount) / totalSupply
-
---   if from ~= nil then
---     WithdrawnFees[from] = WithdrawnFees[from] - withdrawnFeesTransfer
---     TotalWithdrawnFees = TotalWithdrawnFees - withdrawnFeesTransfer
---   else
---     FeePoolWeight = FeePoolWeight + withdrawnFeesTransfer
---   end
-
---   if to ~= nil then
---     WithdrawnFees[to] = (WithdrawnFees[to] or 0) + withdrawnFeesTransfer
---     TotalWithdrawnFees = TotalWithdrawnFees + withdrawnFeesTransfer
---   else
---     FeePoolWeight =FeePoolWeight - withdrawnFeesTransfer
---   end
--- end
-
---[[
     Add Funding 
-  ]]
---
--- @dev: to test the use of distributionHint to set the initial probability distribuiton
--- @dev: to test that adding subsquent funding does not alter the probability distribution
+]]
+-- @dev: TODO: test the use of distributionHint to set the initial probability distribuiton
+-- @dev: TODO: test that adding subsquent funding does not alter the probability distribution
 function AMMMethods:addFunding(from, addedFunds, distributionHint)
   assert(bint.__lt(0, bint(addedFunds)), "funding must be non-zero")
 
@@ -199,9 +132,20 @@ end
 
 -- @dev Run on completion of self:createPosition external call
 function AMMMethods:addFundingPosition(from, addedFunds, mintAmount, sendBackAmounts)
-  self.tokens:mint(from, mintAmount)
+  self:mint(from, mintAmount)
+  -- Remove non-zero items before transfer-batch
+  local nonZeroAmounts = {}
+  local nonZeroPositionIds = {}
+  for i = 1, #sendBackAmounts do
+    if sendBackAmounts[i] > 0 then
+      table.insert(nonZeroAmounts, sendBackAmounts[i])
+      table.insert(nonZeroPositionIds, self.positionIds[i])
+    end
+  end
   -- Send back conditional tokens should there be an uneven distribution
-  ao.send({ Target=self.conditionalTokens, Action = "Transfer-Batch", Recipient=from, TokenIds = self.positionIds, Quantities=sendBackAmounts})
+  if #nonZeroAmounts ~= 0 then
+    ao.send({ Target=self.conditionalTokens, Action = "Transfer-Batch", Recipient=from, TokenIds = json.encode(nonZeroPositionIds), Quantities=json.encode(nonZeroAmounts)})
+  end
   -- Transform sendBackAmounts to array of amounts added
   for i = 1, #sendBackAmounts do
     sendBackAmounts[i] = addedFunds - sendBackAmounts[i]
@@ -223,36 +167,22 @@ function AMMMethods:removeFunding(from, sharesToBurn)
   end
   -- Calculate collateralRemovedFromFeePool
   local poolFeeBalance = ao.send({Target = self.collateralToken, Action = 'Balance'}).receive().Data
-  self.tokens:burn(from, sharesToBurn)
+  self:burn(from, sharesToBurn)
   local collateralRemovedFromFeePool = ao.send({Target = self.collateralToken, Action = 'Balance'}).receive().Data
   collateralRemovedFromFeePool = poolFeeBalance - collateralRemovedFromFeePool
   -- Send collateralRemovedFromFeePool
-  ao.send({ Target=self.collateralToken, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
+  if bint(collateralRemovedFromFeePool) > 0 then
+    ao.send({ Target = self.collateralToken, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
+  end
   -- Send conditionalTokens amounts
-  ao.send({ Target=self.conditionalTokens, Action = "Transfer-Batch", Recipient=from, TokenIds = self.positionIds, Quantities=sendAmounts})
+  ao.send({ Target = self.conditionalTokens, Action = "Transfer-Batch", Recipient = from, TokenIds = json.encode(self.positionIds), Quantities = json.encode(sendAmounts)}).receive()
   -- Send notice
   self.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
 end
 
--- Handle ERC1155 token reception
--- function onERC1155Received(operator, from, id, value, data)
---   if operator == FixedProductMarketMaker then
---     return "ERC1155_RECEIVED"
---   end
---   return ""
--- end
-
--- function onERC1155BatchReceived(operator, from, ids, values, data)
---   if operator == FixedProductMarketMaker and from == nil then
---     return "ERC1155_BATCH_RECEIVED"
---   end
---   return ""
--- end
-
 --[[
     Calc Buy Amount 
-  ]]
---
+]]
 function AMMMethods:calcBuyAmount(investmentAmount, outcomeIndex)
   assert(bint.__lt(0, investmentAmount), 'InvestmentAmount must be greater than zero!')
   assert(bint.__lt(0, outcomeIndex), 'OutcomeIndex must be greater than zero!')
@@ -275,8 +205,7 @@ end
 
 --[[
     Calc Sell Amount
-  ]]
---
+]]
 function AMMMethods:calcSellAmount(returnAmount, outcomeIndex)
   assert(bint.__lt(0, returnAmount), 'ReturnAmount must be greater than zero!')
   assert(bint.__lt(0, outcomeIndex), 'OutcomeIndex must be greater than zero!')
@@ -299,8 +228,7 @@ end
 
 --[[
     Buy 
-  ]]
---
+]]
 function AMMMethods:buy(from, investmentAmount, outcomeIndex, minOutcomeTokensToBuy)
   local outcomeTokensToBuy = self:calcBuyAmount(investmentAmount, outcomeIndex)
   assert(bint.__le(minOutcomeTokensToBuy, bint(outcomeTokensToBuy)), "Minimum outcome tokens not reached!")
@@ -316,8 +244,7 @@ end
 
 --[[
     Sell 
-  ]]
---
+]]
 function AMMMethods:sell(from, returnAmount, outcomeIndex, maxOutcomeTokensToSell)
   local outcomeTokensToSell = self:calcSellAmount(returnAmount, outcomeIndex)
   assert(bint.__le(bint(outcomeTokensToSell), bint(maxOutcomeTokensToSell)), "Maximum sell amount exceeded!")
@@ -332,6 +259,80 @@ function AMMMethods:sell(from, returnAmount, outcomeIndex, maxOutcomeTokensToSel
   self:mergePositions(from, returnAmount, returnAmountPlusFees, outcomeIndex, outcomeTokensToSell)
   -- Send notice (Process continued via "SellOrderCompletionCollateralToken" and "SellOrderCompletionConditionalTokens" handlers)
   self.sellNotice(from, returnAmount, feeAmount, outcomeIndex, outcomeTokensToSell)
+end
+
+--[[
+    Fees
+]]
+-- @dev Returns the total fees collected
+function AMMMethods:collectedFees()
+  return self.feePoolWeight - self.totalWithdrawnFees
+end
+
+-- @dev Returns the fees withdrawable by the sender
+function AMMMethods:feesWithdrawableBy(sender)
+  local balance = self.tokens.balances[sender] or '0'
+  local rawAmount = tostring(bint(bint.div(bint.__mul(bint(self.feePoolWeight), bint(balance)), self.tokens.totalSupply)))
+  return tostring(bint.__sub(bint(rawAmount), bint((self.withdrawnFees[sender] or '0'))))
+end
+
+-- @dev Withdraws fees to the sender
+function AMMMethods:withdrawFees(sender)
+  local balance = self.tokens.balances[sender] or '0'
+  local rawAmount = string.format('%.0f', (bint.__div(bint.__mul(bint(self.feePoolWeight), bint(balance)), self.tokens.totalSupply)))
+  local feeAmount = tostring(bint.__sub(bint.__sub(bint(rawAmount), bint(self.withdrawnFees[sender] or '0')), bint(balance)))
+
+  if bint.__lt(0, bint(feeAmount)) then
+    self.withdrawnFees[sender] = feeAmount
+    self.totalWithdrawnFees = tostring(bint.__add(bint(self.totalWithdrawnFees), bint(feeAmount)))
+
+    ao.send({Target = self.collateralToken, Action = 'Transfer', Recipient = sender, Quantity = feeAmount})
+    -- TODO: decide if similar functionality to the below is required and if the .receive() above serves an equal / necessary purpose
+    -- assert(CollateralToken.transfer(account, withdrawableAmount), "withdrawal transfer failed")
+  end
+end
+
+-- @dev Updates fee accounting before token transfers
+function AMMMethods:_beforeTokenTransfer(from, to, amount)
+
+  if from ~= nil then
+    self:withdrawFees(from)
+  end
+  local totalSupply = self.tokens.totalSupply
+  local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self.feePoolWeight), amount), totalSupply)))
+  if from ~= nil then
+    -- self.withdrawnFees[from] = tostring(bint.__sub(bint(self.withdrawnFees[from] or '0'), withdrawnFeesTransfer))
+    -- self.totalWithdrawnFees = tostring(bint.__sub(bint(self.totalWithdrawnFees), withdrawnFeesTransfer))
+  else
+    self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), withdrawnFeesTransfer))
+  end
+  if to ~= nil then
+    -- self.withdrawnFees[to] = tostring(bint.__add(bint(self.withdrawnFees[to] or '0'), withdrawnFeesTransfer))
+    -- self.totalWithdrawnFees = tostring(bint.__add(bint(self.totalWithdrawnFees), withdrawnFeesTransfer))
+  else
+    self.feePoolWeight = tostring(bint.__sub(bint(self.feePoolWeight), withdrawnFeesTransfer))
+  end
+end
+
+--[[
+    LP Tokens
+]]
+-- @dev See tokensMethods:mint & _beforeTokenTransfer
+function AMMMethods:mint(to, quantity)
+  self:_beforeTokenTransfer(nil, to, quantity)
+  self.tokens:mint(to, quantity)
+end
+
+-- @dev See tokenMethods:burn & _beforeTokenTransfer
+function AMMMethods:burn(from, quantity)
+  self:_beforeTokenTransfer(from, nil, quantity)
+  self.tokens:burn(from, quantity)
+end
+
+-- @dev See tokenMethods:transfer & _beforeTokenTransfer
+function AMMMethods:transfer(from, recipient, quantity, cast, msgId)
+  self:_beforeTokenTransfer(from, recipient, quantity)
+  self.tokens:transfer(from, recipient, quantity, cast, msgId)
 end
 
 return AMM

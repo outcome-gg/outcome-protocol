@@ -146,6 +146,7 @@ end
 -- @param cast The boolean to silence transfer notifications
 -- @param msg For sending X-Tags
 function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg)
+  print("SemiFungibleTokensMethods:transferBatch")
   local ids_ = {}
   local quantities_ = {}
 
