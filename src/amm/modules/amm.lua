@@ -30,7 +30,7 @@ function AMM:new()
     feePoolWeight = config.AMM.FeePoolWeight,
     totalWithdrawnFees = config.AMM.TotalWithdrawnFees,
     withdrawnFees = config.AMM.WithdrawnFees,
-    outcomeSlotCounts = config.AMM.OutcomeSlotCounts,
+    outcomeSlotCount = config.AMM.OutcomeSlotCount,
     poolBalances = config.AMM.PoolBalances,
     ONE = config.AMM.ONE
   }
@@ -58,13 +58,14 @@ end
     Init
   ]]
 --
-function AMMMethods:init(collateralToken, conditionalTokens, conditionId, collectionIds, positionIds, name, ticker, logo)
+function AMMMethods:init(collateralToken, conditionalTokens, conditionId, collectionIds, positionIds, outcomeSlotCount, name, ticker, logo)
   -- Set AMM vars
   self.conditionId = conditionId
   self.conditionalTokens = conditionalTokens
   self.collateralToken = collateralToken
   self.collectionIds = collectionIds
   self.positionIds = positionIds
+  self.outcomeSlotCount = outcomeSlotCount
 
   -- Set LP Token vars
   self.tokens.name = name

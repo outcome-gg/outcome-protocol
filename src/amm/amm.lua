@@ -113,11 +113,13 @@ Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(m
   assert(msg.Tags.PositionIds, "PositionIds is required!")
   local positionIds = json.decode(msg.Tags.PositionIds)
   assert(#positionIds == 2, "Must have two positionIds!")
+  assert(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount is required!")
+  local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
   assert(msg.Tags.Name, "Name is required!")
   assert(msg.Tags.Ticker, "Ticker is required!")
   assert(msg.Tags.Logo, "Logo is required!")
 
-  AMM:init(msg.Tags.CollateralToken, msg.Tags.ConditionalTokens, msg.Tags.ConditionId, collectionIds, positionIds, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo)
+  AMM:init(msg.Tags.CollateralToken, msg.Tags.ConditionalTokens, msg.Tags.ConditionId, collectionIds, positionIds, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo)
 end)
 
 --[[

@@ -345,6 +345,7 @@ describe("amm.integration.test", function () {
           { name: "CollateralToken", value: collateralToken },
           { name: "CollectionIds", value: JSON.stringify([collectionIdIN, collectionIdOUT]) },
           { name: "PositionIds", value: JSON.stringify([positionIdIN, positionIdOUT]) },
+          { name: "OutcomeSlotCount", value: "2" },
           { name: "DataIndex", value: "" },
           { name: "Name", value: "Outcome ETH LP Token 2" }, 
           { name: "Ticker", value: "OETH1" }, 

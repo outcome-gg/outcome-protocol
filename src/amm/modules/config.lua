@@ -29,11 +29,11 @@ config.AMM = {
   Fee = tostring(bint(bint.__div(bint.__pow(10, config.LPToken.Denomination), 100))), -- Fee Percentage, i.e. 1%
   FeePoolWeight = '0',                                                                -- Fee Pool Weight
   TotalWithdrawnFees = '0',                                                           -- Total Withdrawn Fees
-  WithdrawnFees = {},                                                                 -- Withdrawn Fees
-  OutomeSlotCounts = {},                                                              -- Outcome Slot Counts
+  WithdrawnFees = {},                                                                 -- Withdrawn Fees                                                          -- Outcome Slot Counts
   CollectionIds = {},                                                                 -- Collection IDs
   PositionIds = {},                                                                   -- Position IDs   
   PoolBalances = {},                                                                  -- Pool Balances
+  OutomeSlotCount = 2,                                                                -- Outcome Slot Count
   ONE = tostring(bint(bint.__pow(10, config.LPToken.Denomination)))                   -- E.g. 1e12
 }
 

@@ -14,10 +14,10 @@ function AMMHelpers.ceildiv(x, y)
 end
 
 -- Generate basic partition
---@dev hardcoded to 2 outcomesSlotCount
-function AMMHelpers.generateBasicPartition()
+--@dev generates basic partition based on outcomesSlotCount
+function AMMHelpers:generateBasicPartition()
   local partition = {}
-  for i = 0, 1 do
+  for i = 0, self.outcomeSlotCount - 1 do
     table.insert(partition, 1 << i)
   end
   return partition
@@ -87,7 +87,7 @@ function AMMHelpers:createPosition(from, quantity, outcomeIndex, outcomeTokensTo
     ['X-Action'] = "Create-Position",
     ['X-ParentCollectionId'] = "",
     ['X-ConditionId'] = self.conditionId,
-    ['X-Partition'] = json.encode(self.generateBasicPartition()),
+    ['X-Partition'] = json.encode(self:generateBasicPartition()),
     ['X-OutcomeIndex'] = tostring(outcomeIndex),
     ['X-OutcomeTokensToBuy'] = tostring(outcomeTokensToBuy),
     ['X-LPTokensMintAmount'] = tostring(lpTokensMintAmount),
@@ -109,7 +109,7 @@ function AMMHelpers:mergePositions(from, returnAmount, returnAmountPlusFees, out
       collateralToken = self.collateralToken,
       parentCollectionId = '',
       conditionId = self.conditionId,
-      partition = self.generateBasicPartition(),
+      partition = self:generateBasicPartition(),
       quantity = returnAmountPlusFees
     })
   })
