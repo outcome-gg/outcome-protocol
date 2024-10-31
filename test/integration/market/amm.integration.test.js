@@ -570,8 +570,6 @@ describe("amm.integration.test", function () {
         console.log(Error)
       }
 
-      console.log(Messages[0].Tags)
-
       expect(Messages.length).to.be.equal(1)
 
       const account_ = Messages[0].Tags.find(t => t.name === 'Account').value
@@ -711,7 +709,7 @@ describe("amm.integration.test", function () {
     })
 
     it("+ve should have minted more LP tokens as per previous step's x-action", async () => {
-      await new Promise(resolve => setTimeout(resolve, 7000));
+      await new Promise(resolve => setTimeout(resolve, 10000));
       let messageId;
       await message({
         process: amm,
@@ -997,91 +995,91 @@ describe("amm.integration.test", function () {
       expect(ammBalanceAfter).to.equal(parseAmount(0, 12))
     })
 
-    // it("-ve should fail to remove funding greater than balance", async () => {
-    //   let messageId;
-    //   let userBalanceBefore;
-    //   let userBalanceAfter;
-    //   let ammBalanceBefore;
-    //   let ammBalanceAfter;
+    it("-ve should fail to remove funding greater than balance", async () => {
+      let messageId;
+      let userBalanceBefore;
+      let userBalanceAfter;
+      let ammBalanceBefore;
+      let ammBalanceAfter;
 
-    //   const quantity = parseAmount(200, 12)
-    //   const xAction = "Remove-Funding"
+      const quantity = parseAmount(200, 12)
+      const xAction = "Remove-Funding"
 
-    //   async function getBalance(token, recipient) {
-    //     let messageId;
-    //     await message({
-    //       process: token,
-    //       tags: [
-    //         { name: "Action", value: "Balance" },
-    //         { name: "Recipient", value: recipient },
-    //       ],
-    //       signer: createDataItemSigner(wallet),
-    //       data: "",
-    //     })
-    //     .then((id) => {
-    //       messageId = id;
-    //     })
-    //     .catch(console.error);
+      async function getBalance(token, recipient) {
+        let messageId;
+        await message({
+          process: token,
+          tags: [
+            { name: "Action", value: "Balance" },
+            { name: "Recipient", value: recipient },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
 
-    //     let { Messages } = await result({
-    //       message: messageId,
-    //       process: token,
-    //     });
+        let { Messages } = await result({
+          message: messageId,
+          process: token,
+        });
 
-    //     const balance = Messages[0].Data
-    //     return balance
-    //   }
+        const balance = Messages[0].Data
+        return balance
+      }
 
-    //   async function removeFunding() {
-    //     await message({
-    //       process: amm,
-    //       tags: [
-    //         { name: "Action", value: "Transfer" },
-    //         { name: "Recipient", value: amm },
-    //         { name: "Quantity", value: quantity },
-    //         { name: "X-Action", value: xAction },
-    //       ],
-    //       signer: createDataItemSigner(wallet),
-    //       data: "",
-    //     })
-    //     .then((id) => {
-    //       messageId = id;
-    //     })
-    //     .catch(console.error);
+      async function removeFunding() {
+        await message({
+          process: amm,
+          tags: [
+            { name: "Action", value: "Transfer" },
+            { name: "Recipient", value: amm },
+            { name: "Quantity", value: quantity },
+            { name: "X-Action", value: xAction },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
 
-    //     let { Messages, Error } = await result({
-    //       message: messageId,
-    //       process: amm,
-    //     });
+        let { Messages, Error } = await result({
+          message: messageId,
+          process: amm,
+        });
 
-    //     if (Error) {
-    //       console.log(Error)
-    //     }
+        if (Error) {
+          console.log(Error)
+        }
 
-    //     return Messages
-    //   }
+        return Messages
+      }
 
-    //   userBalanceBefore = await getBalance(amm, walletAddress);
-    //   ammBalanceBefore = await getBalance(amm, amm);
+      userBalanceBefore = await getBalance(amm, walletAddress);
+      ammBalanceBefore = await getBalance(amm, amm);
 
-    //   let Messages = await removeFunding();
+      let Messages = await removeFunding();
 
-    //   userBalanceAfter = await getBalance(amm, walletAddress);
-    //   ammBalanceAfter = await getBalance(amm, amm);
+      userBalanceAfter = await getBalance(amm, walletAddress);
+      ammBalanceAfter = await getBalance(amm, amm);
 
-    //   expect(Messages.length).to.be.equal(1)
+      expect(Messages.length).to.be.equal(1)
 
-    //   const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-    //   const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
 
-    //   expect(action_).to.equal('Transfer-Error')
-    //   expect(error_).to.equal('Insufficient Balance!')
+      expect(action_).to.equal('Transfer-Error')
+      expect(error_).to.equal('Insufficient Balance!')
 
-    //   expect(userBalanceBefore).to.equal(parseAmount(150, 12))
-    //   expect(userBalanceAfter).to.equal(parseAmount(150, 12))
-    //   expect(ammBalanceBefore).to.equal(parseAmount(0, 12))
-    //   expect(ammBalanceAfter).to.equal(parseAmount(0, 12))
-    // })
+      expect(userBalanceBefore).to.equal(parseAmount(150, 12))
+      expect(userBalanceAfter).to.equal(parseAmount(150, 12))
+      expect(ammBalanceBefore).to.equal(parseAmount(0, 12))
+      expect(ammBalanceAfter).to.equal(parseAmount(0, 12))
+    })
   })
 
   /************************************************************************ 
@@ -1473,14 +1471,75 @@ describe("amm.integration.test", function () {
   
       const balances = JSON.parse(Messages[0].Data)
   
-      console.log("....")
-      console.log("balances1", balances)
-  
       expect(balances[positionIdIN][amm]).to.equal('140566936636494')
       expect(balances[positionIdOUT][amm]).to.equal('150607070707070')
 
       expect(balances[positionIdIN][walletAddress]).to.equal('60040134070576')
       expect(balances[positionIdOUT][walletAddress]).to.equal('50000000000000')
+    })
+
+    it("+ve should return collected fees before remove funding", async () => {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      let messageId;
+      await message({
+        process: amm,
+        tags: [
+          { name: "Action", value: "Collected-Fees" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+  
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: amm,
+      });
+  
+      if (Error) {
+        console.log(Error)
+      }
+  
+      expect(Messages.length).to.be.equal(1)
+  
+      const collectedFees = JSON.parse(Messages[0].Data)
+
+      expect(collectedFees).to.equal(192929292930)
+    })
+
+    it("+ve should return fees withdrawable before remove funding", async () => {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      let messageId;
+      await message({
+        process: amm,
+        tags: [
+          { name: "Action", value: "Fees-Withdrawable" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+  
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: amm,
+      });
+  
+      if (Error) {
+        console.log(Error)
+      }
+  
+      expect(Messages.length).to.be.equal(1)
+  
+      const collectedFees = JSON.parse(Messages[0].Data)
+
+      expect(collectedFees).to.equal(192929292930)
     })
 
     it("+ve should remove funding with fees", async () => {
@@ -1563,10 +1622,6 @@ describe("amm.integration.test", function () {
 
       expect(Messages.length).to.be.equal(3)
 
-      console.log("Messages[0].Tags", Messages[0].Tags)
-      console.log("Messages[1].Tags", Messages[1].Tags)
-      console.log("Messages[2].Tags", Messages[2].Tags)
-
       const action_0 = Messages[1].Tags.find(t => t.name === 'Action').value
       const xAction_0 = Messages[1].Tags.find(t => t.name === 'X-Action').value
       const recipient_0 = Messages[1].Tags.find(t => t.name === 'Recipient').value
@@ -1632,6 +1687,102 @@ describe("amm.integration.test", function () {
 
       expect(balances[positionIdIN][walletAddress]).to.equal((60040134070576 + 46855645545498).toString())
       expect(balances[positionIdOUT][walletAddress]).to.equal(((50000000000000 + 50202356902357).toString()))
+    })
+
+    it("+ve should return collected fees after remove funding", async () => {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      let messageId;
+      await message({
+        process: amm,
+        tags: [
+          { name: "Action", value: "Collected-Fees" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+  
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: amm,
+      });
+  
+      if (Error) {
+        console.log(Error)
+      }
+  
+      expect(Messages.length).to.be.equal(1)
+  
+      const collectedFees = JSON.parse(Messages[0].Data)
+
+      expect(collectedFees).to.equal(0)
+    })
+
+    it("+ve should return fees withdrawable after remove funding", async () => {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      let messageId;
+      await message({
+        process: amm,
+        tags: [
+          { name: "Action", value: "Fees-Withdrawable" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+  
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: amm,
+      });
+  
+      if (Error) {
+        console.log(Error)
+      }
+  
+      expect(Messages.length).to.be.equal(1)
+  
+      const collectedFees = JSON.parse(Messages[0].Data)
+
+      expect(collectedFees).to.equal(0)
+    })
+
+    it("+ve should withdraw fees", async () => {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      let messageId;
+      await message({
+        process: amm,
+        tags: [
+          { name: "Action", value: "Withdraw-Fees" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+  
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: amm,
+      });
+  
+      if (Error) {
+        console.log(Error)
+      }
+  
+      expect(Messages.length).to.be.equal(1)
+  
+      const withdrawnFees = JSON.parse(Messages[0].Data)
+
+      expect(withdrawnFees).to.equal(0)
     })
   })
 })

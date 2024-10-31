@@ -115,4 +115,19 @@ function AMMHelpers:mergePositions(from, returnAmount, returnAmountPlusFees, out
   })
 end
 
+-- @dev get pool balances
+function AMMHelpers:getPoolBalances()
+  local thises = {}
+  for i = 1, #self.positionIds do
+    thises[i] = ao.id
+  end
+  local poolBalances = ao.send({
+    Target = self.conditionalTokens,
+    Action = "Balance-Of-Batch",
+    Recipients = json.encode(thises),
+    TokenIds = json.encode(self.positionIds)
+  }).receive().Data
+  return poolBalances
+end
+
 return AMMHelpers

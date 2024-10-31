@@ -92,17 +92,18 @@ function AMMMethods:addFunding(from, addedFunds, distributionHint)
   if bint.__lt(0, bint(poolShareSupply)) then
 
     assert(#distributionHint == 0, "cannot use distribution hint after initial funding")
+    local poolBalances = self.poolBalances
     local poolWeight = 0
 
-    for i = 1, #self.poolBalances do
-      local balance = self.poolBalances[i]
+    for i = 1, #poolBalances do
+      local balance = poolBalances[i]
       if bint.__lt(poolWeight, bint(balance)) then
         poolWeight = bint(balance)
       end
     end
 
-    for i = 1, #self.poolBalances do
-      local remaining = (addedFunds * self.poolBalances[i]) / poolWeight
+    for i = 1, #poolBalances do
+      local remaining = (addedFunds * poolBalances[i]) / poolWeight
       sendBackAmounts[i] = addedFunds - remaining
     end
 
@@ -161,9 +162,10 @@ end
 function AMMMethods:removeFunding(from, sharesToBurn)
   assert(bint.__lt(0, bint(sharesToBurn)), "funding must be non-zero")
   -- Calculate conditionalTokens amounts
+  local poolBalances = self.poolBalances
   local sendAmounts = {}
-  for i = 1, #self.poolBalances do
-    sendAmounts[i] = (self.poolBalances[i] * sharesToBurn) / self.tokens.totalSupply
+  for i = 1, #poolBalances do
+    sendAmounts[i] = (poolBalances[i] * sharesToBurn) / self.tokens.totalSupply
   end
   -- Calculate collateralRemovedFromFeePool
   local poolFeeBalance = ao.send({Target = self.collateralToken, Action = 'Balance'}).receive().Data
@@ -188,13 +190,14 @@ function AMMMethods:calcBuyAmount(investmentAmount, outcomeIndex)
   assert(bint.__lt(0, outcomeIndex), 'OutcomeIndex must be greater than zero!')
   assert(bint.__le(outcomeIndex, #self.positionIds), 'OutcomeIndex must be less than or equal to PositionIds length!')
 
+  local poolBalances = self.poolBalances
   local investmentAmountMinusFees = investmentAmount - ((investmentAmount * self.fee) / self.ONE)
-  local buyTokenPoolBalance = self.poolBalances[outcomeIndex]
+  local buyTokenPoolBalance = poolBalances[outcomeIndex]
   local endingOutcomeBalance = buyTokenPoolBalance * self.ONE
 
-  for i = 1, #self.poolBalances do
+  for i = 1, #poolBalances do
     if i ~= outcomeIndex then
-      local poolBalance = self.poolBalances[i]
+      local poolBalance = poolBalances[i]
       endingOutcomeBalance = AMMHelpers.ceildiv(tonumber(endingOutcomeBalance * poolBalance), tonumber(poolBalance + investmentAmountMinusFees))
     end
   end
@@ -211,13 +214,14 @@ function AMMMethods:calcSellAmount(returnAmount, outcomeIndex)
   assert(bint.__lt(0, outcomeIndex), 'OutcomeIndex must be greater than zero!')
   assert(bint.__le(outcomeIndex, #self.positionIds), 'OutcomeIndex must be less than or equal to PositionIds length!')
 
+  local poolBalances = self.poolBalances
   local returnAmountPlusFees = AMMHelpers.ceildiv(tonumber(returnAmount * self.ONE), tonumber(self.ONE - self.fee))
-  local sellTokenPoolBalance = self.poolBalances[outcomeIndex]
+  local sellTokenPoolBalance = poolBalances[outcomeIndex]
   local endingOutcomeBalance = sellTokenPoolBalance * self.ONE
 
-  for i = 1, #self.poolBalances do
+  for i = 1, #poolBalances do
     if i ~= outcomeIndex then
-      local poolBalance = self.poolBalances[i]
+      local poolBalance = poolBalances[i]
       endingOutcomeBalance = AMMHelpers.ceildiv(tonumber(endingOutcomeBalance * poolBalance), tonumber(poolBalance - returnAmountPlusFees))
     end
   end
@@ -264,7 +268,7 @@ end
 --[[
     Fees
 ]]
--- @dev Returns the total fees collected
+-- @dev Returns the total fees collected within the AMM
 function AMMMethods:collectedFees()
   return self.feePoolWeight - self.totalWithdrawnFees
 end
@@ -272,45 +276,40 @@ end
 -- @dev Returns the fees withdrawable by the sender
 function AMMMethods:feesWithdrawableBy(sender)
   local balance = self.tokens.balances[sender] or '0'
-  local rawAmount = tostring(bint(bint.div(bint.__mul(bint(self.feePoolWeight), bint(balance)), self.tokens.totalSupply)))
-  return tostring(bint.__sub(bint(rawAmount), bint((self.withdrawnFees[sender] or '0'))))
+  local rawAmount = '0'
+  if bint(self.tokens.totalSupply) > 0 then
+    rawAmount = string.format('%.0f', (bint.__div(bint.__mul(bint(self:collectedFees()), bint(balance)), self.tokens.totalSupply)))
+  end
+
+  -- @dev max(rawAmount - withdrawnFees, 0)
+  local res = tostring(bint.max(bint(bint.__sub(bint(rawAmount), bint(self.withdrawnFees[sender] or '0'))), 0))
+  return res
 end
 
 -- @dev Withdraws fees to the sender
 function AMMMethods:withdrawFees(sender)
-  local balance = self.tokens.balances[sender] or '0'
-  local rawAmount = string.format('%.0f', (bint.__div(bint.__mul(bint(self.feePoolWeight), bint(balance)), self.tokens.totalSupply)))
-  local feeAmount = tostring(bint.__sub(bint.__sub(bint(rawAmount), bint(self.withdrawnFees[sender] or '0')), bint(balance)))
-
+  local feeAmount = self:feesWithdrawableBy(sender)
   if bint.__lt(0, bint(feeAmount)) then
     self.withdrawnFees[sender] = feeAmount
     self.totalWithdrawnFees = tostring(bint.__add(bint(self.totalWithdrawnFees), bint(feeAmount)))
-
     ao.send({Target = self.collateralToken, Action = 'Transfer', Recipient = sender, Quantity = feeAmount})
     -- TODO: decide if similar functionality to the below is required and if the .receive() above serves an equal / necessary purpose
     -- assert(CollateralToken.transfer(account, withdrawableAmount), "withdrawal transfer failed")
   end
+  return feeAmount
 end
 
 -- @dev Updates fee accounting before token transfers
 function AMMMethods:_beforeTokenTransfer(from, to, amount)
-
   if from ~= nil then
     self:withdrawFees(from)
   end
   local totalSupply = self.tokens.totalSupply
-  local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self.feePoolWeight), amount), totalSupply)))
-  if from ~= nil then
-    -- self.withdrawnFees[from] = tostring(bint.__sub(bint(self.withdrawnFees[from] or '0'), withdrawnFeesTransfer))
-    -- self.totalWithdrawnFees = tostring(bint.__sub(bint(self.totalWithdrawnFees), withdrawnFeesTransfer))
-  else
-    self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), withdrawnFeesTransfer))
-  end
-  if to ~= nil then
-    -- self.withdrawnFees[to] = tostring(bint.__add(bint(self.withdrawnFees[to] or '0'), withdrawnFeesTransfer))
-    -- self.totalWithdrawnFees = tostring(bint.__add(bint(self.totalWithdrawnFees), withdrawnFeesTransfer))
-  else
-    self.feePoolWeight = tostring(bint.__sub(bint(self.feePoolWeight), withdrawnFeesTransfer))
+  local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self:collectedFees()), amount), totalSupply)))
+
+  if to ~= nil and from ~= nil then
+    self.withdrawnFees[from] = tostring(bint.__sub(bint(self.withdrawnFees[from] or '0'), withdrawnFeesTransfer))
+    self.withdrawnFees[to] = tostring(bint.__add(bint(self.withdrawnFees[to] or '0'), withdrawnFeesTransfer))
   end
 end
 

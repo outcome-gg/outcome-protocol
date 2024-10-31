@@ -146,7 +146,6 @@ end
 -- @param cast The boolean to silence transfer notifications
 -- @param msg For sending X-Tags
 function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg)
-  print("SemiFungibleTokensMethods:transferBatch")
   local ids_ = {}
   local quantities_ = {}
 
@@ -187,6 +186,22 @@ function SemiFungibleTokensMethods:getBalanceOf(from, recipient, tokenId)
   end
   -- return balance
   return bal
+end
+
+function SemiFungibleTokensMethods:getBalanceOfBatch(recipients, tokenIds)
+  assert(#recipients == #tokenIds, 'Recipients and TokenIds must have same lengths')
+  local bals = {}
+
+  for i = 1, #recipients do
+    table.insert(bals, '0')
+    if self.balancesOf[tokenIds[i]] then
+      if self.balancesOf[tokenIds[i]][recipients[i]] then
+        bals[i] = self.balancesOf[tokenIds[i]][recipients[i]]
+      end
+    end
+  end
+
+  return bals
 end
 
 function SemiFungibleTokensMethods:getBalancesOf(from, tokenId)
