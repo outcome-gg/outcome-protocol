@@ -1,6 +1,6 @@
 local json = require('json')
 local bint = require('.bint')(256)
-local utils = require(".utils")
+local ownable = require('@autonomousfinance/ownable')
 local ao = require('.ao')
 local config = require('modules.config')
 local amm = require('modules.amm')
@@ -112,6 +112,7 @@ end)
 ]]
 -- @dev to only enable shallow markets on launch, i.e. where parentCollectionId = ""
 Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(msg)
+  -- ownable.onlyOwner(msg) -- access control TODO: test after spawning is enabled
   assert(AMM.initialized == false, "Market already initialized!")
   assert(msg.Tags.ConditionId, "ConditionId is required!")
   assert(msg.Tags.ConditionalTokens, "ConditionalTokens is required!")
