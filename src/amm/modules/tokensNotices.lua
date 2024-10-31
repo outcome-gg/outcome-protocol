@@ -1,5 +1,4 @@
 local ao = require('.ao')
-local json = require('json')
 
 local TokensNotices = {}
 

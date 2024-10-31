@@ -435,12 +435,12 @@ describe("amm.integration.test", function () {
   * amm.Info
   ************************************************************************/
   describe("amm.Info", function () {
-    it("+ve should get market info", async () => {
+    it("+ve should get info", async () => {
       let messageId;
       await message({
         process: amm,
         tags: [
-          { name: "Action", value: "Token-Info" },
+          { name: "Action", value: "Info" },
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -469,6 +469,7 @@ describe("amm.integration.test", function () {
       const collateralToken_ = Messages[0].Tags.find(t => t.name === 'CollateralToken').value
       const conditionalTokens_ = Messages[0].Tags.find(t => t.name === 'ConditionalTokens').value
       const feePoolWeight_ = Messages[0].Tags.find(t => t.name === 'FeePoolWeight').value
+      const totalWithdrawnFees = Messages[0].Tags.find(t => t.name === 'TotalWithdrawnFees').value
       const fee_ = Messages[0].Tags.find(t => t.name === 'Fee').value
 
       expect(name_).to.equal("Outcome ETH LP Token 2")
@@ -479,6 +480,7 @@ describe("amm.integration.test", function () {
       expect(collateralToken_).to.equal(collateralToken)
       expect(conditionalTokens_).to.equal(conditionalTokens)
       expect(feePoolWeight_).to.equal("0")
+      expect(totalWithdrawnFees).to.equal("0")
       expect(fee_).to.equal("10000000000")
     })
   })
@@ -1118,7 +1120,7 @@ describe("amm.integration.test", function () {
 
       expect(Messages.length).to.be.equal(1)
 
-      const buyAmount_ = Messages[0].Tags.find(t => t.name === 'BuyAmount').value
+      const buyAmount_ = Messages[0].Data
       
       expect(buyAmount_).to.equal('89179358717434')
     })
@@ -1159,7 +1161,7 @@ describe("amm.integration.test", function () {
 
       expect(Messages.length).to.be.equal(1)
 
-      const sellAmount_ = Messages[0].Tags.find(t => t.name === 'SellAmount').value
+      const sellAmount_ = Messages[0].Data
       
       expect(sellAmount_).to.equal('118072618072620')
     })
@@ -1201,7 +1203,7 @@ describe("amm.integration.test", function () {
           console.log(Error)
         }
 
-        const buyAmount_ = Messages[0].Tags.find(t => t.name === 'BuyAmount').value
+        const buyAmount_ = Messages[0].Data
         return buyAmount_
       }
 
@@ -1313,7 +1315,7 @@ describe("amm.integration.test", function () {
           console.log(Error)
         }
 
-        const sellAmount_ = Messages[0].Tags.find(t => t.name === 'SellAmount').value
+        const sellAmount_ = Messages[0].Data
         return sellAmount_
       }
 

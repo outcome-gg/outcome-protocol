@@ -1,6 +1,5 @@
 local json = require('json')
 local bint = require('.bint')(256)
-local utils = require(".utils")
 local ao = require('.ao')
 local config = require('modules.config')
 local Tokens = require('modules.tokens')
@@ -330,9 +329,9 @@ function AMMMethods:burn(from, quantity)
 end
 
 -- @dev See tokenMethods:transfer & _beforeTokenTransfer
-function AMMMethods:transfer(from, recipient, quantity, cast, msgId)
+function AMMMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
   self:_beforeTokenTransfer(from, recipient, quantity)
-  self.tokens:transfer(from, recipient, quantity, cast, msgId)
+  self.tokens:transfer(from, recipient, quantity, cast, msgTags, msgId)
 end
 
 return AMM

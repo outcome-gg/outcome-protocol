@@ -10,7 +10,6 @@ local amm = require('modules.amm')
 ]]
 if not AMM or config.ResetState then AMM = amm:new() end
 
-
 --[[
     MATCHING
 ]]
@@ -46,7 +45,7 @@ local function isBuy(msg)
   end
 end
 
-local function isBuyOrderCompletion(msg)
+local function isBuySuccess(msg)
   if msg.From == AMM.conditionalTokens and msg.Action == "Split-Position-Notice" and msg.Tags["X-OutcomeIndex"] ~= "0" then
     return true
   else
@@ -62,7 +61,7 @@ local function isSell(msg)
   end
 end
 
-local function isSellOrderCompletionCollateralToken(msg)
+local function isSellSuccessCollateralToken(msg)
   if msg.From == AMM.collateralToken and msg.Action == "Credit-Notice" and msg["X-Action"] == "Merge-Positions-Completion" then
     return true
   else
@@ -70,7 +69,7 @@ local function isSellOrderCompletionCollateralToken(msg)
   end
 end
 
-local function isSellOrderCompletionConditionalTokens(msg)
+local function isSellSuccessConditionalTokens(msg)
   if msg.From == AMM.conditionalTokens and msg.Action == "Burn-Batch-Notice" then
     return true
   else
@@ -78,7 +77,7 @@ local function isSellOrderCompletionConditionalTokens(msg)
   end
 end
 
-local function isSellReturnUnburned(msg)
+local function isSellSuccessReturnUnburned(msg)
   if msg.From == AMM.conditionalTokens and msg.Action == "Debit-Single-Notice" and msg["X-Action"] == "Return-Unburned" then
     return true
   else
@@ -86,17 +85,27 @@ local function isSellReturnUnburned(msg)
   end
 end
 
-local function isMintBatchNotice(msg)
-  if msg.From == AMM.conditionalTokens and msg.Action == "Mint-Batch-Notice" then
-      return true
-  else
-      return false
-  end
-end
+--[[
+    CORE HANDLERS ----------------------------------------------------------------
+]]
 
 --[[
-    HANDLERS
+    Info
 ]]
+Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(msg)
+  msg.reply({
+    Name = AMM.tokens.name,
+    Ticker = AMM.tokens.ticker,
+    Logo = AMM.tokens.logo,
+    Denomination = tostring(AMM.tokens.denomination),
+    ConditionId = AMM.conditionId,
+    CollateralToken = AMM.collateralToken,
+    ConditionalTokens = AMM.conditionalTokens,
+    Fee = AMM.fee,
+    FeePoolWeight = AMM.feePoolWeight,
+    TotalWithdrawnFees = AMM.totalWithdrawnFees,
+  })
+end)
 
 --[[
     Init
@@ -120,21 +129,6 @@ Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(m
   assert(msg.Tags.Logo, "Logo is required!")
 
   AMM:init(msg.Tags.CollateralToken, msg.Tags.ConditionalTokens, msg.Tags.ConditionId, collectionIds, positionIds, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo)
-end)
-
---[[
-    Info
-]]
-Handlers.add("Market.Info", Handlers.utils.hasMatchingTag("Action", "Market-Info"), function(msg)
-  ao.send({
-    Target = msg.From,
-    Action = "Market-Info",
-    ConditionalTokens = AMM.conditionalTokens,
-    CollateralToken = AMM.collateralToken,
-    ConditionId = AMM.conditionId,
-    Fee = AMM.fee,
-    FeePoolWeight = AMM.feePoolWeight
-  })
 end)
 
 --[[
@@ -187,10 +181,7 @@ Handlers.add("Calc-Buy-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Bu
 
   local buyAmount = AMM:calcBuyAmount(msg.Tags.InvestmentAmount, outcomeIndex)
 
-  msg.forward(msg.From, {
-    BuyAmount = buyAmount,
-    Data = buyAmount
-  })
+  msg.reply({ Data = buyAmount })
 end)
 
 --[[
@@ -203,11 +194,7 @@ Handlers.add("Calc-Sell-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-S
 
   local sellAmount = AMM:calcSellAmount(msg.Tags.ReturnAmount, outcomeIndex)
 
-  ao.send({
-    Target = msg.From,
-    SellAmount = tostring(sellAmount),
-    Data = sellAmount
-  })
+  msg.reply({ Data = sellAmount })
 end)
 
 --[[
@@ -250,27 +237,6 @@ Handlers.add("Buy", isBuy, function(msg)
   else
     AMM:buy(msg.Tags.Sender, msg.Tags.Quantity, tonumber(msg.Tags['X-OutcomeIndex']), tonumber(msg.Tags['X-MinOutcomeTokensToBuy']))
   end
-end)
-
--- @dev called on split-position-notice from conditionalTokens with X-OutcomeIndex ~= '0'
-Handlers.add("BuyOrderCompletion", isBuyOrderCompletion, function(msg)
-  assert(msg.Tags.Quantity, "Quantity is required!")
-  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
-  assert(msg.Tags["X-OutcomeIndex"], "OutcomeIndex is required!")
-  assert(msg.Tags["X-Sender"], "Sender is required!")
-  assert(msg.Tags["X-OutcomeTokensToBuy"], "OutcomeTokensToBuy is required!")
-  assert(bint.__lt(0, bint(msg.Tags["X-OutcomeTokensToBuy"])), 'OutcomeTokensToBuy must be greater than zero!')
-
-  -- Update Pool Balances
-  AMM.poolBalances = AMM:getPoolBalances()
-
-  ao.send({
-    Target = AMM.conditionalTokens,
-    Action = "Transfer-Single",
-    Recipient = msg.Tags["X-Sender"],
-    TokenId = AMM.positionIds[tonumber(msg.Tags["X-OutcomeIndex"])],
-    Quantity = msg.Tags["X-OutcomeTokensToBuy"]
-  })
 end)
 
 --[[
@@ -321,8 +287,122 @@ Handlers.add("Sell", isSell, function(msg)
   end
 end)
 
+--[[
+    Collected Fees
+]]
+-- @dev Returns fees collected by the protocol that haven't been withdrawn
+Handlers.add("Collected-Fees", Handlers.utils.hasMatchingTag("Action", "Collected-Fees"), function(msg)
+  msg.reply({ Data = AMM:collectedFees() })
+end)
+
+--[[
+    Fees Withdrawable
+]]
+-- @dev Returns fees withdrawable by the message sender
+Handlers.add("Fees-Withdrawable", Handlers.utils.hasMatchingTag("Action", "Fees-Withdrawable"), function(msg)
+  msg.reply({ Data = AMM:feesWithdrawableBy(msg.From) })
+end)
+
+--[[
+    Withdraw Fees
+]]
+-- @dev Withdraws withdrawable fees to the message sender
+Handlers.add("Withdraw-Fees", Handlers.utils.hasMatchingTag("Action", "Withdraw-Fees"), function(msg)
+  msg.reply({ Data = AMM:withdrawFees(msg.From) })
+end)
+
+--[[
+    LP TOKEN HANDLERS ----------------------------------------------------------------
+]]
+
+--[[
+    Balance
+]]
+Handlers.add('Balance', Handlers.utils.hasMatchingTag('Action', 'Balance'), function(msg)
+  local bal = '0'
+
+  -- If not Recipient is provided, then return the Senders balance
+  if (msg.Tags.Recipient) then
+    if (AMM.tokens.balances[msg.Tags.Recipient]) then
+      bal = AMM.tokens.balances[msg.Tags.Recipient]
+    end
+  elseif msg.Tags.Target and AMM.tokens.balances[msg.Tags.Target] then
+    bal = AMM.tokens.balances[msg.Tags.Target]
+  elseif AMM.tokens.balances[msg.From] then
+    bal = AMM.tokens.balances[msg.From]
+  end
+
+  msg.reply({
+    Balance = bal,
+    Ticker = AMM.tokens.ticker,
+    Account = msg.Tags.Recipient or msg.From,
+    Data = bal
+  })
+end)
+
+--[[
+    Balances
+]]
+Handlers.add('Balances', Handlers.utils.hasMatchingTag('Action', 'Balances'),
+  function(msg) msg.reply({ Data = json.encode(AMM.tokens.balances) })
+end)
+
+--[[
+    Transfer
+]]
+Handlers.add('Transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), function(msg)
+  assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
+  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
+  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than 0')
+  AMM:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg.Tags, msg.Id)
+end)
+
+--[[
+    Total Supply
+]]
+Handlers.add('Total-Supply', Handlers.utils.hasMatchingTag('Action', 'Total-Supply'), function(msg)
+  assert(msg.From ~= ao.id, 'Cannot call Total-Supply from the same process!')
+
+  msg.reply({
+    Action = 'Total-Supply',
+    Data = AMM.tokens.totalSupply,
+    Ticker = AMM.ticker
+  })
+end)
+
+--[[
+    CALLBACK HANDLERS ----------------------------------------------------------------
+]]
+
+--[[
+    Buy Success
+]]
+-- @dev called on split-position-notice from conditionalTokens with X-OutcomeIndex ~= '0'
+Handlers.add("Buy-Success", isBuySuccess, function(msg)
+  assert(msg.Tags.Quantity, "Quantity is required!")
+  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
+  assert(msg.Tags["X-OutcomeIndex"], "OutcomeIndex is required!")
+  assert(msg.Tags["X-Sender"], "Sender is required!")
+  assert(msg.Tags["X-OutcomeTokensToBuy"], "OutcomeTokensToBuy is required!")
+  assert(bint.__lt(0, bint(msg.Tags["X-OutcomeTokensToBuy"])), 'OutcomeTokensToBuy must be greater than zero!')
+
+  -- Update Pool Balances
+  AMM.poolBalances = AMM:getPoolBalances()
+
+  ao.send({
+    Target = AMM.conditionalTokens,
+    Action = "Transfer-Single",
+    Recipient = msg.Tags["X-Sender"],
+    TokenId = AMM.positionIds[tonumber(msg.Tags["X-OutcomeIndex"])],
+    Quantity = msg.Tags["X-OutcomeTokensToBuy"]
+  })
+end)
+
+--[[
+    Sell Success CollateralToken
+]]
 -- @dev called on credit-notice from collateralToken with X-Action == 'Merge-Positions-Completion'
-Handlers.add("SellOrderCompletionCollateralToken", isSellOrderCompletionCollateralToken, function(msg)
+Handlers.add("Sell-Success-CollateralToken", isSellSuccessCollateralToken, function(msg)
   assert(msg.Tags.Quantity, "Quantity is required!")
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
   assert(msg.Tags['X-Sender'], "X-Sender is required!")
@@ -344,9 +424,11 @@ Handlers.add("SellOrderCompletionCollateralToken", isSellOrderCompletionCollater
   })
 end)
 
+--[[
+    Sell Success ConditionalTokens
+]]
 -- @dev on sell order merge success send return amount to user. fees retained within process. 
--- @dev called on burn-batch-notice from conditionalTokens
-Handlers.add("SellOrderCompletionConditionalTokens", isSellOrderCompletionConditionalTokens, function(msg)
+Handlers.add("Sell-Success-ConditionalTokens", isSellSuccessConditionalTokens, function(msg)
   assert(msg.Tags.Quantities, "Quantities must exist!")
   assert(msg.Tags.RemainingBalances, "RemainingBalances must exist!")
   assert(msg.Tags['X-Sender'], "X-Sender must exist!")
@@ -372,111 +454,10 @@ Handlers.add("SellOrderCompletionConditionalTokens", isSellOrderCompletionCondit
 end)
 
 --[[
-    Fees
+    Sell Success Return Unburned
 ]]
-Handlers.add("Collected-Fees", Handlers.utils.hasMatchingTag("Action", "Collected-Fees"), function(msg)
-  msg.reply({ Data = AMM:collectedFees() })
-end)
-
-Handlers.add("Fees-Withdrawable", Handlers.utils.hasMatchingTag("Action", "Fees-Withdrawable"), function(msg)
-  msg.reply({ Data = AMM:feesWithdrawableBy(msg.From) })
-end)
-
-Handlers.add("Withdraw-Fees", Handlers.utils.hasMatchingTag("Action", "Withdraw-Fees"), function(msg)
-  msg.reply({ Data = AMM:withdrawFees(msg.From) })
-end)
-
---[[
-    LP Token  
-]]
-
---[[
-    Info
-]]
-Handlers.add('Token.info', Handlers.utils.hasMatchingTag('Action', 'Token-Info'), function(msg)
-  ao.send({
-    Target = msg.From,
-    Name = AMM.tokens.name,
-    Ticker = AMM.tokens.ticker,
-    Logo = AMM.tokens.logo,
-    Denomination = tostring(AMM.tokens.denomination),
-    ConditionId = AMM.conditionId,
-    CollateralToken = AMM.collateralToken,
-    ConditionalTokens = AMM.conditionalTokens,
-    FeePoolWeight = AMM.feePoolWeight,
-    Fee = AMM.fee
-  })
-end)
-
---[[
-    Balance
-]]
-Handlers.add('balance', Handlers.utils.hasMatchingTag('Action', 'Balance'), function(msg)
-  local bal = '0'
-
-  -- If not Recipient is provided, then return the Senders balance
-  if (msg.Tags.Recipient) then
-    if (AMM.tokens.balances[msg.Tags.Recipient]) then
-      bal = AMM.tokens.balances[msg.Tags.Recipient]
-    end
-  elseif msg.Tags.Target and AMM.tokens.balances[msg.Tags.Target] then
-    bal = AMM.tokens.balances[msg.Tags.Target]
-  elseif AMM.tokens.balances[msg.From] then
-    bal = AMM.tokens.balances[msg.From]
-  end
-
-  ao.send({
-    Target = msg.From,
-    Balance = bal,
-    Ticker = AMM.tokens.ticker,
-    Account = msg.Tags.Recipient or msg.From,
-    Data = bal
-  })
-end)
-
---[[
-    Balances
-]]
-Handlers.add('balances', Handlers.utils.hasMatchingTag('Action', 'Balances'),
-  function(msg) ao.send({ Target = msg.From, Data = json.encode(AMM.tokens.balances) })
-end)
-
---[[
-    Transfer
-]]
-Handlers.add('transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), function(msg)
-  assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
-  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
-  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than 0')
-  AMM:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg.Tags, msg.Id)
-end)
-
 -- @dev called on debit-single-notice from conditionalTokens with X-Action == 'Return-Unburned'
-Handlers.add("SellReturnUnburned", isSellReturnUnburned, function(msg)
-  -- Update Pool Balances
-  AMM.poolBalances = AMM:getPoolBalances()
-end)
-
-
-
---[[
-    Total Supply
-]]
-Handlers.add('totalSupply', Handlers.utils.hasMatchingTag('Action', 'Total-Supply'), function(msg)
-  assert(msg.From ~= ao.id, 'Cannot call Total-Supply from the same process!')
-
-  ao.send({
-    Target = msg.From,
-    Action = 'Total-Supply',
-    Data = AMM.tokens.totalSupply,
-    Ticker = AMM.ticker
-  })
-end)
-
---[[
-    Batch Mint Notice
-]]
-Handlers.add('mintBatchNotice', isMintBatchNotice, function(msg)
+Handlers.add("Sell-Success-Return-Unburned", isSellSuccessReturnUnburned, function(msg)
   -- Update Pool Balances
   AMM.poolBalances = AMM:getPoolBalances()
 end)

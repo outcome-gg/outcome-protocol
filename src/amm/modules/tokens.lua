@@ -1,8 +1,6 @@
-local json = require('json')
 local bint = require('.bint')(256)
-local utils = require(".utils")
+local json = require('json')
 local ao = require('.ao')
-local config = require('modules.config')
 
 local Tokens = {}
 local TokensMethods = require('modules.tokensNotices')
@@ -94,6 +92,7 @@ function TokensMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
       }
 
       -- Add forwarded tags to the credit and debit notice messages
+      msgTags = msgTags or {}
       for tagName, tagValue in pairs(msgTags) do
         -- Tags beginning with "X-" are forwarded
         if string.sub(tagName, 1, 2) == "X-" then
