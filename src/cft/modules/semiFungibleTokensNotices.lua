@@ -60,7 +60,6 @@ end
 function SemiFungibleTokensNotices:transferSingleNotices(from, to, id, quantity, msg)
   -- Prepare debit notice
   local debitNotice = {
-    Target = from,
     Action = 'Debit-Single-Notice',
     Recipient = to,
     TokenId = tostring(id),
@@ -75,7 +74,7 @@ function SemiFungibleTokensNotices:transferSingleNotices(from, to, id, quantity,
     end
   end
   -- Send notice
-  ao.send(debitNotice)
+  msg.reply(debitNotice)
 
   -- Prepare credit notice
   local creditNotice = {
@@ -106,7 +105,6 @@ end
 function SemiFungibleTokensNotices:transferBatchNotices(from, to, ids, quantities, msg)
   -- Prepare debit notice
   local debitNotice = {
-    Target = from,
     Action = 'Debit-Batch-Notice',
     Recipient = to,
     TokenIds = json.encode(ids),
@@ -121,7 +119,7 @@ function SemiFungibleTokensNotices:transferBatchNotices(from, to, ids, quantitie
     end
   end
   -- Send notice
-  ao.send(debitNotice)
+  msg.reply(debitNotice)
 
   -- Prepare credit notice
   local creditNotice = {
@@ -146,12 +144,11 @@ end
 -- @dev Transfer error notice
 -- @param from The address to be debited
 -- @param id ID of the tokens to be transferred
--- @param msgId The message ID
-function SemiFungibleTokensNotices:transferErrorNotice(from, id, msgId)
-  ao.send({
-    Target = from,
+-- @param msg The message
+function SemiFungibleTokensNotices:transferErrorNotice(id, msg)
+  msg.reply({
     Action = 'Transfer-Error',
-    ['Message-Id'] = msgId,
+    ['Message-Id'] = msg.Id,
     ['Token-Id'] = id,
     Error = 'Insufficient Balance!'
   })

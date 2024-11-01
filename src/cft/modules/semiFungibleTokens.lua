@@ -134,7 +134,7 @@ function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity,
       self:transferSingleNotices(from, recipient, id, quantity, msg)
     end
   else
-    self:transferErrorNotice(from, id, msg.Id)
+    self:transferErrorNotice(id, msg)
   end
 end
 
@@ -163,7 +163,7 @@ function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantitie
       table.insert(ids_, ids[i])
       table.insert(quantities_, quantities[i])
     else
-      self:transferErrorNotice(from, ids[i], msg.id)
+      self:transferErrorNotice(ids[i], msg)
     end
   end
 

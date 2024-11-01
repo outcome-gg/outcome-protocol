@@ -67,7 +67,7 @@ function ConditionalTokensMethods:prepareCondition(msg)
   -- Initialize the denominator to zero to indicate that the condition has not been resolved.
   self.payoutDenominator[conditionId] = 0
   -- Send the condition preparation notice.
-  self:conditionPreparationNotice(conditionId, data.resolutionAgent, data.questionId, data.outcomeSlotCount)
+  self:conditionPreparationNotice(conditionId, data.resolutionAgent, data.questionId, data.outcomeSlotCount, msg)
 end
 
 -- @dev Called by the resolutionAgent for reporting results of conditions. Will set the payout vector for the condition with the ID `keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount))`, 
@@ -274,7 +274,6 @@ function ConditionalTokensMethods:redeemPositions(from, collateralToken, parentC
         ['X-IndexSets'] = json.encode(indexSets),
         ['X-TotalPayout'] = json.encode(totalPayout)
       })
-      return
     else
       SemiFungibleTokens:mint(from, self.getPositionId(collateralToken, parentCollectionId), totalPayout)
     end

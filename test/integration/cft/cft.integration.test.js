@@ -11,8 +11,8 @@ import exp from "constants";
 
 dotenv.config();
 
-const collateralToken = process.env.TEST_COLLATERAL_TOKEN;
-const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS;
+const collateralToken = process.env.TEST_COLLATERAL_TOKEN3;
+const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS2;
 
 console.log("COLLATERAL TOKEN: ", collateralToken)
 console.log("CONDITIONAL TOKENS: ", conditionalTokens)
@@ -41,7 +41,7 @@ let parlayCollectionIds;
 /* 
 * Tests
 */
-describe("conditionalTokens.integration.test", function () {
+describe("cft.integration.test", function () {
   before(async () => ( 
     // Txn execution variables
     wallet = JSON.parse(
@@ -909,12 +909,12 @@ describe("conditionalTokens.integration.test", function () {
       const balances_ = JSON.parse(Messages[0].Data)
 
       // first condition
-      expect(balances_["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"][walletAddress]).to.equal("100")
-      expect(balances_["a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3"][walletAddress]).to.equal("100")
-      expect(balances_["210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d"][walletAddress]).to.equal("100")
+      expect(balances_["b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f"][walletAddress]).to.equal("100")
+      expect(balances_["22779750265a2d1c41268acec9d9e6645db53f146a08860d40b6e448c89cb988"][walletAddress]).to.equal("100")
+      expect(balances_["b96e159bd7027181eb36ffcffba39cf88464d07fa051b220322e50a10eff1464"][walletAddress]).to.equal("100")
       // second condition
-      expect(balances_["57eb31d9b46ae3959d8fc5df467552bd1bb3b6f5554162c77beed49648699ba8"][walletAddress]).to.equal("100")
-      expect(balances_["cd0aa400e245543a80795533ed5d75e416e0e78b347965fe6097cfb55421b16a"][walletAddress]).to.equal("100")
+      expect(balances_["b1b855b9582759c9e8aaa06b1c7e69917ddce370343250e188175f0f7fcb1c75"][walletAddress]).to.equal("100")
+      expect(balances_["b3a220c30ffc0e28c8edab9002fb3376641230bd8172af1843d0d55f05907060"][walletAddress]).to.equal("100")
     })
 
     it("+ve should verify position mint amounts (with Balance-Of)", async () => {
@@ -923,7 +923,7 @@ describe("conditionalTokens.integration.test", function () {
         process: conditionalTokens,
         tags: [
           { name: "Action", value: "Balances-Of" },
-          { name: "TokenId", value: "2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06" },
+          { name: "TokenId", value: "b96e159bd7027181eb36ffcffba39cf88464d07fa051b220322e50a10eff1464" },
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -1025,7 +1025,7 @@ describe("conditionalTokens.integration.test", function () {
       expect(action_).to.equal("Position-Id")
       expect(collateralToken_).to.equal(collateralToken)
       expect(collectionId_).to.equal(collectionIds[0])
-      expect(positionId_).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(positionId_).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
     })
 
     //@dev ref: https://docs.gnosis.io/conditionaltokens/docs/devguide05
@@ -1083,12 +1083,12 @@ describe("conditionalTokens.integration.test", function () {
       const parentCollectionId_2 = Messages[2].Tags.find(t => t.name === 'ParentCollectionId').value
 
       expect(action_0).to.equal("Burn-Single-Notice")
-      expect(tokenId_0).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(tokenId_0).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
       expect(quantity_0).to.equal("20")
 
       expect(action_1).to.equal("Mint-Batch-Notice")
-      expect(tokenIds_1[0]).to.equal("4314febbea54043b317c4ec77794eab1f262a278d84db8f73589bf5c1e66b770")
-      expect(tokenIds_1[1]).to.equal("be6063e1fcab5e2bf2bf27830a1b94a7efb504d232480a7cf0fd324f74682e30")
+      expect(tokenIds_1[0]).to.equal("129b1b7d96e3360bd289c422359f23c4223e004ac1241284efa741868005b617")
+      expect(tokenIds_1[1]).to.equal("8689f7b5d1c99fd422b9ba4237f0bb4c3d24a5d6d5e7a311c00f47f2cb164f45")
       expect(quantities_1[0]).to.equal("20")
       expect(quantities_1[1]).to.equal("20")
 
@@ -1127,15 +1127,15 @@ describe("conditionalTokens.integration.test", function () {
       const balances_ = JSON.parse(Messages[0].Data)
 
       // first condition
-      expect(balances_["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"][walletAddress]).to.equal("80") // split
-      expect(balances_["a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3"][walletAddress]).to.equal("100")
-      expect(balances_["210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d"][walletAddress]).to.equal("100")
+      expect(balances_["b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f"][walletAddress]).to.equal("80") // split
+      expect(balances_["22779750265a2d1c41268acec9d9e6645db53f146a08860d40b6e448c89cb988"][walletAddress]).to.equal("100")
+      expect(balances_["b96e159bd7027181eb36ffcffba39cf88464d07fa051b220322e50a10eff1464"][walletAddress]).to.equal("100")
       // second condition
-      expect(balances_["57eb31d9b46ae3959d8fc5df467552bd1bb3b6f5554162c77beed49648699ba8"][walletAddress]).to.equal("100")
-      expect(balances_["cd0aa400e245543a80795533ed5d75e416e0e78b347965fe6097cfb55421b16a"][walletAddress]).to.equal("100")
+      expect(balances_["b1b855b9582759c9e8aaa06b1c7e69917ddce370343250e188175f0f7fcb1c75"][walletAddress]).to.equal("100")
+      expect(balances_["b3a220c30ffc0e28c8edab9002fb3376641230bd8172af1843d0d55f05907060"][walletAddress]).to.equal("100")
       // split from first condition
-      expect(balances_["be6063e1fcab5e2bf2bf27830a1b94a7efb504d232480a7cf0fd324f74682e30"][walletAddress]).to.equal("20")
-      expect(balances_["4314febbea54043b317c4ec77794eab1f262a278d84db8f73589bf5c1e66b770"][walletAddress]).to.equal("20")
+      expect(balances_["8689f7b5d1c99fd422b9ba4237f0bb4c3d24a5d6d5e7a311c00f47f2cb164f45"][walletAddress]).to.equal("20")
+      expect(balances_["129b1b7d96e3360bd289c422359f23c4223e004ac1241284efa741868005b617"][walletAddress]).to.equal("20")
     })
 
     it("+ve should verify updated collateral balance (conditionalTokens +/-0)", async () => {
@@ -1264,13 +1264,13 @@ describe("conditionalTokens.integration.test", function () {
       const parentCollectionId_2 = Messages[2].Tags.find(t => t.name === 'ParentCollectionId').value
 
       expect(action_0).to.equal("Burn-Single-Notice")
-      expect(tokenId_0).to.equal("cd0aa400e245543a80795533ed5d75e416e0e78b347965fe6097cfb55421b16a")
+      expect(tokenId_0).to.equal("b3a220c30ffc0e28c8edab9002fb3376641230bd8172af1843d0d55f05907060")
       expect(quantity_0).to.equal("15")
 
       expect(action_1).to.equal("Mint-Batch-Notice")
-      expect(tokenIds_1[0]).to.equal("eb5a50032b2d6662e0e5f89c2fc45fbacbdfa8cfdacce260e272b0df56780c50")
-      expect(tokenIds_1[1]).to.equal("1b428749c3b62e80cc4dcf72f47cac0f73ccf0a54c3c8a35d810c98b8830d516")
-      expect(tokenIds_1[2]).to.equal("a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485")
+      expect(tokenIds_1[0]).to.equal("02d03e9ac9c0f56ac4aba9adcc0a463f393085826ad03bd46399e1fcd5b2a7d2")
+      expect(tokenIds_1[1]).to.equal("5fcdaa8bb5b1580f0f40d2b6baf6afb357f58d4ad1f4f056b7c18da6bd2cc13b")
+      expect(tokenIds_1[2]).to.equal("aa5b7dab91040892abeb62d96207d093861e64f3fdb3119213d8ec237fb279de")
       expect(quantities_1[0]).to.equal("15")
       expect(quantities_1[1]).to.equal("15")
       expect(quantities_1[2]).to.equal("15")
@@ -1338,12 +1338,12 @@ describe("conditionalTokens.integration.test", function () {
       const parentCollectionId_2 = Messages[2].Tags.find(t => t.name === 'ParentCollectionId').value
 
       expect(action_0).to.equal("Burn-Single-Notice")
-      expect(tokenId_0).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(tokenId_0).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
       expect(quantity_0).to.equal("3")
 
       expect(action_1).to.equal("Mint-Batch-Notice")
-      expect(tokenIds_1[0]).to.equal("a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485")
-      expect(tokenIds_1[1]).to.equal("b1078a54de03ee4ca6970e2f2e2d878b43aec8c411e083a46543e13e3d42683a")
+      expect(tokenIds_1[0]).to.equal("aa5b7dab91040892abeb62d96207d093861e64f3fdb3119213d8ec237fb279de")
+      expect(tokenIds_1[1]).to.equal("d69ff9b26e3458c4cd720f3f1ec6129e5a4414914986a336c83454c8b35e54e5")
       expect(quantities_1[0]).to.equal("3")
       expect(quantities_1[1]).to.equal("3")
 
@@ -1383,24 +1383,24 @@ describe("conditionalTokens.integration.test", function () {
       expect(Messages.length).to.be.equal(1)
 
       const balances_ = JSON.parse(Messages[0].Data)
-
+ 
       // A,B,C split from collateral
-      expect(balances_["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"][walletAddress]).to.equal("77") // -3
-      expect(balances_["a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3"][walletAddress]).to.equal("100")
-      expect(balances_["210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d"][walletAddress]).to.equal("100")
+      expect(balances_["b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f"][walletAddress]).to.equal("77") // -3
+      expect(balances_["22779750265a2d1c41268acec9d9e6645db53f146a08860d40b6e448c89cb988"][walletAddress]).to.equal("100")
+      expect(balances_["b96e159bd7027181eb36ffcffba39cf88464d07fa051b220322e50a10eff1464"][walletAddress]).to.equal("100")
       // IN, OUT split from collateral
-      expect(balances_["57eb31d9b46ae3959d8fc5df467552bd1bb3b6f5554162c77beed49648699ba8"][walletAddress]).to.equal("100")
-      expect(balances_["cd0aa400e245543a80795533ed5d75e416e0e78b347965fe6097cfb55421b16a"][walletAddress]).to.equal("85") // -15
+      expect(balances_["b1b855b9582759c9e8aaa06b1c7e69917ddce370343250e188175f0f7fcb1c75"][walletAddress]).to.equal("100")
+      expect(balances_["b3a220c30ffc0e28c8edab9002fb3376641230bd8172af1843d0d55f05907060"][walletAddress]).to.equal("85") // -15
       // A&HI, A&LO split from A
-      expect(balances_["be6063e1fcab5e2bf2bf27830a1b94a7efb504d232480a7cf0fd324f74682e30"][walletAddress]).to.equal("20")
-      expect(balances_["4314febbea54043b317c4ec77794eab1f262a278d84db8f73589bf5c1e66b770"][walletAddress]).to.equal("20")
+      expect(balances_["129b1b7d96e3360bd289c422359f23c4223e004ac1241284efa741868005b617"][walletAddress]).to.equal("20")
+      expect(balances_["8689f7b5d1c99fd422b9ba4237f0bb4c3d24a5d6d5e7a311c00f47f2cb164f45"][walletAddress]).to.equal("20")
       // B&IN, C&IN split from IN
-      expect(balances_["eb5a50032b2d6662e0e5f89c2fc45fbacbdfa8cfdacce260e272b0df56780c50"][walletAddress]).to.equal("15") // +15
-      expect(balances_["1b428749c3b62e80cc4dcf72f47cac0f73ccf0a54c3c8a35d810c98b8830d516"][walletAddress]).to.equal("15") // +15
+      expect(balances_["5fcdaa8bb5b1580f0f40d2b6baf6afb357f58d4ad1f4f056b7c18da6bd2cc13b"][walletAddress]).to.equal("15") // +15
+      expect(balances_["02d03e9ac9c0f56ac4aba9adcc0a463f393085826ad03bd46399e1fcd5b2a7d2"][walletAddress]).to.equal("15") // +15
       // A&OUT split from A
-      expect(balances_["b1078a54de03ee4ca6970e2f2e2d878b43aec8c411e083a46543e13e3d42683a"][walletAddress]).to.equal("3") // +3
+      expect(balances_["d69ff9b26e3458c4cd720f3f1ec6129e5a4414914986a336c83454c8b35e54e5"][walletAddress]).to.equal("3") // +3
       // A&IN split from IN and A
-      expect(balances_["a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485"][walletAddress]).to.equal("18") // +15+3
+      expect(balances_["aa5b7dab91040892abeb62d96207d093861e64f3fdb3119213d8ec237fb279de"][walletAddress]).to.equal("18") // +15+3
     })
 
     it("+ve should verify unchanged collateral balance (conditionalTokens +/-0)", async () => {
@@ -1523,15 +1523,15 @@ describe("conditionalTokens.integration.test", function () {
       const parentCollectionId_2 = Messages[2].Tags.find(t => t.name === 'ParentCollectionId').value
 
       expect(action_0).to.equal("Burn-Batch-Notice")
-      expect(tokenIds_0[0]).to.equal("a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485")
-      expect(tokenIds_0[1]).to.equal("b1078a54de03ee4ca6970e2f2e2d878b43aec8c411e083a46543e13e3d42683a")
+      expect(tokenIds_0[0]).to.equal("aa5b7dab91040892abeb62d96207d093861e64f3fdb3119213d8ec237fb279de")
+      expect(tokenIds_0[1]).to.equal("d69ff9b26e3458c4cd720f3f1ec6129e5a4414914986a336c83454c8b35e54e5")
       expect(quantities_0[0]).to.equal("2")
       expect(quantities_0[1]).to.equal("2")
       expect(remainingBalances_0[0]).to.equal("16")
       expect(remainingBalances_0[1]).to.equal("1")
 
       expect(action_1).to.equal("Mint-Single-Notice")
-      expect(tokenId_1).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(tokenId_1).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
       expect(quantity_1).to.equal("2")
 
       expect(action_2).to.equal("Merge-Positions-Notice")
@@ -1568,22 +1568,22 @@ describe("conditionalTokens.integration.test", function () {
       const balances_ = JSON.parse(Messages[0].Data)
 
       // A,B,C split from collateral
-      expect(balances_["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"][walletAddress]).to.equal("79") // +2
-      expect(balances_["a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3"][walletAddress]).to.equal("100")
-      expect(balances_["210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d"][walletAddress]).to.equal("100")
+      expect(balances_["b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f"][walletAddress]).to.equal("79") // +2
+      expect(balances_["22779750265a2d1c41268acec9d9e6645db53f146a08860d40b6e448c89cb988"][walletAddress]).to.equal("100")
+      expect(balances_["b96e159bd7027181eb36ffcffba39cf88464d07fa051b220322e50a10eff1464"][walletAddress]).to.equal("100")
       // IN, OUT split from collateral
-      expect(balances_["57eb31d9b46ae3959d8fc5df467552bd1bb3b6f5554162c77beed49648699ba8"][walletAddress]).to.equal("100")
-      expect(balances_["cd0aa400e245543a80795533ed5d75e416e0e78b347965fe6097cfb55421b16a"][walletAddress]).to.equal("85") 
+      expect(balances_["b1b855b9582759c9e8aaa06b1c7e69917ddce370343250e188175f0f7fcb1c75"][walletAddress]).to.equal("100")
+      expect(balances_["b3a220c30ffc0e28c8edab9002fb3376641230bd8172af1843d0d55f05907060"][walletAddress]).to.equal("85") 
       // A&HI, A&LO split from A
-      expect(balances_["be6063e1fcab5e2bf2bf27830a1b94a7efb504d232480a7cf0fd324f74682e30"][walletAddress]).to.equal("20")
-      expect(balances_["4314febbea54043b317c4ec77794eab1f262a278d84db8f73589bf5c1e66b770"][walletAddress]).to.equal("20")
+      expect(balances_["129b1b7d96e3360bd289c422359f23c4223e004ac1241284efa741868005b617"][walletAddress]).to.equal("20")
+      expect(balances_["8689f7b5d1c99fd422b9ba4237f0bb4c3d24a5d6d5e7a311c00f47f2cb164f45"][walletAddress]).to.equal("20")
       // B&IN, C&IN split from IN
-      expect(balances_["eb5a50032b2d6662e0e5f89c2fc45fbacbdfa8cfdacce260e272b0df56780c50"][walletAddress]).to.equal("15") 
-      expect(balances_["1b428749c3b62e80cc4dcf72f47cac0f73ccf0a54c3c8a35d810c98b8830d516"][walletAddress]).to.equal("15") 
+      expect(balances_["5fcdaa8bb5b1580f0f40d2b6baf6afb357f58d4ad1f4f056b7c18da6bd2cc13b"][walletAddress]).to.equal("15") 
+      expect(balances_["02d03e9ac9c0f56ac4aba9adcc0a463f393085826ad03bd46399e1fcd5b2a7d2"][walletAddress]).to.equal("15") 
       // A&OUT split from A
-      expect(balances_["b1078a54de03ee4ca6970e2f2e2d878b43aec8c411e083a46543e13e3d42683a"][walletAddress]).to.equal("1") // -2
+      expect(balances_["d69ff9b26e3458c4cd720f3f1ec6129e5a4414914986a336c83454c8b35e54e5"][walletAddress]).to.equal("1") // -2
       // A&IN split from IN and A
-      expect(balances_["a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485"][walletAddress]).to.equal("16") // -2
+      expect(balances_["aa5b7dab91040892abeb62d96207d093861e64f3fdb3119213d8ec237fb279de"][walletAddress]).to.equal("16") // -2
     })
 
     it("+ve should verify unchanged collateral balance (conditionalTokens +/-0)", async () => {
@@ -1663,9 +1663,9 @@ describe("conditionalTokens.integration.test", function () {
       const xPartition_1 = JSON.parse(Messages[1].Tags.find(t => t.name === 'X-Partition').value)
 
       expect(action_0).to.equal("Burn-Batch-Notice")
-      expect(tokenIds_0[0]).to.equal("a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3")
-      expect(tokenIds_0[1]).to.equal("210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d")
-      expect(tokenIds_0[2]).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(tokenIds_0[0]).to.equal("b1b855b9582759c9e8aaa06b1c7e69917ddce370343250e188175f0f7fcb1c75")
+      expect(tokenIds_0[1]).to.equal("22779750265a2d1c41268acec9d9e6645db53f146a08860d40b6e448c89cb988")
+      expect(tokenIds_0[2]).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
       expect(quantities_0[0]).to.equal("70")
       expect(quantities_0[1]).to.equal("70")
       expect(quantities_0[2]).to.equal("70")
@@ -1710,22 +1710,22 @@ describe("conditionalTokens.integration.test", function () {
       const balances_ = JSON.parse(Messages[0].Data)
 
       // A,B,C split from collateral
-      expect(balances_["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"][walletAddress]).to.equal("9") // -70
-      expect(balances_["a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3"][walletAddress]).to.equal("30") // -70
-      expect(balances_["210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d"][walletAddress]).to.equal("30") // -70
+      expect(balances_["b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f"][walletAddress]).to.equal("9") // -70
+      expect(balances_["22779750265a2d1c41268acec9d9e6645db53f146a08860d40b6e448c89cb988"][walletAddress]).to.equal("30") // -70
+      expect(balances_["b1b855b9582759c9e8aaa06b1c7e69917ddce370343250e188175f0f7fcb1c75"][walletAddress]).to.equal("30") // -70
       // IN, OUT split from collateral
-      expect(balances_["57eb31d9b46ae3959d8fc5df467552bd1bb3b6f5554162c77beed49648699ba8"][walletAddress]).to.equal("100")
-      expect(balances_["cd0aa400e245543a80795533ed5d75e416e0e78b347965fe6097cfb55421b16a"][walletAddress]).to.equal("85") 
+      expect(balances_["b96e159bd7027181eb36ffcffba39cf88464d07fa051b220322e50a10eff1464"][walletAddress]).to.equal("100")
+      expect(balances_["b3a220c30ffc0e28c8edab9002fb3376641230bd8172af1843d0d55f05907060"][walletAddress]).to.equal("85") 
       // A&HI, A&LO split from A
-      expect(balances_["be6063e1fcab5e2bf2bf27830a1b94a7efb504d232480a7cf0fd324f74682e30"][walletAddress]).to.equal("20")
-      expect(balances_["4314febbea54043b317c4ec77794eab1f262a278d84db8f73589bf5c1e66b770"][walletAddress]).to.equal("20")
+      expect(balances_["129b1b7d96e3360bd289c422359f23c4223e004ac1241284efa741868005b617"][walletAddress]).to.equal("20")
+      expect(balances_["8689f7b5d1c99fd422b9ba4237f0bb4c3d24a5d6d5e7a311c00f47f2cb164f45"][walletAddress]).to.equal("20")
       // B&IN, C&IN split from IN
-      expect(balances_["eb5a50032b2d6662e0e5f89c2fc45fbacbdfa8cfdacce260e272b0df56780c50"][walletAddress]).to.equal("15") 
-      expect(balances_["1b428749c3b62e80cc4dcf72f47cac0f73ccf0a54c3c8a35d810c98b8830d516"][walletAddress]).to.equal("15") 
+      expect(balances_["5fcdaa8bb5b1580f0f40d2b6baf6afb357f58d4ad1f4f056b7c18da6bd2cc13b"][walletAddress]).to.equal("15") 
+      expect(balances_["02d03e9ac9c0f56ac4aba9adcc0a463f393085826ad03bd46399e1fcd5b2a7d2"][walletAddress]).to.equal("15") 
       // A&OUT split from A
-      expect(balances_["b1078a54de03ee4ca6970e2f2e2d878b43aec8c411e083a46543e13e3d42683a"][walletAddress]).to.equal("1") 
+      expect(balances_["d69ff9b26e3458c4cd720f3f1ec6129e5a4414914986a336c83454c8b35e54e5"][walletAddress]).to.equal("1") 
       // A&IN split from IN and A
-      expect(balances_["a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485"][walletAddress]).to.equal("16") 
+      expect(balances_["aa5b7dab91040892abeb62d96207d093861e64f3fdb3119213d8ec237fb279de"][walletAddress]).to.equal("16") 
     })
 
     it("+ve should verify collateral tokens are returned (post merge)", async () => {
@@ -1761,13 +1761,13 @@ describe("conditionalTokens.integration.test", function () {
   * Transfer Position
   ************************************************************************/
   describe("Prepare Condition", function () {
-    it("+ve  [balance] should get balance-of", async () => {
+    it("+ve [balance] should get balance-of", async () => {
       let messageId;
       await message({
         process: conditionalTokens,
         tags: [
           { name: "Action", value: "Balance-Of" },
-          { name: "TokenId", value: "2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06" }
+          { name: "TokenId", value: "b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f" }
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -1795,7 +1795,7 @@ describe("conditionalTokens.integration.test", function () {
         process: conditionalTokens,
         tags: [
           { name: "Action", value: "Transfer-Single" },
-          { name: "TokenId", value: "2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06" },
+          { name: "TokenId", value: "b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f" },
           { name: "Quantity", value: "10" },
           { name: "Recipient", value: walletAddress2 }
         ],
@@ -1820,7 +1820,7 @@ describe("conditionalTokens.integration.test", function () {
 
       expect(action_).to.equal("Transfer-Error")
       expect(error_).to.equal("Insufficient Balance!")
-      expect(tokenId_).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(tokenId_).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
     })
 
     it("+ve should send single transfer (with notice)", async () => {
@@ -1829,7 +1829,7 @@ describe("conditionalTokens.integration.test", function () {
         process: conditionalTokens,
         tags: [
           { name: "Action", value: "Transfer-Single" },
-          { name: "TokenId", value: "2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06" },
+          { name: "TokenId", value: "b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f" },
           { name: "Quantity", value: "5" },
           { name: "Recipient", value: walletAddress2 }
         ],
@@ -1860,12 +1860,12 @@ describe("conditionalTokens.integration.test", function () {
     
       expect(action_0).to.equal("Debit-Single-Notice")
       expect(quantity_0).to.equal("5")
-      expect(tokenId_0).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(tokenId_0).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
       expect(recipient_0).to.equal(walletAddress2)
 
       expect(action_1).to.equal("Credit-Single-Notice")
       expect(quantity_1).to.equal("5")
-      expect(tokenId_1).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(tokenId_1).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
       expect(sender_1).to.equal(walletAddress)
     })
 
@@ -1875,7 +1875,7 @@ describe("conditionalTokens.integration.test", function () {
         process: conditionalTokens,
         tags: [
           { name: "Action", value: "Transfer-Batch" },
-          { name: "TokenIds", value: JSON.stringify(["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"]) },
+          { name: "TokenIds", value: JSON.stringify(["b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f"]) },
           { name: "Quantities", value: JSON.stringify(['5']) },
           { name: "Recipient", value: walletAddress2 }
         ],
@@ -1900,7 +1900,7 @@ describe("conditionalTokens.integration.test", function () {
 
       expect(action_).to.equal("Transfer-Error")
       expect(error_).to.equal("Insufficient Balance!")
-      expect(tokenId_).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(tokenId_).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
     })
 
     it("+ve should send batch transfer (with notice)", async () => {
@@ -1909,7 +1909,7 @@ describe("conditionalTokens.integration.test", function () {
         process: conditionalTokens,
         tags: [
           { name: "Action", value: "Transfer-Batch" },
-          { name: "TokenIds", value: JSON.stringify(["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"]) },
+          { name: "TokenIds", value: JSON.stringify(["b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f"]) },
           { name: "Quantities", value: JSON.stringify(['2']) },
           { name: "Recipient", value: walletAddress2 }
         ],
@@ -1940,12 +1940,12 @@ describe("conditionalTokens.integration.test", function () {
     
       expect(action_0).to.equal("Debit-Batch-Notice")
       expect(quantities_0[0]).to.equal("2")
-      expect(tokenIds_0[0]).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(tokenIds_0[0]).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
       expect(recipient_0).to.equal(walletAddress2)
 
       expect(action_1).to.equal("Credit-Batch-Notice")
       expect(quantities_1[0]).to.equal("2")
-      expect(tokenIds_1[0]).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(tokenIds_1[0]).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
       expect(sender_1).to.equal(walletAddress)
     })
   })
@@ -2263,15 +2263,15 @@ describe("conditionalTokens.integration.test", function () {
       const conditionId_4 = Messages[4].Tags.find(t => t.name === 'ConditionId').value
 
       expect(action_0).to.equal("Burn-Single-Notice")
-      expect(tokenId_0).to.equal("2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06")
+      expect(tokenId_0).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
       expect(quantity_0).to.equal("2")
 
       expect(action_1).to.equal("Burn-Single-Notice")
-      expect(tokenId_1).to.equal("210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d")
+      expect(tokenId_1).to.equal("22779750265a2d1c41268acec9d9e6645db53f146a08860d40b6e448c89cb988")
       expect(quantity_1).to.equal("30")
   
       expect(action_2).to.equal("Burn-Single-Notice")
-      expect(tokenId_2).to.equal("a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3")
+      expect(tokenId_2).to.equal("b1b855b9582759c9e8aaa06b1c7e69917ddce370343250e188175f0f7fcb1c75")
       expect(quantity_2).to.equal("30")
     
       expect(action_3).to.equal("Transfer")
@@ -2311,24 +2311,24 @@ describe("conditionalTokens.integration.test", function () {
       const balances_ = JSON.parse(Messages[0].Data)
 
       // A,B,C split from collateral
-      expect(balances_["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"][walletAddress]).to.equal("0") // redeemed
-      expect(balances_["a4df2384449477962779f1c84c7c8576a7e553e2b5f4f2c8a6867016c8350bc3"][walletAddress]).to.equal("0") // redeemed
-      expect(balances_["210f5a2759cf3bd3d76a22dabfda4bb2552993fe5968ca1fa444a503bbfd570d"][walletAddress]).to.equal("0") // redeemed
+      expect(balances_["b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f"][walletAddress]).to.equal("0") // redeemed
+      expect(balances_["22779750265a2d1c41268acec9d9e6645db53f146a08860d40b6e448c89cb988"][walletAddress]).to.equal("0") // redeemed
+      expect(balances_["b1b855b9582759c9e8aaa06b1c7e69917ddce370343250e188175f0f7fcb1c75"][walletAddress]).to.equal("0") // redeemed
       //wallet address 2
-      expect(balances_["2a569cefec1dce1f4013ee059b66a1c0987ccdf1eeb7694582c9f47c44f1cc06"][walletAddress2]).to.equal("7") // not redeemed
+      expect(balances_["b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f"][walletAddress2]).to.equal("7") // not redeemed
       // IN, OUT split from collateral
-      expect(balances_["57eb31d9b46ae3959d8fc5df467552bd1bb3b6f5554162c77beed49648699ba8"][walletAddress]).to.equal("100")
-      expect(balances_["cd0aa400e245543a80795533ed5d75e416e0e78b347965fe6097cfb55421b16a"][walletAddress]).to.equal("85") 
+      expect(balances_["b96e159bd7027181eb36ffcffba39cf88464d07fa051b220322e50a10eff1464"][walletAddress]).to.equal("100")
+      expect(balances_["b3a220c30ffc0e28c8edab9002fb3376641230bd8172af1843d0d55f05907060"][walletAddress]).to.equal("85") 
       // A&HI, A&LO split from A
-      expect(balances_["be6063e1fcab5e2bf2bf27830a1b94a7efb504d232480a7cf0fd324f74682e30"][walletAddress]).to.equal("20")
-      expect(balances_["4314febbea54043b317c4ec77794eab1f262a278d84db8f73589bf5c1e66b770"][walletAddress]).to.equal("20")
+      expect(balances_["129b1b7d96e3360bd289c422359f23c4223e004ac1241284efa741868005b617"][walletAddress]).to.equal("20")
+      expect(balances_["8689f7b5d1c99fd422b9ba4237f0bb4c3d24a5d6d5e7a311c00f47f2cb164f45"][walletAddress]).to.equal("20")
       // B&IN, C&IN split from IN
-      expect(balances_["eb5a50032b2d6662e0e5f89c2fc45fbacbdfa8cfdacce260e272b0df56780c50"][walletAddress]).to.equal("15") 
-      expect(balances_["1b428749c3b62e80cc4dcf72f47cac0f73ccf0a54c3c8a35d810c98b8830d516"][walletAddress]).to.equal("15") 
+      expect(balances_["5fcdaa8bb5b1580f0f40d2b6baf6afb357f58d4ad1f4f056b7c18da6bd2cc13b"][walletAddress]).to.equal("15") 
+      expect(balances_["02d03e9ac9c0f56ac4aba9adcc0a463f393085826ad03bd46399e1fcd5b2a7d2"][walletAddress]).to.equal("15") 
       // A&OUT split from A
-      expect(balances_["b1078a54de03ee4ca6970e2f2e2d878b43aec8c411e083a46543e13e3d42683a"][walletAddress]).to.equal("1") 
+      expect(balances_["d69ff9b26e3458c4cd720f3f1ec6129e5a4414914986a336c83454c8b35e54e5"][walletAddress]).to.equal("1") 
       // A&IN split from IN and A
-      expect(balances_["a870103e2c2d5e373cf5846fffce694625e02dc4084203d225151ca28f660485"][walletAddress]).to.equal("16") 
+      expect(balances_["aa5b7dab91040892abeb62d96207d093861e64f3fdb3119213d8ec237fb279de"][walletAddress]).to.equal("16") 
     })
   })
 
@@ -2585,8 +2585,8 @@ describe("conditionalTokens.integration.test", function () {
       const balances_ = JSON.parse(Messages[0].Data)
 
       // Leg-one of 2-way parlay
-      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("1000")
-      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("1000") 
+      expect(balances_["e56d60e8583e8e7db91253cec968b415ba39a3315ab187c75ac1e3241f5bb114"][walletAddress]).to.equal("1000")
+      expect(balances_["666234827f84bdad1f662bd523c3073aabd4ee205bab3b9d7a3ee4e4e288280f"][walletAddress]).to.equal("1000") 
     })
 
     it("+ve should create 2-way parlay (bulls-beat-pistons + lakers-beat-celtics)", async () => {
@@ -2657,12 +2657,12 @@ describe("conditionalTokens.integration.test", function () {
       const balances_ = JSON.parse(Messages[0].Data)
 
       // Leg one of 2-way parlay
-      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("500") // IN: split
-      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("1000") // OUT
+      expect(balances_["666234827f84bdad1f662bd523c3073aabd4ee205bab3b9d7a3ee4e4e288280f"][walletAddress]).to.equal("500") // IN: split
+      expect(balances_["e56d60e8583e8e7db91253cec968b415ba39a3315ab187c75ac1e3241f5bb114"][walletAddress]).to.equal("1000") // OUT
       
       // Two-way parlay
-      expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("500") 
-      expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("500") 
+      expect(balances_["2db69137dd2c11719ed9894f624873c747f86e41251d5af9e4c7f58d8fb52fee"][walletAddress]).to.equal("500") 
+      expect(balances_["cabba89400419db958200dda1eb8e9c460741d92e0b452c321c79933933963ba"][walletAddress]).to.equal("500") 
     })
 
     it("+ve should create leg-one of 2-way parlay in reverse (lakers-beat-celtics)", async () => {
@@ -2731,18 +2731,19 @@ describe("conditionalTokens.integration.test", function () {
       expect(Messages.length).to.be.equal(1)
 
       const balances_ = JSON.parse(Messages[0].Data)
+     
 
-     // Leg one of 2-way parlay
-     expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("500") // IN: split
-     expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("1000") // OUT
+      // Leg one of 2-way parlay
+      expect(balances_["666234827f84bdad1f662bd523c3073aabd4ee205bab3b9d7a3ee4e4e288280f"][walletAddress]).to.equal("500") // IN: split
+      expect(balances_["e56d60e8583e8e7db91253cec968b415ba39a3315ab187c75ac1e3241f5bb114"][walletAddress]).to.equal("1000") // OUT
      
       // Leg one of 2-way parlay (reverse)
-      expect(balances_["69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7"][walletAddress]).to.equal("2000") 
-      expect(balances_["bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657"][walletAddress]).to.equal("2000") 
+      expect(balances_["5cf29fd543d8f1982b54294ba4a990832806fd9ad75cac5fb4b515e805b72238"][walletAddress]).to.equal("2000") 
+      expect(balances_["d67474ad9b1434d16b818f6ae016b301066c6c66a277f8db26dc62901c838537"][walletAddress]).to.equal("2000") 
 
-     // Two-way parlay
-     expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("500") 
-     expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("500") 
+      // Two-way parlay
+      expect(balances_["2db69137dd2c11719ed9894f624873c747f86e41251d5af9e4c7f58d8fb52fee"][walletAddress]).to.equal("500") 
+      expect(balances_["cabba89400419db958200dda1eb8e9c460741d92e0b452c321c79933933963ba"][walletAddress]).to.equal("500") 
     })
 
     it("+ve should create same 2-way parlay in reverse (lakers-beat-celtics + bulls-beat-pistons)", async () => {
@@ -2813,17 +2814,17 @@ describe("conditionalTokens.integration.test", function () {
       const balances_ = JSON.parse(Messages[0].Data)
 
       // Leg one of 2-way parlay
-      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("500") // IN: split 
-      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("1000") // OUT
+      expect(balances_["666234827f84bdad1f662bd523c3073aabd4ee205bab3b9d7a3ee4e4e288280f"][walletAddress]).to.equal("500") // IN: split 
+      expect(balances_["e56d60e8583e8e7db91253cec968b415ba39a3315ab187c75ac1e3241f5bb114"][walletAddress]).to.equal("1000") // OUT
      
       // Leg one of 2-way parlay (reverse)
-      expect(balances_["bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657"][walletAddress]).to.equal("800") // IN: split 
-      expect(balances_["69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7"][walletAddress]).to.equal("2000") // OUT
+      expect(balances_["d67474ad9b1434d16b818f6ae016b301066c6c66a277f8db26dc62901c838537"][walletAddress]).to.equal("800") // IN: split 
+      expect(balances_["5cf29fd543d8f1982b54294ba4a990832806fd9ad75cac5fb4b515e805b72238"][walletAddress]).to.equal("2000") // OUT
 
       // Two-way parlay
-      expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("1700") // Lakers-beat-celtics + bulls-beat-pistons
-      expect(balances_["e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196"][walletAddress]).to.equal("1200") // Lakers-beat-celtics + pistons-beat-bulls
-      expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("500") // bulls-beat-pistons + celts-beat-lakers
+      expect(balances_["2db69137dd2c11719ed9894f624873c747f86e41251d5af9e4c7f58d8fb52fee"][walletAddress]).to.equal("1700") // Lakers-beat-celtics + bulls-beat-pistons
+      expect(balances_["1f102c3f6563a16e6d02eef9523888cf3537cb9060e3d04d311ba86086ca0be1"][walletAddress]).to.equal("1200") // Lakers-beat-celtics + pistons-beat-bulls
+      expect(balances_["cabba89400419db958200dda1eb8e9c460741d92e0b452c321c79933933963ba"][walletAddress]).to.equal("500") // bulls-beat-pistons + celts-beat-lakers
     })
 
     it("+ve should allow reporting (on leg-one of 2-way parlay)", async () => {
@@ -2918,11 +2919,11 @@ describe("conditionalTokens.integration.test", function () {
       const conditionId_3 = Messages[3].Tags.find(t => t.name === 'ConditionId').value
 
       expect(action_0).to.equal("Burn-Single-Notice")
-      expect(tokenId_0).to.equal("536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277")
+      expect(tokenId_0).to.equal("666234827f84bdad1f662bd523c3073aabd4ee205bab3b9d7a3ee4e4e288280f")
       expect(quantity_0).to.equal("500")
 
       expect(action_1).to.equal("Burn-Single-Notice")
-      expect(tokenId_1).to.equal("b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243")
+      expect(tokenId_1).to.equal("e56d60e8583e8e7db91253cec968b415ba39a3315ab187c75ac1e3241f5bb114")
       expect(quantity_1).to.equal("1000")
     
       expect(action_2).to.equal("Transfer")
@@ -2961,19 +2962,19 @@ describe("conditionalTokens.integration.test", function () {
       expect(Messages.length).to.be.equal(1)
 
       const balances_ = JSON.parse(Messages[0].Data)
-     
+      
       // Leg one of 2-way parlay
-      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("0") // Redeemed
-      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("0") // Redeemed
+      expect(balances_["666234827f84bdad1f662bd523c3073aabd4ee205bab3b9d7a3ee4e4e288280f"][walletAddress]).to.equal("0") // Redeemed
+      expect(balances_["e56d60e8583e8e7db91253cec968b415ba39a3315ab187c75ac1e3241f5bb114"][walletAddress]).to.equal("0") // Redeemed
      
       // Leg one of 2-way parlay (reverse)
-      expect(balances_["bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657"][walletAddress]).to.equal("800") // Unchanged
-      expect(balances_["69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7"][walletAddress]).to.equal("2000") // Unchanged
+      expect(balances_["d67474ad9b1434d16b818f6ae016b301066c6c66a277f8db26dc62901c838537"][walletAddress]).to.equal("800") // Unchanged
+      expect(balances_["5cf29fd543d8f1982b54294ba4a990832806fd9ad75cac5fb4b515e805b72238"][walletAddress]).to.equal("2000") // Unchanged
 
       // Two-way parlay
-      expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("1700") // Unchanged: Lakers-beat-celtics + bulls-beat-pistons
-      expect(balances_["e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196"][walletAddress]).to.equal("1200") // Unchanged: Lakers-beat-celtics + pistons-beat-bulls
-      expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("500") // Unchanged: bulls-beat-pistons + celts-beat-lakers
+      expect(balances_["2db69137dd2c11719ed9894f624873c747f86e41251d5af9e4c7f58d8fb52fee"][walletAddress]).to.equal("1700") // Unchanged: Lakers-beat-celtics + bulls-beat-pistons
+      expect(balances_["1f102c3f6563a16e6d02eef9523888cf3537cb9060e3d04d311ba86086ca0be1"][walletAddress]).to.equal("1200") // Unchanged: Lakers-beat-celtics + pistons-beat-bulls
+      expect(balances_["cabba89400419db958200dda1eb8e9c460741d92e0b452c321c79933933963ba"][walletAddress]).to.equal("500") // Unchanged: bulls-beat-pistons + celts-beat-lakers
     })
 
     it("+ve should allow reporting (on leg-two of 2-way parlay)", async () => {
@@ -3068,11 +3069,11 @@ describe("conditionalTokens.integration.test", function () {
       const conditionId_3 = Messages[3].Tags.find(t => t.name === 'ConditionId').value
 
       expect(action_0).to.equal("Burn-Single-Notice")
-      expect(tokenId_0).to.equal("bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657")
+      expect(tokenId_0).to.equal("d67474ad9b1434d16b818f6ae016b301066c6c66a277f8db26dc62901c838537")
       expect(quantity_0).to.equal("800")
 
       expect(action_1).to.equal("Burn-Single-Notice")
-      expect(tokenId_1).to.equal("69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7")
+      expect(tokenId_1).to.equal("5cf29fd543d8f1982b54294ba4a990832806fd9ad75cac5fb4b515e805b72238")
       expect(quantity_1).to.equal("2000")
     
       expect(action_2).to.equal("Transfer")
@@ -3113,17 +3114,17 @@ describe("conditionalTokens.integration.test", function () {
       const balances_ = JSON.parse(Messages[0].Data)
       
       // Leg one of 2-way parlay
-      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("0") // (Redeemed)
-      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("0") // (Redeemed)
+      expect(balances_["666234827f84bdad1f662bd523c3073aabd4ee205bab3b9d7a3ee4e4e288280f"][walletAddress]).to.equal("0") // (Redeemed)
+      expect(balances_["e56d60e8583e8e7db91253cec968b415ba39a3315ab187c75ac1e3241f5bb114"][walletAddress]).to.equal("0") // (Redeemed)
      
       // Leg one of 2-way parlay (reverse)
-      expect(balances_["bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657"][walletAddress]).to.equal("0") // Redeemed
-      expect(balances_["69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7"][walletAddress]).to.equal("0") // Redeemed
+      expect(balances_["d67474ad9b1434d16b818f6ae016b301066c6c66a277f8db26dc62901c838537"][walletAddress]).to.equal("0") // Redeemed
+      expect(balances_["5cf29fd543d8f1982b54294ba4a990832806fd9ad75cac5fb4b515e805b72238"][walletAddress]).to.equal("0") // Redeemed
 
       // Two-way parlay
-      expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("1700") // Unchanged: Lakers-beat-celtics + bulls-beat-pistons
-      expect(balances_["e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196"][walletAddress]).to.equal("1200") // Unchanged: Lakers-beat-celtics + pistons-beat-bulls
-      expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("500") // Unchanged: bulls-beat-pistons + celts-beat-lakers
+      expect(balances_["2db69137dd2c11719ed9894f624873c747f86e41251d5af9e4c7f58d8fb52fee"][walletAddress]).to.equal("1700") // Unchanged: Lakers-beat-celtics + bulls-beat-pistons
+      expect(balances_["1f102c3f6563a16e6d02eef9523888cf3537cb9060e3d04d311ba86086ca0be1"][walletAddress]).to.equal("1200") // Unchanged: Lakers-beat-celtics + pistons-beat-bulls
+      expect(balances_["cabba89400419db958200dda1eb8e9c460741d92e0b452c321c79933933963ba"][walletAddress]).to.equal("500") // Unchanged: bulls-beat-pistons + celts-beat-lakers
     })
 
     it("+ve should merge (winning parlay with parent: bulls-beat-pistons)", async () => {
@@ -3177,15 +3178,15 @@ describe("conditionalTokens.integration.test", function () {
       const parentCollectionId_2 = Messages[2].Tags.find(t => t.name === 'ParentCollectionId').value
 
       expect(action_0).to.equal("Burn-Batch-Notice")
-      expect(tokenIds_0[0]).to.equal("e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7")
-      expect(tokenIds_0[1]).to.equal("cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e")
+      expect(tokenIds_0[0]).to.equal("2db69137dd2c11719ed9894f624873c747f86e41251d5af9e4c7f58d8fb52fee")
+      expect(tokenIds_0[1]).to.equal("cabba89400419db958200dda1eb8e9c460741d92e0b452c321c79933933963ba")
       expect(quantities_0[0]).to.equal("500")
       expect(quantities_0[1]).to.equal("500")
       expect(remainingBalances_0[0]).to.equal("1200")
       expect(remainingBalances_0[1]).to.equal("0")
 
       expect(action_1).to.equal("Mint-Single-Notice")
-      expect(tokenId_1).to.equal("536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277")
+      expect(tokenId_1).to.equal("666234827f84bdad1f662bd523c3073aabd4ee205bab3b9d7a3ee4e4e288280f")
       expect(quantity_1).to.equal("500")
 
       expect(action_2).to.equal("Merge-Positions-Notice")
@@ -3223,17 +3224,17 @@ describe("conditionalTokens.integration.test", function () {
       const balances_ = JSON.parse(Messages[0].Data)
       
       // Leg one of 2-way parlay
-      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("500") // Merged
-      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("0") // (Redeemed)
+      expect(balances_["666234827f84bdad1f662bd523c3073aabd4ee205bab3b9d7a3ee4e4e288280f"][walletAddress]).to.equal("500") // Merged
+      expect(balances_["e56d60e8583e8e7db91253cec968b415ba39a3315ab187c75ac1e3241f5bb114"][walletAddress]).to.equal("0") // (Redeemed)
      
       // Leg one of 2-way parlay (reverse)
-      expect(balances_["bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657"][walletAddress]).to.equal("0") // (Redeemed)
-      expect(balances_["69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7"][walletAddress]).to.equal("0") // (Redeemed)
+      expect(balances_["d67474ad9b1434d16b818f6ae016b301066c6c66a277f8db26dc62901c838537"][walletAddress]).to.equal("0") // (Redeemed)
+      expect(balances_["5cf29fd543d8f1982b54294ba4a990832806fd9ad75cac5fb4b515e805b72238"][walletAddress]).to.equal("0") // (Redeemed)
 
       // Two-way parlay
-      expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("1200") // -500: Lakers-beat-celtics + bulls-beat-pistons
-      expect(balances_["e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196"][walletAddress]).to.equal("1200") // Unchanged: Lakers-beat-celtics + pistons-beat-bulls
-      expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("0") // -500: bulls-beat-pistons + celts-beat-lakers
+      expect(balances_["2db69137dd2c11719ed9894f624873c747f86e41251d5af9e4c7f58d8fb52fee"][walletAddress]).to.equal("1200") // -500: Lakers-beat-celtics + bulls-beat-pistons
+      expect(balances_["1f102c3f6563a16e6d02eef9523888cf3537cb9060e3d04d311ba86086ca0be1"][walletAddress]).to.equal("1200") // Unchanged: Lakers-beat-celtics + pistons-beat-bulls
+      expect(balances_["cabba89400419db958200dda1eb8e9c460741d92e0b452c321c79933933963ba"][walletAddress]).to.equal("0") // -500: bulls-beat-pistons + celts-beat-lakers
     })
 
     it("+ve should merge (winning parlay with parent: lakers-beat-celtics)", async () => {
@@ -3287,15 +3288,15 @@ describe("conditionalTokens.integration.test", function () {
       const parentCollectionId_2 = Messages[2].Tags.find(t => t.name === 'ParentCollectionId').value
 
       expect(action_0).to.equal("Burn-Batch-Notice")
-      expect(tokenIds_0[0]).to.equal("e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7")
-      expect(tokenIds_0[1]).to.equal("e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196")
+      expect(tokenIds_0[0]).to.equal("2db69137dd2c11719ed9894f624873c747f86e41251d5af9e4c7f58d8fb52fee")
+      expect(tokenIds_0[1]).to.equal("1f102c3f6563a16e6d02eef9523888cf3537cb9060e3d04d311ba86086ca0be1")
       expect(quantities_0[0]).to.equal("1200")
       expect(quantities_0[1]).to.equal("1200")
       expect(remainingBalances_0[0]).to.equal("0")
       expect(remainingBalances_0[1]).to.equal("0")
 
       expect(action_1).to.equal("Mint-Single-Notice")
-      expect(tokenId_1).to.equal("bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657")
+      expect(tokenId_1).to.equal("d67474ad9b1434d16b818f6ae016b301066c6c66a277f8db26dc62901c838537")
       expect(quantity_1).to.equal("1200")
 
       expect(action_2).to.equal("Merge-Positions-Notice")
@@ -3331,19 +3332,19 @@ describe("conditionalTokens.integration.test", function () {
       expect(Messages.length).to.be.equal(1)
 
       const balances_ = JSON.parse(Messages[0].Data)
-      
+
       // Leg one of 2-way parlay
-      expect(balances_["536233f389c0b61ecd189cfff77b09349a64baaf129b442eb641d63795824277"][walletAddress]).to.equal("500") // (Merged)
-      expect(balances_["b18bc299fb3aa2e97416f3fcab9b87dc4db5535e03d3ec36d2fb5ffd20f26243"][walletAddress]).to.equal("0") // (Redeemed)
+      expect(balances_["666234827f84bdad1f662bd523c3073aabd4ee205bab3b9d7a3ee4e4e288280f"][walletAddress]).to.equal("500") // (Merged)
+      expect(balances_["e56d60e8583e8e7db91253cec968b415ba39a3315ab187c75ac1e3241f5bb114"][walletAddress]).to.equal("0") // (Redeemed)
      
       // Leg one of 2-way parlay (reverse)
-      expect(balances_["bf7b21d16bb135e169d380b1f40b1efb5091c98827dea26722319dbbc35ed657"][walletAddress]).to.equal("1200") // Merged
-      expect(balances_["69331937a6e3adf69e226903d47b364917eb18b286677f5938492a8e0de0abc7"][walletAddress]).to.equal("0") // (Redeemed)
+      expect(balances_["d67474ad9b1434d16b818f6ae016b301066c6c66a277f8db26dc62901c838537"][walletAddress]).to.equal("1200") // Merged
+      expect(balances_["5cf29fd543d8f1982b54294ba4a990832806fd9ad75cac5fb4b515e805b72238"][walletAddress]).to.equal("0") // (Redeemed)
 
       // Two-way parlay
-      expect(balances_["e03bd59e7f0378fc01fa58c48c626d9178b03af891763d494cf2fce620812fe7"][walletAddress]).to.equal("0") // -1200: Lakers-beat-celtics + bulls-beat-pistons
-      expect(balances_["e5252bf459d4c07929df06de80625e01ffd96650119c0f1d4d7add306d60f196"][walletAddress]).to.equal("0") // -1200: Lakers-beat-celtics + pistons-beat-bulls
-      expect(balances_["cf86e1d05088445c94bfc5556e8a9582c69148162187ee992bf4338198ce3c3e"][walletAddress]).to.equal("0") // Unchanged: bulls-beat-pistons + celts-beat-lakers
+      expect(balances_["2db69137dd2c11719ed9894f624873c747f86e41251d5af9e4c7f58d8fb52fee"][walletAddress]).to.equal("0") // -1200: Lakers-beat-celtics + bulls-beat-pistons
+      expect(balances_["1f102c3f6563a16e6d02eef9523888cf3537cb9060e3d04d311ba86086ca0be1"][walletAddress]).to.equal("0") // -1200: Lakers-beat-celtics + pistons-beat-bulls
+      expect(balances_["cabba89400419db958200dda1eb8e9c460741d92e0b452c321c79933933963ba"][walletAddress]).to.equal("0") // Unchanged: bulls-beat-pistons + celts-beat-lakers
     })
   })
 })

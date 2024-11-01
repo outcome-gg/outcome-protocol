@@ -9,9 +9,9 @@ local ConditionalTokensNotices = {}
 -- @param resolutionAgent The process assigned to report the result for the prepared condition.
 -- @param questionId An identifier for the question to be answered by the resolutionAgent.
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
-function ConditionalTokensNotices:conditionPreparationNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount)
-  ao.send({
-    Target = 'DataIndex',
+-- @param msg For sending msg.reply
+function ConditionalTokensNotices:conditionPreparationNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, msg)
+  msg.reply({
     Action = "Condition-Preparation-Notice",
     ConditionId = conditionId,
     ResolutionAgent = resolutionAgent,
