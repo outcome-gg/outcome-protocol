@@ -25,13 +25,13 @@ function AMM:new()
     conditionId = config.AMM.ConditionId,
     collectionIds = config.AMM.CollectionIds,
     positionIds = config.AMM.PositionIds,
-    fee = config.AMM.Fee,
     feePoolWeight = config.AMM.FeePoolWeight,
     totalWithdrawnFees = config.AMM.TotalWithdrawnFees,
     withdrawnFees = config.AMM.WithdrawnFees,
     outcomeSlotCount = config.AMM.OutcomeSlotCount,
     poolBalances = config.AMM.PoolBalances,
-    ONE = config.AMM.ONE
+    fee = config.LPFee.Percentage,
+    ONE = config.LPFee.ONE
   }
 
   -- Set metatable for method lookups

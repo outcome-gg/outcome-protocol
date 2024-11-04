@@ -1272,7 +1272,7 @@ describe("amm.integration.test", function () {
       await buy(investmentAmount, outcomeIndex, buyAmount.toString());
 
       // wait for the buy to be processed
-      await new Promise(resolve => setTimeout(resolve, 7000));
+      await new Promise(resolve => setTimeout(resolve, 8000));
       const balanceOfAfter = await getBalanceOf(conditionalTokens, positionId, walletAddress);
 
       expect(buyAmount).to.be.equal((balanceOfAfter - balanceOfBefore).toString())

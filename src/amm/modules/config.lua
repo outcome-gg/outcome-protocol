@@ -25,7 +25,6 @@ config.AMM = {
   CollateralToken = '',                                                               -- Process ID of Collateral Token 
   ConditionalTokens = '',                                                             -- Process ID of Conditional Tokens
   ConditionId = '',                                                                   -- Condition ID
-  Fee = tostring(bint(bint.__div(bint.__pow(10, config.LPToken.Denomination), 100))), -- Fee Percentage, i.e. 1%
   FeePoolWeight = '0',                                                                -- Fee Pool Weight
   TotalWithdrawnFees = '0',                                                           -- Total Withdrawn Fees
   WithdrawnFees = {},                                                                 -- Withdrawn Fees
@@ -33,7 +32,11 @@ config.AMM = {
   PositionIds = {},                                                                   -- Position IDs   
   PoolBalances = {},                                                                  -- Pool Balances
   OutomeSlotCount = 2,                                                                -- Outcome Slot Count
-  ONE = tostring(bint(bint.__pow(10, config.LPToken.Denomination)))                   -- E.g. 1e12
+}
+
+config.LPFee = {
+  Percentage = tostring(bint(bint.__div(bint.__pow(10, config.LPToken.Denomination), 100))), -- Fee Percentage, i.e. 1%
+  ONE = tostring(bint(bint.__pow(10, config.LPToken.Denomination)))                          -- E.g. 1e12
 }
 
 -- Derived
