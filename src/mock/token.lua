@@ -151,7 +151,7 @@ Handlers.add('transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), fu
     if not msg.Cast then
       -- Debit-Notice message template, that is sent to the Sender of the transfer
       local debitNotice = {
-        Target = msg.From,
+        -- Target = msg.From,
         Action = 'Debit-Notice',
         Recipient = msg.Recipient,
         Quantity = msg.Quantity,
@@ -180,7 +180,7 @@ Handlers.add('transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), fu
       end
 
       -- Send Debit-Notice and Credit-Notice
-      ao.send(debitNotice)
+      msg.reply(debitNotice)
       ao.send(creditNotice)
     end
   else

@@ -6,12 +6,12 @@ local config = require('modules.config')
 local amm = require('modules.amm')
 
 --[[
-    AMM
+    AMM ----------------------------------------------------------------
 ]]
 if not AMM or config.ResetState then AMM = amm:new() end
 
 --[[
-    MATCHING
+    MATCHING ----------------------------------------------------------------
 ]]
 local function isAddFunding(msg)
   if msg.From == AMM.collateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then

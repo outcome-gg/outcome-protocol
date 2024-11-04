@@ -1,5 +1,6 @@
 local crypto = require('.crypto')
 local bint = require('.bint')(256)
+local json = require('json')
 
 local ConditionalTokensHelpers = {}
 
@@ -51,6 +52,33 @@ end
 -- @param collectionId ID of the outcome collection associated with this position.
 function ConditionalTokensHelpers.getPositionId(collateralToken, collectionId)
   return crypto.digest.keccak256(collateralToken .. collectionId).asHex()
+end
+
+function ConditionalTokensHelpers:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, parentCollectionId, conditionId, indexSets)
+  local takeFee = (totalPayout * self.takeFeePercentage) / self.ONE
+  local totalPayoutMinusFee = totalPayout - takeFee
+
+  -- Send Take Fee to Take Fee Target
+  ao.send({
+    Target = collateralToken,
+    Action = "Transfer",
+    Recipient = self.takeFeeTarget,
+    Quantity = tostring(takeFee),
+  })
+
+  -- Return Total Payout minus Take Fee
+  ao.send({
+    Target = collateralToken,
+    Action = "Transfer",
+    Recipient = from,
+    Quantity = tostring(totalPayoutMinusFee),
+    ['X-Action'] = "Redeem-Positions-Completion",
+    ['X-CollateralToken'] = collateralToken,
+    ['X-ParentCollectionId'] = parentCollectionId,
+    ['X-ConditionId'] = conditionId,
+    ['X-IndexSets'] = json.encode(indexSets),
+    ['X-TotalPayout'] = json.encode(totalPayout)
+  })
 end
 
 return ConditionalTokensHelpers

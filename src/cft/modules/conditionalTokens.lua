@@ -2,6 +2,7 @@
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
+local config = require('modules.config')
 local semiFungibleTokens = require('modules.semiFungibleTokens')
 local conditionalTokensHelpers = require('modules.conditionalTokensHelpers')
 
@@ -22,7 +23,10 @@ function ConditionalTokens:new(name, ticker, denomination, logo)
     name = SemiFungibleTokens.name,
     ticker = SemiFungibleTokens.ticker,
     denomination = SemiFungibleTokens.denomination,
-    logo = SemiFungibleTokens.logo
+    logo = SemiFungibleTokens.logo,
+    takeFeePercentage = config.TakeFee.Percentage,
+    takeFeeTarget = config.TakeFee.Target,
+    ONE = config.TakeFee.ONE
   }
 
   -- Set metatable for method lookups from ConditionalTokensMethods, SemiFungibleTokensMethods, and ConditionalTokensHelpers
@@ -261,19 +265,7 @@ function ConditionalTokensMethods:redeemPositions(from, collateralToken, parentC
   if totalPayout > 0 then
     totalPayout = math.floor(totalPayout)
     if parentCollectionId == "" then
-      -- Transfer debit receipt to trigger payoutRedemptionNotice
-      ao.send({
-        Target = collateralToken,
-        Action = "Transfer",
-        Recipient = from,
-        Quantity = tostring(totalPayout),
-        ['X-Action'] = "Redeem-Positions-Completion",
-        ['X-CollateralToken'] = collateralToken,
-        ['X-ParentCollectionId'] = parentCollectionId,
-        ['X-ConditionId'] = conditionId,
-        ['X-IndexSets'] = json.encode(indexSets),
-        ['X-TotalPayout'] = json.encode(totalPayout)
-      })
+      self:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, parentCollectionId, conditionId, indexSets)
     else
       SemiFungibleTokens:mint(from, self.getPositionId(collateralToken, parentCollectionId), totalPayout)
     end

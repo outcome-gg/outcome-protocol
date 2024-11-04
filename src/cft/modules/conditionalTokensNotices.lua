@@ -98,7 +98,7 @@ end
 -- @param payout The payout amount.
 function ConditionalTokensNotices:payoutRedemptionNotice(redeemer, collateralToken, parentCollectionId, conditionId, indexSets, payout)
   ao.send({
-    Target = DataIndex,
+    Target = ao.id,
     Action = "Payout-Redemption-Notice",
     Process = ao.id,
     Redeemer = redeemer,

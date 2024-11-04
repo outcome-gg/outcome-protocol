@@ -1,5 +1,4 @@
 local bint = require('.bint')(256)
-
 local config = {}
 
 -- General
@@ -29,7 +28,7 @@ config.AMM = {
   Fee = tostring(bint(bint.__div(bint.__pow(10, config.LPToken.Denomination), 100))), -- Fee Percentage, i.e. 1%
   FeePoolWeight = '0',                                                                -- Fee Pool Weight
   TotalWithdrawnFees = '0',                                                           -- Total Withdrawn Fees
-  WithdrawnFees = {},                                                                 -- Withdrawn Fees                                                          -- Outcome Slot Counts
+  WithdrawnFees = {},                                                                 -- Withdrawn Fees
   CollectionIds = {},                                                                 -- Collection IDs
   PositionIds = {},                                                                   -- Position IDs   
   PoolBalances = {},                                                                  -- Pool Balances

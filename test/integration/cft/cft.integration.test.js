@@ -2237,7 +2237,7 @@ describe("cft.integration.test", function () {
         process: conditionalTokens,
       });
 
-      expect(Messages.length).to.be.equal(5)
+      expect(Messages.length).to.be.equal(6)
 
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
       const tokenId_0 = Messages[0].Tags.find(t => t.name === 'TokenId').value
@@ -2254,13 +2254,17 @@ describe("cft.integration.test", function () {
       const action_3 = Messages[3].Tags.find(t => t.name === 'Action').value
       const recipient_3 = Messages[3].Tags.find(t => t.name === 'Recipient').value
       const quantity_3 = Messages[3].Tags.find(t => t.name === 'Quantity').value
-    
+
       const action_4 = Messages[4].Tags.find(t => t.name === 'Action').value
-      const redeemer_4 = Messages[4].Tags.find(t => t.name === 'Redeemer').value
-      const payout_4 = Messages[4].Tags.find(t => t.name === 'Payout').value
-      const collateralToken_4 = Messages[4].Tags.find(t => t.name === 'CollateralToken').value
-      const indexSets_4 = Messages[4].Tags.find(t => t.name === 'IndexSets').value
-      const conditionId_4 = Messages[4].Tags.find(t => t.name === 'ConditionId').value
+      const recipient_4 = Messages[4].Tags.find(t => t.name === 'Recipient').value
+      const quantity_4 = Messages[4].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_5 = Messages[5].Tags.find(t => t.name === 'Action').value
+      const redeemer_5 = Messages[5].Tags.find(t => t.name === 'Redeemer').value
+      const payout_5 = Messages[5].Tags.find(t => t.name === 'Payout').value
+      const collateralToken_5 = Messages[5].Tags.find(t => t.name === 'CollateralToken').value
+      const indexSets_5 = Messages[5].Tags.find(t => t.name === 'IndexSets').value
+      const conditionId_5 = Messages[5].Tags.find(t => t.name === 'ConditionId').value
 
       expect(action_0).to.equal("Burn-Single-Notice")
       expect(tokenId_0).to.equal("b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f")
@@ -2275,15 +2279,19 @@ describe("cft.integration.test", function () {
       expect(quantity_2).to.equal("30")
     
       expect(action_3).to.equal("Transfer")
-      expect(recipient_3).to.equal(walletAddress)
-      expect(quantity_3).to.equal("2")
+      expect(recipient_3).to.equal(walletAddress2)
+      expect(quantity_3).to.equal((2*0.025).toString())
 
-      expect(action_4).to.equal("Payout-Redemption-Notice")
-      expect(redeemer_4).to.equal(walletAddress)
-      expect(payout_4).to.equal("2")
-      expect(collateralToken_4).to.equal(collateralToken)
-      expect(indexSets_4).to.equal(JSON.stringify([7,56,448]))
-      expect(conditionId_4).to.equal(conditionId)
+      expect(action_4).to.equal("Transfer")
+      expect(recipient_4).to.equal(walletAddress)
+      expect(quantity_4).to.equal((2*0.975).toString())
+
+      expect(action_5).to.equal("Payout-Redemption-Notice")
+      expect(redeemer_5).to.equal(walletAddress)
+      expect(payout_5).to.equal("2")
+      expect(collateralToken_5).to.equal(collateralToken)
+      expect(indexSets_5).to.equal(JSON.stringify([7,56,448]))
+      expect(conditionId_5).to.equal(conditionId)
     })
 
     it("+ve should verify zerod-out redeemed positions (and not affect others)", async () => {
@@ -2897,7 +2905,7 @@ describe("cft.integration.test", function () {
         process: conditionalTokens,
       });
 
-      expect(Messages.length).to.be.equal(4)
+      expect(Messages.length).to.be.equal(5)
 
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
       const tokenId_0 = Messages[0].Tags.find(t => t.name === 'TokenId').value
@@ -2910,13 +2918,17 @@ describe("cft.integration.test", function () {
       const action_2 = Messages[2].Tags.find(t => t.name === 'Action').value
       const recipient_2 = Messages[2].Tags.find(t => t.name === 'Recipient').value
       const quantity_2 = Messages[2].Tags.find(t => t.name === 'Quantity').value
-    
+
       const action_3 = Messages[3].Tags.find(t => t.name === 'Action').value
-      const redeemer_3 = Messages[3].Tags.find(t => t.name === 'Redeemer').value
-      const payout_3 = Messages[3].Tags.find(t => t.name === 'Payout').value
-      const collateralToken_3 = Messages[3].Tags.find(t => t.name === 'CollateralToken').value
-      const indexSets_3 = Messages[3].Tags.find(t => t.name === 'IndexSets').value
-      const conditionId_3 = Messages[3].Tags.find(t => t.name === 'ConditionId').value
+      const recipient_3 = Messages[3].Tags.find(t => t.name === 'Recipient').value
+      const quantity_3 = Messages[3].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_4 = Messages[4].Tags.find(t => t.name === 'Action').value
+      const redeemer_4 = Messages[4].Tags.find(t => t.name === 'Redeemer').value
+      const payout_4 = Messages[4].Tags.find(t => t.name === 'Payout').value
+      const collateralToken_4 = Messages[4].Tags.find(t => t.name === 'CollateralToken').value
+      const indexSets_4 = Messages[4].Tags.find(t => t.name === 'IndexSets').value
+      const conditionId_4 = Messages[4].Tags.find(t => t.name === 'ConditionId').value
 
       expect(action_0).to.equal("Burn-Single-Notice")
       expect(tokenId_0).to.equal("666234827f84bdad1f662bd523c3073aabd4ee205bab3b9d7a3ee4e4e288280f")
@@ -2927,15 +2939,19 @@ describe("cft.integration.test", function () {
       expect(quantity_1).to.equal("1000")
     
       expect(action_2).to.equal("Transfer")
-      expect(recipient_2).to.equal(walletAddress)
-      expect(quantity_2).to.equal("500")
+      expect(recipient_2).to.equal(walletAddress2)
+      expect(quantity_2).to.equal((500 * 0.025).toString())
 
-      expect(action_3).to.equal("Payout-Redemption-Notice")
-      expect(redeemer_3).to.equal(walletAddress)
-      expect(payout_3).to.equal("500")
-      expect(collateralToken_3).to.equal(collateralToken)
-      expect(indexSets_3).to.equal(JSON.stringify([1,2]))
-      expect(conditionId_3).to.equal(conditionId)
+      expect(action_3).to.equal("Transfer")
+      expect(recipient_3).to.equal(walletAddress)
+      expect(quantity_3).to.equal((500 * 0.975).toString())
+
+      expect(action_4).to.equal("Payout-Redemption-Notice")
+      expect(redeemer_4).to.equal(walletAddress)
+      expect(payout_4).to.equal("500")
+      expect(collateralToken_4).to.equal(collateralToken)
+      expect(indexSets_4).to.equal(JSON.stringify([1,2]))
+      expect(conditionId_4).to.equal(conditionId)
     })
 
     it("+ve should verify 2-way parlay (after reporting bulls-beat-pistons -> IN)", async () => {
@@ -3047,7 +3063,7 @@ describe("cft.integration.test", function () {
         process: conditionalTokens,
       });
 
-      expect(Messages.length).to.be.equal(4)
+      expect(Messages.length).to.be.equal(5)
 
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
       const tokenId_0 = Messages[0].Tags.find(t => t.name === 'TokenId').value
@@ -3060,13 +3076,17 @@ describe("cft.integration.test", function () {
       const action_2 = Messages[2].Tags.find(t => t.name === 'Action').value
       const recipient_2 = Messages[2].Tags.find(t => t.name === 'Recipient').value
       const quantity_2 = Messages[2].Tags.find(t => t.name === 'Quantity').value
-    
+
       const action_3 = Messages[3].Tags.find(t => t.name === 'Action').value
-      const redeemer_3 = Messages[3].Tags.find(t => t.name === 'Redeemer').value
-      const payout_3 = Messages[3].Tags.find(t => t.name === 'Payout').value
-      const collateralToken_3 = Messages[3].Tags.find(t => t.name === 'CollateralToken').value
-      const indexSets_3 = Messages[3].Tags.find(t => t.name === 'IndexSets').value
-      const conditionId_3 = Messages[3].Tags.find(t => t.name === 'ConditionId').value
+      const recipient_3 = Messages[3].Tags.find(t => t.name === 'Recipient').value
+      const quantity_3 = Messages[3].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_4 = Messages[4].Tags.find(t => t.name === 'Action').value
+      const redeemer_4 = Messages[4].Tags.find(t => t.name === 'Redeemer').value
+      const payout_4 = Messages[4].Tags.find(t => t.name === 'Payout').value
+      const collateralToken_4 = Messages[4].Tags.find(t => t.name === 'CollateralToken').value
+      const indexSets_4 = Messages[4].Tags.find(t => t.name === 'IndexSets').value
+      const conditionId_4 = Messages[4].Tags.find(t => t.name === 'ConditionId').value
 
       expect(action_0).to.equal("Burn-Single-Notice")
       expect(tokenId_0).to.equal("d67474ad9b1434d16b818f6ae016b301066c6c66a277f8db26dc62901c838537")
@@ -3077,15 +3097,19 @@ describe("cft.integration.test", function () {
       expect(quantity_1).to.equal("2000")
     
       expect(action_2).to.equal("Transfer")
-      expect(recipient_2).to.equal(walletAddress)
-      expect(quantity_2).to.equal("800")
+      expect(recipient_2).to.equal(walletAddress2)
+      expect(Number(quantity_2)).to.equal(800 * 0.025)
 
-      expect(action_3).to.equal("Payout-Redemption-Notice")
-      expect(redeemer_3).to.equal(walletAddress)
-      expect(payout_3).to.equal("800")
-      expect(collateralToken_3).to.equal(collateralToken)
-      expect(indexSets_3).to.equal(JSON.stringify([1,2]))
-      expect(conditionId_3).to.equal(conditionId)
+      expect(action_3).to.equal("Transfer")
+      expect(recipient_3).to.equal(walletAddress)
+      expect(Number(quantity_3)).to.equal(800 * 0.975)
+
+      expect(action_4).to.equal("Payout-Redemption-Notice")
+      expect(redeemer_4).to.equal(walletAddress)
+      expect(payout_4).to.equal("800")
+      expect(collateralToken_4).to.equal(collateralToken)
+      expect(indexSets_4).to.equal(JSON.stringify([1,2]))
+      expect(conditionId_4).to.equal(conditionId)
     })
 
     it("+ve should verify 2-way parlay (after reporting lakers-beat-celtics -> IN)", async () => {
