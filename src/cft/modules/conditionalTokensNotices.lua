@@ -11,6 +11,7 @@ local ConditionalTokensNotices = {}
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
 -- @param msg For sending msg.reply
 function ConditionalTokensNotices:conditionPreparationNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, msg)
+  -- TODO: Decide if to be sent to user and/or Data Index
   msg.reply({
     Action = "Condition-Preparation-Notice",
     ConditionId = conditionId,
@@ -27,15 +28,16 @@ end
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
 -- @param payoutNumerators The payout numerators for each outcome slot.
 function ConditionalTokensNotices:conditionResolutionNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, payoutNumerators)
-    ao.send({
-        Target = 'DataIndex',
-        Action = "Condition-Resolution-Notice",
-        ConditionId = conditionId,
-        ResolutionAgent = resolutionAgent,
-        QuestionId = questionId,
-        OutcomeSlotCount = tostring(outcomeSlotCount),
-        PayoutNumerators = payoutNumerators
-    })
+  -- TODO: Decide if to be sent to user and/or Data Index
+  ao.send({
+      Target = 'DataIndex',
+      Action = "Condition-Resolution-Notice",
+      ConditionId = conditionId,
+      ResolutionAgent = resolutionAgent,
+      QuestionId = questionId,
+      OutcomeSlotCount = tostring(outcomeSlotCount),
+      PayoutNumerators = payoutNumerators
+  })
 end
 
 -- @dev Emitted when a position is successfully split.
@@ -65,7 +67,7 @@ function ConditionalTokensNotices:positionSplitNotice(from, collateralToken, par
       notice[tagName] = tagValue
     end
   end
-  -- Send notice
+  -- Send notice | @dev ao.send vs msg.reply to ensure message is sent to user (not collateralToken)
   ao.send(notice)
 end
 
@@ -97,11 +99,11 @@ end
 -- @param indexSets The index sets.
 -- @param payout The payout amount.
 function ConditionalTokensNotices:payoutRedemptionNotice(redeemer, collateralToken, parentCollectionId, conditionId, indexSets, payout)
+  -- TODO: Decide if to be sent to user and/or Data Index
   ao.send({
-    Target = ao.id,
+    Target = redeemer,
     Action = "Payout-Redemption-Notice",
     Process = ao.id,
-    Redeemer = redeemer,
     CollateralToken = collateralToken,
     ParentCollectionId = parentCollectionId,
     ConditionId = conditionId,

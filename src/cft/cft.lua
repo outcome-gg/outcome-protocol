@@ -40,8 +40,7 @@ end
     Info
 ]]
 Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Get-Info"), function(msg)
-  ao.send({
-    Target = msg.From,
+  msg.reply({
     Name = Name,
     Ticker = Ticker,
     Logo = Logo,
@@ -123,7 +122,7 @@ Handlers.add("Get-Outcome-Slot-Count", Handlers.utils.hasMatchingTag("Action", "
   assert(msg.Tags.ConditionId, "ConditionId is required!")
   assert(type(msg.Tags.ConditionId) == 'string', "ConditionId must be a string!")
   local count = ConditionalTokens:getOutcomeSlotCount(msg)
-  ao.send({ Target = msg.From, Action = "Outcome-Slot-Count", ConditionId = msg.Tags.ConditionId, OutcomeSlotCount = tostring(count) })
+  msg.reply({ Action = "Outcome-Slot-Count", ConditionId = msg.Tags.ConditionId, OutcomeSlotCount = tostring(count) })
 end)
 
 --[[
@@ -134,7 +133,7 @@ Handlers.add("Get-Condition-Id", Handlers.utils.hasMatchingTag("Action", "Get-Co
   assert(msg.Tags.QuestionId, "QuestionId is required!")
   assert(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount is required!")
   local conditionId = ConditionalTokens.getConditionId(msg.Tags.ResolutionAgent, msg.Tags.QuestionId, msg.Tags.OutcomeSlotCount)
-  ao.send({ Target = msg.From, Action = "Condition-Id", ResolutionAgent = msg.Tags.ResolutionAgent, QuestionId = msg.Tags.QuestionId, OutcomeSlotCount = msg.Tags.OutcomeSlotCount, ConditionId = conditionId })
+  msg.reply({ Action = "Condition-Id", ResolutionAgent = msg.Tags.ResolutionAgent, QuestionId = msg.Tags.QuestionId, OutcomeSlotCount = msg.Tags.OutcomeSlotCount, ConditionId = conditionId })
 end)
 
 --[[
@@ -145,7 +144,7 @@ Handlers.add("Get-Collection-Id", Handlers.utils.hasMatchingTag("Action", "Get-C
   assert(msg.Tags.ConditionId, "ConditionId is required!")
   assert(msg.Tags.IndexSet, "IndexSet is required!")
   local collectionId = ConditionalTokens.getCollectionId(msg.Tags.ParentCollectionId, msg.Tags.ConditionId, msg.Tags.IndexSet)
-  ao.send({ Target = msg.From, Action = "Collection-Id", ParentCollectionId = msg.Tags.ParentCollectionId, ConditionId = msg.Tags.ConditionId, IndexSet = msg.Tags.IndexSet, CollectionId = collectionId })
+  msg.reply({ Action = "Collection-Id", ParentCollectionId = msg.Tags.ParentCollectionId, ConditionId = msg.Tags.ConditionId, IndexSet = msg.Tags.IndexSet, CollectionId = collectionId })
 end)
 
 --[[
@@ -155,7 +154,7 @@ Handlers.add("Get-Position-Id", Handlers.utils.hasMatchingTag("Action", "Get-Pos
   assert(msg.Tags.CollateralToken, "CollateralToken is required!")
   assert(msg.Tags.CollectionId, "CollectionId is required!")
   local positionId = ConditionalTokens.getPositionId(msg.Tags.CollateralToken, msg.Tags.CollectionId)
-  ao.send({ Target = msg.From, Action = "Position-Id", CollateralToken = msg.Tags.CollateralToken, CollectionId = msg.Tags.CollectionId, PositionId = positionId })
+  msg.reply({ Action = "Position-Id", CollateralToken = msg.Tags.CollateralToken, CollectionId = msg.Tags.CollectionId, PositionId = positionId })
 end)
 
 --[[
@@ -163,7 +162,7 @@ end)
 ]]
 Handlers.add("Get-Denominator", Handlers.utils.hasMatchingTag("Action", "Get-Denominator"), function(msg)
   assert(msg.Tags.ConditionId, "ConditionId is required!")
-  ao.send({ Target = msg.From, Action = "Denominator", ConditionId = msg.Tags.ConditionId, Denominator = tostring(PayoutDenominator[msg.Tags.ConditionId]) })
+  msg.reply({ Action = "Denominator", ConditionId = msg.Tags.ConditionId, Denominator = tostring(PayoutDenominator[msg.Tags.ConditionId]) })
 end)
 
 --[[
@@ -172,7 +171,7 @@ end)
 Handlers.add("Get-Payout-Numerators", Handlers.utils.hasMatchingTag("Action", "Get-Payout-Numerators"), function(msg)
   assert(msg.Tags.ConditionId, "ConditionId is required!")
   assert(ConditionalTokens.payoutNumerators[msg.Tags.ConditionId], "ConditionId must be valid!")
-  ao.send({
+  msg.reply({
     Action = "Payout-Numerators",
     ConditionId = msg.Tags.ConditionId,
     PayoutNumerators = json.encode(ConditionalTokens.payoutNumerators[msg.Tags.ConditionId])
@@ -185,7 +184,7 @@ end)
 Handlers.add("Get-Payout-Denominator", Handlers.utils.hasMatchingTag("Action", "Get-Payout-Denominator"), function(msg)
   assert(msg.Tags.ConditionId, "ConditionId is required!")
   assert(ConditionalTokens.payoutDenominator[msg.Tags.ConditionId], "ConditionId must be valid!")
-  ao.send({
+  msg.reply({
     Action = "Payout-Denominator",
     ConditionId = msg.Tags.ConditionId,
     PayoutDenominator = tostring(ConditionalTokens.payoutDenominator[msg.Tags.ConditionId])
@@ -203,8 +202,7 @@ Handlers.add("Balance-Of", Handlers.utils.hasMatchingTag("Action", "Balance-Of")
   assert(msg.Tags.TokenId, "TokenId is required!")
   local bal = ConditionalTokens:getBalanceOf(msg.From, msg.Tags.Recipient, msg.Tags.TokenId)
 
-  ao.send({
-    Target = msg.From,
+  msg.reply({
     Balance = bal,
     TokenId = msg.Tags.TokenId,
     Ticker = Ticker,
