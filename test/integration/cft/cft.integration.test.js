@@ -2280,11 +2280,11 @@ describe("cft.integration.test", function () {
     
       expect(action_3).to.equal("Transfer")
       expect(recipient_3).to.equal(walletAddress2)
-      expect(quantity_3).to.equal((2*0.025).toString())
+      expect(quantity_3).to.equal((Math.ceil(2*0.025)).toString())
 
       expect(action_4).to.equal("Transfer")
       expect(recipient_4).to.equal(walletAddress)
-      expect(quantity_4).to.equal((2*0.975).toString())
+      expect(quantity_4).to.equal((2 - Math.ceil(2*0.025)).toString())
 
       expect(action_5).to.equal("Payout-Redemption-Notice")
       expect(redeemer_5).to.equal(walletAddress)
@@ -2292,6 +2292,34 @@ describe("cft.integration.test", function () {
       expect(collateralToken_5).to.equal(collateralToken)
       expect(indexSets_5).to.equal(JSON.stringify([7,56,448]))
       expect(conditionId_5).to.equal(conditionId)
+    })
+
+    it("+ve should should redeem (verify take fee)", async () => {
+      await new Promise(r => setTimeout(r, 10000));
+      let messageId;
+      await message({
+        process: collateralToken,
+        tags: [
+          { name: "Action", value: "Balances" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: collateralToken,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+      
+      expect(balances_[walletAddress2]).to.equal('10000000000000001')
     })
 
     it("+ve should verify zerod-out redeemed positions (and not affect others)", async () => {
@@ -2940,11 +2968,11 @@ describe("cft.integration.test", function () {
     
       expect(action_2).to.equal("Transfer")
       expect(recipient_2).to.equal(walletAddress2)
-      expect(quantity_2).to.equal((500 * 0.025).toString())
+      expect(quantity_2).to.equal((Math.ceil(500 * 0.025)).toString())
 
       expect(action_3).to.equal("Transfer")
       expect(recipient_3).to.equal(walletAddress)
-      expect(quantity_3).to.equal((500 * 0.975).toString())
+      expect(quantity_3).to.equal((500 - Math.ceil(500 * 0.025)).toString())
 
       expect(action_4).to.equal("Payout-Redemption-Notice")
       expect(redeemer_4).to.equal(walletAddress)
@@ -2954,7 +2982,36 @@ describe("cft.integration.test", function () {
       expect(conditionId_4).to.equal(conditionId)
     })
 
-    it("+ve should verify 2-way parlay (after reporting bulls-beat-pistons -> IN)", async () => {
+     it("+ve should redeem (verify 2-way parlay: take fee)", async () => {
+      await new Promise(r => setTimeout(r, 10000));
+      let messageId;
+      await message({
+        process: collateralToken,
+        tags: [
+          { name: "Action", value: "Balances" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: collateralToken,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+      
+      // prior balance + fee
+      expect(balances_[walletAddress2]).to.equal('10000000000000014')
+    })
+
+    it("+ve should redeem (verify 2-way parlay: after reporting bulls-beat-pistons -> IN)", async () => {
       await new Promise(r => setTimeout(r, 1000));
       let messageId;
       await message({

@@ -1236,8 +1236,6 @@ describe("amm.integration.test", function () {
         if (Error) {
           console.log(Error)
         }
-
-        console.log(Messages[0].Tags)
       }
 
       async function getBalanceOf(token, tokenId, recipient) {
