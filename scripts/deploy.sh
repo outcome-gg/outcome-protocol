@@ -50,7 +50,7 @@ if [ "$1" == "test" ]; then
     echo "Running in TEST mode..."
     # Deploy core contracts
     create_or_update_process TEST_DATA_INDEX4 src/core/dataIndex.lua --sqlite
-    create_or_update_process TEST_MARKET_FOUNDRY4 src/core/marketFoundry.lua --sqlite
+    create_or_update_process TEST_MARKET_FACTORY2 src/core/marketFactory.lua --sqlite
     # Deploy market contracts
     create_or_update_process TEST_CONDITIONAL_TOKENS2 src/cft/cft.lua
     create_or_update_process TEST_DLOB src/market/market.lua
@@ -64,7 +64,7 @@ elif [ "$1" == "prod" ]; then
     echo "Running in PROD mode..."
     # Deploy core contracts
     create_or_update_process PROD_DATA_INDEX4 src/core/dataIndex.lua --sqlite
-    create_or_update_process PROD_MARKET_FOUNDRY4 src/core/marketFoundry.lua --sqlite
+    create_or_update_process PROD_MARKET_FACTORY src/core/marketFactory.lua --sqlite
     # Deploy market contracts
     create_or_update_process PROD_CONDITIONAL_TOKENS2 src/cft/cft.lua
     create_or_update_process PROD_DLOB src/market/market.lua

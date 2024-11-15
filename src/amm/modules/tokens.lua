@@ -64,11 +64,8 @@ function TokensMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
     self.balances[from] = tostring(bint.__sub(balance, qty))
     self.balances[recipient] = tostring(bint.__add(self.balances[recipient], qty))
 
-    --[[
-         Only send the notifications to the Sender and Recipient
-         if the Cast tag is not set on the Transfer message
-       ]]
-    --
+    -- Only send the notifications to the Sender and Recipient
+    -- if the Cast tag is not set on the Transfer message
     if not cast then
       -- Debit-Notice message template, that is sent to the Sender of the transfer
       local debitNotice = {

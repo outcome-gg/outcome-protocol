@@ -66,8 +66,6 @@ function ConditionalTokensHelpers:returnTotalPayoutMinusTakeFee(collateralToken,
     Quantity = takeFee,
   })
 
-  print("takeFee: " .. takeFee)
-
   -- Return Total Payout minus Take Fee
   ao.send({
     Target = collateralToken,

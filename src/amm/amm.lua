@@ -1,18 +1,17 @@
 local json = require('json')
 local bint = require('.bint')(256)
-local ownable = require('@autonomousfinance/ownable')
 local ao = require('.ao')
 local config = require('modules.config')
 local amm = require('modules.amm')
 
---[[
-    AMM ----------------------------------------------------------------
-]]
+---------------------------------------------------------------------------------
+-- AMM --------------------------------------------------------------------------
+---------------------------------------------------------------------------------
 if not AMM or config.ResetState then AMM = amm:new() end
 
---[[
-    MATCHING ----------------------------------------------------------------
-]]
+---------------------------------------------------------------------------------
+-- MATCHING ---------------------------------------------------------------------
+---------------------------------------------------------------------------------
 local function isAddFunding(msg)
   if msg.From == AMM.collateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
     return true
@@ -85,13 +84,11 @@ local function isSellSuccessReturnUnburned(msg)
   end
 end
 
---[[
-    CORE HANDLERS ----------------------------------------------------------------
-]]
+---------------------------------------------------------------------------------
+-- CORE HANDLERS ----------------------------------------------------------------
+---------------------------------------------------------------------------------
 
---[[
-    Info
-]]
+-- Info
 Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(msg)
   msg.reply({
     Name = AMM.tokens.name,
@@ -107,13 +104,12 @@ Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(m
   })
 end)
 
---[[
-    Init
-]]
+-- Init
 -- @dev to only enable shallow markets on launch, i.e. where parentCollectionId = ""
 Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(msg)
   -- ownable.onlyOwner(msg) -- access control TODO: test after spawning is enabled
   assert(AMM.initialized == false, "Market already initialized!")
+  assert(msg.Tags.MarketId, "MarketId is required!")
   assert(msg.Tags.ConditionId, "ConditionId is required!")
   assert(msg.Tags.ConditionalTokens, "ConditionalTokens is required!")
   assert(msg.Tags.CollateralToken, "CollateralToken is required!")
@@ -129,12 +125,10 @@ Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(m
   assert(msg.Tags.Ticker, "Ticker is required!")
   assert(msg.Tags.Logo, "Logo is required!")
 
-  AMM:init(msg.Tags.CollateralToken, msg.Tags.ConditionalTokens, msg.Tags.ConditionId, collectionIds, positionIds, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo)
+  AMM:init(msg.Tags.CollateralToken, msg.Tags.ConditionalTokens, msg.Tags.MarketId, msg.Tags.ConditionId, collectionIds, positionIds, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo, msg)
 end)
 
---[[
-    Add Funding
-]]
+-- Add Funding
 -- @dev called on credit-notice from collateralToken with X-Action == 'Add-Funding'
 Handlers.add('Add-Funding', isAddFunding, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
@@ -142,8 +136,13 @@ Handlers.add('Add-Funding', isAddFunding, function(msg)
   assert(msg.Tags['X-Distribution'], 'X-Distribution is required!')
   local distribution = json.decode(msg.Tags['X-Distribution'])
 
+  -- Enable actioning on behalf of others
+  local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
+
   if AMM:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
-    AMM:addFunding(msg.Tags["Sender"], msg.Tags['Quantity'], distribution)
+    AMM:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags['Quantity'], distribution, msg)
+  else
+    msg.reply({Data = {Success = false}})
   end
 end)
 
@@ -152,17 +151,16 @@ Handlers.add('Add-Funding-Position', isAddFundingPosition, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
   assert(msg.Tags['X-Sender'], 'X-Sender is required!')
+  assert(msg.Tags['X-OnBehalfOf'], 'X-OnBehalfOf is required!')
   assert(msg.Tags['X-LPTokensMintAmount'], 'X-LPTokensMintAmount is required!')
   assert(bint.__lt(0, bint(msg.Tags['X-LPTokensMintAmount'])), 'X-LPTokensMintAmount must be greater than zero!')
   assert(msg.Tags['X-SendBackAmounts'], 'X-SendBackAmounts is required!')
   local sendBackAmounts = json.decode(msg.Tags['X-SendBackAmounts'])
 
-  AMM:addFundingPosition(msg.Tags["X-Sender"], msg.Tags['Quantity'],  msg.Tags['X-LPTokensMintAmount'], sendBackAmounts)
+  AMM:addFundingPosition(msg.Tags['X-Sender'], msg.Tags['X-OnBehalfOf'], msg.Tags['Quantity'],  msg.Tags['X-LPTokensMintAmount'], sendBackAmounts)
 end)
 
---[[
-    Remove Funding
-]]
+-- Remove Funding
 -- @dev called on credit-notice from ao.id with X-Action == 'Remove-Funding'
 Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
@@ -172,9 +170,7 @@ Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
   end
 end)
 
---[[
-    Calc Buy Amount
-]]
+-- Calc Buy Amount
 Handlers.add("Calc-Buy-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Buy-Amount"), function(msg)
   assert(msg.Tags.InvestmentAmount, 'InvestmentAmount is required!')
   assert(msg.Tags.OutcomeIndex, 'OutcomeIndex is required!')
@@ -185,9 +181,7 @@ Handlers.add("Calc-Buy-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Bu
   msg.reply({ Data = buyAmount })
 end)
 
---[[
-    Calc Sell Amount
-]]
+-- Calc Sell Amount
 Handlers.add("Calc-Sell-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Sell-Amount"), function(msg)
   assert(msg.Tags.ReturnAmount, 'ReturnAmount is required!')
   assert(msg.Tags.OutcomeIndex, 'OutcomeIndex is required!')
@@ -198,13 +192,14 @@ Handlers.add("Calc-Sell-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-S
   msg.reply({ Data = sellAmount })
 end)
 
---[[
-    Buy
-]]
+-- Buy
 -- @dev called on credit-notice from collateralToken with X-Action == 'Buy'
 Handlers.add("Buy", isBuy, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
+
+  -- Enable actioning on behalf of others
+  local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
 
   local error = false
   local errorMessage = ''
@@ -221,7 +216,7 @@ Handlers.add("Buy", isBuy, function(msg)
     outcomeTokensToBuy = AMM:calcBuyAmount(msg.Tags.Quantity, tonumber(msg.Tags['X-OutcomeIndex']))
     if not bint.__le(bint(msg.Tags['X-MinOutcomeTokensToBuy']), bint(outcomeTokensToBuy)) then
       error = true
-      errorMessage = "minimum buy amount not reached"
+      errorMessage = 'minimum buy amount not reached'
     end
   end
 
@@ -236,13 +231,11 @@ Handlers.add("Buy", isBuy, function(msg)
     })
     assert(false, errorMessage)
   else
-    AMM:buy(msg.Tags.Sender, msg.Tags.Quantity, tonumber(msg.Tags['X-OutcomeIndex']), tonumber(msg.Tags['X-MinOutcomeTokensToBuy']))
+    AMM:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, tonumber(msg.Tags['X-OutcomeIndex']), tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
   end
 end)
 
---[[
-    Sell
-]]
+-- Sell
 -- @dev called on credit-single-notice from conditionalTokens with X-Action == 'Sell'
 Handlers.add("Sell", isSell, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
@@ -281,44 +274,35 @@ Handlers.add("Sell", isSell, function(msg)
       Quantity = msg.Tags.Quantity,
       ['X-Error'] = 'Sell Error: ' .. errorMessage
     })
-    print(errorMessage)
     assert(false, errorMessage)
   else
     AMM:sell(msg.Tags.Sender, msg.Tags['X-ReturnAmount'], tonumber(msg.Tags['X-OutcomeIndex']), tonumber(msg.Tags['X-MaxOutcomeTokensToSell']))
   end
 end)
 
---[[
-    Collected Fees
-]]
+-- Collected Fees
 -- @dev Returns fees collected by the protocol that haven't been withdrawn
 Handlers.add("Collected-Fees", Handlers.utils.hasMatchingTag("Action", "Collected-Fees"), function(msg)
   msg.reply({ Data = AMM:collectedFees() })
 end)
 
---[[
-    Fees Withdrawable
-]]
+-- Fees Withdrawable
 -- @dev Returns fees withdrawable by the message sender
 Handlers.add("Fees-Withdrawable", Handlers.utils.hasMatchingTag("Action", "Fees-Withdrawable"), function(msg)
   msg.reply({ Data = AMM:feesWithdrawableBy(msg.From) })
 end)
 
---[[
-    Withdraw Fees
-]]
+-- Withdraw Fees
 -- @dev Withdraws withdrawable fees to the message sender
 Handlers.add("Withdraw-Fees", Handlers.utils.hasMatchingTag("Action", "Withdraw-Fees"), function(msg)
   msg.reply({ Data = AMM:withdrawFees(msg.From) })
 end)
 
---[[
-    LP TOKEN HANDLERS ----------------------------------------------------------------
-]]
+---------------------------------------------------------------------------------
+-- LP TOKEN HANDLERS ------------------------------------------------------------
+---------------------------------------------------------------------------------
 
---[[
-    Balance
-]]
+-- Balance
 Handlers.add('Balance', Handlers.utils.hasMatchingTag('Action', 'Balance'), function(msg)
   local bal = '0'
 
@@ -341,16 +325,12 @@ Handlers.add('Balance', Handlers.utils.hasMatchingTag('Action', 'Balance'), func
   })
 end)
 
---[[
-    Balances
-]]
+-- Balances
 Handlers.add('Balances', Handlers.utils.hasMatchingTag('Action', 'Balances'),
   function(msg) msg.reply({ Data = json.encode(AMM.tokens.balances) })
 end)
 
---[[
-    Transfer
-]]
+-- Transfer
 Handlers.add('Transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), function(msg)
   assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
   assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
@@ -358,9 +338,7 @@ Handlers.add('Transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), fu
   AMM:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg.Tags, msg.Id)
 end)
 
---[[
-    Total Supply
-]]
+-- Total Supply
 Handlers.add('Total-Supply', Handlers.utils.hasMatchingTag('Action', 'Total-Supply'), function(msg)
   assert(msg.From ~= ao.id, 'Cannot call Total-Supply from the same process!')
 
@@ -371,13 +349,11 @@ Handlers.add('Total-Supply', Handlers.utils.hasMatchingTag('Action', 'Total-Supp
   })
 end)
 
---[[
-    CALLBACK HANDLERS ----------------------------------------------------------------
-]]
+---------------------------------------------------------------------------------
+-- CALLBACK HANDLERS ------------------------------------------------------------
+---------------------------------------------------------------------------------
 
---[[
-    Buy Success
-]]
+-- Buy Success
 -- @dev called on split-position-notice from conditionalTokens with X-OutcomeIndex ~= '0'
 Handlers.add("Buy-Success", isBuySuccess, function(msg)
   assert(msg.Tags.Quantity, "Quantity is required!")
@@ -399,9 +375,7 @@ Handlers.add("Buy-Success", isBuySuccess, function(msg)
   })
 end)
 
---[[
-    Sell Success CollateralToken
-]]
+-- Sell Success CollateralToken
 -- @dev called on credit-notice from collateralToken with X-Action == 'Merge-Positions-Completion'
 Handlers.add("Sell-Success-CollateralToken", isSellSuccessCollateralToken, function(msg)
   assert(msg.Tags.Quantity, "Quantity is required!")
@@ -425,9 +399,7 @@ Handlers.add("Sell-Success-CollateralToken", isSellSuccessCollateralToken, funct
   })
 end)
 
---[[
-    Sell Success ConditionalTokens
-]]
+-- Sell Success ConditionalTokens
 -- @dev on sell order merge success send return amount to user. fees retained within process. 
 Handlers.add("Sell-Success-ConditionalTokens", isSellSuccessConditionalTokens, function(msg)
   assert(msg.Tags.Quantities, "Quantities must exist!")
@@ -454,9 +426,7 @@ Handlers.add("Sell-Success-ConditionalTokens", isSellSuccessConditionalTokens, f
   })
 end)
 
---[[
-    Sell Success Return Unburned
-]]
+-- Sell Success Return Unburned
 -- @dev called on debit-single-notice from conditionalTokens with X-Action == 'Return-Unburned'
 Handlers.add("Sell-Success-Return-Unburned", isSellSuccessReturnUnburned, function(msg)
   -- Update Pool Balances

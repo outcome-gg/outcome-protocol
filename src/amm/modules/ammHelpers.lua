@@ -77,9 +77,8 @@ function AMMHelpers:validateRemoveFunding(from, quantity)
 end
 
 -- @dev creates a position within the conditionalTokens process
-function AMMHelpers:createPosition(from, quantity, outcomeIndex, outcomeTokensToBuy, lpTokensMintAmount, sendBackAmounts)
-  ao.send({
-    Target = self.collateralToken,
+function AMMHelpers:createPosition(from, onBehalfOf, quantity, outcomeIndex, outcomeTokensToBuy, lpTokensMintAmount, sendBackAmounts, msg)
+  msg.forward(self.collateralToken, {
     Action = "Transfer",
     Quantity = quantity,
     Recipient = self.conditionalTokens,
@@ -91,7 +90,8 @@ function AMMHelpers:createPosition(from, quantity, outcomeIndex, outcomeTokensTo
     ['X-OutcomeTokensToBuy'] = tostring(outcomeTokensToBuy),
     ['X-LPTokensMintAmount'] = tostring(lpTokensMintAmount),
     ['X-SendBackAmounts'] = json.encode(sendBackAmounts),
-    ['X-Sender'] = from
+    ['X-Sender'] = from,
+    ['X-OnBehalfOf'] = onBehalfOf
   })
 end
 

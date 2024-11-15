@@ -144,7 +144,24 @@ Handlers.add("Get-Collection-Id", Handlers.utils.hasMatchingTag("Action", "Get-C
   assert(msg.Tags.ConditionId, "ConditionId is required!")
   assert(msg.Tags.IndexSet, "IndexSet is required!")
   local collectionId = ConditionalTokens.getCollectionId(msg.Tags.ParentCollectionId, msg.Tags.ConditionId, msg.Tags.IndexSet)
-  msg.reply({ Action = "Collection-Id", ParentCollectionId = msg.Tags.ParentCollectionId, ConditionId = msg.Tags.ConditionId, IndexSet = msg.Tags.IndexSet, CollectionId = collectionId })
+  msg.reply({ Action = "Collection-Id", ParentCollectionId = msg.Tags.ParentCollectionId, ConditionId = msg.Tags.ConditionId, IndexSet = msg.Tags.IndexSet, Data = collectionId })
+end)
+
+--[[
+    Get Collection Ids
+]]
+Handlers.add("Get-Collection-Ids", Handlers.utils.hasMatchingTag("Action", "Get-Collection-Ids"), function(msg)
+  assert(msg.Tags.ParentCollectionId, "ParentCollectionId is required!")
+  assert(msg.Tags.ConditionId, "ConditionId is required!")
+  assert(msg.Tags.IndexSets, "IndexSets is required!")
+  local indexSets = json.decode(msg.Tags.IndexSets)
+  assert(type(indexSets) == 'table', "IndexSets must be an array!")
+  local collectionIds = {}
+  for i = 1, #indexSets do
+    local collectionId = ConditionalTokens.getCollectionId(msg.Tags.ParentCollectionId, msg.Tags.ConditionId, indexSets[i])
+    table.insert(collectionIds, collectionId)
+  end
+  msg.reply({ Action = "Collection-Ids", ParentCollectionId = msg.Tags.ParentCollectionId, ConditionId = msg.Tags.ConditionId, IndexSets = msg.Tags.IndexSets, Data = json.encode(collectionIds) })
 end)
 
 --[[
@@ -154,7 +171,23 @@ Handlers.add("Get-Position-Id", Handlers.utils.hasMatchingTag("Action", "Get-Pos
   assert(msg.Tags.CollateralToken, "CollateralToken is required!")
   assert(msg.Tags.CollectionId, "CollectionId is required!")
   local positionId = ConditionalTokens.getPositionId(msg.Tags.CollateralToken, msg.Tags.CollectionId)
-  msg.reply({ Action = "Position-Id", CollateralToken = msg.Tags.CollateralToken, CollectionId = msg.Tags.CollectionId, PositionId = positionId })
+  msg.reply({ Action = "Position-Id", CollateralToken = msg.Tags.CollateralToken, CollectionId = msg.Tags.CollectionId, Data = positionId })
+end)
+
+--[[
+    Get Position Ids
+]]
+Handlers.add("Get-Position-Ids", Handlers.utils.hasMatchingTag("Action", "Get-Position-Ids"), function(msg)
+  assert(msg.Tags.CollateralToken, "CollateralToken is required!")
+  assert(msg.Tags.CollectionIds, "CollectionIds is required!")
+  local collectionIds = json.decode(msg.Tags.CollectionIds)
+  assert(type(collectionIds) == 'table', "CollectionIds must be an array!")
+  local positionIds = {}
+  for i = 1, #collectionIds do
+    local positionId = ConditionalTokens.getPositionId(msg.Tags.CollateralToken, collectionIds[i])
+    table.insert(positionIds, positionId)
+  end
+  msg.reply({ Action = "Position-Ids", CollateralToken = msg.Tags.CollateralToken, CollectionIds = msg.Tags.CollectionIds, Data = json.encode(positionIds) })
 end)
 
 --[[
@@ -170,11 +203,11 @@ end)
 ]]
 Handlers.add("Get-Payout-Numerators", Handlers.utils.hasMatchingTag("Action", "Get-Payout-Numerators"), function(msg)
   assert(msg.Tags.ConditionId, "ConditionId is required!")
-  assert(ConditionalTokens.payoutNumerators[msg.Tags.ConditionId], "ConditionId must be valid!")
+  local data = PayoutNumerators[msg.Tags.ConditionId] == nil and nil or PayoutNumerators[msg.Tags.ConditionId]
   msg.reply({
     Action = "Payout-Numerators",
     ConditionId = msg.Tags.ConditionId,
-    PayoutNumerators = json.encode(ConditionalTokens.payoutNumerators[msg.Tags.ConditionId])
+    Data = tostring(data)
   })
 end)
 
@@ -183,11 +216,10 @@ end)
 ]]
 Handlers.add("Get-Payout-Denominator", Handlers.utils.hasMatchingTag("Action", "Get-Payout-Denominator"), function(msg)
   assert(msg.Tags.ConditionId, "ConditionId is required!")
-  assert(ConditionalTokens.payoutDenominator[msg.Tags.ConditionId], "ConditionId must be valid!")
   msg.reply({
     Action = "Payout-Denominator",
     ConditionId = msg.Tags.ConditionId,
-    PayoutDenominator = tostring(ConditionalTokens.payoutDenominator[msg.Tags.ConditionId])
+    Data = ConditionalTokens.payoutDenominator[msg.Tags.ConditionId] or nil
   })
 end)
 

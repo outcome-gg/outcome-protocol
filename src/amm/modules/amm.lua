@@ -49,16 +49,14 @@ function AMM:new()
   return obj
 end
 
---[[
-    FUNCTIONS
-]]
+---------------------------------------------------------------------------------
+-- FUNCTIONS --------------------------------------------------------------------
+---------------------------------------------------------------------------------
 
---[[
-    Init
-  ]]
---
-function AMMMethods:init(collateralToken, conditionalTokens, conditionId, collectionIds, positionIds, outcomeSlotCount, name, ticker, logo)
+-- Init
+function AMMMethods:init(collateralToken, conditionalTokens, marketId, conditionId, collectionIds, positionIds, outcomeSlotCount, name, ticker, logo, msg)
   -- Set AMM vars
+  self.marketId = marketId
   self.conditionId = conditionId
   self.conditionalTokens = conditionalTokens
   self.collateralToken = collateralToken
@@ -74,15 +72,13 @@ function AMMMethods:init(collateralToken, conditionalTokens, conditionId, collec
   -- Initialized
   self.initialized = true
 
-  self.newMarketNotice(collateralToken, conditionalTokens, conditionId, collectionIds, positionIds, name, ticker, logo)
+  self.newMarketNotice(collateralToken, conditionalTokens, marketId, conditionId, collectionIds, positionIds, outcomeSlotCount, name, ticker, logo, msg)
 end
 
---[[
-    Add Funding 
-]]
+-- Add Funding 
 -- @dev: TODO: test the use of distributionHint to set the initial probability distribuiton
 -- @dev: TODO: test that adding subsquent funding does not alter the probability distribution
-function AMMMethods:addFunding(from, addedFunds, distributionHint)
+function AMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, msg)
   assert(bint.__lt(0, bint(addedFunds)), "funding must be non-zero")
 
   local sendBackAmounts = {}
@@ -128,12 +124,12 @@ function AMMMethods:addFunding(from, addedFunds, distributionHint)
     mintAmount = tostring(addedFunds)
   end
   -- @dev awaits via handlers before running AMMMethods:addFundingPosition
-  self:createPosition(from, addedFunds, '0', '0', mintAmount, sendBackAmounts)
+  self:createPosition(from, onBehalfOf, addedFunds, '0', '0', mintAmount, sendBackAmounts, msg)
 end
 
 -- @dev Run on completion of self:createPosition external call
-function AMMMethods:addFundingPosition(from, addedFunds, mintAmount, sendBackAmounts)
-  self:mint(from, mintAmount)
+function AMMMethods:addFundingPosition(from, onBehalfOf, addedFunds, mintAmount, sendBackAmounts)
+  self:mint(onBehalfOf, mintAmount)
   -- Remove non-zero items before transfer-batch
   local nonZeroAmounts = {}
   local nonZeroPositionIds = {}
@@ -145,7 +141,7 @@ function AMMMethods:addFundingPosition(from, addedFunds, mintAmount, sendBackAmo
   end
   -- Send back conditional tokens should there be an uneven distribution
   if #nonZeroAmounts ~= 0 then
-    ao.send({ Target=self.conditionalTokens, Action = "Transfer-Batch", Recipient=from, TokenIds = json.encode(nonZeroPositionIds), Quantities=json.encode(nonZeroAmounts)})
+    ao.send({ Target=self.conditionalTokens, Action = "Transfer-Batch", Recipient=onBehalfOf, TokenIds = json.encode(nonZeroPositionIds), Quantities=json.encode(nonZeroAmounts)})
   end
   -- Transform sendBackAmounts to array of amounts added
   for i = 1, #sendBackAmounts do
@@ -155,10 +151,7 @@ function AMMMethods:addFundingPosition(from, addedFunds, mintAmount, sendBackAmo
   self.fundingAddedNotice(from, sendBackAmounts, mintAmount)
 end
 
---[[
-    Remove Funding 
-  ]]
---
+-- Remove Funding 
 function AMMMethods:removeFunding(from, sharesToBurn)
   assert(bint.__lt(0, bint(sharesToBurn)), "funding must be non-zero")
   -- Calculate conditionalTokens amounts
@@ -182,9 +175,7 @@ function AMMMethods:removeFunding(from, sharesToBurn)
   self.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
 end
 
---[[
-    Calc Buy Amount 
-]]
+-- Calc Buy Amount 
 function AMMMethods:calcBuyAmount(investmentAmount, outcomeIndex)
   assert(bint.__lt(0, investmentAmount), 'InvestmentAmount must be greater than zero!')
   assert(bint.__lt(0, outcomeIndex), 'OutcomeIndex must be greater than zero!')
@@ -206,9 +197,7 @@ function AMMMethods:calcBuyAmount(investmentAmount, outcomeIndex)
   return tostring(bint.ceil(buyTokenPoolBalance + investmentAmountMinusFees - AMMHelpers.ceildiv(endingOutcomeBalance, self.ONE)))
 end
 
---[[
-    Calc Sell Amount
-]]
+-- Calc Sell Amount
 function AMMMethods:calcSellAmount(returnAmount, outcomeIndex)
   assert(bint.__lt(0, returnAmount), 'ReturnAmount must be greater than zero!')
   assert(bint.__lt(0, outcomeIndex), 'OutcomeIndex must be greater than zero!')
@@ -230,10 +219,8 @@ function AMMMethods:calcSellAmount(returnAmount, outcomeIndex)
   return tostring(bint.ceil(returnAmountPlusFees + AMMHelpers.ceildiv(endingOutcomeBalance, self.ONE) - sellTokenPoolBalance))
 end
 
---[[
-    Buy 
-]]
-function AMMMethods:buy(from, investmentAmount, outcomeIndex, minOutcomeTokensToBuy)
+-- Buy 
+function AMMMethods:buy(from, onBehalfOf, investmentAmount, outcomeIndex, minOutcomeTokensToBuy, msg)
   local outcomeTokensToBuy = self:calcBuyAmount(investmentAmount, outcomeIndex)
   assert(bint.__le(minOutcomeTokensToBuy, bint(outcomeTokensToBuy)), "Minimum outcome tokens not reached!")
 
@@ -241,14 +228,12 @@ function AMMMethods:buy(from, investmentAmount, outcomeIndex, minOutcomeTokensTo
   self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
   local investmentAmountMinusFees = tostring(bint.__sub(investmentAmount, bint(feeAmount)))
   -- Split position through all conditions
-  self:createPosition(from, investmentAmountMinusFees, outcomeIndex, outcomeTokensToBuy, 0, {})
+  self:createPosition(from, onBehalfOf, investmentAmountMinusFees, outcomeIndex, outcomeTokensToBuy, 0, {}, msg)
   -- Send notice (Process continued via "BuyOrderCompletion" handler)
   self.buyNotice(from, investmentAmount, feeAmount, outcomeIndex, outcomeTokensToBuy)
 end
 
---[[
-    Sell 
-]]
+-- Sell 
 function AMMMethods:sell(from, returnAmount, outcomeIndex, maxOutcomeTokensToSell)
   local outcomeTokensToSell = self:calcSellAmount(returnAmount, outcomeIndex)
   assert(bint.__le(bint(outcomeTokensToSell), bint(maxOutcomeTokensToSell)), "Maximum sell amount exceeded!")
@@ -265,9 +250,7 @@ function AMMMethods:sell(from, returnAmount, outcomeIndex, maxOutcomeTokensToSel
   self.sellNotice(from, returnAmount, feeAmount, outcomeIndex, outcomeTokensToSell)
 end
 
---[[
-    Fees
-]]
+-- Fees
 -- @dev Returns the total fees collected within the AMM
 function AMMMethods:collectedFees()
   return self.feePoolWeight - self.totalWithdrawnFees
@@ -313,9 +296,7 @@ function AMMMethods:_beforeTokenTransfer(from, to, amount)
   end
 end
 
---[[
-    LP Tokens
-]]
+-- LP Tokens
 -- @dev See tokensMethods:mint & _beforeTokenTransfer
 function AMMMethods:mint(to, quantity)
   self:_beforeTokenTransfer(nil, to, quantity)

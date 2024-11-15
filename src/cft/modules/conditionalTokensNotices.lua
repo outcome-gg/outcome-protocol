@@ -50,7 +50,6 @@ end
 -- @param msg For sending X-Tags
 function ConditionalTokensNotices:positionSplitNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity, msg)
   local notice = {
-    Target = from,
     Action = "Split-Position-Notice",
     Process = ao.id,
     Stakeholder = from,
@@ -68,7 +67,7 @@ function ConditionalTokensNotices:positionSplitNotice(from, collateralToken, par
     end
   end
   -- Send notice | @dev ao.send vs msg.reply to ensure message is sent to user (not collateralToken)
-  ao.send(notice)
+  msg.forward(from, notice)
 end
 
 
