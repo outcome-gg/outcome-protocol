@@ -2,18 +2,18 @@ local json = require('json')
 local bint = require('.bint')(256)
 local ao = require('.ao')
 local config = require('modules.config')
-local amm = require('modules.amm')
+local cpmm = require('modules.cpmm')
 
 ---------------------------------------------------------------------------------
--- AMM --------------------------------------------------------------------------
+-- CPMM -------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-if not AMM or config.ResetState then AMM = amm:new() end
+if not CPMM or config.ResetState then CPMM = cpmm:new() end
 
 ---------------------------------------------------------------------------------
 -- MATCHING ---------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 local function isAddFunding(msg)
-  if msg.From == AMM.collateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
+  if msg.From == CPMM.collateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
     return true
   else
     return false
@@ -21,7 +21,7 @@ local function isAddFunding(msg)
 end
 
 local function isAddFundingPosition(msg)
-  if msg.From == AMM.conditionalTokens  and msg.Action == "Split-Position-Notice" and  msg.Tags["X-OutcomeIndex"] == "0" then
+  if msg.From == CPMM.conditionalTokens  and msg.Action == "Split-Position-Notice" and  msg.Tags["X-OutcomeIndex"] == "0" then
     return true
   else
     return false
@@ -37,7 +37,7 @@ local function isRemoveFunding(msg)
 end
 
 local function isBuy(msg)
-  if msg.From == AMM.collateralToken and msg.Action == "Credit-Notice" and msg["X-Action"] == "Buy" then
+  if msg.From == CPMM.collateralToken and msg.Action == "Credit-Notice" and msg["X-Action"] == "Buy" then
     return true
   else
     return false
@@ -45,7 +45,7 @@ local function isBuy(msg)
 end
 
 local function isBuySuccess(msg)
-  if msg.From == AMM.conditionalTokens and msg.Action == "Split-Position-Notice" and msg.Tags["X-OutcomeIndex"] ~= "0" then
+  if msg.From == CPMM.conditionalTokens and msg.Action == "Split-Position-Notice" and msg.Tags["X-OutcomeIndex"] ~= "0" then
     return true
   else
     return false
@@ -53,7 +53,7 @@ local function isBuySuccess(msg)
 end
 
 local function isSell(msg)
-  if msg.From == AMM.conditionalTokens and msg.Action == "Credit-Single-Notice" and msg["X-Action"] == "Sell" then
+  if msg.From == CPMM.conditionalTokens and msg.Action == "Credit-Single-Notice" and msg["X-Action"] == "Sell" then
     return true
   else
     return false
@@ -61,7 +61,7 @@ local function isSell(msg)
 end
 
 local function isSellSuccessCollateralToken(msg)
-  if msg.From == AMM.collateralToken and msg.Action == "Credit-Notice" and msg["X-Action"] == "Merge-Positions-Completion" then
+  if msg.From == CPMM.collateralToken and msg.Action == "Credit-Notice" and msg["X-Action"] == "Merge-Positions-Completion" then
     return true
   else
     return false
@@ -69,7 +69,7 @@ local function isSellSuccessCollateralToken(msg)
 end
 
 local function isSellSuccessConditionalTokens(msg)
-  if msg.From == AMM.conditionalTokens and msg.Action == "Burn-Batch-Notice" then
+  if msg.From == CPMM.conditionalTokens and msg.Action == "Burn-Batch-Notice" then
     return true
   else
     return false
@@ -77,7 +77,7 @@ local function isSellSuccessConditionalTokens(msg)
 end
 
 local function isSellSuccessReturnUnburned(msg)
-  if msg.From == AMM.conditionalTokens and msg.Action == "Debit-Single-Notice" and msg["X-Action"] == "Return-Unburned" then
+  if msg.From == CPMM.conditionalTokens and msg.Action == "Debit-Single-Notice" and msg["X-Action"] == "Return-Unburned" then
     return true
   else
     return false
@@ -91,16 +91,16 @@ end
 -- Info
 Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(msg)
   msg.reply({
-    Name = AMM.tokens.name,
-    Ticker = AMM.tokens.ticker,
-    Logo = AMM.tokens.logo,
-    Denomination = tostring(AMM.tokens.denomination),
-    ConditionId = AMM.conditionId,
-    CollateralToken = AMM.collateralToken,
-    ConditionalTokens = AMM.conditionalTokens,
-    Fee = AMM.fee,
-    FeePoolWeight = AMM.feePoolWeight,
-    TotalWithdrawnFees = AMM.totalWithdrawnFees,
+    Name = CPMM.tokens.name,
+    Ticker = CPMM.tokens.ticker,
+    Logo = CPMM.tokens.logo,
+    Denomination = tostring(CPMM.tokens.denomination),
+    ConditionId = CPMM.conditionId,
+    CollateralToken = CPMM.collateralToken,
+    ConditionalTokens = CPMM.conditionalTokens,
+    Fee = CPMM.fee,
+    FeePoolWeight = CPMM.feePoolWeight,
+    TotalWithdrawnFees = CPMM.totalWithdrawnFees,
   })
 end)
 
@@ -108,7 +108,7 @@ end)
 -- @dev to only enable shallow markets on launch, i.e. where parentCollectionId = ""
 Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(msg)
   -- ownable.onlyOwner(msg) -- access control TODO: test after spawning is enabled
-  assert(AMM.initialized == false, "Market already initialized!")
+  assert(CPMM.initialized == false, "Market already initialized!")
   assert(msg.Tags.MarketId, "MarketId is required!")
   assert(msg.Tags.ConditionId, "ConditionId is required!")
   assert(msg.Tags.ConditionalTokens, "ConditionalTokens is required!")
@@ -125,7 +125,7 @@ Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(m
   assert(msg.Tags.Ticker, "Ticker is required!")
   assert(msg.Tags.Logo, "Logo is required!")
 
-  AMM:init(msg.Tags.CollateralToken, msg.Tags.ConditionalTokens, msg.Tags.MarketId, msg.Tags.ConditionId, collectionIds, positionIds, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo, msg)
+  CPMM:init(msg.Tags.CollateralToken, msg.Tags.ConditionalTokens, msg.Tags.MarketId, msg.Tags.ConditionId, collectionIds, positionIds, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo, msg)
 end)
 
 -- Add Funding
@@ -139,25 +139,10 @@ Handlers.add('Add-Funding', isAddFunding, function(msg)
   -- Enable actioning on behalf of others
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
 
-  if AMM:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
-    AMM:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags['Quantity'], distribution, msg)
-  else
-    msg.reply({Data = {Success = false}})
+  -- @dev returns fudning if invalid
+  if CPMM:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
+    CPMM:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags['Quantity'], distribution, msg)
   end
-end)
-
--- @dev called on split-position-notice from conditionalTokens with X-OutcomeIndex == '0'
-Handlers.add('Add-Funding-Position', isAddFundingPosition, function(msg)
-  assert(msg.Tags.Quantity, 'Quantity is required!')
-  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
-  assert(msg.Tags['X-Sender'], 'X-Sender is required!')
-  assert(msg.Tags['X-OnBehalfOf'], 'X-OnBehalfOf is required!')
-  assert(msg.Tags['X-LPTokensMintAmount'], 'X-LPTokensMintAmount is required!')
-  assert(bint.__lt(0, bint(msg.Tags['X-LPTokensMintAmount'])), 'X-LPTokensMintAmount must be greater than zero!')
-  assert(msg.Tags['X-SendBackAmounts'], 'X-SendBackAmounts is required!')
-  local sendBackAmounts = json.decode(msg.Tags['X-SendBackAmounts'])
-
-  AMM:addFundingPosition(msg.Tags['X-Sender'], msg.Tags['X-OnBehalfOf'], msg.Tags['Quantity'],  msg.Tags['X-LPTokensMintAmount'], sendBackAmounts)
 end)
 
 -- Remove Funding
@@ -165,8 +150,8 @@ end)
 Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
-  if AMM:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
-    AMM:removeFunding(msg.Tags.Sender, msg.Tags.Quantity)
+  if CPMM:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
+    CPMM:removeFunding(msg.Tags.Sender, msg.Tags.Quantity)
   end
 end)
 
@@ -176,7 +161,7 @@ Handlers.add("Calc-Buy-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Bu
   assert(msg.Tags.OutcomeIndex, 'OutcomeIndex is required!')
   local outcomeIndex = tonumber(msg.Tags.OutcomeIndex)
 
-  local buyAmount = AMM:calcBuyAmount(msg.Tags.InvestmentAmount, outcomeIndex)
+  local buyAmount = CPMM:calcBuyAmount(msg.Tags.InvestmentAmount, outcomeIndex)
 
   msg.reply({ Data = buyAmount })
 end)
@@ -187,7 +172,7 @@ Handlers.add("Calc-Sell-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-S
   assert(msg.Tags.OutcomeIndex, 'OutcomeIndex is required!')
   local outcomeIndex = tonumber(msg.Tags.OutcomeIndex)
 
-  local sellAmount = AMM:calcSellAmount(msg.Tags.ReturnAmount, outcomeIndex)
+  local sellAmount = CPMM:calcSellAmount(msg.Tags.ReturnAmount, outcomeIndex)
 
   msg.reply({ Data = sellAmount })
 end)
@@ -213,7 +198,7 @@ Handlers.add("Buy", isBuy, function(msg)
     error = true
     errorMessage = 'X-MinOutcomeTokensToBuy is required!'
   else
-    outcomeTokensToBuy = AMM:calcBuyAmount(msg.Tags.Quantity, tonumber(msg.Tags['X-OutcomeIndex']))
+    outcomeTokensToBuy = CPMM:calcBuyAmount(msg.Tags.Quantity, tonumber(msg.Tags['X-OutcomeIndex']))
     if not bint.__le(bint(msg.Tags['X-MinOutcomeTokensToBuy']), bint(outcomeTokensToBuy)) then
       error = true
       errorMessage = 'minimum buy amount not reached'
@@ -231,7 +216,7 @@ Handlers.add("Buy", isBuy, function(msg)
     })
     assert(false, errorMessage)
   else
-    AMM:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, tonumber(msg.Tags['X-OutcomeIndex']), tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
+    CPMM:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, tonumber(msg.Tags['X-OutcomeIndex']), tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
   end
 end)
 
@@ -257,7 +242,7 @@ Handlers.add("Sell", isSell, function(msg)
     error = true
     errorMessage = 'X-MaxOutcomeTokensToSell is required!'
   elseif not error then
-    outcomeTokensToSell = AMM:calcSellAmount(msg.Tags['X-ReturnAmount'], tonumber(msg.Tags['X-OutcomeIndex']))
+    outcomeTokensToSell = CPMM:calcSellAmount(msg.Tags['X-ReturnAmount'], tonumber(msg.Tags['X-OutcomeIndex']))
     if not bint.__le(bint(outcomeTokensToSell), bint(msg.Tags['X-MaxOutcomeTokensToSell'])) then
       error = true
       errorMessage = "maximum sell amount not sufficient"
@@ -276,26 +261,26 @@ Handlers.add("Sell", isSell, function(msg)
     })
     assert(false, errorMessage)
   else
-    AMM:sell(msg.Tags.Sender, msg.Tags['X-ReturnAmount'], tonumber(msg.Tags['X-OutcomeIndex']), tonumber(msg.Tags['X-MaxOutcomeTokensToSell']))
+    CPMM:sell(msg.Tags.Sender, msg.Tags['X-ReturnAmount'], tonumber(msg.Tags['X-OutcomeIndex']), tonumber(msg.Tags['X-MaxOutcomeTokensToSell']))
   end
 end)
 
 -- Collected Fees
 -- @dev Returns fees collected by the protocol that haven't been withdrawn
 Handlers.add("Collected-Fees", Handlers.utils.hasMatchingTag("Action", "Collected-Fees"), function(msg)
-  msg.reply({ Data = AMM:collectedFees() })
+  msg.reply({ Data = CPMM:collectedFees() })
 end)
 
 -- Fees Withdrawable
 -- @dev Returns fees withdrawable by the message sender
 Handlers.add("Fees-Withdrawable", Handlers.utils.hasMatchingTag("Action", "Fees-Withdrawable"), function(msg)
-  msg.reply({ Data = AMM:feesWithdrawableBy(msg.From) })
+  msg.reply({ Data = CPMM:feesWithdrawableBy(msg.From) })
 end)
 
 -- Withdraw Fees
 -- @dev Withdraws withdrawable fees to the message sender
 Handlers.add("Withdraw-Fees", Handlers.utils.hasMatchingTag("Action", "Withdraw-Fees"), function(msg)
-  msg.reply({ Data = AMM:withdrawFees(msg.From) })
+  msg.reply({ Data = CPMM:withdrawFees(msg.From) })
 end)
 
 ---------------------------------------------------------------------------------
@@ -308,18 +293,18 @@ Handlers.add('Balance', Handlers.utils.hasMatchingTag('Action', 'Balance'), func
 
   -- If not Recipient is provided, then return the Senders balance
   if (msg.Tags.Recipient) then
-    if (AMM.tokens.balances[msg.Tags.Recipient]) then
-      bal = AMM.tokens.balances[msg.Tags.Recipient]
+    if (CPMM.tokens.balances[msg.Tags.Recipient]) then
+      bal = CPMM.tokens.balances[msg.Tags.Recipient]
     end
-  elseif msg.Tags.Target and AMM.tokens.balances[msg.Tags.Target] then
-    bal = AMM.tokens.balances[msg.Tags.Target]
-  elseif AMM.tokens.balances[msg.From] then
-    bal = AMM.tokens.balances[msg.From]
+  elseif msg.Tags.Target and CPMM.tokens.balances[msg.Tags.Target] then
+    bal = CPMM.tokens.balances[msg.Tags.Target]
+  elseif CPMM.tokens.balances[msg.From] then
+    bal = CPMM.tokens.balances[msg.From]
   end
 
   msg.reply({
     Balance = bal,
-    Ticker = AMM.tokens.ticker,
+    Ticker = CPMM.tokens.ticker,
     Account = msg.Tags.Recipient or msg.From,
     Data = bal
   })
@@ -327,7 +312,7 @@ end)
 
 -- Balances
 Handlers.add('Balances', Handlers.utils.hasMatchingTag('Action', 'Balances'),
-  function(msg) msg.reply({ Data = json.encode(AMM.tokens.balances) })
+  function(msg) msg.reply({ Data = json.encode(CPMM.tokens.balances) })
 end)
 
 -- Transfer
@@ -335,7 +320,7 @@ Handlers.add('Transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), fu
   assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
   assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than 0')
-  AMM:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg.Tags, msg.Id)
+  CPMM:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg.Tags, msg.Id)
 end)
 
 -- Total Supply
@@ -344,14 +329,31 @@ Handlers.add('Total-Supply', Handlers.utils.hasMatchingTag('Action', 'Total-Supp
 
   msg.reply({
     Action = 'Total-Supply',
-    Data = AMM.tokens.totalSupply,
-    Ticker = AMM.ticker
+    Data = CPMM.tokens.totalSupply,
+    Ticker = CPMM.ticker
   })
 end)
 
 ---------------------------------------------------------------------------------
 -- CALLBACK HANDLERS ------------------------------------------------------------
 ---------------------------------------------------------------------------------
+-- Add Funding Success
+----- @dev called on split-position-notice from conditionalTokens with X-OutcomeIndex == '0'
+Handlers.add('Add-Funding-Position', isAddFundingPosition, function(msg)
+  assert(msg.Tags.Quantity, 'Quantity is required!')
+  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
+  assert(msg.Tags['X-Sender'], 'X-Sender is required!')
+  assert(msg.Tags['X-OnBehalfOf'], 'X-OnBehalfOf is required!')
+  assert(msg.Tags['X-LPTokensMintAmount'], 'X-LPTokensMintAmount is required!')
+  assert(bint.__lt(0, bint(msg.Tags['X-LPTokensMintAmount'])), 'X-LPTokensMintAmount must be greater than zero!')
+  assert(msg.Tags['X-SendBackAmounts'], 'X-SendBackAmounts is required!')
+  local sendBackAmounts = json.decode(msg.Tags['X-SendBackAmounts'])
+
+  -- Update Pool Balances
+  CPMM.poolBalances = CPMM:getPoolBalances()
+
+  CPMM:addFundingPosition(msg.Tags['X-Sender'], msg.Tags['X-OnBehalfOf'], msg.Tags['Quantity'],  msg.Tags['X-LPTokensMintAmount'], sendBackAmounts)
+end)
 
 -- Buy Success
 -- @dev called on split-position-notice from conditionalTokens with X-OutcomeIndex ~= '0'
@@ -364,13 +366,13 @@ Handlers.add("Buy-Success", isBuySuccess, function(msg)
   assert(bint.__lt(0, bint(msg.Tags["X-OutcomeTokensToBuy"])), 'OutcomeTokensToBuy must be greater than zero!')
 
   -- Update Pool Balances
-  AMM.poolBalances = AMM:getPoolBalances()
+  CPMM.poolBalances = CPMM:getPoolBalances()
 
   ao.send({
-    Target = AMM.conditionalTokens,
+    Target = CPMM.conditionalTokens,
     Action = "Transfer-Single",
     Recipient = msg.Tags["X-Sender"],
-    TokenId = AMM.positionIds[tonumber(msg.Tags["X-OutcomeIndex"])],
+    TokenId = CPMM.positionIds[tonumber(msg.Tags["X-OutcomeIndex"])],
     Quantity = msg.Tags["X-OutcomeTokensToBuy"]
   })
 end)
@@ -384,7 +386,7 @@ Handlers.add("Sell-Success-CollateralToken", isSellSuccessCollateralToken, funct
   assert(msg.Tags["X-ReturnAmount"], "ReturnAmount is required!")
   assert(bint.__lt(0, bint(msg.Tags["X-ReturnAmount"])), 'ReturnAmount must be greater than zero!')
 
-  if not bint.__eq(bint(0), bint(AMM.fee)) then
+  if not bint.__eq(bint(0), bint(CPMM.fee)) then
     assert(bint.__lt(bint(msg.Tags["X-ReturnAmount"]), bint(msg.Tags.Quantity)), 'Fee: ReturnAmount must be less than quantity!')
   else
     assert(bint.__eq(bint(msg.Tags["X-ReturnAmount"]), bint(msg.Tags.Quantity)), 'No fee: ReturnAmount must equal quantity!')
@@ -392,7 +394,7 @@ Handlers.add("Sell-Success-CollateralToken", isSellSuccessCollateralToken, funct
 
   -- Returns Collateral to user
   ao.send({
-    Target = AMM.collateralToken,
+    Target = CPMM.collateralToken,
     Action = "Transfer",
     Quantity = msg.Tags["X-ReturnAmount"],
     Recipient = msg.Tags['X-Sender']
@@ -413,15 +415,15 @@ Handlers.add("Sell-Success-ConditionalTokens", isSellSuccessConditionalTokens, f
   local quantityOverpaid = tostring(bint.__sub(bint(msg.Tags['X-OutcomeTokensToSell']), bint(quantityBurned)))
 
   -- Update Pool Balances
-  AMM.poolBalances = AMM:getPoolBalances()
+  CPMM.poolBalances = CPMM:getPoolBalances()
 
   -- Returns Unburned Conditional tokens to user 
   ao.send({
-    Target = AMM.conditionalTokens,
+    Target = CPMM.conditionalTokens,
     Action = "Transfer-Single",
     ['X-Action'] = "Return-Unburned",
     Quantity = quantityOverpaid,
-    TokenId = AMM.positionIds[tonumber(msg.Tags["X-OutcomeIndex"])],
+    TokenId = CPMM.positionIds[tonumber(msg.Tags["X-OutcomeIndex"])],
     Recipient = msg.Tags["X-Sender"]
   })
 end)
@@ -430,7 +432,7 @@ end)
 -- @dev called on debit-single-notice from conditionalTokens with X-Action == 'Return-Unburned'
 Handlers.add("Sell-Success-Return-Unburned", isSellSuccessReturnUnburned, function(msg)
   -- Update Pool Balances
-  AMM.poolBalances = AMM:getPoolBalances()
+  CPMM.poolBalances = CPMM:getPoolBalances()
 end)
 
 return "ok"

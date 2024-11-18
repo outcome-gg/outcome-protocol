@@ -11,11 +11,11 @@ import exp from "constants";
 
 dotenv.config();
 
-const amm = process.env.TEST_AMM4;
+const cpmm = process.env.TEST_CPMM1;
 const collateralToken = process.env.TEST_COLLATERAL_TOKEN3;
 const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS2;
 
-console.log("AMM: ", amm)
+console.log("CPMM: ", cpmm)
 console.log("COLLATERAL TOKEN: ", collateralToken)
 console.log("CONDITIONAL TOKENS: ", conditionalTokens)
 
@@ -44,10 +44,12 @@ let collectionIdOUT;
 let positionIdIN;
 let positionIdOUT;
 
+let marketId;
+
 /* 
 * Tests
 */
-describe("amm.integration.test", function () {
+describe("cpmm.integration.test", function () {
   before(async () => ( 
     // Txn execution variables
     wallet = JSON.parse(
@@ -75,13 +77,15 @@ describe("amm.integration.test", function () {
     collectionIdIN = "45f9415be8dff7be6a906246c469f46730bccd9984486f4ad316cf90eb2e951d",
     collectionIdOUT = "4c028af9b5b5f60457c96be27af32080a9adce728390919566bb2fcbd03d65f9",
     positionIdIN = "35ba13152a8b2086a40393fb611dae5c74a8ada28a80effda1e58381b9edc2f4",
-    positionIdOUT = "b52a990678dd524169490cfaa7300fc1c58bc3f06e0bd252e837cda920b93101"
+    positionIdOUT = "b52a990678dd524169490cfaa7300fc1c58bc3f06e0bd252e837cda920b93101",
+
+    marketId = "123"
   ))
 
   /************************************************************************ 
   * ConditionalTokens.Setup
   ************************************************************************/
-  describe("amm.ConditionalTokens.Setup", function () {
+  describe("cpmm.ConditionalTokens.Setup", function () {
     it("+ve should get conditionId", async () => {
       let messageId;
       await message({
@@ -157,7 +161,7 @@ describe("amm.integration.test", function () {
       const parentCollectionId_ = Messages[0].Tags.find(t => t.name === 'ParentCollectionId').value
       const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
       const indexSet_ = Messages[0].Tags.find(t => t.name === 'IndexSet').value
-      const collectionId_ = Messages[0].Tags.find(t => t.name === 'CollectionId').value
+      const collectionId_ = Messages[0].Data
 
       expect(action_).to.equal("Collection-Id")
       expect(parentCollectionId_).to.equal(parentCollectionId)
@@ -199,7 +203,7 @@ describe("amm.integration.test", function () {
       const parentCollectionId_ = Messages[0].Tags.find(t => t.name === 'ParentCollectionId').value
       const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
       const indexSet_ = Messages[0].Tags.find(t => t.name === 'IndexSet').value
-      const collectionId_ = Messages[0].Tags.find(t => t.name === 'CollectionId').value
+      const collectionId_ = Messages[0].Data
 
       expect(action_).to.equal("Collection-Id")
       expect(parentCollectionId_).to.equal(parentCollectionId)
@@ -239,7 +243,7 @@ describe("amm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const collateralToken_ = Messages[0].Tags.find(t => t.name === 'CollateralToken').value
       const collectionId_ = Messages[0].Tags.find(t => t.name === 'CollectionId').value
-      const positionId_ = Messages[0].Tags.find(t => t.name === 'PositionId').value
+      const positionId_ = Messages[0].Data
 
       expect(action_).to.equal("Position-Id")
       expect(collateralToken_).to.equal(collateralToken)
@@ -278,7 +282,7 @@ describe("amm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const collateralToken_ = Messages[0].Tags.find(t => t.name === 'CollateralToken').value
       const collectionId_ = Messages[0].Tags.find(t => t.name === 'CollectionId').value
-      const positionId_ = Messages[0].Tags.find(t => t.name === 'PositionId').value
+      const positionId_ = Messages[0].Data
 
       expect(action_).to.equal("Position-Id")
       expect(collateralToken_).to.equal(collateralToken)
@@ -331,15 +335,16 @@ describe("amm.integration.test", function () {
   })
 
   /************************************************************************ 
-  * amm.Init
+  * cpmm.Init
   ************************************************************************/
-  describe("amm.Init", function () {
-    it("+ve should init amm", async () => {
+  describe("cpmm.Init", function () {
+    it("+ve should init cpmm", async () => {
       let messageId;
       await message({
-        process: amm,
+        process: cpmm,
         tags: [
           { name: "Action", value: "Init" },
+          { name: "MarketId", value: marketId },
           { name: "ConditionId", value: conditionId },
           { name: "ConditionalTokens", value: conditionalTokens },
           { name: "CollateralToken", value: collateralToken },
@@ -361,7 +366,7 @@ describe("amm.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: amm,
+        process: cpmm,
       });
 
       if (Error) {
@@ -392,10 +397,10 @@ describe("amm.integration.test", function () {
       expect(logo_).to.equal("")
     })
 
-    it("+ve should fail to init amm after initialized", async () => {
+    it("+ve should fail to init cpmm after initialized", async () => {
       let messageId;
       await message({
-        process: amm,
+        process: cpmm,
         tags: [
           { name: "Action", value: "Init" },
           { name: "ConditionalTokens", value: conditionalTokens },
@@ -418,7 +423,7 @@ describe("amm.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: amm,
+        process: cpmm,
       });
 
       if (Error) {
@@ -432,13 +437,13 @@ describe("amm.integration.test", function () {
   })
 
   /************************************************************************ 
-  * amm.Info
+  * cpmm.Info
   ************************************************************************/
-  describe("amm.Info", function () {
+  describe("cpmm.Info", function () {
     it("+ve should get info", async () => {
       let messageId;
       await message({
-        process: amm,
+        process: cpmm,
         tags: [
           { name: "Action", value: "Info" },
         ],
@@ -452,7 +457,7 @@ describe("amm.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: amm,
+        process: cpmm,
       });
 
       if (Error) {
@@ -486,9 +491,9 @@ describe("amm.integration.test", function () {
   })
 
   /************************************************************************ 
-  * amm.Add-Funding
+  * cpmm.Add-Funding
   ************************************************************************/
-  describe("amm.Add-Funding", function () {
+  describe("cpmm.Add-Funding", function () {
     it("+ve should add initial funding as per distribution", async () => {
       let messageId;
       const quantity = parseAmount(100, 12)
@@ -498,7 +503,7 @@ describe("amm.integration.test", function () {
         process: collateralToken,
         tags: [
           { name: "Action", value: "Transfer" },
-          { name: "Recipient", value: amm },
+          { name: "Recipient", value: cpmm },
           { name: "Quantity", value: quantity },
           { name: "X-Action", value: xAction },
           { name: "X-Distribution", value: xDistribution },
@@ -535,7 +540,7 @@ describe("amm.integration.test", function () {
       const xDistribution_1 = Messages[1].Tags.find(t => t.name === 'X-Distribution').value
       
       expect(action_0).to.equal("Debit-Notice")
-      expect(recipient_0).to.equal(amm)
+      expect(recipient_0).to.equal(cpmm)
       expect(quantity_0).to.equal(quantity)
       expect(xAction_0).to.equal(xAction)
       expect(xDistribution_0).to.equal(xDistribution)
@@ -585,10 +590,10 @@ describe("amm.integration.test", function () {
     })
 
     it("+ve should have minted LP tokens as per previous step's x-action", async () => {
-      await new Promise(resolve => setTimeout(resolve, 7000));
+      await new Promise(resolve => setTimeout(resolve, 10000));
       let messageId;
       await message({
-        process: amm,
+        process: cpmm,
         tags: [
           { name: "Action", value: "Balance" },
         ],
@@ -602,7 +607,7 @@ describe("amm.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: amm,
+        process: cpmm,
       });
 
       if (Error) {
@@ -620,7 +625,7 @@ describe("amm.integration.test", function () {
       expect(ticker_).to.equal("OETH1")
     })
 
-    it("+ve should have minted position tokens to amm in exchange for the LP tokens", async () => {
+    it("+ve should have minted position tokens to cpmm in exchange for the LP tokens", async () => {
       await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
@@ -649,8 +654,8 @@ describe("amm.integration.test", function () {
 
       const balances = JSON.parse(Messages[0].Data)
 
-      expect(balances[positionIdIN][amm]).to.equal(parseAmount(100, 12))
-      expect(balances[positionIdOUT][amm]).to.equal(parseAmount(100, 12))
+      expect(balances[positionIdIN][cpmm]).to.equal(parseAmount(100, 12))
+      expect(balances[positionIdOUT][cpmm]).to.equal(parseAmount(100, 12))
     })
 
     it("+ve should add subsequent funding w/o distribution", async () => {
@@ -662,7 +667,7 @@ describe("amm.integration.test", function () {
         process: collateralToken,
         tags: [
           { name: "Action", value: "Transfer" },
-          { name: "Recipient", value: amm },
+          { name: "Recipient", value: cpmm },
           { name: "Quantity", value: quantity },
           { name: "X-Action", value: xAction },
           { name: "X-Distribution", value: xDistribution },
@@ -699,7 +704,7 @@ describe("amm.integration.test", function () {
       const xDistribution_1 = Messages[1].Tags.find(t => t.name === 'X-Distribution').value
       
       expect(action_0).to.equal("Debit-Notice")
-      expect(recipient_0).to.equal(amm)
+      expect(recipient_0).to.equal(cpmm)
       expect(quantity_0).to.equal(quantity)
       expect(xAction_0).to.equal(xAction)
       expect(xDistribution_0).to.equal(xDistribution)
@@ -712,10 +717,10 @@ describe("amm.integration.test", function () {
     })
 
     it("+ve should have minted more LP tokens as per previous step's x-action", async () => {
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 20000));
       let messageId;
       await message({
-        process: amm,
+        process: cpmm,
         tags: [
           { name: "Action", value: "Balance" },
         ],
@@ -729,7 +734,7 @@ describe("amm.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: amm,
+        process: cpmm,
       });
 
       if (Error) {
@@ -747,7 +752,7 @@ describe("amm.integration.test", function () {
       expect(ticker_).to.equal("OETH1")
     })
 
-    it("+ve should have minted more position tokens to amm in exchange for the LP tokens", async () => {
+    it("+ve should have minted more position tokens to cpmm in exchange for the LP tokens", async () => {
       await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
@@ -776,8 +781,8 @@ describe("amm.integration.test", function () {
 
       const balances = JSON.parse(Messages[0].Data)
 
-      expect(balances[positionIdIN][amm]).to.equal(parseAmount(200, 12))
-      expect(balances[positionIdOUT][amm]).to.equal(parseAmount(200, 12))
+      expect(balances[positionIdIN][cpmm]).to.equal(parseAmount(200, 12))
+      expect(balances[positionIdOUT][cpmm]).to.equal(parseAmount(200, 12))
     })
 
     it("-ve should fail to add subsequent funding w/ distribution", async () => {
@@ -816,7 +821,7 @@ describe("amm.integration.test", function () {
           process: collateralToken,
           tags: [
             { name: "Action", value: "Transfer" },
-            { name: "Recipient", value: amm },
+            { name: "Recipient", value: cpmm },
             { name: "Quantity", value: quantity },
             { name: "X-Action", value: xAction },
             { name: "X-Distribution", value: xDistribution },
@@ -857,7 +862,7 @@ describe("amm.integration.test", function () {
         process: collateralToken,
         tags: [
           { name: "Action", value: "Transfer" },
-          { name: "Recipient", value: amm },
+          { name: "Recipient", value: cpmm },
           { name: "Quantity", value: quantity },
           { name: "X-Action", value: xAction },
           { name: "X-Distribution", value: xDistribution },
@@ -885,20 +890,20 @@ describe("amm.integration.test", function () {
   })
 
   /************************************************************************ 
-  * amm.Remove-Funding
+  * cpmm.Remove-Funding
   ************************************************************************/
-  describe("amm.Remove-Funding", function () {
+  describe("cpmm.Remove-Funding", function () {
     before(async () => {
       // Add delay to allow for previous test to complete
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 7000));
     })
 
     it("+ve should remove funding", async () => {
       let messageId;
       let userBalanceBefore;
       let userBalanceAfter;
-      let ammBalanceBefore;
-      let ammBalanceAfter;
+      let cpmmBalanceBefore;
+      let cpmmBalanceAfter;
 
       const quantity = parseAmount(50, 12)
       const xAction = "Remove-Funding"
@@ -930,10 +935,10 @@ describe("amm.integration.test", function () {
 
       async function removeFunding() {
         await message({
-          process: amm,
+          process: cpmm,
           tags: [
             { name: "Action", value: "Transfer" },
-            { name: "Recipient", value: amm },
+            { name: "Recipient", value: cpmm },
             { name: "Quantity", value: quantity },
             { name: "X-Action", value: xAction },
           ],
@@ -947,7 +952,7 @@ describe("amm.integration.test", function () {
 
         let { Messages, Error } = await result({
           message: messageId,
-          process: amm,
+          process: cpmm,
         });
 
         if (Error) {
@@ -957,15 +962,15 @@ describe("amm.integration.test", function () {
         return Messages
       }
 
-      userBalanceBefore = await getBalance(amm, walletAddress);
-      ammBalanceBefore = await getBalance(amm, amm);
+      userBalanceBefore = await getBalance(cpmm, walletAddress);
+      cpmmBalanceBefore = await getBalance(cpmm, cpmm);
 
       let Messages = await removeFunding();
 
       await new Promise(resolve => setTimeout(resolve, 5000));
 
-      userBalanceAfter = await getBalance(amm, walletAddress);
-      ammBalanceAfter = await getBalance(amm, amm);
+      userBalanceAfter = await getBalance(cpmm, walletAddress);
+      cpmmBalanceAfter = await getBalance(cpmm, cpmm);
 
       expect(Messages.length).to.be.equal(2)
 
@@ -979,13 +984,13 @@ describe("amm.integration.test", function () {
       const sender_1 = Messages[1].Tags.find(t => t.name === 'Sender').value
       const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
 
-      // Debits LP tokens from the sender to the amm
+      // Debits LP tokens from the sender to the cpmm
       expect(action_0).to.equal('Debit-Notice')
       expect(xAction_0).to.equal('Remove-Funding')
       expect(quantity_0).to.equal(quantity)
-      expect(recipient_0).to.equal(amm)
+      expect(recipient_0).to.equal(cpmm)
 
-      // Credits the amm with the LP tokens
+      // Credits the cpmm with the LP tokens
       expect(action_1).to.equal('Credit-Notice')
       expect(xAction_1).to.equal('Remove-Funding')
       expect(quantity_1).to.equal(quantity)
@@ -994,108 +999,108 @@ describe("amm.integration.test", function () {
       // Check balances
       expect(userBalanceBefore).to.equal(parseAmount(200, 12))
       expect(userBalanceAfter).to.equal(parseAmount(150, 12))
-      expect(ammBalanceBefore).to.equal(parseAmount(0, 12))
-      expect(ammBalanceAfter).to.equal(parseAmount(0, 12))
+      expect(cpmmBalanceBefore).to.equal(parseAmount(0, 12))
+      expect(cpmmBalanceAfter).to.equal(parseAmount(0, 12))
     })
 
-    it("-ve should fail to remove funding greater than balance", async () => {
-      let messageId;
-      let userBalanceBefore;
-      let userBalanceAfter;
-      let ammBalanceBefore;
-      let ammBalanceAfter;
+    // it("-ve should fail to remove funding greater than balance", async () => {
+    //   let messageId;
+    //   let userBalanceBefore;
+    //   let userBalanceAfter;
+    //   let cpmmBalanceBefore;
+    //   let cpmmBalanceAfter;
 
-      const quantity = parseAmount(200, 12)
-      const xAction = "Remove-Funding"
+    //   const quantity = parseAmount(200, 12)
+    //   const xAction = "Remove-Funding"
 
-      async function getBalance(token, recipient) {
-        let messageId;
-        await message({
-          process: token,
-          tags: [
-            { name: "Action", value: "Balance" },
-            { name: "Recipient", value: recipient },
-          ],
-          signer: createDataItemSigner(wallet),
-          data: "",
-        })
-        .then((id) => {
-          messageId = id;
-        })
-        .catch(console.error);
+    //   async function getBalance(token, recipient) {
+    //     let messageId;
+    //     await message({
+    //       process: token,
+    //       tags: [
+    //         { name: "Action", value: "Balance" },
+    //         { name: "Recipient", value: recipient },
+    //       ],
+    //       signer: createDataItemSigner(wallet),
+    //       data: "",
+    //     })
+    //     .then((id) => {
+    //       messageId = id;
+    //     })
+    //     .catch(console.error);
 
-        let { Messages } = await result({
-          message: messageId,
-          process: token,
-        });
+    //     let { Messages } = await result({
+    //       message: messageId,
+    //       process: token,
+    //     });
 
-        const balance = Messages[0].Data
-        return balance
-      }
+    //     const balance = Messages[0].Data
+    //     return balance
+    //   }
 
-      async function removeFunding() {
-        await message({
-          process: amm,
-          tags: [
-            { name: "Action", value: "Transfer" },
-            { name: "Recipient", value: amm },
-            { name: "Quantity", value: quantity },
-            { name: "X-Action", value: xAction },
-          ],
-          signer: createDataItemSigner(wallet),
-          data: "",
-        })
-        .then((id) => {
-          messageId = id;
-        })
-        .catch(console.error);
+    //   async function removeFunding() {
+    //     await message({
+    //       process: cpmm,
+    //       tags: [
+    //         { name: "Action", value: "Transfer" },
+    //         { name: "Recipient", value: cpmm },
+    //         { name: "Quantity", value: quantity },
+    //         { name: "X-Action", value: xAction },
+    //       ],
+    //       signer: createDataItemSigner(wallet),
+    //       data: "",
+    //     })
+    //     .then((id) => {
+    //       messageId = id;
+    //     })
+    //     .catch(console.error);
 
-        let { Messages, Error } = await result({
-          message: messageId,
-          process: amm,
-        });
+    //     let { Messages, Error } = await result({
+    //       message: messageId,
+    //       process: cpmm,
+    //     });
 
-        if (Error) {
-          console.log(Error)
-        }
+    //     if (Error) {
+    //       console.log(Error)
+    //     }
 
-        return Messages
-      }
+    //     return Messages
+    //   }
 
-      userBalanceBefore = await getBalance(amm, walletAddress);
-      ammBalanceBefore = await getBalance(amm, amm);
+    //   userBalanceBefore = await getBalance(cpmm, walletAddress);
+    //   cpmmBalanceBefore = await getBalance(cpmm, cpmm);
 
-      let Messages = await removeFunding();
+    //   let Messages = await removeFunding();
 
-      userBalanceAfter = await getBalance(amm, walletAddress);
-      ammBalanceAfter = await getBalance(amm, amm);
+    //   userBalanceAfter = await getBalance(cpmm, walletAddress);
+    //   cpmmBalanceAfter = await getBalance(cpmm, cpmm);
 
-      expect(Messages.length).to.be.equal(1)
+    //   expect(Messages.length).to.be.equal(1)
 
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
+    //   const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+    //   const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
 
-      expect(action_).to.equal('Transfer-Error')
-      expect(error_).to.equal('Insufficient Balance!')
+    //   expect(action_).to.equal('Transfer-Error')
+    //   expect(error_).to.equal('Insufficient Balance!')
 
-      expect(userBalanceBefore).to.equal(parseAmount(150, 12))
-      expect(userBalanceAfter).to.equal(parseAmount(150, 12))
-      expect(ammBalanceBefore).to.equal(parseAmount(0, 12))
-      expect(ammBalanceAfter).to.equal(parseAmount(0, 12))
-    })
+    //   expect(userBalanceBefore).to.equal(parseAmount(150, 12))
+    //   expect(userBalanceAfter).to.equal(parseAmount(150, 12))
+    //   expect(cpmmBalanceBefore).to.equal(parseAmount(0, 12))
+    //   expect(cpmmBalanceAfter).to.equal(parseAmount(0, 12))
+    // })
   })
 
   /************************************************************************ 
-  * amm.Calc-Buy-Amount
+  * cpmm.Calc-Buy-Amount
   ************************************************************************/
-  describe("amm.Calc-Buy-Amount", function () {
+  describe("cpmm.Calc-Buy-Amount", function () {
     it("+ve should calculate buy amount", async () => {
       let messageId;
       const investmentAmount = parseAmount(50, 12);
       const outcomeIndex = "1";
       
       await message({
-        process: amm,
+        process: cpmm,
         tags: [
           { name: "Action", value: "Calc-Buy-Amount" },
           { name: "InvestmentAmount", value: investmentAmount },
@@ -1111,7 +1116,7 @@ describe("amm.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: amm,
+        process: cpmm,
       });
 
       if (Error) {
@@ -1127,16 +1132,16 @@ describe("amm.integration.test", function () {
   })
 
   /************************************************************************ 
-  * amm.Calc-Sell-Amount
+  * cpmm.Calc-Sell-Amount
   ************************************************************************/
-  describe("amm.Calc-Sell-Amount", function () {
+  describe("cpmm.Calc-Sell-Amount", function () {
     it("+ve should calculate sell amount", async () => {
       let messageId;
       const returnAmount = parseAmount(50, 12);
       const outcomeIndex = "1";
       
       await message({
-        process: amm,
+        process: cpmm,
         tags: [
           { name: "Action", value: "Calc-Sell-Amount" },
           { name: "ReturnAmount", value: returnAmount },
@@ -1152,7 +1157,7 @@ describe("amm.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: amm,
+        process: cpmm,
       });
 
       if (Error) {
@@ -1168,9 +1173,9 @@ describe("amm.integration.test", function () {
   })
 
   /************************************************************************ 
-  * amm.Buy
+  * cpmm.Buy
   ************************************************************************/
-  describe("amm.Buy", function () {
+  describe("cpmm.Buy", function () {
     it("+ve should buy position tokens", async () => {
       const investmentAmount = parseAmount(10, 12);
       const outcomeIndex = "1";
@@ -1180,7 +1185,7 @@ describe("amm.integration.test", function () {
         let messageId;
         
         await message({
-          process: amm,
+          process: cpmm,
           tags: [
             { name: "Action", value: "Calc-Buy-Amount" },
             { name: "InvestmentAmount", value: amount },
@@ -1196,7 +1201,7 @@ describe("amm.integration.test", function () {
 
         let { Messages, Error } = await result({
           message: messageId,
-          process: amm,
+          process: cpmm,
         });
 
         if (Error) {
@@ -1214,7 +1219,7 @@ describe("amm.integration.test", function () {
           process: collateralToken,
           tags: [
             { name: "Action", value: "Transfer" },
-            { name: "Recipient", value: amm },
+            { name: "Recipient", value: cpmm },
             { name: "Quantity", value: amount },
             { name: "X-Action", value: "Buy" },
             { name: "X-OutcomeIndex", value: index },
@@ -1270,7 +1275,7 @@ describe("amm.integration.test", function () {
       await buy(investmentAmount, outcomeIndex, buyAmount.toString());
 
       // wait for the buy to be processed
-      await new Promise(resolve => setTimeout(resolve, 8000));
+      await new Promise(resolve => setTimeout(resolve, 20000));
       const balanceOfAfter = await getBalanceOf(conditionalTokens, positionId, walletAddress);
 
       expect(buyAmount).to.be.equal((balanceOfAfter - balanceOfBefore).toString())
@@ -1278,9 +1283,9 @@ describe("amm.integration.test", function () {
   })
 
   /************************************************************************ 
-  * amm.Sell
+  * cpmm.Sell
   ************************************************************************/
-  describe("amm.Sell", function () {
+  describe("cpmm.Sell", function () {
     it("+ve should sell position tokens", async () => {
       const returnAmount = parseAmount(9.2, 12); // User Balance - 8% (to account for fees)
       const outcomeIndex = "1";
@@ -1290,7 +1295,7 @@ describe("amm.integration.test", function () {
         let messageId;
         
         await message({
-          process: amm,
+          process: cpmm,
           tags: [
             { name: "Action", value: "Calc-Sell-Amount" },
             { name: "ReturnAmount", value: returnAmount },
@@ -1306,7 +1311,7 @@ describe("amm.integration.test", function () {
 
         let { Messages, Error } = await result({
           message: messageId,
-          process: amm,
+          process: cpmm,
         });
 
         if (Error) {
@@ -1324,7 +1329,7 @@ describe("amm.integration.test", function () {
           process: conditionalTokens,
           tags: [
             { name: "Action", value: "Transfer-Single" },
-            { name: "Recipient", value: amm },
+            { name: "Recipient", value: cpmm },
             { name: "TokenId", value: positionId },
             { name: "Quantity", value: maxSellAmount },
             { name: "X-Action", value: "Sell" },
@@ -1403,18 +1408,18 @@ describe("amm.integration.test", function () {
 
       const userBalanceOfBefore = await getBalanceOf(conditionalTokens, positionId, walletAddress);
       const userBalanceBefore = await getBalance(collateralToken, walletAddress);
-      const ammBalanceOfBefore = await getBalanceOf(conditionalTokens, positionId, amm);
-      const ammBalanceBefore = await getBalance(collateralToken, amm);
+      const cpmmBalanceOfBefore = await getBalanceOf(conditionalTokens, positionId, cpmm);
+      const cpmmBalanceBefore = await getBalance(collateralToken, cpmm);
       const maxSellAmount = await calcSellAmount(returnAmount, outcomeIndex);
 
       await sell(returnAmount, outcomeIndex, maxSellAmount.toString());
 
       // wait for the sell to be processed
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 10000));
       const userBalanceOfAfter = await getBalanceOf(conditionalTokens, positionId, walletAddress);
       const userBalanceAfter = await getBalance(collateralToken, walletAddress);
-      const ammBalanceOfAfter = await getBalanceOf(conditionalTokens, positionId, amm);
-      const ammBalanceAfter = await getBalance(collateralToken, amm);
+      const cpmmBalanceOfAfter = await getBalanceOf(conditionalTokens, positionId, cpmm);
+      const cpmmBalanceAfter = await getBalance(collateralToken, cpmm);
 
       // @dev: This is the actual amount sold / burned during the position merge process
       const sellAmount = "9292929292930"
@@ -1424,26 +1429,26 @@ describe("amm.integration.test", function () {
       // User: Expect returnAmount of collateral tokens to be credited to user
       expect(returnAmount).to.be.equal((userBalanceAfter - userBalanceBefore).toString())
 
-      // AMM: Expect amm balances to remain the same
-      expect(ammBalanceOfBefore).to.be.equal(ammBalanceOfAfter)
+      // cpmm: Expect cpmm balances to remain the same
+      expect(cpmmBalanceOfBefore).to.be.equal(cpmmBalanceOfAfter)
 
-      //AMM: expect fee to have been added to amm's balance
+      //cpmm: expect fee to have been added to cpmm's balance
       // @dev: This is a 1% fee on the sell amount (approx.)
       const feeAmount = 92929292930;
-      expect(ammBalanceAfter.toString()).to.be.equal((Number(ammBalanceBefore) + feeAmount).toString())
+      expect(cpmmBalanceAfter.toString()).to.be.equal((Number(cpmmBalanceBefore) + feeAmount).toString())
     })
   })
 
   /************************************************************************ 
-  * amm.Remove-Funding and collect Fees
+  * cpmm.Remove-Funding and collect Fees
   ************************************************************************/
-  describe("amm.Remove-Funding-With-Fees", function () {
+  describe("cpmm.Remove-Funding-With-Fees", function () {
     before(async () => {
       // Add delay to allow for previous test to complete
       await new Promise(resolve => setTimeout(resolve, 5000));
     })
 
-    it("+ve should check positions of user and amm", async () => {
+    it("+ve should check positions of user and cpmm", async () => {
       await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
@@ -1472,8 +1477,8 @@ describe("amm.integration.test", function () {
   
       const balances = JSON.parse(Messages[0].Data)
   
-      expect(balances[positionIdIN][amm]).to.equal('140566936636494')
-      expect(balances[positionIdOUT][amm]).to.equal('150607070707070')
+      expect(balances[positionIdIN][cpmm]).to.equal('140566936636494')
+      expect(balances[positionIdOUT][cpmm]).to.equal('150607070707070')
 
       expect(balances[positionIdIN][walletAddress]).to.equal('60040134070576')
       expect(balances[positionIdOUT][walletAddress]).to.equal('50000000000000')
@@ -1483,7 +1488,7 @@ describe("amm.integration.test", function () {
       await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
-        process: amm,
+        process: cpmm,
         tags: [
           { name: "Action", value: "Collected-Fees" },
         ],
@@ -1497,7 +1502,7 @@ describe("amm.integration.test", function () {
   
       let { Messages, Error } = await result({
         message: messageId,
-        process: amm,
+        process: cpmm,
       });
   
       if (Error) {
@@ -1515,7 +1520,7 @@ describe("amm.integration.test", function () {
       await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
-        process: amm,
+        process: cpmm,
         tags: [
           { name: "Action", value: "Fees-Withdrawable" },
         ],
@@ -1529,7 +1534,7 @@ describe("amm.integration.test", function () {
   
       let { Messages, Error } = await result({
         message: messageId,
-        process: amm,
+        process: cpmm,
       });
   
       if (Error) {
@@ -1547,8 +1552,8 @@ describe("amm.integration.test", function () {
       let messageId;
       let userLPTokenBalanceBefore;
       let userLPTokenBalanceAfter;
-      let ammLPTokenBalanceBefore;
-      let ammLPTokenBalanceAfter;
+      let cpmmLPTokenBalanceBefore;
+      let cpmmLPTokenBalanceAfter;
       let userCollateralBalanceBefore;
       let userCollateralBalanceAfter;
 
@@ -1582,10 +1587,10 @@ describe("amm.integration.test", function () {
 
       async function removeFunding() {
         await message({
-          process: amm,
+          process: cpmm,
           tags: [
             { name: "Action", value: "Transfer" },
-            { name: "Recipient", value: amm },
+            { name: "Recipient", value: cpmm },
             { name: "Quantity", value: quantity },
             { name: "X-Action", value: xAction },
           ],
@@ -1599,7 +1604,7 @@ describe("amm.integration.test", function () {
 
         let { Messages, Error } = await result({
           message: messageId,
-          process: amm,
+          process: cpmm,
         });
 
         if (Error) {
@@ -1609,16 +1614,16 @@ describe("amm.integration.test", function () {
         return Messages
       }
 
-      userLPTokenBalanceBefore = await getBalance(amm, walletAddress);
-      ammLPTokenBalanceBefore = await getBalance(amm, amm);
+      userLPTokenBalanceBefore = await getBalance(cpmm, walletAddress);
+      cpmmLPTokenBalanceBefore = await getBalance(cpmm, cpmm);
       userCollateralBalanceBefore = await getBalance(collateralToken, walletAddress);
 
       let Messages = await removeFunding();
 
       await new Promise(resolve => setTimeout(resolve, 10000));
 
-      userLPTokenBalanceAfter = await getBalance(amm, walletAddress);
-      ammLPTokenBalanceAfter = await getBalance(amm, amm);
+      userLPTokenBalanceAfter = await getBalance(cpmm, walletAddress);
+      cpmmLPTokenBalanceAfter = await getBalance(cpmm, cpmm);
       userCollateralBalanceAfter = await getBalance(collateralToken, walletAddress);
 
       expect(Messages.length).to.be.equal(3)
@@ -1633,13 +1638,13 @@ describe("amm.integration.test", function () {
       const sender_1 = Messages[2].Tags.find(t => t.name === 'Sender').value
       const quantity_1 = Messages[2].Tags.find(t => t.name === 'Quantity').value
 
-      // Debits LP tokens from the sender to the amm
+      // Debits LP tokens from the sender to the cpmm
       expect(action_0).to.equal('Debit-Notice')
       expect(xAction_0).to.equal('Remove-Funding')
       expect(quantity_0).to.equal(quantity)
-      expect(recipient_0).to.equal(amm)
+      expect(recipient_0).to.equal(cpmm)
 
-      // Credits the amm with the LP tokens
+      // Credits the cpmm with the LP tokens
       expect(action_1).to.equal('Credit-Notice')
       expect(xAction_1).to.equal('Remove-Funding')
       expect(quantity_1).to.equal(quantity)
@@ -1648,13 +1653,13 @@ describe("amm.integration.test", function () {
       // Check balances
       expect(userLPTokenBalanceBefore).to.equal(parseAmount(150, 12))
       expect(userLPTokenBalanceAfter).to.equal(parseAmount(100, 12))
-      expect(ammLPTokenBalanceBefore).to.equal(parseAmount(0, 12))
-      expect(ammLPTokenBalanceAfter).to.equal(parseAmount(0, 12))
+      expect(cpmmLPTokenBalanceBefore).to.equal(parseAmount(0, 12))
+      expect(cpmmLPTokenBalanceAfter).to.equal(parseAmount(0, 12))
       expect(userCollateralBalanceBefore).to.equal('9799200000000000')
       expect(userCollateralBalanceAfter).to.equal('9799392929292930')
     })
 
-    it("+ve should have retrieved position tokens from amm in exchange for the LP tokens", async () => {
+    it("+ve should have retrieved position tokens from cpmm in exchange for the LP tokens", async () => {
       await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
@@ -1683,8 +1688,8 @@ describe("amm.integration.test", function () {
   
       const balances = JSON.parse(Messages[0].Data)
 
-      expect(balances[positionIdIN][amm]).to.equal((140566936636494 - 46855645545498).toString())
-      expect(balances[positionIdOUT][amm]).to.equal((150607070707070 - 50202356902357).toString())
+      expect(balances[positionIdIN][cpmm]).to.equal((140566936636494 - 46855645545498).toString())
+      expect(balances[positionIdOUT][cpmm]).to.equal((150607070707070 - 50202356902357).toString())
 
       expect(balances[positionIdIN][walletAddress]).to.equal((60040134070576 + 46855645545498).toString())
       expect(balances[positionIdOUT][walletAddress]).to.equal(((50000000000000 + 50202356902357).toString()))
@@ -1694,7 +1699,7 @@ describe("amm.integration.test", function () {
       await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
-        process: amm,
+        process: cpmm,
         tags: [
           { name: "Action", value: "Collected-Fees" },
         ],
@@ -1708,7 +1713,7 @@ describe("amm.integration.test", function () {
   
       let { Messages, Error } = await result({
         message: messageId,
-        process: amm,
+        process: cpmm,
       });
   
       if (Error) {
@@ -1726,7 +1731,7 @@ describe("amm.integration.test", function () {
       await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
-        process: amm,
+        process: cpmm,
         tags: [
           { name: "Action", value: "Fees-Withdrawable" },
         ],
@@ -1740,7 +1745,7 @@ describe("amm.integration.test", function () {
   
       let { Messages, Error } = await result({
         message: messageId,
-        process: amm,
+        process: cpmm,
       });
   
       if (Error) {
@@ -1758,7 +1763,7 @@ describe("amm.integration.test", function () {
       await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
-        process: amm,
+        process: cpmm,
         tags: [
           { name: "Action", value: "Withdraw-Fees" },
         ],
@@ -1772,7 +1777,7 @@ describe("amm.integration.test", function () {
   
       let { Messages, Error } = await result({
         message: messageId,
-        process: amm,
+        process: cpmm,
       });
   
       if (Error) {

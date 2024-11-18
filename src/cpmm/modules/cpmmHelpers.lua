@@ -2,10 +2,10 @@ local bint = require('.bint')(256)
 local json = require('json')
 local ao = require('.ao')
 
-local AMMHelpers = {}
+local CPMMHelpers = {}
 
 -- Utility function: CeilDiv
-function AMMHelpers.ceildiv(x, y)
+function CPMMHelpers.ceildiv(x, y)
   if x > 0 then
     return math.floor((x - 1) / y) + 1
   end
@@ -14,7 +14,7 @@ end
 
 -- Generate basic partition
 --@dev generates basic partition based on outcomesSlotCount
-function AMMHelpers:generateBasicPartition()
+function CPMMHelpers:generateBasicPartition()
   local partition = {}
   for i = 0, self.outcomeSlotCount - 1 do
     table.insert(partition, 1 << i)
@@ -23,7 +23,7 @@ function AMMHelpers:generateBasicPartition()
 end
 
 -- @dev validates addFunding
-function AMMHelpers:validateAddFunding(from, quantity, distribution)
+function CPMMHelpers:validateAddFunding(from, quantity, distribution)
   local error = false
   local errorMessage = ''
 
@@ -60,7 +60,7 @@ function AMMHelpers:validateAddFunding(from, quantity, distribution)
 end
 
 -- @dev validates removeFunding
-function AMMHelpers:validateRemoveFunding(from, quantity)
+function CPMMHelpers:validateRemoveFunding(from, quantity)
   local error = false
   local balance = self.tokens.balances[from] or '0'
   if not bint.__lt(bint(quantity), bint(balance)) then
@@ -77,7 +77,7 @@ function AMMHelpers:validateRemoveFunding(from, quantity)
 end
 
 -- @dev creates a position within the conditionalTokens process
-function AMMHelpers:createPosition(from, onBehalfOf, quantity, outcomeIndex, outcomeTokensToBuy, lpTokensMintAmount, sendBackAmounts, msg)
+function CPMMHelpers:createPosition(from, onBehalfOf, quantity, outcomeIndex, outcomeTokensToBuy, lpTokensMintAmount, sendBackAmounts, msg)
   msg.forward(self.collateralToken, {
     Action = "Transfer",
     Quantity = quantity,
@@ -96,7 +96,7 @@ function AMMHelpers:createPosition(from, onBehalfOf, quantity, outcomeIndex, out
 end
 
 -- @dev merges positions within the conditionalTokens process
-function AMMHelpers:mergePositions(from, returnAmount, returnAmountPlusFees, outcomeIndex, outcomeTokensToSell)
+function CPMMHelpers:mergePositions(from, returnAmount, returnAmountPlusFees, outcomeIndex, outcomeTokensToSell)
   ao.send({
     Target = self.conditionalTokens,
     Action = "Merge-Positions",
@@ -115,7 +115,7 @@ function AMMHelpers:mergePositions(from, returnAmount, returnAmountPlusFees, out
 end
 
 -- @dev get pool balances
-function AMMHelpers:getPoolBalances()
+function CPMMHelpers:getPoolBalances()
   local thises = {}
   for i = 1, #self.positionIds do
     thises[i] = ao.id
@@ -129,4 +129,4 @@ function AMMHelpers:getPoolBalances()
   return poolBalances
 end
 
-return AMMHelpers
+return CPMMHelpers

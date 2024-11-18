@@ -9,7 +9,7 @@ config.MarketFactory = "TFfNYQ4BW6-0kRO0IwyL7YbcC_02hXdQIF9vvdWEp7Q" -- Set to P
 
 -- LP Token
 config.LPToken = {
-  Name = 'AMM-v' .. config.Version,                     -- LPToken versioned name
+  Name = 'CPMM-v' .. config.Version,                    -- LPToken versioned name
   Ticker = 'OUTCOME-LP-v' .. config.Version,            -- LPToken Ticker
   Logo = 'SBCCXwwecBlDqRLUjb8dYABExTJXLieawf7m2aBJ-KY', -- LPToken Logo
   Balances = {},                                        -- LPToken Balances
@@ -17,9 +17,9 @@ config.LPToken = {
   Denomination = 12                                     -- LPToken Denomination
 }
 
--- AMM
-config.AMM = {
-  Initialized = false,      -- AMM Initialization Status
+-- CPMM
+config.CPMM = {
+  Initialized = false,      -- CPMM Initialization Status
   CollateralToken = '',     -- Process ID of Collateral Token 
   ConditionalTokens = '',   -- Process ID of Conditional Tokens
   MarketId = '',            -- Market ID

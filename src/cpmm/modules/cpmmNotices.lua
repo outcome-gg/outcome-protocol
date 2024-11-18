@@ -1,9 +1,9 @@
 local ao = require('.ao')
 local json = require('json')
 
-local AMMNotices = {}
+local CPMMNotices = {}
 
-function AMMNotices.newMarketNotice(collateralToken, conditionalTokens, marketId, conditionId, collectionIds, positionIds, outcomeSlotCount, name, ticker, logo, msg)
+function CPMMNotices.newMarketNotice(collateralToken, conditionalTokens, marketId, conditionId, collectionIds, positionIds, outcomeSlotCount, name, ticker, logo, msg)
   msg.reply({
     Action = "New-Market-Notice",
     MarketId = marketId,
@@ -20,7 +20,7 @@ function AMMNotices.newMarketNotice(collateralToken, conditionalTokens, marketId
   })
 end
 
-function AMMNotices.fundingAddedNotice(from, sendBackAmounts, mintAmount)
+function CPMMNotices.fundingAddedNotice(from, sendBackAmounts, mintAmount)
   ao.send({
     Target = from,
     Action = "Funding-Added-Notice",
@@ -30,7 +30,7 @@ function AMMNotices.fundingAddedNotice(from, sendBackAmounts, mintAmount)
   })
 end
 
-function AMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
+function CPMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
   ao.send({
     Target = from,
     Action = "Funding-Removed-Notice",
@@ -41,7 +41,7 @@ function AMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFro
   })
 end
 
-function AMMNotices.buyNotice(from, investmentAmount, feeAmount, outcomeIndex, outcomeTokensToBuy)
+function CPMMNotices.buyNotice(from, investmentAmount, feeAmount, outcomeIndex, outcomeTokensToBuy)
   ao.send({
     Target = from,
     Action = "Buy-Notice",
@@ -53,7 +53,7 @@ function AMMNotices.buyNotice(from, investmentAmount, feeAmount, outcomeIndex, o
   })
 end
 
-function AMMNotices.sellNotice(from, returnAmount, feeAmount, outcomeIndex, outcomeTokensToSell)
+function CPMMNotices.sellNotice(from, returnAmount, feeAmount, outcomeIndex, outcomeTokensToSell)
   ao.send({
     Target = from,
     Action = "Sell-Notice",
@@ -65,4 +65,4 @@ function AMMNotices.sellNotice(from, returnAmount, feeAmount, outcomeIndex, outc
   })
 end
 
-return AMMNotices
+return CPMMNotices

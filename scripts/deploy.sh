@@ -54,7 +54,7 @@ if [ "$1" == "test" ]; then
     # Deploy market contracts
     create_or_update_process TEST_CONDITIONAL_TOKENS2 src/cft/cft.lua
     create_or_update_process TEST_DLOB src/market/market.lua
-    create_or_update_process TEST_AMM4 src/amm/amm.lua
+    create_or_update_process TEST_CPMM1 src/cpmm/cpmm.lua
     # Deploy mock contracts
     create_or_update_process TEST_COLLATERAL_TOKEN3 src/mock/token.lua
     # Deploy agents
@@ -67,7 +67,7 @@ elif [ "$1" == "prod" ]; then
     create_or_update_process PROD_MARKET_FACTORY src/core/marketFactory.lua --sqlite
     # Deploy market contracts
     create_or_update_process PROD_CONDITIONAL_TOKENS2 src/cft/cft.lua
-    create_or_update_process PROD_DLOB src/market/market.lua
+    create_or_update_process PROD_CPMM1 src/cpmm/cpmm.lua
 else
     echo "Usage: $0 {test|prod}"
     exit 1

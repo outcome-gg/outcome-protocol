@@ -15,7 +15,7 @@
 | src/core/marketFoundry.lua             | 9  | Used to spawn fully-autonomous markets: a collection of AMM, DataAgent and ResolutionAgent processes. |
 | src/core/orderBook.lua               | 2   | Used to create limit orders. Sits on top of each market's AMM to offer hybrid market+limit order book.                                                                                                                                                                    |
 | src/core/outcomeToken.lua             | 248   | Outcome's utility token.                                                                                                                                             |
-| src/market/amm.lua      | 1307  | A Fixed Price Market Maker designed for binary tokens.                                                                                                                                                                     |
+| src/market/CPMM.lua      | 1307  | A Fixed Price Market Maker designed for binary tokens.                                                                                                                                                                     |
 | src/market/conditionalTokens.lua            | 916  | Conditional Framework Tokens to enable combinatorial market positions, based on those developed by Gnosis.                                                                                                                                                         |
 | src/oracles/dexi.lua    | 2   | Oracle process for Dexi integration.                                                                                                                                                                   |
 | src/oracles/orbit.lua | 2   | Oracle process for 0rbit integration.                                                                                                                                                                    |
@@ -39,7 +39,7 @@ src
   └─ orderBook.lua
   └─ outcomeToken.lua
 └─ market
-  └─ amm.lua
+  └─ CPMM.lua
   └─ conditionalTokens.lua
 └─ oracles
   └─ dexi.lua
