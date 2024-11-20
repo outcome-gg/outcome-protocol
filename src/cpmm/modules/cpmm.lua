@@ -2,36 +2,39 @@ local json = require('json')
 local bint = require('.bint')(256)
 local ao = require('.ao')
 local config = require('modules.config')
-local Tokens = require('modules.tokens')
+local Token = require('modules.token')
 local CPMMHelpers = require('modules.cpmmHelpers')
 
 local CPMM = {}
 local CPMMMethods = require('modules.cpmmNotices')
-local LPTokens = {}
+local LPToken = {}
 
 -- Constructor for CPMM 
 function CPMM:new()
+  -- Load config
+  config = config:new()
+
   -- Initialize Tokens and store the object
-  LPTokens = Tokens:new(config.LPToken.Balances, config.LPToken.TotalSupply, config.LPToken.Name, config.LPToken.Ticker, config.LPToken.Denomination, config.LPToken.Logo)
+  LPToken = Token:new(config.token.name, config.token.ticker, config.token.logo, config.token.balances, config.token.totalSupply, config.token.denomination)
 
   -- Create a new CPMM object
   local obj = {
     -- LP Token Vars
-    tokens = LPTokens,
+    token = LPToken,
     -- CPMM Vars
     initialized = false,
-    collateralToken = config.CPMM.CollateralTokens,
-    conditionalTokens = config.CPMM.ConditionalTokens,
-    conditionId = config.CPMM.ConditionId,
-    collectionIds = config.CPMM.CollectionIds,
-    positionIds = config.CPMM.PositionIds,
-    feePoolWeight = config.CPMM.FeePoolWeight,
-    totalWithdrawnFees = config.CPMM.TotalWithdrawnFees,
-    withdrawnFees = config.CPMM.WithdrawnFees,
-    outcomeSlotCount = config.CPMM.OutcomeSlotCount,
-    poolBalances = config.CPMM.PoolBalances,
-    fee = config.LPFee.Percentage,
-    ONE = config.LPFee.ONE
+    collateralToken = config.collateralTokens,
+    conditionalTokens = config.conditionalTokens,
+    conditionId = config.conditionId,
+    collectionIds = config.collectionIds,
+    positionIds = config.positionIds,
+    feePoolWeight = config.feePoolWeight,
+    totalWithdrawnFees = config.totalWithdrawnFees,
+    withdrawnFees = config.withdrawnFees,
+    outcomeSlotCount = config.outcomeSlotCount,
+    poolBalances = config.poolBalances,
+    fee = config.lpFee.Percentage,
+    ONE = config.lpFee.ONE
   }
 
   -- Set metatable for method lookups
@@ -65,9 +68,9 @@ function CPMMMethods:init(collateralToken, conditionalTokens, marketId, conditio
   self.outcomeSlotCount = outcomeSlotCount
 
   -- Set LP Token vars
-  self.tokens.name = name
-  self.tokens.ticker = ticker
-  self.tokens.logo = logo
+  self.token.name = name
+  self.token.ticker = ticker
+  self.token.logo = logo
 
   -- Initialized
   self.initialized = true
@@ -82,7 +85,7 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
   assert(bint.__lt(0, bint(addedFunds)), "funding must be non-zero")
 
   local sendBackAmounts = {}
-  local poolShareSupply = self.tokens.totalSupply
+  local poolShareSupply = self.token.totalSupply
   local mintAmount = '0'
 
   if bint.__lt(0, bint(poolShareSupply)) then
@@ -157,7 +160,7 @@ function CPMMMethods:removeFunding(from, sharesToBurn)
   local poolBalances = self.poolBalances
   local sendAmounts = {}
   for i = 1, #poolBalances do
-    sendAmounts[i] = (poolBalances[i] * sharesToBurn) / self.tokens.totalSupply
+    sendAmounts[i] = (poolBalances[i] * sharesToBurn) / self.token.totalSupply
   end
   -- Calculate collateralRemovedFromFeePool
   local poolFeeBalance = ao.send({Target = self.collateralToken, Action = 'Balance'}).receive().Data
@@ -257,10 +260,10 @@ end
 
 -- @dev Returns the fees withdrawable by the sender
 function CPMMMethods:feesWithdrawableBy(sender)
-  local balance = self.tokens.balances[sender] or '0'
+  local balance = self.token.balances[sender] or '0'
   local rawAmount = '0'
-  if bint(self.tokens.totalSupply) > 0 then
-    rawAmount = string.format('%.0f', (bint.__div(bint.__mul(bint(self:collectedFees()), bint(balance)), self.tokens.totalSupply)))
+  if bint(self.token.totalSupply) > 0 then
+    rawAmount = string.format('%.0f', (bint.__div(bint.__mul(bint(self:collectedFees()), bint(balance)), self.token.totalSupply)))
   end
 
   -- @dev max(rawAmount - withdrawnFees, 0)
@@ -286,7 +289,7 @@ function CPMMMethods:_beforeTokenTransfer(from, to, amount)
   if from ~= nil then
     self:withdrawFees(from)
   end
-  local totalSupply = self.tokens.totalSupply
+  local totalSupply = self.token.totalSupply
   local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self:collectedFees()), amount), totalSupply)))
 
   if from ~= nil and to ~= nil then
@@ -299,19 +302,19 @@ end
 -- @dev See tokensMethods:mint & _beforeTokenTransfer
 function CPMMMethods:mint(to, quantity)
   self:_beforeTokenTransfer(nil, to, quantity)
-  self.tokens:mint(to, quantity)
+  self.token:mint(to, quantity)
 end
 
 -- @dev See tokenMethods:burn & _beforeTokenTransfer
 function CPMMMethods:burn(from, quantity)
   self:_beforeTokenTransfer(from, nil, quantity)
-  self.tokens:burn(from, quantity)
+  self.token:burn(from, quantity)
 end
 
 -- @dev See tokenMethods:transfer & _beforeTokenTransfer
 function CPMMMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
   self:_beforeTokenTransfer(from, recipient, quantity)
-  self.tokens:transfer(from, recipient, quantity, cast, msgTags, msgId)
+  self.token:transfer(from, recipient, quantity, cast, msgTags, msgId)
 end
 
 return CPMM

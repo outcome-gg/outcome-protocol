@@ -11,22 +11,22 @@ local ConditionalTokens = {}
 local ConditionalTokensMethods = require('modules.conditionalTokensNotices')
 
 -- Constructor for ConditionalTokens 
-function ConditionalTokens:new(name, ticker, denomination, logo)
+function ConditionalTokens:new()
+  -- Load config
+  config = config:new()
   -- Initialize SemiFungibleTokens and store the object
-  SemiFungibleTokens = semiFungibleTokens:new(name, ticker, denomination, logo)
+  SemiFungibleTokens = semiFungibleTokens:new(config.tokens.name, config.tokens.ticker, config.tokens.logo, config.tokens.balancesOf, config.tokens.totalSupplyOf, config.tokens.denomination)
 
   -- Create a new ConditionalTokens object
   local obj = {
+    -- SemiFungible Tokens
+    tokens = SemiFungibleTokens,
     payoutNumerators = {},
     payoutDenominator = {},
-    balancesOf = SemiFungibleTokens.balancesOf,
-    name = SemiFungibleTokens.name,
-    ticker = SemiFungibleTokens.ticker,
-    denomination = SemiFungibleTokens.denomination,
-    logo = SemiFungibleTokens.logo,
-    takeFeePercentage = config.TakeFee.Percentage,
-    takeFeeTarget = config.TakeFee.Target,
-    ONE = config.TakeFee.ONE
+    takeFeePercentage = config.takeFee.percentage,
+    takeFeeTarget = config.takeFee.target,
+    ONE = config.takeFee.ONE,
+    resetState = config.resetState
   }
 
   -- Set metatable for method lookups from ConditionalTokensMethods, SemiFungibleTokensMethods, and ConditionalTokensHelpers
@@ -255,9 +255,9 @@ function ConditionalTokensMethods:redeemPositions(from, collateralToken, parentC
       end
     end
 
-    assert(self.balancesOf[positionId], "invalid position")
-    if not self.balancesOf[positionId][from] then self.balancesOf[positionId][from] = "0" end
-    local payoutStake = self.balancesOf[positionId][from]
+    assert(self.tokens.balancesOf[positionId], "invalid position")
+    if not self.tokens.balancesOf[positionId][from] then self.tokens.balancesOf[positionId][from] = "0" end
+    local payoutStake = self.tokens.balancesOf[positionId][from]
     if bint.__lt(0, bint(payoutStake)) then
       totalPayout = totalPayout + (payoutStake * payoutNumerator) / den
       self:burn(from, positionId, payoutStake)

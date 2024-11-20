@@ -12,7 +12,7 @@ import exp from "constants";
 dotenv.config();
 
 const collateralToken = process.env.TEST_COLLATERAL_TOKEN3;
-const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS2;
+const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS4;
 
 console.log("COLLATERAL TOKEN: ", collateralToken)
 console.log("CONDITIONAL TOKENS: ", conditionalTokens)
@@ -41,7 +41,7 @@ let parlayCollectionIds;
 /* 
 * Tests
 */
-describe("cft.integration.test", function () {
+describe("ctf.integration.test", function () {
   before(async () => ( 
     // Txn execution variables
     wallet = JSON.parse(
@@ -979,7 +979,7 @@ describe("cft.integration.test", function () {
       const parentCollectionId_ = Messages[0].Tags.find(t => t.name === 'ParentCollectionId').value
       const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
       const indexSet_ = Messages[0].Tags.find(t => t.name === 'IndexSet').value
-      const collectionId_ = Messages[0].Tags.find(t => t.name === 'CollectionId').value
+      const collectionId_ = Messages[0].Data
 
       expect(action_).to.equal("Collection-Id")
       expect(parentCollectionId_).to.equal(parentCollectionId)
@@ -1020,7 +1020,7 @@ describe("cft.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const collateralToken_ = Messages[0].Tags.find(t => t.name === 'CollateralToken').value
       const collectionId_ = Messages[0].Tags.find(t => t.name === 'CollectionId').value
-      const positionId_ = Messages[0].Tags.find(t => t.name === 'PositionId').value
+      const positionId_ = Messages[0].Data
     
       expect(action_).to.equal("Position-Id")
       expect(collateralToken_).to.equal(collateralToken)
@@ -1201,7 +1201,7 @@ describe("cft.integration.test", function () {
       const parentCollectionId_ = Messages[0].Tags.find(t => t.name === 'ParentCollectionId').value
       const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
       const indexSet_ = Messages[0].Tags.find(t => t.name === 'IndexSet').value
-      const collectionId_ = Messages[0].Tags.find(t => t.name === 'CollectionId').value
+      const collectionId_ = Messages[0].Data
 
       expect(action_).to.equal("Collection-Id")
       expect(parentCollectionId_).to.equal(parentCollectionId)
@@ -2164,7 +2164,7 @@ describe("cft.integration.test", function () {
 
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
-      const payoutNumerators_ = Messages[0].Tags.find(t => t.name === 'PayoutNumerators').value
+      const payoutNumerators_ = Messages[0].Data
 
       expect(action_).to.equal("Payout-Numerators")
       expect(conditionId_).to.equal(conditionId)
@@ -2198,11 +2198,11 @@ describe("cft.integration.test", function () {
 
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
-      const payoutDenominator_ = Messages[0].Tags.find(t => t.name === 'PayoutDenominator').value
+      const payoutDenominator_ = Messages[0].Data
     
       expect(action_).to.equal("Payout-Denominator")
       expect(conditionId_).to.equal(conditionId)
-      expect(payoutDenominator_).to.equal("3")
+      expect(payoutDenominator_).to.equal(3)
     })
   })
 
@@ -2495,7 +2495,7 @@ describe("cft.integration.test", function () {
       const parentCollectionId_ = Messages[0].Tags.find(t => t.name === 'ParentCollectionId').value
       const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
       const indexSet_ = Messages[0].Tags.find(t => t.name === 'IndexSet').value
-      const collectionId_ = Messages[0].Tags.find(t => t.name === 'CollectionId').value
+      const collectionId_ = Messages[0].Data
 
       expect(action_).to.equal("Collection-Id")
       expect(parentCollectionId_).to.equal(parentCollectionId)
@@ -2541,7 +2541,7 @@ describe("cft.integration.test", function () {
       const parentCollectionId_ = Messages[0].Tags.find(t => t.name === 'ParentCollectionId').value
       const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
       const indexSet_ = Messages[0].Tags.find(t => t.name === 'IndexSet').value
-      const collectionId_ = Messages[0].Tags.find(t => t.name === 'CollectionId').value
+      const collectionId_ = Messages[0].Data
 
       expect(action_).to.equal("Collection-Id")
       expect(parentCollectionId_).to.equal(parentCollectionId)

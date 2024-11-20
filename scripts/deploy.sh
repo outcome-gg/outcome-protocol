@@ -52,7 +52,7 @@ if [ "$1" == "test" ]; then
     create_or_update_process TEST_DATA_INDEX4 src/core/dataIndex.lua --sqlite
     create_or_update_process TEST_MARKET_FACTORY2 src/core/marketFactory.lua --sqlite
     # Deploy market contracts
-    create_or_update_process TEST_CONDITIONAL_TOKENS2 src/cft/cft.lua
+    create_or_update_process TEST_CONDITIONAL_TOKENS2 src/ctf/ctf.lua
     create_or_update_process TEST_DLOB src/market/market.lua
     create_or_update_process TEST_CPMM1 src/cpmm/cpmm.lua
     # Deploy mock contracts
@@ -66,7 +66,7 @@ elif [ "$1" == "prod" ]; then
     create_or_update_process PROD_DATA_INDEX4 src/core/dataIndex.lua --sqlite
     create_or_update_process PROD_MARKET_FACTORY src/core/marketFactory.lua --sqlite
     # Deploy market contracts
-    create_or_update_process PROD_CONDITIONAL_TOKENS2 src/cft/cft.lua
+    create_or_update_process PROD_CONDITIONAL_TOKENS2 src/ctf/ctf.lua
     create_or_update_process PROD_CPMM1 src/cpmm/cpmm.lua
 else
     echo "Usage: $0 {test|prod}"

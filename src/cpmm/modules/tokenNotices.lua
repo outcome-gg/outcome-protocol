@@ -1,8 +1,8 @@
 local ao = require('.ao')
 
-local TokensNotices = {}
+local TokenNotices = {}
 
-function TokensNotices.mintNotice(recipient, quantity)
+function TokenNotices.mintNotice(recipient, quantity)
   ao.send({
     Target = recipient,
     Quantity = tostring(quantity),
@@ -11,7 +11,7 @@ function TokensNotices.mintNotice(recipient, quantity)
   })
 end
 
-function TokensNotices.burnNotice(holder, quantity)
+function TokenNotices.burnNotice(holder, quantity)
   ao.send({
     Target = holder,
     Quantity = tostring(quantity),
@@ -20,14 +20,14 @@ function TokensNotices.burnNotice(holder, quantity)
   })
 end
 
-function TokensNotices.transferNotices(debitNotice, creditNotice)
+function TokenNotices.transferNotices(debitNotice, creditNotice)
   -- Send Debit-Notice to the Sender
   ao.send(debitNotice)
   -- Send Credit-Notice to the Recipient
   ao.send(creditNotice)
 end
 
-function TokensNotices.transferErrorNotice(sender, msgId)
+function TokenNotices.transferErrorNotice(sender, msgId)
   ao.send({
     Target = sender,
     Action = 'Transfer-Error',
@@ -36,4 +36,4 @@ function TokensNotices.transferErrorNotice(sender, msgId)
   })
 end
 
-return TokensNotices
+return TokenNotices

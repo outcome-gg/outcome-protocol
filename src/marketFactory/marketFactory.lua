@@ -33,6 +33,15 @@ end
 ---------------------------------------------------------------------------------
 -- WRITE HANDLERS ---------------------------------------------------------------
 ---------------------------------------------------------------------------------
+-- Update Conditional Tokens
+Handlers.add('updateConditionalTokens', Handlers.utils.hasMatchingTag('Action', 'Update-Conditional-Tokens'), function(msg)
+  assert(type(msg.Tags['Collateral-Token']) == 'string', 'Collateral-Token is required!')
+  assert(type(msg.Tags['Conditional-Tokens']) == 'string', 'Conditional-Tokens is required!')
+  config.updateConditionalTokens(msg.Tags['Collateral-Token'], msg.Tags['Conditional-Tokens'])
+
+  msg.reply({ Action = 'Conditional-Tokens-Updated', CollateralToken = msg.Tags['Collateral-Token'], ConditionalTokens = msg.Tags['Conditional-Tokens'] })
+end)
+
 -- Create Market
 --@dev TODO: decide if this should be open to anyone
 --@dev TODO: decide if a minimum collateral amount should be required
@@ -91,6 +100,11 @@ end)
 ---------------------------------------------------------------------------------
 -- READ HANDLERS ----------------------------------------------------------------
 ---------------------------------------------------------------------------------
+-- Get Conditional Tokens
+Handlers.add('updateConditionalTokens', Handlers.utils.hasMatchingTag('Action', 'Get-Conditional-Tokens'), function(msg)
+  config.updateConditionalTokens(msg.Tags['Collateral-Token'], msg.Tags['Conditional-Tokens'])
+  msg.reply({Action = 'Conditional-Tokens', Data = config.MarketFactory.ConditionalTokens})
+end)
 -- Get Market
 Handlers.add('getMarketData', Handlers.utils.hasMatchingTag('Action', 'Get-Market-Data'), function(msg)
   assert(msg.Tags.MarketId, 'MarketId is required!')

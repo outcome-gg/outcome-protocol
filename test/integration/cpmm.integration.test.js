@@ -13,7 +13,7 @@ dotenv.config();
 
 const cpmm = process.env.TEST_CPMM1;
 const collateralToken = process.env.TEST_COLLATERAL_TOKEN3;
-const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS2;
+const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS4;
 
 console.log("CPMM: ", cpmm)
 console.log("COLLATERAL TOKEN: ", collateralToken)
@@ -553,7 +553,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should have transferred CollateralTokens to ConditionalTokens as per previous step", async () => {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 10000));
       let messageId;
       await message({
         process: collateralToken,
@@ -1003,91 +1003,91 @@ describe("cpmm.integration.test", function () {
       expect(cpmmBalanceAfter).to.equal(parseAmount(0, 12))
     })
 
-    // it("-ve should fail to remove funding greater than balance", async () => {
-    //   let messageId;
-    //   let userBalanceBefore;
-    //   let userBalanceAfter;
-    //   let cpmmBalanceBefore;
-    //   let cpmmBalanceAfter;
+    it("-ve should fail to remove funding greater than balance", async () => {
+      let messageId;
+      let userBalanceBefore;
+      let userBalanceAfter;
+      let cpmmBalanceBefore;
+      let cpmmBalanceAfter;
 
-    //   const quantity = parseAmount(200, 12)
-    //   const xAction = "Remove-Funding"
+      const quantity = parseAmount(200, 12)
+      const xAction = "Remove-Funding"
 
-    //   async function getBalance(token, recipient) {
-    //     let messageId;
-    //     await message({
-    //       process: token,
-    //       tags: [
-    //         { name: "Action", value: "Balance" },
-    //         { name: "Recipient", value: recipient },
-    //       ],
-    //       signer: createDataItemSigner(wallet),
-    //       data: "",
-    //     })
-    //     .then((id) => {
-    //       messageId = id;
-    //     })
-    //     .catch(console.error);
+      async function getBalance(token, recipient) {
+        let messageId;
+        await message({
+          process: token,
+          tags: [
+            { name: "Action", value: "Balance" },
+            { name: "Recipient", value: recipient },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
 
-    //     let { Messages } = await result({
-    //       message: messageId,
-    //       process: token,
-    //     });
+        let { Messages } = await result({
+          message: messageId,
+          process: token,
+        });
 
-    //     const balance = Messages[0].Data
-    //     return balance
-    //   }
+        const balance = Messages[0].Data
+        return balance
+      }
 
-    //   async function removeFunding() {
-    //     await message({
-    //       process: cpmm,
-    //       tags: [
-    //         { name: "Action", value: "Transfer" },
-    //         { name: "Recipient", value: cpmm },
-    //         { name: "Quantity", value: quantity },
-    //         { name: "X-Action", value: xAction },
-    //       ],
-    //       signer: createDataItemSigner(wallet),
-    //       data: "",
-    //     })
-    //     .then((id) => {
-    //       messageId = id;
-    //     })
-    //     .catch(console.error);
+      async function removeFunding() {
+        await message({
+          process: cpmm,
+          tags: [
+            { name: "Action", value: "Transfer" },
+            { name: "Recipient", value: cpmm },
+            { name: "Quantity", value: quantity },
+            { name: "X-Action", value: xAction },
+          ],
+          signer: createDataItemSigner(wallet),
+          data: "",
+        })
+        .then((id) => {
+          messageId = id;
+        })
+        .catch(console.error);
 
-    //     let { Messages, Error } = await result({
-    //       message: messageId,
-    //       process: cpmm,
-    //     });
+        let { Messages, Error } = await result({
+          message: messageId,
+          process: cpmm,
+        });
 
-    //     if (Error) {
-    //       console.log(Error)
-    //     }
+        if (Error) {
+          console.log(Error)
+        }
 
-    //     return Messages
-    //   }
+        return Messages
+      }
 
-    //   userBalanceBefore = await getBalance(cpmm, walletAddress);
-    //   cpmmBalanceBefore = await getBalance(cpmm, cpmm);
+      userBalanceBefore = await getBalance(cpmm, walletAddress);
+      cpmmBalanceBefore = await getBalance(cpmm, cpmm);
 
-    //   let Messages = await removeFunding();
+      let Messages = await removeFunding();
 
-    //   userBalanceAfter = await getBalance(cpmm, walletAddress);
-    //   cpmmBalanceAfter = await getBalance(cpmm, cpmm);
+      userBalanceAfter = await getBalance(cpmm, walletAddress);
+      cpmmBalanceAfter = await getBalance(cpmm, cpmm);
 
-    //   expect(Messages.length).to.be.equal(1)
+      expect(Messages.length).to.be.equal(1)
 
-    //   const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-    //   const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
 
-    //   expect(action_).to.equal('Transfer-Error')
-    //   expect(error_).to.equal('Insufficient Balance!')
+      expect(action_).to.equal('Transfer-Error')
+      expect(error_).to.equal('Insufficient Balance!')
 
-    //   expect(userBalanceBefore).to.equal(parseAmount(150, 12))
-    //   expect(userBalanceAfter).to.equal(parseAmount(150, 12))
-    //   expect(cpmmBalanceBefore).to.equal(parseAmount(0, 12))
-    //   expect(cpmmBalanceAfter).to.equal(parseAmount(0, 12))
-    // })
+      expect(userBalanceBefore).to.equal(parseAmount(150, 12))
+      expect(userBalanceAfter).to.equal(parseAmount(150, 12))
+      expect(cpmmBalanceBefore).to.equal(parseAmount(0, 12))
+      expect(cpmmBalanceAfter).to.equal(parseAmount(0, 12))
+    })
   })
 
   /************************************************************************ 
@@ -1415,7 +1415,7 @@ describe("cpmm.integration.test", function () {
       await sell(returnAmount, outcomeIndex, maxSellAmount.toString());
 
       // wait for the sell to be processed
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 25000));
       const userBalanceOfAfter = await getBalanceOf(conditionalTokens, positionId, walletAddress);
       const userBalanceAfter = await getBalance(collateralToken, walletAddress);
       const cpmmBalanceOfAfter = await getBalanceOf(conditionalTokens, positionId, cpmm);

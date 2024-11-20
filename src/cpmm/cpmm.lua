@@ -7,7 +7,18 @@ local cpmm = require('modules.cpmm')
 ---------------------------------------------------------------------------------
 -- CPMM -------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-if not CPMM or config.ResetState then CPMM = cpmm:new() end
+-- @dev Load config
+if not Config or Config.resetState then Config = config:new() end
+-- @dev Reset state while in DEV mode
+if not CPMM or Config.resetState then CPMM = cpmm:new() end
+
+-- @dev Link expected namespace variables
+Name = CPMM.token.name
+Ticker = CPMM.token.ticker
+Logo = CPMM.token.logo
+Balances = CPMM.token.balances
+TotalSupply = CPMM.token.totalSupply
+Denomination = CPMM.token.denomination
 
 ---------------------------------------------------------------------------------
 -- MATCHING ---------------------------------------------------------------------
@@ -91,10 +102,10 @@ end
 -- Info
 Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(msg)
   msg.reply({
-    Name = CPMM.tokens.name,
-    Ticker = CPMM.tokens.ticker,
-    Logo = CPMM.tokens.logo,
-    Denomination = tostring(CPMM.tokens.denomination),
+    Name = CPMM.token.name,
+    Ticker = CPMM.token.ticker,
+    Logo = CPMM.token.logo,
+    Denomination = tostring(CPMM.token.denomination),
     ConditionId = CPMM.conditionId,
     CollateralToken = CPMM.collateralToken,
     ConditionalTokens = CPMM.conditionalTokens,
@@ -141,7 +152,7 @@ Handlers.add('Add-Funding', isAddFunding, function(msg)
 
   -- @dev returns fudning if invalid
   if CPMM:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
-    CPMM:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags['Quantity'], distribution, msg)
+    CPMM:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, distribution, msg)
   end
 end)
 
@@ -293,18 +304,18 @@ Handlers.add('Balance', Handlers.utils.hasMatchingTag('Action', 'Balance'), func
 
   -- If not Recipient is provided, then return the Senders balance
   if (msg.Tags.Recipient) then
-    if (CPMM.tokens.balances[msg.Tags.Recipient]) then
-      bal = CPMM.tokens.balances[msg.Tags.Recipient]
+    if (CPMM.token.balances[msg.Tags.Recipient]) then
+      bal = CPMM.token.balances[msg.Tags.Recipient]
     end
-  elseif msg.Tags.Target and CPMM.tokens.balances[msg.Tags.Target] then
-    bal = CPMM.tokens.balances[msg.Tags.Target]
-  elseif CPMM.tokens.balances[msg.From] then
-    bal = CPMM.tokens.balances[msg.From]
+  elseif msg.Tags.Target and CPMM.token.balances[msg.Tags.Target] then
+    bal = CPMM.token.balances[msg.Tags.Target]
+  elseif CPMM.token.balances[msg.From] then
+    bal = CPMM.token.balances[msg.From]
   end
 
   msg.reply({
     Balance = bal,
-    Ticker = CPMM.tokens.ticker,
+    Ticker = CPMM.token.ticker,
     Account = msg.Tags.Recipient or msg.From,
     Data = bal
   })
@@ -312,7 +323,7 @@ end)
 
 -- Balances
 Handlers.add('Balances', Handlers.utils.hasMatchingTag('Action', 'Balances'),
-  function(msg) msg.reply({ Data = json.encode(CPMM.tokens.balances) })
+  function(msg) msg.reply({ Data = json.encode(CPMM.token.balances) })
 end)
 
 -- Transfer
@@ -329,7 +340,7 @@ Handlers.add('Total-Supply', Handlers.utils.hasMatchingTag('Action', 'Total-Supp
 
   msg.reply({
     Action = 'Total-Supply',
-    Data = CPMM.tokens.totalSupply,
+    Data = CPMM.token.totalSupply,
     Ticker = CPMM.ticker
   })
 end)

@@ -6,14 +6,15 @@ local SemiFungibleTokens = {}
 local SemiFungibleTokensMethods = require('modules.semiFungibleTokensNotices')
 
 -- Constructor for SemiFungibleTokens 
-function SemiFungibleTokens:new(name, ticker, denomination, logo)
+function SemiFungibleTokens:new(name, ticker, logo, balancesOf, totalSupplyOf, denomination)
   -- This will store user balancesOf semi-fungible tokens and metadata
   local obj = {
-    balancesOf = {},  -- { userId -> id -> balance of semi-fungible tokens }
     name = name,
     ticker = ticker,
-    denomination = denomination,
-    logo = logo
+    logo = logo,
+    balancesOf = balancesOf,  -- { id -> userId -> balance of semi-fungible tokens }
+    totalSupplyOf = totalSupplyOf, -- { id -> userId -> totalSupply of semi-fungible tokens }
+    denomination = denomination
   }
   setmetatable(obj, { __index = SemiFungibleTokensMethods })
   return obj

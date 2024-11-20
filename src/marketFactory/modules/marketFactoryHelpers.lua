@@ -13,29 +13,6 @@ local MarketFactoryHelpers = {}
 --[[
     DB Schema  
 ]]
-QUESTIONS = [[
-  CREATE TABLE IF NOT EXISTS Questions (
-    id TEXT PRIMARY KEY,
-    question TEXT NOT NULL,
-    proposed_by TEXT NOT NULL,
-    proposed_at TEXT NOT NULL
-  );
-]]
-
-CONDITIONS = [[
-  CREATE TABLE IF NOT EXISTS Conditions (
-    id TEXT PRIMARY KEY,
-    question_id TEXT NOT NULL,
-    resolution_agent TEXT NOT NULL,
-    outcomeSlotCount TEXT NOT NULL,
-    prepared_by TEXT NOT NULL,
-    prepared_at TEXT NOT NULL,
-    created_by TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('prepared', 'created'))
-  );
-]]
-
 MARKETS = [[
   CREATE TABLE IF NOT EXISTS Markets (
     id TEXT PRIMARY KEY,
@@ -63,8 +40,6 @@ MARKETS = [[
     Init DB 
 ]]
 function MarketFactoryHelpers:initDb()
-  self.db:exec(QUESTIONS)
-  self.db:exec(CONDITIONS)
   self.db:exec(MARKETS)
   return self.dbAdmin:tables()
 end
@@ -129,7 +104,7 @@ function MarketFactoryHelpers.split(input, delimiter)
 end
 
 --[[
-    CFT HELPERS -------------------------------------------------------------------------  
+    CTF HELPERS -------------------------------------------------------------------------  
 ]]
 
 -- Generate basic partition
@@ -141,62 +116,5 @@ function MarketFactoryHelpers.generateBasicPartition(outcomeSlotCount)
   end
   return partition
 end
-
---[[
-    CALLBACK HELPERS -------------------------------------------------------------------------  
-]]
-
---[[
-    Prepare Condition Callback Helper 
-]]
--- @dev returns true if prepareCondition is successful, false otherwise
-function MarketFactoryHelpers.prepareConditionSuccess(conditionId, preparedAt)
-  -- Check if the condition is in drafted state
-  local conditionsToPrepare = dbAdmin:exec(
-    string.format([[
-      SELECT * FROM Conditions
-      WHERE id = "%s";
-    ]], conditionId)
-  )
-
-  -- Update the condition status to prepared
-  if #conditionsToPrepare == 1 then
-    local newStatus = conditionsToPrepare[1].drafted_by == Admin and "registered" or "prepared"
-    if newStatus == "registered" then
-      db:exec(
-        string.format([[
-          UPDATE Conditions SET status = "%s", prepared_at = "%s", registered_at = "%s"
-          WHERE id = "%s"
-        ]], newStatus, preparedAt, preparedAt, conditionId)
-      )
-    else
-      db:exec(
-        string.format([[
-          UPDATE Conditions SET status = "%s", prepared_at = "%s"
-          WHERE id = "%s"
-        ]], newStatus, preparedAt, conditionId)
-      )
-    end
-  end
-
-  -- Get the condition data
-  local conditionData = dbAdmin:exec(
-    string.format([[
-      SELECT * FROM Conditions
-      WHERE id = "%s";
-    ]], conditionId)
-  )[1]
-
-  return conditionData, #conditionsToPrepare == 1
-
-end
-
--- function MarketFactoryHelpers.wait(seconds)
---   local start = os.time()
---   while os.time() - start < seconds do
---     print("Waiting for " .. seconds - (os.time() - start) .. " seconds")
---     -- Loop until the specified number of seconds has passed
---   end
--- end
 
 return MarketFactoryHelpers

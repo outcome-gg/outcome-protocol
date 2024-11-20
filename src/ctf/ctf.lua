@@ -7,16 +7,20 @@ local config = require('modules.config')
 
 
 --[[
-    CFT ----------------------------------------------------------------
+    CTF ----------------------------------------------------------------
 ]]
-if not ConditionalTokens or config.ResetState then ConditionalTokens = conditionalTokens:new(config.CFT.Name, config.CFT.Ticker, config.CFT.Denomination, config.CFT.Logo) end
+-- @dev Load config
+if not Config or Config.resetState then Config = config:new() end
+-- @dev Reset state while in DEV mode
+if not ConditionalTokens or Config.resetState then ConditionalTokens = conditionalTokens:new() end
 
 -- @dev Link expected namespace variables
-BalancesOf = ConditionalTokens.balancesOf
-Name = ConditionalTokens.name
-Ticker = ConditionalTokens.ticker
-Denomination = ConditionalTokens.denomination
-Logo = ConditionalTokens.logo
+Name = ConditionalTokens.tokens.name
+Ticker = ConditionalTokens.tokens.ticker
+Logo = ConditionalTokens.tokens.logo
+BalancesOf = ConditionalTokens.tokens.balancesOf
+TotalSupplyOf = ConditionalTokens.tokens.totalSupplyOf
+Denomination = ConditionalTokens.tokens.denomination
 PayoutNumerators = ConditionalTokens.payoutNumerators
 PayoutDenominator = ConditionalTokens.payoutDenominator
 DataIndex = config.DataIndex
@@ -207,7 +211,7 @@ Handlers.add("Get-Payout-Numerators", Handlers.utils.hasMatchingTag("Action", "G
   msg.reply({
     Action = "Payout-Numerators",
     ConditionId = msg.Tags.ConditionId,
-    Data = tostring(data)
+    Data = json.encode(data)
   })
 end)
 
@@ -297,6 +301,73 @@ Handlers.add('Transfer-Batch', Handlers.utils.hasMatchingTag('Action', 'Transfer
     assert(bint.__lt(0, bint(quantities[i])), 'Quantity must be greater than 0')
   end
   ConditionalTokens:transferBatch(msg.From, msg.Tags.Recipient, tokenIds, quantities, msg.Tags.Cast, msg)
+end)
+
+--[[
+    CONFIG HANDLERS ----------------------------------------------------------------
+]]
+
+--[[
+    Update Take Fee Percentage
+]]
+Handlers.add('Update-Take-Fee-Percentage', Handlers.utils.hasMatchingTag('Action', 'Update-Take-Fee-Percentage'), function(msg)
+  assert(msg.From == config.Configurator, 'Sender must be configurator!')
+  assert(msg.Tags.Percentage, 'Percentage is required!')
+  assert(bint.__lt(0, bint(msg.Tags.Percentage)), 'Percentage must be greater than 0')
+  assert(bint.__le(bint(msg.Tags.Percentage), 10), 'Percentage must be less than than or equal to 10')
+
+  local formattedPercentage = tostring(bint(bint.__div(bint.__mul(bint.__pow(10, Denomination), bint(msg.Tags.Percentage)), 100)))
+  Config:updateTakeFeePercentage(formattedPercentage)
+
+  msg.reply({Action = 'Take-Fee-Percentage-Updated', Data = tostring(msg.Tags.Percentage)})
+end)
+
+--[[
+    Update Take Fee Target
+]]
+Handlers.add('Update-Take-Fee-Target', Handlers.utils.hasMatchingTag('Action', 'Update-Take-Fee-Target'), function(msg)
+  assert(msg.From == config.Configurator, 'Sender must be configurator!')
+  assert(msg.Tags.Target, 'Target is required!')
+
+  Config:updateTakeFeeTarget(msg.Tags.Target)
+
+  msg.reply({Action = 'Take-Fee-Target-Updated', Data = tostring(msg.Tags.Target)})
+end)
+
+--[[
+    Update Name
+]]
+Handlers.add('Update-Name', Handlers.utils.hasMatchingTag('Action', 'Update-Name'), function(msg)
+  assert(msg.From == config.Configurator, 'Sender must be configurator!')
+  assert(msg.Tags.Name, 'Name is required!')
+
+  Config:updateName(msg.Tags.Name)
+
+  msg.reply({Action = 'Name-Updated', Data = tostring(msg.Tags.Name)})
+end)
+
+--[[
+    Update Ticker
+]]
+Handlers.add('Update-Ticker', Handlers.utils.hasMatchingTag('Action', 'Update-Ticker'), function(msg)
+  assert(msg.From == config.Configurator, 'Sender must be configurator!')
+  assert(msg.Tags.Ticker, 'Ticker is required!')
+
+  Config:updateTicker(msg.Tags.Ticker)
+
+  msg.reply({Action = 'Ticker-Updated', Data = tostring(msg.Tags.Ticker)})
+end)
+
+--[[
+    Update Logo
+]]
+Handlers.add('Update-Logo', Handlers.utils.hasMatchingTag('Action', 'Update-Logo'), function(msg)
+  assert(msg.From == config.Configurator, 'Sender must be configurator!')
+  assert(msg.Tags.Logo, 'Logo is required!')
+
+  Config:updateLogo(msg.Tags.Logo)
+
+  msg.reply({Action = 'Logo-Updated', Data = tostring(msg.Tags.Logo)})
 end)
 
 return "ok"

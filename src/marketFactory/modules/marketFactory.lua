@@ -1,10 +1,8 @@
 local ao = require('.ao')
 local json = require('json')
-local crypto = require('.crypto')
-local bint = require('.bint')(256)
 local sqlite3 = require('lsqlite3')
 local config = require('modules.config')
-local ammSourceCode = require('modules.ammSourceCode')
+local cpmmSourceCode = require('modules.cpmmSourceCode')
 local MarketFactoryHelpers = require('modules.marketFactoryHelpers')
 
 local MarketFactory = {}
@@ -86,15 +84,15 @@ function MarketFactoryMethods:createMarket(question, resolutionAgent, outcomeSlo
   local positionIdsString = self.join(json.decode(positionIds))
 
   -- Spawn process
-  local amm = ao.spawn(ao.env.Module.Id, {
+  local cpmm = ao.spawn(ao.env.Module.Id, {
     ["Authority"] = ao.authorities[1]
   }).receive()
 
   -- Add Source Code
   ao.send({
-    Target = amm.Process,
+    Target = cpmm.Process,
     Action = 'Eval',
-    Data = ammSourceCode
+    Data = cpmmSourceCode
   })
 
   -- Insert into Markets table
@@ -102,7 +100,7 @@ function MarketFactoryMethods:createMarket(question, resolutionAgent, outcomeSlo
     string.format([[
       INSERT INTO Markets (id, condition_id, question_id, question, conditional_tokens, quantity, collateral_token, parent_collection_id, outcome_slot_count, collection_ids, position_ids, partition, distribution, resolution_agent, process_id, created_by, created_at, status)
       VALUES ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "created");
-    ]], marketId, conditionId, questionId, question, self.conditionalTokens, quantity, collateralToken, parentCollectionId, tostring(outcomeSlotCount), collectionIdsString, positionIdsString, json.encode(partition), json.encode(distribution), resolutionAgent, amm.Process, sender, os.time())
+    ]], marketId, conditionId, questionId, question, self.conditionalTokens, quantity, collateralToken, parentCollectionId, tostring(outcomeSlotCount), collectionIdsString, positionIdsString, json.encode(partition), json.encode(distribution), resolutionAgent, cpmm.Process, sender, os.time())
   )
 
   -- Check market was created 
@@ -111,7 +109,7 @@ function MarketFactoryMethods:createMarket(question, resolutionAgent, outcomeSlo
     return false, marketId
   end
 
-  self.marketCreatedNotice(sender, marketId, amm.Process, resolutionAgent, question, questionId, conditionId, self.conditionalTokens, collateralToken, parentCollectionId, collectionIds, positionIds, outcomeSlotCount, partition, distribution, quantity)
+  self.marketCreatedNotice(sender, marketId, cpmm.Process, resolutionAgent, question, questionId, conditionId, self.conditionalTokens, collateralToken, parentCollectionId, collectionIds, positionIds, outcomeSlotCount, partition, distribution, quantity)
   return true, marketId
 end
 

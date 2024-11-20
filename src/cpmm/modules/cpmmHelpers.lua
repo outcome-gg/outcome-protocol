@@ -32,7 +32,7 @@ function CPMMHelpers:validateAddFunding(from, quantity, distribution)
     error = true
     errorMessage = 'X-Distribution is required!'
   elseif not error then
-    if bint.iszero(bint(self.tokens.totalSupply)) then
+    if bint.iszero(bint(self.token.totalSupply)) then
       -- Ensure distribution is set across all position ids
       if #distribution ~= #self.positionIds then
         error = true
@@ -62,7 +62,7 @@ end
 -- @dev validates removeFunding
 function CPMMHelpers:validateRemoveFunding(from, quantity)
   local error = false
-  local balance = self.tokens.balances[from] or '0'
+  local balance = self.token.balances[from] or '0'
   if not bint.__lt(bint(quantity), bint(balance)) then
     error = true
     ao.send({

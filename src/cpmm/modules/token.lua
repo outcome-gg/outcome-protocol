@@ -2,28 +2,28 @@ local bint = require('.bint')(256)
 local json = require('json')
 local ao = require('.ao')
 
-local Tokens = {}
-local TokensMethods = require('modules.tokensNotices')
+local Token = {}
+local TokenMethods = require('modules.tokenNotices')
 
--- Constructor for Tokens 
-function Tokens:new(balances, totalSupply, name, ticker, denomination, logo)
+-- Constructor for Token 
+function Token:new(name, ticker, logo, balances, totalSupply, denomination)
   -- This will store user balancesOf semi-fungible tokens and metadata
   local obj = {
-    balances = balances,
-    totalSupply = totalSupply,
     name = name,
     ticker = ticker,
-    denomination = denomination,
-    logo = logo
+    logo = logo,
+    balances = balances,
+    totalSupply = totalSupply,
+    denomination = denomination
   }
-  setmetatable(obj, { __index = TokensMethods })
+  setmetatable(obj, { __index = TokenMethods })
   return obj
 end
 
 -- @dev Internal function to mint a quantity of tokens
 -- @param to The address that will own the minted token
 -- @param quantity Quantity of the token to be minted
-function TokensMethods:mint(to, quantity)
+function TokenMethods:mint(to, quantity)
   assert(quantity, 'Quantity is required!')
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
   -- Mint tokens
@@ -37,7 +37,7 @@ end
 -- @dev Internal function to burn a quantity of tokens
 -- @param from The address that will burn the token
 -- @param quantity Quantity of the token to be burned
-function TokensMethods:burn(from, quantity)
+function TokenMethods:burn(from, quantity)
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
   assert(bint.__le(quantity, self.balances[ao.id]), 'Must have sufficient tokens!')
   -- Burn tokens
@@ -54,7 +54,7 @@ end
 -- @param cast Cast to silence the transfer notice
 -- @param msgTags The message tags (used for x-tag forwarding)
 -- @param msgId The message ID (used for error reporting)
-function TokensMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
+function TokenMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
   if not self.balances[from] then self.balances[from] = "0" end
   if not self.balances[recipient] then self.balances[recipient] = "0" end
 
@@ -106,4 +106,4 @@ function TokensMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
   end
 end
 
-return Tokens
+return Token
