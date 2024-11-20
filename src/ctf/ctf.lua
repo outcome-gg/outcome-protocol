@@ -12,7 +12,7 @@ local config = require('modules.config')
 -- @dev Load config
 if not Config or Config.resetState then Config = config:new() end
 -- @dev Reset state while in DEV mode
-if not ConditionalTokens or Config.resetState then ConditionalTokens = conditionalTokens:new() end
+if not ConditionalTokens or Config.resetState then ConditionalTokens = conditionalTokens:new(Config) end
 
 -- @dev Link expected namespace variables
 Name = ConditionalTokens.tokens.name

@@ -846,7 +846,7 @@ describe("cpmm.integration.test", function () {
       balanceBefore = await getBalance();
       await addFundingWithDistributionAfterInitialFunding();
       // wait for failed forwarded call transfer of funds to be returned
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 10000));
       balanceAfter = await getBalance();
 
       expect(balanceBefore).to.be.equal(balanceAfter)

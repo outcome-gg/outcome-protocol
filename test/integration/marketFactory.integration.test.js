@@ -12,7 +12,7 @@ dotenv.config();
 
 const marketFactory = process.env.TEST_MARKET_FACTORY7;
 const collateralToken = process.env.TEST_COLLATERAL_TOKEN3;
-const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS;
+const conditionalTokens = process.env.TEST_CONDITIONAL_TOKENS4;
 
 console.log("MARKET_FACTORY: ", marketFactory)
 console.log("COLLATERAL_TOKEN: ", collateralToken)
@@ -45,6 +45,8 @@ let marketId;
 let partition;
 let distribution;
 let marketProcessId;
+let collateralTokenTicker;
+let lpTokenLogo;
 
 /* 
 * Tests
@@ -70,7 +72,11 @@ describe("marketFactory.integration.test", function () {
     conditionId = keccak256(resolutionAgent + questionId + outcomeSlotCount).toString('hex'),
     marketId = keccak256(collateralToken + parentCollectionId + conditionId + walletAddress).toString('hex'),
     partition = JSON.stringify([1,1]),
-    distribution = JSON.stringify([50,50])
+    distribution = JSON.stringify([50,50]),
+    // collateral token ticker
+    collateralTokenTicker = 'DAI',
+    // lp token logo
+    lpTokenLogo = ''
   ))
 
   /***********************************************************************
@@ -78,6 +84,44 @@ describe("marketFactory.integration.test", function () {
   ************************************************************************/
 
   describe("MarketFactory", function () {
+    it("+ve should approve a collateral", async () => {
+      await message({
+        process: marketFactory,
+        tags: [
+          { name: "Action", value: "Update-Lookup" },
+          { name: "CollateralToken", value: collateralToken },
+          { name: "CollateralTokenTicker", value: collateralTokenTicker },
+          { name: "ConditionalTokens", value: conditionalTokens },
+          { name: "LpTokenLogo", value: lpTokenLogo },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: marketFactory,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const data_ = JSON.parse(Messages[0].Data)
+      
+      expect(action_).to.equal("Lookup-Updated")
+      expect(data_.conditionalTokens).to.equal(conditionalTokens)
+      expect(data_.ticker).to.equal(collateralTokenTicker)
+      expect(data_.logo).to.equal(lpTokenLogo)
+    })
+
     it("+ve should create a market", async () => {
       await message({
         process: collateralToken,

@@ -9,7 +9,7 @@ function Config:new()
     env = 'DEV',              -- Set to "PROD" for production, "DEV" to Reset State on each run
     version = '1.0.1',        -- Code version
     initialized = false,      -- CPMM Initialization Status
-    configurator = '',        -- Configurator process Id
+    incentives = '',          -- Incentives process Id
     marketFactory = '',       -- Market Factory process Id
     collateralToken = '',     -- Process ID of Collateral Token 
     conditionalTokens = '',   -- Process ID of Conditional Tokens
@@ -44,15 +44,6 @@ function Config:new()
   -- Set metatable for method lookups
   setmetatable(obj, { __index = ConfigMethods })
   return obj
-end
-
--- Update Methods
-function ConfigMethods:updateLpFeePercentage(percentage)
-  self.lpFee.percentage = percentage
-end
-
-function ConfigMethods:updateLogo(logo)
-  self.logo = logo
 end
 
 return Config

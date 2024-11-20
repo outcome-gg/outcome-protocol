@@ -1,7 +1,6 @@
 local ao = require('.ao')
 local json = require('json')
 local sqlite3 = require('lsqlite3')
-local config = require('modules.config')
 local cpmmSourceCode = require('modules.cpmmSourceCode')
 local MarketFactoryHelpers = require('modules.marketFactoryHelpers')
 
@@ -9,13 +8,18 @@ local MarketFactory = {}
 local MarketFactoryMethods = require('modules.marketFactoryNotices')
 
 -- Constructor for MarketFactory 
-function MarketFactory:new()
+function MarketFactory:new(config)
+  -- Instantiate db
   local db = sqlite3.open_memory()
   -- Create a new MarketFactory object
   local obj = {
     db = db,
     dbAdmin = require('modules.dbAdmin').new(db),
-    conditionalTokens = config.MarketFactory.ConditionalTokens
+    configurator = config.configurator,
+    incentives = config.incentives,
+    lookup = config.lookup,
+    counters = config.counters,
+    delay = config.delay,
   }
   -- Set metatable for method lookups from MarketFactoryMethods, MarketFactoryHelpers and MarketFactoryNotices
   setmetatable(obj, {
@@ -39,6 +43,9 @@ end
 ---------------------------------------------------------------------------------
 -- Create Market
 function MarketFactoryMethods:createMarket(question, resolutionAgent, outcomeSlotCount, partition, distribution, parentCollectionId, quantity, collateralToken, sender)
+  assert(self.lookup[collateralToken], 'Collateral Token not approved!')
+  local conditionalTokens = self.lookup[collateralToken].conditionalTokens
+
   -- Get Ids
   local questionId = self.getQuestionId(question)
   local conditionId = self.getConditionId(resolutionAgent, questionId, outcomeSlotCount)
@@ -46,15 +53,15 @@ function MarketFactoryMethods:createMarket(question, resolutionAgent, outcomeSlo
 
   -- Check if condition is already prepared
   local payoutNumerators = ao.send({
-    Target = self.conditionalTokens,
+    Target = conditionalTokens,
     Action = 'Get-Payout-Numerators',
     ConditionId = conditionId
   }).receive().Data
 
   -- Prepare condition if not already prepared
-  if payoutNumerators == 'nil' then
+  if tostring(payoutNumerators) == 'null' then
     ao.send({
-      Target = self.conditionalTokens,
+      Target = conditionalTokens,
       Action = 'Prepare-Condition',
       Data = json.encode({
         questionId = questionId,
@@ -66,7 +73,7 @@ function MarketFactoryMethods:createMarket(question, resolutionAgent, outcomeSlo
 
   -- Get Collection Ids
   local collectionIds = ao.send({
-    Target = self.conditionalTokens,
+    Target = conditionalTokens,
     Action = 'Get-Collection-Ids',
     ParentCollectionId = parentCollectionId,
     ConditionId = conditionId,
@@ -76,12 +83,18 @@ function MarketFactoryMethods:createMarket(question, resolutionAgent, outcomeSlo
 
   -- Get Position Ids
   local positionIds = ao.send({
-    Target = self.conditionalTokens,
+    Target = conditionalTokens,
     Action = 'Get-Position-Ids',
     CollateralToken = collateralToken,
     CollectionIds = collectionIds,
   }).receive().Data
   local positionIdsString = self.join(json.decode(positionIds))
+
+  -- Get Token Name and Ticker
+  local tokenNumber = self.counters[collateralToken] or 1
+  self.counters[collateralToken] = tokenNumber + 1
+  local tokenName = string.format('Outcome %s LP Token %s', self.lookup[collateralToken].ticker, tokenNumber)
+  local tokenTicker = string.format('O%s-LP-%s', self.lookup[collateralToken].ticker, tokenNumber)
 
   -- Spawn process
   local cpmm = ao.spawn(ao.env.Module.Id, {
@@ -98,9 +111,9 @@ function MarketFactoryMethods:createMarket(question, resolutionAgent, outcomeSlo
   -- Insert into Markets table
   self.db:exec(
     string.format([[
-      INSERT INTO Markets (id, condition_id, question_id, question, conditional_tokens, quantity, collateral_token, parent_collection_id, outcome_slot_count, collection_ids, position_ids, partition, distribution, resolution_agent, process_id, created_by, created_at, status)
-      VALUES ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "created");
-    ]], marketId, conditionId, questionId, question, self.conditionalTokens, quantity, collateralToken, parentCollectionId, tostring(outcomeSlotCount), collectionIdsString, positionIdsString, json.encode(partition), json.encode(distribution), resolutionAgent, cpmm.Process, sender, os.time())
+      INSERT INTO Markets (id, condition_id, question_id, question, conditional_tokens, quantity, collateral_token, parent_collection_id, outcome_slot_count, collection_ids, position_ids, partition, distribution, resolution_agent, process_id, token_name, token_ticker, created_by, created_at, status)
+      VALUES ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "created");
+    ]], marketId, conditionId, questionId, question, conditionalTokens, quantity, collateralToken, parentCollectionId, tostring(outcomeSlotCount), collectionIdsString, positionIdsString, json.encode(partition), json.encode(distribution), resolutionAgent, cpmm.Process, tokenName, tokenTicker, sender, os.time())
   )
 
   -- Check market was created 
@@ -109,7 +122,7 @@ function MarketFactoryMethods:createMarket(question, resolutionAgent, outcomeSlo
     return false, marketId
   end
 
-  self.marketCreatedNotice(sender, marketId, cpmm.Process, resolutionAgent, question, questionId, conditionId, self.conditionalTokens, collateralToken, parentCollectionId, collectionIds, positionIds, outcomeSlotCount, partition, distribution, quantity)
+  self.marketCreatedNotice(sender, marketId, cpmm.Process, resolutionAgent, question, questionId, conditionId, conditionalTokens, collateralToken, parentCollectionId, collectionIds, positionIds, outcomeSlotCount, partition, distribution, quantity)
   return true, marketId
 end
 
@@ -117,7 +130,6 @@ end
 function MarketFactoryMethods:initMarket(marketId, msg)
   -- Get market data
   local marketData = self:getMarketById(marketId, 'created')
-  local marketData2 = self:getMarketById(marketId, nil)
   -- Check market exists
   if not marketData then
     return false, 'Market not found!'
@@ -137,9 +149,9 @@ function MarketFactoryMethods:initMarket(marketId, msg)
     CollectionIds = json.encode(collectionIds),
     PositionIds = json.encode(positionIds),
     OutcomeSlotCount = marketData.outcome_slot_count,
-    Name = 'Outcome LP Token',
-    Ticker = 'OUTCOME-LP', -- TODO: Decide if this should be numbered
-    Logo = '' -- TODO: Add logo
+    Name = marketData.token_name,
+    Ticker = marketData.token_ticker,
+    Logo = self.lookup[marketData.collateral_token].logo
   }).receive()
 
   -- Update table to 'init'

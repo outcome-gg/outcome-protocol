@@ -2,61 +2,66 @@ return [[
 -- module: "modules.config"
 local function _loaded_mod_modules_config()
 local bint = require('.bint')(256)
-local config = {}
+local Config = {}
+local ConfigMethods = {}
 
--- General
-config.Env = "DEV"                                                   -- Set to "PROD" for production, "DEV" to Reset State on each run
-config.Version = "1.0.1"                                             -- Update on each code change
-config.DataIndex = ""                                                -- Set to Process ID of Data Index
-config.MarketFactory = "TFfNYQ4BW6-0kRO0IwyL7YbcC_02hXdQIF9vvdWEp7Q" -- Set to Process ID of Market Factory
+-- Constructor for Config 
+function Config:new()
+  -- Create a new config object
+  local obj = {
+    env = 'DEV',              -- Set to "PROD" for production, "DEV" to Reset State on each run
+    version = '1.0.1',        -- Code version
+    initialized = false,      -- CPMM Initialization Status
+    incentives = '',          -- Incentives process Id
+    marketFactory = '',       -- Market Factory process Id
+    collateralToken = '',     -- Process ID of Collateral Token 
+    conditionalTokens = '',   -- Process ID of Conditional Tokens
+    marketId = '',            -- Market ID
+    conditionId = '',         -- Condition ID
+    feePoolWeight = '0',      -- Fee Pool Weight
+    totalWithdrawnFees = '0', -- Total Withdrawn Fees
+    withdrawnFees = {},       -- Withdrawn Fees
+    collectionIds = {},       -- Collection IDs
+    positionIds = {},         -- Position IDs   
+    poolBalances = {},        -- Pool Balances
+    outomeSlotCount = 2,      -- Outcome Slot Count
+  }
+  -- Add Token
+  local token = {
+    name = 'Outcome DAI LP Token 1',  -- LP Token Name
+    ticker = 'ODAI-LP-1',             -- LP Token Ticker
+    logo = '',                        -- LP Token Logo
+    balances = {},                    -- LP Token Balances
+    totalSupply = '0',                -- LP Token Total Supply
+    denomination = 12                 -- LP Token Denomination
+  }
+  obj.token = token
+  -- Add LP Fee
+  local lpFee = {
+    Percentage = tostring(bint(bint.__div(bint.__pow(10, obj.token.denomination), 100))), -- Fee Percentage, i.e. 1%
+    ONE = tostring(bint(bint.__pow(10, obj.token.denomination)))
+  }
+  obj.lpFee = lpFee
+  -- Add derived metadata
+  obj.resetState = obj.env == 'DEV' or false
+  -- Set metatable for method lookups
+  setmetatable(obj, { __index = ConfigMethods })
+  return obj
+end
 
--- LP Token
-config.LPToken = {
-  Name = 'CPMM-v' .. config.Version,                    -- LPToken versioned name
-  Ticker = 'OUTCOME-LP-v' .. config.Version,            -- LPToken Ticker
-  Logo = 'SBCCXwwecBlDqRLUjb8dYABExTJXLieawf7m2aBJ-KY', -- LPToken Logo
-  Balances = {},                                        -- LPToken Balances
-  TotalSupply = '0',                                    -- LPToken Total Supply
-  Denomination = 12                                     -- LPToken Denomination
-}
-
--- CPMM
-config.CPMM = {
-  Initialized = false,      -- CPMM Initialization Status
-  CollateralToken = '',     -- Process ID of Collateral Token 
-  ConditionalTokens = '',   -- Process ID of Conditional Tokens
-  MarketId = '',            -- Market ID
-  ConditionId = '',         -- Condition ID
-  FeePoolWeight = '0',      -- Fee Pool Weight
-  TotalWithdrawnFees = '0', -- Total Withdrawn Fees
-  WithdrawnFees = {},       -- Withdrawn Fees
-  CollectionIds = {},       -- Collection IDs
-  PositionIds = {},         -- Position IDs   
-  PoolBalances = {},        -- Pool Balances
-  OutomeSlotCount = 2,      -- Outcome Slot Count
-}
-
-config.LPFee = {
-  Percentage = tostring(bint(bint.__div(bint.__pow(10, config.LPToken.Denomination), 100))), -- Fee Percentage, i.e. 1%
-  ONE = tostring(bint(bint.__pow(10, config.LPToken.Denomination)))                          -- E.g. 1e12
-}
-
--- Derived
-config.ResetState = config.Env == "DEV" or false -- Used to reset state for integration tests
-
-return config
+return Config
 
 end
 
 _G.package.loaded["modules.config"] = _loaded_mod_modules_config()
 
--- module: "modules.tokensNotices"
-local function _loaded_mod_modules_tokensNotices()
+-- module: "modules.tokenNotices"
+local function _loaded_mod_modules_tokenNotices()
 local ao = require('.ao')
 
-local TokensNotices = {}
+local TokenNotices = {}
 
-function TokensNotices.mintNotice(recipient, quantity)
+function TokenNotices.mintNotice(recipient, quantity)
   ao.send({
     Target = recipient,
     Quantity = tostring(quantity),
@@ -65,7 +70,7 @@ function TokensNotices.mintNotice(recipient, quantity)
   })
 end
 
-function TokensNotices.burnNotice(holder, quantity)
+function TokenNotices.burnNotice(holder, quantity)
   ao.send({
     Target = holder,
     Quantity = tostring(quantity),
@@ -74,14 +79,14 @@ function TokensNotices.burnNotice(holder, quantity)
   })
 end
 
-function TokensNotices.transferNotices(debitNotice, creditNotice)
+function TokenNotices.transferNotices(debitNotice, creditNotice)
   -- Send Debit-Notice to the Sender
   ao.send(debitNotice)
   -- Send Credit-Notice to the Recipient
   ao.send(creditNotice)
 end
 
-function TokensNotices.transferErrorNotice(sender, msgId)
+function TokenNotices.transferErrorNotice(sender, msgId)
   ao.send({
     Target = sender,
     Action = 'Transfer-Error',
@@ -90,39 +95,39 @@ function TokensNotices.transferErrorNotice(sender, msgId)
   })
 end
 
-return TokensNotices
+return TokenNotices
 end
 
-_G.package.loaded["modules.tokensNotices"] = _loaded_mod_modules_tokensNotices()
+_G.package.loaded["modules.tokenNotices"] = _loaded_mod_modules_tokenNotices()
 
--- module: "modules.tokens"
-local function _loaded_mod_modules_tokens()
+-- module: "modules.token"
+local function _loaded_mod_modules_token()
 local bint = require('.bint')(256)
 local json = require('json')
 local ao = require('.ao')
 
-local Tokens = {}
-local TokensMethods = require('modules.tokensNotices')
+local Token = {}
+local TokenMethods = require('modules.tokenNotices')
 
--- Constructor for Tokens 
-function Tokens:new(balances, totalSupply, name, ticker, denomination, logo)
+-- Constructor for Token 
+function Token:new(name, ticker, logo, balances, totalSupply, denomination)
   -- This will store user balances of tokens and metadata
   local obj = {
-    balances = balances,
-    totalSupply = totalSupply,
     name = name,
     ticker = ticker,
-    denomination = denomination,
-    logo = logo
+    logo = logo,
+    balances = balances,
+    totalSupply = totalSupply,
+    denomination = denomination
   }
-  setmetatable(obj, { __index = TokensMethods })
+  setmetatable(obj, { __index = TokenMethods })
   return obj
 end
 
 -- @dev Internal function to mint a quantity of tokens
 -- @param to The address that will own the minted token
 -- @param quantity Quantity of the token to be minted
-function TokensMethods:mint(to, quantity)
+function TokenMethods:mint(to, quantity)
   assert(quantity, 'Quantity is required!')
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
   -- Mint tokens
@@ -136,7 +141,7 @@ end
 -- @dev Internal function to burn a quantity of tokens
 -- @param from The address that will burn the token
 -- @param quantity Quantity of the token to be burned
-function TokensMethods:burn(from, quantity)
+function TokenMethods:burn(from, quantity)
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
   assert(bint.__le(quantity, self.balances[ao.id]), 'Must have sufficient tokens!')
   -- Burn tokens
@@ -153,7 +158,7 @@ end
 -- @param cast Cast to silence the transfer notice
 -- @param msgTags The message tags (used for x-tag forwarding)
 -- @param msgId The message ID (used for error reporting)
-function TokensMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
+function TokenMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
   if not self.balances[from] then self.balances[from] = "0" end
   if not self.balances[recipient] then self.balances[recipient] = "0" end
 
@@ -205,11 +210,11 @@ function TokensMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
   end
 end
 
-return Tokens
+return Token
 
 end
 
-_G.package.loaded["modules.tokens"] = _loaded_mod_modules_tokens()
+_G.package.loaded["modules.token"] = _loaded_mod_modules_token()
 
 -- module: "modules.cpmmHelpers"
 local function _loaded_mod_modules_cpmmHelpers()
@@ -247,7 +252,7 @@ function CPMMHelpers:validateAddFunding(from, quantity, distribution)
     error = true
     errorMessage = 'X-Distribution is required!'
   elseif not error then
-    if bint.iszero(bint(self.tokens.totalSupply)) then
+    if bint.iszero(bint(self.token.totalSupply)) then
       -- Ensure distribution is set across all position ids
       if #distribution ~= #self.positionIds then
         error = true
@@ -277,7 +282,7 @@ end
 -- @dev validates removeFunding
 function CPMMHelpers:validateRemoveFunding(from, quantity)
   local error = false
-  local balance = self.tokens.balances[from] or '0'
+  local balance = self.token.balances[from] or '0'
   if not bint.__lt(bint(quantity), bint(balance)) then
     error = true
     ao.send({
@@ -428,37 +433,36 @@ local function _loaded_mod_modules_cpmm()
 local json = require('json')
 local bint = require('.bint')(256)
 local ao = require('.ao')
-local config = require('modules.config')
-local Tokens = require('modules.tokens')
+local Token = require('modules.token')
 local CPMMHelpers = require('modules.cpmmHelpers')
 
 local CPMM = {}
 local CPMMMethods = require('modules.cpmmNotices')
-local LPTokens = {}
+local LPToken = {}
 
 -- Constructor for CPMM 
-function CPMM:new()
+function CPMM:new(config)
   -- Initialize Tokens and store the object
-  LPTokens = Tokens:new(config.LPToken.Balances, config.LPToken.TotalSupply, config.LPToken.Name, config.LPToken.Ticker, config.LPToken.Denomination, config.LPToken.Logo)
+  LPToken = Token:new(config.token.name, config.token.ticker, config.token.logo, config.token.balances, config.token.totalSupply, config.token.denomination)
 
   -- Create a new CPMM object
   local obj = {
     -- LP Token Vars
-    tokens = LPTokens,
+    token = LPToken,
     -- CPMM Vars
     initialized = false,
-    collateralToken = config.CPMM.CollateralTokens,
-    conditionalTokens = config.CPMM.ConditionalTokens,
-    conditionId = config.CPMM.ConditionId,
-    collectionIds = config.CPMM.CollectionIds,
-    positionIds = config.CPMM.PositionIds,
-    feePoolWeight = config.CPMM.FeePoolWeight,
-    totalWithdrawnFees = config.CPMM.TotalWithdrawnFees,
-    withdrawnFees = config.CPMM.WithdrawnFees,
-    outcomeSlotCount = config.CPMM.OutcomeSlotCount,
-    poolBalances = config.CPMM.PoolBalances,
-    fee = config.LPFee.Percentage,
-    ONE = config.LPFee.ONE
+    collateralToken = config.collateralTokens,
+    conditionalTokens = config.conditionalTokens,
+    conditionId = config.conditionId,
+    collectionIds = config.collectionIds,
+    positionIds = config.positionIds,
+    feePoolWeight = config.feePoolWeight,
+    totalWithdrawnFees = config.totalWithdrawnFees,
+    withdrawnFees = config.withdrawnFees,
+    outcomeSlotCount = config.outcomeSlotCount,
+    poolBalances = config.poolBalances,
+    fee = config.lpFee.Percentage,
+    ONE = config.lpFee.ONE
   }
 
   -- Set metatable for method lookups
@@ -492,9 +496,9 @@ function CPMMMethods:init(collateralToken, conditionalTokens, marketId, conditio
   self.outcomeSlotCount = outcomeSlotCount
 
   -- Set LP Token vars
-  self.tokens.name = name
-  self.tokens.ticker = ticker
-  self.tokens.logo = logo
+  self.token.name = name
+  self.token.ticker = ticker
+  self.token.logo = logo
 
   -- Initialized
   self.initialized = true
@@ -509,7 +513,7 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
   assert(bint.__lt(0, bint(addedFunds)), "funding must be non-zero")
 
   local sendBackAmounts = {}
-  local poolShareSupply = self.tokens.totalSupply
+  local poolShareSupply = self.token.totalSupply
   local mintAmount = '0'
 
   if bint.__lt(0, bint(poolShareSupply)) then
@@ -584,7 +588,7 @@ function CPMMMethods:removeFunding(from, sharesToBurn)
   local poolBalances = self.poolBalances
   local sendAmounts = {}
   for i = 1, #poolBalances do
-    sendAmounts[i] = (poolBalances[i] * sharesToBurn) / self.tokens.totalSupply
+    sendAmounts[i] = (poolBalances[i] * sharesToBurn) / self.token.totalSupply
   end
   -- Calculate collateralRemovedFromFeePool
   local poolFeeBalance = ao.send({Target = self.collateralToken, Action = 'Balance'}).receive().Data
@@ -684,10 +688,10 @@ end
 
 -- @dev Returns the fees withdrawable by the sender
 function CPMMMethods:feesWithdrawableBy(sender)
-  local balance = self.tokens.balances[sender] or '0'
+  local balance = self.token.balances[sender] or '0'
   local rawAmount = '0'
-  if bint(self.tokens.totalSupply) > 0 then
-    rawAmount = string.format('%.0f', (bint.__div(bint.__mul(bint(self:collectedFees()), bint(balance)), self.tokens.totalSupply)))
+  if bint(self.token.totalSupply) > 0 then
+    rawAmount = string.format('%.0f', (bint.__div(bint.__mul(bint(self:collectedFees()), bint(balance)), self.token.totalSupply)))
   end
 
   -- @dev max(rawAmount - withdrawnFees, 0)
@@ -713,7 +717,7 @@ function CPMMMethods:_beforeTokenTransfer(from, to, amount)
   if from ~= nil then
     self:withdrawFees(from)
   end
-  local totalSupply = self.tokens.totalSupply
+  local totalSupply = self.token.totalSupply
   local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self:collectedFees()), amount), totalSupply)))
 
   if from ~= nil and to ~= nil then
@@ -726,19 +730,19 @@ end
 -- @dev See tokensMethods:mint & _beforeTokenTransfer
 function CPMMMethods:mint(to, quantity)
   self:_beforeTokenTransfer(nil, to, quantity)
-  self.tokens:mint(to, quantity)
+  self.token:mint(to, quantity)
 end
 
 -- @dev See tokenMethods:burn & _beforeTokenTransfer
 function CPMMMethods:burn(from, quantity)
   self:_beforeTokenTransfer(from, nil, quantity)
-  self.tokens:burn(from, quantity)
+  self.token:burn(from, quantity)
 end
 
 -- @dev See tokenMethods:transfer & _beforeTokenTransfer
 function CPMMMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
   self:_beforeTokenTransfer(from, recipient, quantity)
-  self.tokens:transfer(from, recipient, quantity, cast, msgTags, msgId)
+  self.token:transfer(from, recipient, quantity, cast, msgTags, msgId)
 end
 
 return CPMM
@@ -755,7 +759,18 @@ local cpmm = require('modules.cpmm')
 ---------------------------------------------------------------------------------
 -- CPMM -------------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-if not CPMM or config.ResetState then CPMM = cpmm:new() end
+-- @dev Load config
+if not Config or Config.resetState then Config = config:new() end
+-- @dev Reset state while in DEV mode
+if not CPMM or Config.resetState then CPMM = cpmm:new(Config) end
+
+-- @dev Link expected namespace variables
+Name = CPMM.token.name
+Ticker = CPMM.token.ticker
+Logo = CPMM.token.logo
+Balances = CPMM.token.balances
+TotalSupply = CPMM.token.totalSupply
+Denomination = CPMM.token.denomination
 
 ---------------------------------------------------------------------------------
 -- MATCHING ---------------------------------------------------------------------
@@ -839,10 +854,10 @@ end
 -- Info
 Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(msg)
   msg.reply({
-    Name = CPMM.tokens.name,
-    Ticker = CPMM.tokens.ticker,
-    Logo = CPMM.tokens.logo,
-    Denomination = tostring(CPMM.tokens.denomination),
+    Name = CPMM.token.name,
+    Ticker = CPMM.token.ticker,
+    Logo = CPMM.token.logo,
+    Denomination = tostring(CPMM.token.denomination),
     ConditionId = CPMM.conditionId,
     CollateralToken = CPMM.collateralToken,
     ConditionalTokens = CPMM.conditionalTokens,
@@ -889,7 +904,7 @@ Handlers.add('Add-Funding', isAddFunding, function(msg)
 
   -- @dev returns fudning if invalid
   if CPMM:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
-    CPMM:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags['Quantity'], distribution, msg)
+    CPMM:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, distribution, msg)
   end
 end)
 
@@ -1041,18 +1056,18 @@ Handlers.add('Balance', Handlers.utils.hasMatchingTag('Action', 'Balance'), func
 
   -- If not Recipient is provided, then return the Senders balance
   if (msg.Tags.Recipient) then
-    if (CPMM.tokens.balances[msg.Tags.Recipient]) then
-      bal = CPMM.tokens.balances[msg.Tags.Recipient]
+    if (CPMM.token.balances[msg.Tags.Recipient]) then
+      bal = CPMM.token.balances[msg.Tags.Recipient]
     end
-  elseif msg.Tags.Target and CPMM.tokens.balances[msg.Tags.Target] then
-    bal = CPMM.tokens.balances[msg.Tags.Target]
-  elseif CPMM.tokens.balances[msg.From] then
-    bal = CPMM.tokens.balances[msg.From]
+  elseif msg.Tags.Target and CPMM.token.balances[msg.Tags.Target] then
+    bal = CPMM.token.balances[msg.Tags.Target]
+  elseif CPMM.token.balances[msg.From] then
+    bal = CPMM.token.balances[msg.From]
   end
 
   msg.reply({
     Balance = bal,
-    Ticker = CPMM.tokens.ticker,
+    Ticker = CPMM.token.ticker,
     Account = msg.Tags.Recipient or msg.From,
     Data = bal
   })
@@ -1060,7 +1075,7 @@ end)
 
 -- Balances
 Handlers.add('Balances', Handlers.utils.hasMatchingTag('Action', 'Balances'),
-  function(msg) msg.reply({ Data = json.encode(CPMM.tokens.balances) })
+  function(msg) msg.reply({ Data = json.encode(CPMM.token.balances) })
 end)
 
 -- Transfer
@@ -1077,7 +1092,7 @@ Handlers.add('Total-Supply', Handlers.utils.hasMatchingTag('Action', 'Total-Supp
 
   msg.reply({
     Action = 'Total-Supply',
-    Data = CPMM.tokens.totalSupply,
+    Data = CPMM.token.totalSupply,
     Ticker = CPMM.ticker
   })
 end)

@@ -30,6 +30,8 @@ MARKETS = [[
     partition TEXT NOT NULL,
     distribution TEXT NOT NULL,
     process_id TEXT NOT NULL,
+    token_name TEXT NOT NULL,
+    token_ticker TEXT NOT NULL,
     created_by TEXT NOT NULL,
     created_at TEXT NOT NULL,
     status TEXT NOT NULL CHECK (status IN ('created', 'init', 'funded'))

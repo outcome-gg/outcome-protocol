@@ -1,13 +1,14 @@
 local json = require('json')
+local config = require('modules.config')
 local configurator = require('modules.configurator')
 
 --[[
     Configurator ----------------------------------------------------------------
 ]]
 -- @dev Create new instance of Configurator if doesn't exist
-if not Configurator then Configurator = configurator:new() end
+if not Config then Config = config:new() end
 -- @dev Reset state on load while in DEV mode
-if Configurator.resetState then Configurator = configurator:new() end
+if Configurator.resetState then Configurator = configurator:new(Config) end
 
 --[[
     Info

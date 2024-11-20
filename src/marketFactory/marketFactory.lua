@@ -7,7 +7,10 @@ local marketFactory = require('modules.marketFactory')
 ---------------------------------------------------------------------------------
 -- MarketFactory ----------------------------------------------------------------
 ---------------------------------------------------------------------------------
-if not MarketFactory or config.ResetState then MarketFactory = marketFactory:new() end
+-- @dev Load config
+if not Config or Config.resetState then Config = config:new() end
+-- @dev Reset state while in DEV mode
+if not MarketFactory or Config.resetState then MarketFactory = marketFactory:new(Config) end
 
 ---------------------------------------------------------------------------------
 -- MATCHING ---------------------------------------------------------------------
@@ -100,11 +103,11 @@ end)
 ---------------------------------------------------------------------------------
 -- READ HANDLERS ----------------------------------------------------------------
 ---------------------------------------------------------------------------------
--- Get Conditional Tokens
-Handlers.add('updateConditionalTokens', Handlers.utils.hasMatchingTag('Action', 'Get-Conditional-Tokens'), function(msg)
-  config.updateConditionalTokens(msg.Tags['Collateral-Token'], msg.Tags['Conditional-Tokens'])
-  msg.reply({Action = 'Conditional-Tokens', Data = config.MarketFactory.ConditionalTokens})
+-- Get Lookup
+Handlers.add('updateConditionalTokens', Handlers.utils.hasMatchingTag('Action', 'Get-Lookup'), function(msg)
+  msg.reply({Action = 'Lookup', Data = MarketFactory.lookup})
 end)
+
 -- Get Market
 Handlers.add('getMarketData', Handlers.utils.hasMatchingTag('Action', 'Get-Market-Data'), function(msg)
   assert(msg.Tags.MarketId, 'MarketId is required!')
@@ -126,4 +129,26 @@ Handlers.add('fundingAddedCallback', isFundingAdded, function(msg)
   MarketFactory:fundingAdded(msg.From)
 end)
 
+---------------------------------------------------------------------------------
+-- CONFIG HANDLERS --------------------------------------------------------------
+---------------------------------------------------------------------------------
+Handlers.add('updateLookup', Handlers.utils.hasMatchingTag('Action', 'Update-Lookup'), function(msg)
+  assert(msg.Tags['CollateralToken'], 'CollateralToken is required!')
+  assert(msg.Tags['CollateralTokenTicker'], 'CollateralTokenTicker is required!')
+  assert(msg.Tags['ConditionalTokens'], 'ConditionalTokens is required!')
+  assert(msg.Tags['LpTokenLogo'], 'LpTokenLogo is required!')
+
+  local data = Config:updateLookup(msg.Tags['CollateralToken'], msg.Tags['CollateralTokenTicker'], msg.Tags['ConditionalTokens'], msg.Tags['LpTokenLogo'])
+  msg.reply({
+    Action = 'Lookup-Updated',
+    Data = data
+  })
+end)
+
+Handlers.add('removeLookup', Handlers.utils.hasMatchingTag('Action', 'Remove-Lookup'), function(msg)
+  assert(msg.Tags['Collateral-Token'], 'Collateral-Token is required!')
+  assert(MarketFactory.lookup[msg.Tags['Collateral-Token']], 'Collateral Token not found!')
+  Config:removeLookup(msg.Tags['Collateral-Token'])
+  msg.reply({ Action = 'Lookup-Removed', CollateralToken = msg.Tags['Collateral-Token'] })
+end)
 return "ok"

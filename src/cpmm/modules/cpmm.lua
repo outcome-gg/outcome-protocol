@@ -1,7 +1,6 @@
 local json = require('json')
 local bint = require('.bint')(256)
 local ao = require('.ao')
-local config = require('modules.config')
 local Token = require('modules.token')
 local CPMMHelpers = require('modules.cpmmHelpers')
 
@@ -10,10 +9,7 @@ local CPMMMethods = require('modules.cpmmNotices')
 local LPToken = {}
 
 -- Constructor for CPMM 
-function CPMM:new()
-  -- Load config
-  config = config:new()
-
+function CPMM:new(config)
   -- Initialize Tokens and store the object
   LPToken = Token:new(config.token.name, config.token.ticker, config.token.logo, config.token.balances, config.token.totalSupply, config.token.denomination)
 

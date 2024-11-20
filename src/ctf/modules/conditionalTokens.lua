@@ -2,7 +2,6 @@
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
-local config = require('modules.config')
 local semiFungibleTokens = require('modules.semiFungibleTokens')
 local conditionalTokensHelpers = require('modules.conditionalTokensHelpers')
 
@@ -11,9 +10,7 @@ local ConditionalTokens = {}
 local ConditionalTokensMethods = require('modules.conditionalTokensNotices')
 
 -- Constructor for ConditionalTokens 
-function ConditionalTokens:new()
-  -- Load config
-  config = config:new()
+function ConditionalTokens:new(config)
   -- Initialize SemiFungibleTokens and store the object
   SemiFungibleTokens = semiFungibleTokens:new(config.tokens.name, config.tokens.ticker, config.tokens.logo, config.tokens.balances, config.tokens.totalSupplyOf, config.tokens.denomination)
 

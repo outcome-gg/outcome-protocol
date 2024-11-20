@@ -9,6 +9,7 @@ function Config:new()
     env = 'DEV',                      -- Set to "PROD" for production, "DEV" to Reset State on each run
     version = '1.0.1',                -- Code version
     configurator = '',                -- Configurator process Id
+    incentives = '',                  -- Incentives process Id
     collateralToken = ''              -- Approved Collateral Token
   }
   -- Add Tokens
@@ -54,6 +55,14 @@ end
 
 function ConfigMethods:updateLogo(logo)
   self.logo = logo
+end
+
+function ConfigMethods:updateIncentives(incentives)
+  self.incentives = incentives
+end
+
+function ConfigMethods:updateConfigurator(configurator)
+  self.configurator = configurator
 end
 
 return Config

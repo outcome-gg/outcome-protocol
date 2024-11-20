@@ -1,14 +1,10 @@
-local bint = require('.bint')(256)
 local crypto = require('.crypto')
-local config = require('config')
 
 Configurator = {}
 ConfiguratorMethods = {}
 
 -- Constructor for ProcessProvider 
-function Configurator:new()
-  -- Load config
-  config = config:new()
+function Configurator:new(config)
   -- Create a new configurator object
   local obj = {
     admin = '',             -- Admin Address
