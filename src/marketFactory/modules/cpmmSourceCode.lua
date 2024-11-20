@@ -106,7 +106,7 @@ local TokensMethods = require('modules.tokensNotices')
 
 -- Constructor for Tokens 
 function Tokens:new(balances, totalSupply, name, ticker, denomination, logo)
-  -- This will store user balancesOf semi-fungible tokens and metadata
+  -- This will store user balances of tokens and metadata
   local obj = {
     balances = balances,
     totalSupply = totalSupply,
@@ -337,7 +337,7 @@ function CPMMHelpers:getPoolBalances()
   end
   local poolBalances = ao.send({
     Target = self.conditionalTokens,
-    Action = "Balance-Of-Batch",
+    Action = "Batch-Balance",
     Recipients = json.encode(thises),
     TokenIds = json.encode(self.positionIds)
   }).receive().Data

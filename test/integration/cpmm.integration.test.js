@@ -590,7 +590,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should have minted LP tokens as per previous step's x-action", async () => {
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 20000));
       let messageId;
       await message({
         process: cpmm,
@@ -1243,12 +1243,12 @@ describe("cpmm.integration.test", function () {
         }
       }
 
-      async function getBalanceOf(token, tokenId, recipient) {
+      async function getBalance(token, tokenId, recipient) {
         let messageId;
         await message({
           process: token,
           tags: [
-            { name: "Action", value: "Balance-Of" },
+            { name: "Action", value: "Balance" },
             { name: "TokenId", value: tokenId },
             { name: "Recipient", value: recipient },
           ],
@@ -1269,16 +1269,16 @@ describe("cpmm.integration.test", function () {
         return balance
       }
 
-      const balanceOfBefore = await getBalanceOf(conditionalTokens, positionId, walletAddress);
+      const balanceBefore = await getBalance(conditionalTokens, positionId, walletAddress);
       const buyAmount = await calcBuyAmount(investmentAmount, outcomeIndex);
 
       await buy(investmentAmount, outcomeIndex, buyAmount.toString());
 
       // wait for the buy to be processed
       await new Promise(resolve => setTimeout(resolve, 20000));
-      const balanceOfAfter = await getBalanceOf(conditionalTokens, positionId, walletAddress);
+      const balanceAfter = await getBalance(conditionalTokens, positionId, walletAddress);
 
-      expect(buyAmount).to.be.equal((balanceOfAfter - balanceOfBefore).toString())
+      expect(buyAmount).to.be.equal((balanceAfter - balanceBefore).toString())
     })
   })
 
@@ -1355,12 +1355,12 @@ describe("cpmm.integration.test", function () {
         }
       }
 
-      async function getBalanceOf(token, tokenId, recipient) {
+      async function getConditionalBalance(token, tokenId, recipient) {
         let messageId;
         await message({
           process: token,
           tags: [
-            { name: "Action", value: "Balance-Of" },
+            { name: "Action", value: "Balance" },
             { name: "TokenId", value: tokenId },
             { name: "Recipient", value: recipient },
           ],
@@ -1406,36 +1406,36 @@ describe("cpmm.integration.test", function () {
         return balance
       }
 
-      const userBalanceOfBefore = await getBalanceOf(conditionalTokens, positionId, walletAddress);
-      const userBalanceBefore = await getBalance(collateralToken, walletAddress);
-      const cpmmBalanceOfBefore = await getBalanceOf(conditionalTokens, positionId, cpmm);
-      const cpmmBalanceBefore = await getBalance(collateralToken, cpmm);
+      const userConditionalBalanceBefore = await getConditionalBalance(conditionalTokens, positionId, walletAddress);
+      const userCollateralBalanceBefore = await getBalance(collateralToken, walletAddress);
+      const cpmmConditionalBalanceBefore = await getConditionalBalance(conditionalTokens, positionId, cpmm);
+      const cpmmCollateralBalanceBefore = await getBalance(collateralToken, cpmm);
       const maxSellAmount = await calcSellAmount(returnAmount, outcomeIndex);
 
       await sell(returnAmount, outcomeIndex, maxSellAmount.toString());
 
       // wait for the sell to be processed
       await new Promise(resolve => setTimeout(resolve, 25000));
-      const userBalanceOfAfter = await getBalanceOf(conditionalTokens, positionId, walletAddress);
-      const userBalanceAfter = await getBalance(collateralToken, walletAddress);
-      const cpmmBalanceOfAfter = await getBalanceOf(conditionalTokens, positionId, cpmm);
-      const cpmmBalanceAfter = await getBalance(collateralToken, cpmm);
+      const userConditionalBalanceAfter = await getConditionalBalance(conditionalTokens, positionId, walletAddress);
+      const userCollateralBalanceAfter = await getBalance(collateralToken, walletAddress);
+      const cpmmConditionalBalanceAfter = await getConditionalBalance(conditionalTokens, positionId, cpmm);
+      const cpmmCollateralBalanceAfter = await getBalance(collateralToken, cpmm);
 
       // @dev: This is the actual amount sold / burned during the position merge process
       const sellAmount = "9292929292930"
       expect(Number(sellAmount)).to.be.lessThan(Number(maxSellAmount))
-      expect(sellAmount).to.be.equal((userBalanceOfBefore - userBalanceOfAfter).toString())
+      expect(sellAmount).to.be.equal((userConditionalBalanceBefore - userConditionalBalanceAfter).toString())
 
       // User: Expect returnAmount of collateral tokens to be credited to user
-      expect(returnAmount).to.be.equal((userBalanceAfter - userBalanceBefore).toString())
+      expect(returnAmount).to.be.equal((userCollateralBalanceAfter - userCollateralBalanceBefore).toString())
 
       // cpmm: Expect cpmm balances to remain the same
-      expect(cpmmBalanceOfBefore).to.be.equal(cpmmBalanceOfAfter)
+      expect(cpmmConditionalBalanceBefore).to.be.equal(cpmmConditionalBalanceAfter)
 
       //cpmm: expect fee to have been added to cpmm's balance
       // @dev: This is a 1% fee on the sell amount (approx.)
       const feeAmount = 92929292930;
-      expect(cpmmBalanceAfter.toString()).to.be.equal((Number(cpmmBalanceBefore) + feeAmount).toString())
+      expect(cpmmCollateralBalanceAfter.toString()).to.be.equal((Number(cpmmCollateralBalanceBefore) + feeAmount).toString())
     })
   })
 

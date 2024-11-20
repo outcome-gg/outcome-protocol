@@ -434,16 +434,16 @@ test('Split-Position: should Get-Position-Id', async () => {
   assert.equal(positionId_, "4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532")
 })
 
-test('Split-Position: should mint amounts in positions associated with partition verified with Balances-Of', async () => {
+test('Split-Position: should mint amounts in positions associated with partition verified with Balances', async () => {
   const result = await Send({
     From: "1234",
-    Action: 'Balances-Of',
+    Action: 'Balances',
     TokenId: "4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532",
     Data: ''
   })
 
-  const balancesOfId = JSON.parse(result.Messages[0].Data)
-  assert.equal(balancesOfId["9876"], '100')
+  const balances = JSON.parse(result.Messages[0].Data)
+  assert.equal(balances["9876"], '100')
 })
 
 test('Split-Position: should mint amounts in positions associated with partition verified with Balances', async () => {
@@ -501,14 +501,14 @@ test('Split-Position: New Prepare-Condition: should send a Condition-Preparation
   assert.equal(outcomeSlotCount_, outcomeSlotCount)
 })
 
-test('Split-Position: [balanceOf] should have a balance of tokenId 4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532', async () => {
+test('Split-Position: [balance] should have a balance of tokenId 4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532', async () => {
   const result = await Send({
     From: "9876",
-    Action: 'Balance-Of',
+    Action: 'Balance',
     TokenId: '4e9dd43eec444cacd421965476abce6707d34301c49931cceca9d47de1526532'
   })
 
-  console.log("balanceOf result", result.Messages[0].Tags)
+  console.log("balance result", result.Messages[0].Tags)
 })
 
 test('Split-Position: should split from a parentCollection from the same condition and send a Split-Position-Notice', async () => {
@@ -1118,10 +1118,10 @@ test('Merge-Position: should burn positions tokens from the trader', async () =>
   // collateral balances
 })
 
-test('Transferring: check Balance-Of', async () => {
+test('Transferring: check Balance', async () => {
   const result = await Send({
     From: "9876",
-    Action: 'Balance-Of',
+    Action: 'Balance',
     TokenId: '0010c76539475810599b1396709623a94f10d972a6d8231e9c98dc77c9efd7b1'
   })
 

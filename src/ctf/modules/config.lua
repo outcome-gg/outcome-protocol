@@ -16,8 +16,8 @@ function Config:new()
     name = 'Outcome DAI Conditional Tokens',  -- Collateral-specific Name
     ticker = 'CDAI',                          -- Collateral-specific Ticker
     logo = '',                                -- Logo
-    balancesOf = {},                          -- BalancesOf
-    totalSupplyOf = {},                       -- TotalSupplyOf
+    balances = {},                            -- Balances by id 
+    totalSupply = {},                         -- TotalSupply by id
     denomination = 12                         -- Denomination
   }
   obj.tokens = tokens

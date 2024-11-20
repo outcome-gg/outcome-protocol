@@ -18,8 +18,8 @@ if not ConditionalTokens or Config.resetState then ConditionalTokens = condition
 Name = ConditionalTokens.tokens.name
 Ticker = ConditionalTokens.tokens.ticker
 Logo = ConditionalTokens.tokens.logo
-BalancesOf = ConditionalTokens.tokens.balancesOf
-TotalSupplyOf = ConditionalTokens.tokens.totalSupplyOf
+Balances = ConditionalTokens.tokens.balances
+TotalSupply = ConditionalTokens.tokens.totalSupply
 Denomination = ConditionalTokens.tokens.denomination
 PayoutNumerators = ConditionalTokens.payoutNumerators
 PayoutDenominator = ConditionalTokens.payoutDenominator
@@ -232,11 +232,11 @@ end)
 ]]
 
 --[[
-    Balance Of
+    Balance
 ]]
-Handlers.add("Balance-Of", Handlers.utils.hasMatchingTag("Action", "Balance-Of"), function(msg)
+Handlers.add("Balance", Handlers.utils.hasMatchingTag("Action", "Balance"), function(msg)
   assert(msg.Tags.TokenId, "TokenId is required!")
-  local bal = ConditionalTokens:getBalanceOf(msg.From, msg.Tags.Recipient, msg.Tags.TokenId)
+  local bal = ConditionalTokens:getBalance(msg.From, msg.Tags.Recipient, msg.Tags.TokenId)
 
   msg.reply({
     Balance = bal,
@@ -248,24 +248,34 @@ Handlers.add("Balance-Of", Handlers.utils.hasMatchingTag("Action", "Balance-Of")
 end)
 
 --[[
-    Balance Of Batch
+    Batch Balance
 ]]
-Handlers.add("Balance-Of-Batch", Handlers.utils.hasMatchingTag("Action", "Balance-Of-Batch"), function(msg)
+Handlers.add("Batch-Balance", Handlers.utils.hasMatchingTag("Action", "Batch-Balance"), function(msg)
   assert(msg.Tags.Recipients, "Recipients is required!")
   assert(msg.Tags.TokenIds, "TokenIds is required!")
   local recipients = json.decode(msg.Tags.Recipients)
   local tokenIds = json.decode(msg.Tags.TokenIds)
   assert(#recipients == #tokenIds, "Recipients and TokenIds must have same lengths")
-  local bals = ConditionalTokens:getBalanceOfBatch(recipients, tokenIds)
+  local bals = ConditionalTokens:getBatchBalance(recipients, tokenIds)
   msg.reply({ Data = bals })
 end)
 
 --[[
-    Balances Of
+    Balances
 ]]
-Handlers.add('Balances-Of', Handlers.utils.hasMatchingTag('Action', 'Balances-Of'), function(msg)
+Handlers.add('Balances', Handlers.utils.hasMatchingTag('Action', 'Balances'), function(msg)
   assert(msg.Tags.TokenId, "TokenId is required!")
-  local bals = ConditionalTokens:getBalancesOf(msg.From, msg.Tags.TokenId)
+  local bals = ConditionalTokens:getBalances(msg.Tags.TokenId)
+  msg.reply({ Data = bals })
+end)
+
+--[[
+    Batch Balances
+]]
+Handlers.add('Batch-Balances', Handlers.utils.hasMatchingTag('Action', 'Batch-Balances'), function(msg)
+  assert(msg.Tags.TokenIds, "TokenIds is required!")
+  local tokenIds = json.decode(msg.Tags.TokenIds)
+  local bals = ConditionalTokens:getBatchBalances(tokenIds)
   msg.reply({ Data = bals })
 end)
 
@@ -273,7 +283,7 @@ end)
     Balances All
 ]]
 Handlers.add('Balances-All', Handlers.utils.hasMatchingTag('Action', 'Balances-All'), function(msg)
-  msg.reply({ Data = BalancesOf })
+  msg.reply({ Data = Balances })
 end)
 
 --[[

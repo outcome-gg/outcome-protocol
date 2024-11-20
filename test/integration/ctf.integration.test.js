@@ -917,12 +917,12 @@ describe("ctf.integration.test", function () {
       expect(balances_["b3a220c30ffc0e28c8edab9002fb3376641230bd8172af1843d0d55f05907060"][walletAddress]).to.equal("100")
     })
 
-    it("+ve should verify position mint amounts (with Balance-Of)", async () => {
+    it("+ve should verify position mint amounts (with Balances)", async () => {
       let messageId;
       await message({
         process: conditionalTokens,
         tags: [
-          { name: "Action", value: "Balances-Of" },
+          { name: "Action", value: "Balances" },
           { name: "TokenId", value: "b96e159bd7027181eb36ffcffba39cf88464d07fa051b220322e50a10eff1464" },
         ],
         signer: createDataItemSigner(wallet),
@@ -940,9 +940,9 @@ describe("ctf.integration.test", function () {
 
       expect(Messages.length).to.be.equal(1)
 
-      const balancesOf_ = JSON.parse(Messages[0].Data)
+      const balances_ = JSON.parse(Messages[0].Data)
 
-      expect(balancesOf_[walletAddress]).to.equal("100")
+      expect(balances_[walletAddress]).to.equal("100")
     })
 
     it("+ve should get collection id (condition 1, indexSet A)", async () => {
@@ -1761,12 +1761,12 @@ describe("ctf.integration.test", function () {
   * Transfer Position
   ************************************************************************/
   describe("Prepare Condition", function () {
-    it("+ve [balance] should get balance-of", async () => {
+    it("+ve [balance] should get balance", async () => {
       let messageId;
       await message({
         process: conditionalTokens,
         tags: [
-          { name: "Action", value: "Balance-Of" },
+          { name: "Action", value: "Balance" },
           { name: "TokenId", value: "b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f" }
         ],
         signer: createDataItemSigner(wallet),

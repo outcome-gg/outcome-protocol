@@ -7,7 +7,7 @@ local TokenMethods = require('modules.tokenNotices')
 
 -- Constructor for Token 
 function Token:new(name, ticker, logo, balances, totalSupply, denomination)
-  -- This will store user balancesOf semi-fungible tokens and metadata
+  -- This will store user balances of tokens and metadata
   local obj = {
     name = name,
     ticker = ticker,

@@ -6,14 +6,14 @@ local SemiFungibleTokens = {}
 local SemiFungibleTokensMethods = require('modules.semiFungibleTokensNotices')
 
 -- Constructor for SemiFungibleTokens 
-function SemiFungibleTokens:new(name, ticker, logo, balancesOf, totalSupplyOf, denomination)
-  -- This will store user balancesOf semi-fungible tokens and metadata
+function SemiFungibleTokens:new(name, ticker, logo, balances, totalSupply, denomination)
+  -- This will store user balances semi-fungible tokens and metadata
   local obj = {
     name = name,
     ticker = ticker,
     logo = logo,
-    balancesOf = balancesOf,  -- { id -> userId -> balance of semi-fungible tokens }
-    totalSupplyOf = totalSupplyOf, -- { id -> userId -> totalSupply of semi-fungible tokens }
+    balances = balances,  -- { id -> userId -> balance of semi-fungible tokens }
+    totalSupply = totalSupply, -- { id -> totalSupply of semi-fungible tokens }
     denomination = denomination
   }
   setmetatable(obj, { __index = SemiFungibleTokensMethods })
@@ -28,10 +28,10 @@ function SemiFungibleTokensMethods:mint(to, id, quantity)
   assert(quantity, 'Quantity is required!')
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
 
-  if not self.balancesOf[id] then self.balancesOf[id] = {} end
-  if not self.balancesOf[id][to] then self.balancesOf[id][to] = "0" end
+  if not self.balances[id] then self.balances[id] = {} end
+  if not self.balances[id][to] then self.balances[id][to] = "0" end
 
-  self.balancesOf[id][to] = tostring(bint.__add(self.balancesOf[id][to], quantity))
+  self.balances[id][to] = tostring(bint.__add(self.balances[id][to], quantity))
   -- Send notice
   self:mintSingleNotice(to, id, quantity)
 end
@@ -44,10 +44,10 @@ function SemiFungibleTokensMethods:batchMint(to, ids, quantities)
   assert(#ids == #quantities, 'Ids and quantities must have the same lengths')
 
   for i = 1, #ids do
-    if not self.balancesOf[ids[i]] then self.balancesOf[ids[i]] = {} end
-    if not self.balancesOf[ids[i]][to] then self.balancesOf[ids[i]][to] = "0" end
+    if not self.balances[ids[i]] then self.balances[ids[i]] = {} end
+    if not self.balances[ids[i]][to] then self.balances[ids[i]][to] = "0" end
 
-    self.balancesOf[ids[i]][to] = tostring(bint.__add(self.balancesOf[ids[i]][to], quantities[i]))
+    self.balances[ids[i]][to] = tostring(bint.__add(self.balances[ids[i]][to], quantities[i]))
   end
 
   -- Send notice
@@ -60,12 +60,12 @@ end
 -- @param quantity Quantity of the token to be burned
 function SemiFungibleTokensMethods:burn(from, id, quantity)
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
-  assert(self.balancesOf[id], 'Id must exist! ' .. id)
-  assert(self.balancesOf[id][from], 'User must hold token! :: ' .. id)
-  assert(bint.__le(quantity, self.balancesOf[id][from]), 'User must have sufficient tokens! ' .. id)
+  assert(self.balances[id], 'Id must exist! ' .. id)
+  assert(self.balances[id][from], 'User must hold token! :: ' .. id)
+  assert(bint.__le(quantity, self.balances[id][from]), 'User must have sufficient tokens! ' .. id)
 
   -- Burn tokens
-  self.balancesOf[id][from] = tostring(bint.__sub(self.balancesOf[id][from], quantity))
+  self.balances[id][from] = tostring(bint.__sub(self.balances[id][from], quantity))
   -- Send notice
   self:burnSingleNotice(from, id, quantity)
 end
@@ -80,17 +80,17 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)
 
   for i = 1, #ids do
     assert(bint.__lt(0, quantities[i]), 'Quantity must be greater than zero!')
-    assert(self.balancesOf[ids[i]], 'Id must exist! ' .. ids[i])
-    assert(self.balancesOf[ids[i]][from], 'User must hold token! ' .. ids[i])
-    assert(bint.__le(quantities[i], self.balancesOf[ids[i]][from]), 'User must have sufficient tokens!')
+    assert(self.balances[ids[i]], 'Id must exist! ' .. ids[i])
+    assert(self.balances[ids[i]][from], 'User must hold token! ' .. ids[i])
+    assert(bint.__le(quantities[i], self.balances[ids[i]][from]), 'User must have sufficient tokens!')
   end
 
   local remainingBalances = {}
 
   -- Burn tokens
   for i = 1, #ids do
-    self.balancesOf[ids[i]][from] = tostring(bint.__sub(self.balancesOf[ids[i]][from], quantities[i]))
-    remainingBalances[i] = BalancesOf[ids[i]][from]
+    self.balances[ids[i]][from] = tostring(bint.__sub(self.balances[ids[i]][from], quantities[i]))
+    remainingBalances[i] = self.balances[ids[i]][from]
   end
   -- Draft notice
   local notice = {
@@ -120,15 +120,15 @@ end
 -- @param cast The boolean to silence transfer notifications
 -- @param msg For sending X-Tags
 function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, msg)
-  if not self.balancesOf[id] then self.balancesOf[id] = {} end
-  if not self.balancesOf[id][from] then self.balancesOf[id][from] = "0" end
-  if not self.balancesOf[id][recipient] then self.balancesOf[id][recipient] = "0" end
+  if not self.balances[id] then self.balances[id] = {} end
+  if not self.balances[id][from] then self.balances[id][from] = "0" end
+  if not self.balances[id][recipient] then self.balances[id][recipient] = "0" end
 
   local qty = bint(quantity)
-  local balance = bint(self.balancesOf[id][from])
+  local balance = bint(self.balances[id][from])
   if bint.__le(qty, balance) then
-    self.balancesOf[id][from] = tostring(bint.__sub(balance, qty))
-    self.balancesOf[id][recipient] = tostring(bint.__add(self.balancesOf[id][recipient], qty))
+    self.balances[id][from] = tostring(bint.__sub(balance, qty))
+    self.balances[id][recipient] = tostring(bint.__add(self.balances[id][recipient], qty))
 
     -- Only send the notifications if the cast tag is not set
     if not cast then
@@ -151,16 +151,16 @@ function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantitie
   local quantities_ = {}
 
   for i = 1, #ids do
-    if not self.balancesOf[ids[i]] then self.balancesOf[ids[i]] = {} end
-    if not self.balancesOf[ids[i]][from] then self.balancesOf[ids[i]][from] = "0" end
-    if not self.balancesOf[ids[i]][recipient] then self.balancesOf[ids[i]][recipient] = "0" end
+    if not self.balances[ids[i]] then self.balances[ids[i]] = {} end
+    if not self.balances[ids[i]][from] then self.balances[ids[i]][from] = "0" end
+    if not self.balances[ids[i]][recipient] then self.balances[ids[i]][recipient] = "0" end
 
     local qty = bint(quantities[i])
-    local balance = bint(self.balancesOf[ids[i]][from])
+    local balance = bint(self.balances[ids[i]][from])
 
     if bint.__le(qty, balance) then
-      self.balancesOf[ids[i]][from] = tostring(bint.__sub(balance, qty))
-      self.balancesOf[ids[i]][recipient] = tostring(bint.__add(self.balancesOf[ids[i]][recipient], qty))
+      self.balances[ids[i]][from] = tostring(bint.__sub(balance, qty))
+      self.balances[ids[i]][recipient] = tostring(bint.__add(self.balances[ids[i]][recipient], qty))
       table.insert(ids_, ids[i])
       table.insert(quantities_, quantities[i])
     else
@@ -174,30 +174,30 @@ function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantitie
   end
 end
 
-function SemiFungibleTokensMethods:getBalanceOf(from, recipient, tokenId)
+function SemiFungibleTokensMethods:getBalance(from, recipient, tokenId)
   local bal = '0'
   -- If Id is found then cointinue
-  if self.balancesOf[tokenId] then
+  if self.balances[tokenId] then
     -- If not Recipient is provided, then return the Senders balance
-    if (recipient and self.balancesOf[tokenId][recipient]) then
-      bal = self.balancesOf[tokenId][recipient]
-    elseif self.balancesOf[tokenId][from] then
-      bal = self.balancesOf[tokenId][from]
+    if (recipient and self.balances[tokenId][recipient]) then
+      bal = self.balances[tokenId][recipient]
+    elseif self.balances[tokenId][from] then
+      bal = self.balances[tokenId][from]
     end
   end
   -- return balance
   return bal
 end
 
-function SemiFungibleTokensMethods:getBalanceOfBatch(recipients, tokenIds)
+function SemiFungibleTokensMethods:getBatchBalance(recipients, tokenIds)
   assert(#recipients == #tokenIds, 'Recipients and TokenIds must have same lengths')
   local bals = {}
 
   for i = 1, #recipients do
     table.insert(bals, '0')
-    if self.balancesOf[tokenIds[i]] then
-      if self.balancesOf[tokenIds[i]][recipients[i]] then
-        bals[i] = self.balancesOf[tokenIds[i]][recipients[i]]
+    if self.balances[tokenIds[i]] then
+      if self.balances[tokenIds[i]][recipients[i]] then
+        bals[i] = self.balances[tokenIds[i]][recipients[i]]
       end
     end
   end
@@ -205,10 +205,23 @@ function SemiFungibleTokensMethods:getBalanceOfBatch(recipients, tokenIds)
   return bals
 end
 
-function SemiFungibleTokensMethods:getBalancesOf(from, tokenId)
+function SemiFungibleTokensMethods:getBalances(tokenId)
   local bals = {}
-  if self.balancesOf[tokenId] then
-    bals = self.balancesOf[tokenId]
+  if self.balances[tokenId] then
+    bals = self.balances[tokenId]
+  end
+  -- return balances
+  return bals
+end
+
+function SemiFungibleTokensMethods:getBatchBalances(tokenIds)
+  local bals = {}
+
+  for i = 1, #tokenIds do
+    bals[tokenIds[i]] = {}
+    if self.balances[tokenIds[i]] then
+      bals[tokenIds[i]] = self.balances[tokenIds[i]]
+    end
   end
   -- return balances
   return bals

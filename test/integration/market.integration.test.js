@@ -415,7 +415,7 @@ describe("dlob.integration.test", function () {
       await message({
         process: conditionalTokens,
         tags: [
-          { name: "Action", value: "Balances-Of" },
+          { name: "Action", value: "Balances" },
           { name: "TokenId", value: positionIdIN },
         ],
         signer: createDataItemSigner(wallet),
@@ -446,7 +446,7 @@ describe("dlob.integration.test", function () {
       await message({
         process: conditionalTokens,
         tags: [
-          { name: "Action", value: "Balances-Of" },
+          { name: "Action", value: "Balances" },
           { name: "TokenId", value: positionIdOUT },
         ],
         signer: createDataItemSigner(wallet),

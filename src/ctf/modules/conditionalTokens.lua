@@ -15,7 +15,7 @@ function ConditionalTokens:new()
   -- Load config
   config = config:new()
   -- Initialize SemiFungibleTokens and store the object
-  SemiFungibleTokens = semiFungibleTokens:new(config.tokens.name, config.tokens.ticker, config.tokens.logo, config.tokens.balancesOf, config.tokens.totalSupplyOf, config.tokens.denomination)
+  SemiFungibleTokens = semiFungibleTokens:new(config.tokens.name, config.tokens.ticker, config.tokens.logo, config.tokens.balances, config.tokens.totalSupplyOf, config.tokens.denomination)
 
   -- Create a new ConditionalTokens object
   local obj = {
@@ -255,9 +255,9 @@ function ConditionalTokensMethods:redeemPositions(from, collateralToken, parentC
       end
     end
 
-    assert(self.tokens.balancesOf[positionId], "invalid position")
-    if not self.tokens.balancesOf[positionId][from] then self.tokens.balancesOf[positionId][from] = "0" end
-    local payoutStake = self.tokens.balancesOf[positionId][from]
+    assert(self.tokens.balances[positionId], "invalid position")
+    if not self.tokens.balances[positionId][from] then self.tokens.balances[positionId][from] = "0" end
+    local payoutStake = self.tokens.balances[positionId][from]
     if bint.__lt(0, bint(payoutStake)) then
       totalPayout = totalPayout + (payoutStake * payoutNumerator) / den
       self:burn(from, positionId, payoutStake)

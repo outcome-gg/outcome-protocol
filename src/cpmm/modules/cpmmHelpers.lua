@@ -122,7 +122,7 @@ function CPMMHelpers:getPoolBalances()
   end
   local poolBalances = ao.send({
     Target = self.conditionalTokens,
-    Action = "Balance-Of-Batch",
+    Action = "Batch-Balance",
     Recipients = json.encode(thises),
     TokenIds = json.encode(self.positionIds)
   }).receive().Data
