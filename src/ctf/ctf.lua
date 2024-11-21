@@ -18,8 +18,8 @@ if not ConditionalTokens or Config.resetState then ConditionalTokens = condition
 Name = ConditionalTokens.tokens.name
 Ticker = ConditionalTokens.tokens.ticker
 Logo = ConditionalTokens.tokens.logo
-Balances = ConditionalTokens.tokens.balances
-TotalSupply = ConditionalTokens.tokens.totalSupply
+BalancesById = ConditionalTokens.tokens.balancesById
+TotalSupplyById = ConditionalTokens.tokens.totalSupplyById
 Denomination = ConditionalTokens.tokens.denomination
 PayoutNumerators = ConditionalTokens.payoutNumerators
 PayoutDenominator = ConditionalTokens.payoutDenominator
@@ -261,18 +261,18 @@ Handlers.add("Batch-Balance", Handlers.utils.hasMatchingTag("Action", "Batch-Bal
 end)
 
 --[[
-    Balances
+    Balances By Id
 ]]
-Handlers.add('Balances', Handlers.utils.hasMatchingTag('Action', 'Balances'), function(msg)
+Handlers.add('Balances-By-Id', Handlers.utils.hasMatchingTag('Action', 'Balances-By-Id'), function(msg)
   assert(msg.Tags.TokenId, "TokenId is required!")
   local bals = ConditionalTokens:getBalances(msg.Tags.TokenId)
   msg.reply({ Data = bals })
 end)
 
 --[[
-    Batch Balances
+    Batch Balances By Id
 ]]
-Handlers.add('Batch-Balances', Handlers.utils.hasMatchingTag('Action', 'Batch-Balances'), function(msg)
+Handlers.add('Batch-Balances-By-Id', Handlers.utils.hasMatchingTag('Action', 'Batch-Balances-By-Id'), function(msg)
   assert(msg.Tags.TokenIds, "TokenIds is required!")
   local tokenIds = json.decode(msg.Tags.TokenIds)
   local bals = ConditionalTokens:getBatchBalances(tokenIds)
@@ -283,7 +283,7 @@ end)
     Balances All
 ]]
 Handlers.add('Balances-All', Handlers.utils.hasMatchingTag('Action', 'Balances-All'), function(msg)
-  msg.reply({ Data = Balances })
+  msg.reply({ Data = BalancesById })
 end)
 
 --[[

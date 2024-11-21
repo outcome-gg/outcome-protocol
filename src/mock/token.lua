@@ -64,7 +64,6 @@ Variant = "0.0.3"
 Denomination = 12
 
 if not Balances or ResetState then Balances = { 
-  [ao.id] = utils.toBalanceValue(10000 * 10 ^ Denomination),
   ['XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I'] = utils.toBalanceValue(10000 * 10 ^ Denomination),
   ['m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0'] = utils.toBalanceValue(10000 * 10 ^ Denomination),
 } end
