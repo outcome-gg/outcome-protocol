@@ -1766,7 +1766,7 @@ describe("ctf.integration.test", function () {
       await message({
         process: conditionalTokens,
         tags: [
-          { name: "Action", value: "Balance" },
+          { name: "Action", value: "Balance-By-Id" },
           { name: "TokenId", value: "b0cc14a9c29176bbd34366bdaecbe94b05758710fb4e8c956cb53ab58ec7ff4f" }
         ],
         signer: createDataItemSigner(wallet),

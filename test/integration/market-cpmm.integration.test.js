@@ -477,8 +477,8 @@ describe("cpmm.integration.test", function () {
       const totalWithdrawnFees = Messages[0].Tags.find(t => t.name === 'TotalWithdrawnFees').value
       const fee_ = Messages[0].Tags.find(t => t.name === 'Fee').value
 
-      expect(name_).to.equal("Outcome ETH LP Token 2")
-      expect(ticker_).to.equal("OETH1")
+      expect(name_).to.equal("Outcome DAI LP Token 1")
+      expect(ticker_).to.equal("ODAI-LP-1")
       expect(logo_).to.equal("")
       expect(denomination_).to.equal("12")
       expect(conditionId_).to.equal(conditionId)
@@ -1248,7 +1248,7 @@ describe("cpmm.integration.test", function () {
         await message({
           process: token,
           tags: [
-            { name: "Action", value: "Balance" },
+            { name: "Action", value: "Balance-By-Id" },
             { name: "TokenId", value: tokenId },
             { name: "Recipient", value: recipient },
           ],
@@ -1360,7 +1360,7 @@ describe("cpmm.integration.test", function () {
         await message({
           process: token,
           tags: [
-            { name: "Action", value: "Balance" },
+            { name: "Action", value: "Balance-By-Id" },
             { name: "TokenId", value: tokenId },
             { name: "Recipient", value: recipient },
           ],
@@ -1415,7 +1415,7 @@ describe("cpmm.integration.test", function () {
       await sell(returnAmount, outcomeIndex, maxSellAmount.toString());
 
       // wait for the sell to be processed
-      await new Promise(resolve => setTimeout(resolve, 25000));
+      await new Promise(resolve => setTimeout(resolve, 20000));
       const userConditionalBalanceAfter = await getConditionalBalance(conditionalTokens, positionId, walletAddress);
       const userCollateralBalanceAfter = await getBalance(collateralToken, walletAddress);
       const cpmmConditionalBalanceAfter = await getConditionalBalance(conditionalTokens, positionId, cpmm);
@@ -1434,8 +1434,15 @@ describe("cpmm.integration.test", function () {
 
       //cpmm: expect fee to have been added to cpmm's balance
       // @dev: This is a 1% fee on the sell amount (approx.)
-      const feeAmount = 92929292930;
-      expect(cpmmCollateralBalanceAfter.toString()).to.be.equal((Number(cpmmCollateralBalanceBefore) + feeAmount).toString())
+      // const feeAmount = 92929292930; <-- This is the previous test, which is no longer valid
+
+      // @dev Updating this test to reflect that CTF and CPMM are now the same process, meaning
+      // i) there is no change in balance due the feeAmount as this is transferred from A to A
+      // ii) collateral is now held by the process, meaning the returnAmount is returned to the user
+      expect(cpmmCollateralBalanceAfter.toString()).to.be.equal((Number(cpmmCollateralBalanceBefore - returnAmount)).toString())
+
+      // @dev This is the previous test, which is no longer valid
+      // expect(cpmmCollateralBalanceAfter.toString()).to.be.equal((Number(cpmmCollateralBalanceBefore) + feeAmount).toString())
     })
   })
 
