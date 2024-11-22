@@ -553,7 +553,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should have transferred CollateralTokens to ConditionalTokens as per previous step", async () => {
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      // await new Promise(resolve => setTimeout(resolve, 10000));
       let messageId;
       await message({
         process: collateralToken,
@@ -590,7 +590,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should have minted LP tokens as per previous step's x-action", async () => {
-      await new Promise(resolve => setTimeout(resolve, 20000));
+      await new Promise(resolve => setTimeout(resolve, 5000)); // 20000
       let messageId;
       await message({
         process: cpmm,
@@ -626,7 +626,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should have minted position tokens to cpmm in exchange for the LP tokens", async () => {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
         process: conditionalTokens,
@@ -717,7 +717,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should have minted more LP tokens as per previous step's x-action", async () => {
-      await new Promise(resolve => setTimeout(resolve, 20000));
+      await new Promise(resolve => setTimeout(resolve, 5000)); // 20000
       let messageId;
       await message({
         process: cpmm,
@@ -753,7 +753,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should have minted more position tokens to cpmm in exchange for the LP tokens", async () => {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 5000
       let messageId;
       await message({
         process: conditionalTokens,
@@ -846,7 +846,7 @@ describe("cpmm.integration.test", function () {
       balanceBefore = await getBalance();
       await addFundingWithDistributionAfterInitialFunding();
       // wait for failed forwarded call transfer of funds to be returned
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 5000)); // 10000
       balanceAfter = await getBalance();
 
       expect(balanceBefore).to.be.equal(balanceAfter)
@@ -895,7 +895,7 @@ describe("cpmm.integration.test", function () {
   describe("cpmm.Remove-Funding", function () {
     before(async () => {
       // Add delay to allow for previous test to complete
-      await new Promise(resolve => setTimeout(resolve, 7000));
+      // await new Promise(resolve => setTimeout(resolve, 7000));
     })
 
     it("+ve should remove funding", async () => {
@@ -1275,7 +1275,7 @@ describe("cpmm.integration.test", function () {
       await buy(investmentAmount, outcomeIndex, buyAmount.toString());
 
       // wait for the buy to be processed
-      await new Promise(resolve => setTimeout(resolve, 20000));
+      await new Promise(resolve => setTimeout(resolve, 7000)); // 20000
       const balanceAfter = await getBalance(conditionalTokens, positionId, walletAddress);
 
       expect(buyAmount).to.be.equal((balanceAfter - balanceBefore).toString())
@@ -1415,7 +1415,7 @@ describe("cpmm.integration.test", function () {
       await sell(returnAmount, outcomeIndex, maxSellAmount.toString());
 
       // wait for the sell to be processed
-      await new Promise(resolve => setTimeout(resolve, 20000));
+      await new Promise(resolve => setTimeout(resolve, 5000)); // 20000
       const userConditionalBalanceAfter = await getConditionalBalance(conditionalTokens, positionId, walletAddress);
       const userCollateralBalanceAfter = await getBalance(collateralToken, walletAddress);
       const cpmmConditionalBalanceAfter = await getConditionalBalance(conditionalTokens, positionId, cpmm);
@@ -1452,11 +1452,11 @@ describe("cpmm.integration.test", function () {
   describe("cpmm.Remove-Funding-With-Fees", function () {
     before(async () => {
       // Add delay to allow for previous test to complete
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // await new Promise(resolve => setTimeout(resolve, 5000));
     })
 
     it("+ve should check positions of user and cpmm", async () => {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
         process: conditionalTokens,
@@ -1492,7 +1492,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should return collected fees before remove funding", async () => {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
         process: cpmm,
@@ -1524,7 +1524,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should return fees withdrawable before remove funding", async () => {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
         process: cpmm,
@@ -1627,7 +1627,7 @@ describe("cpmm.integration.test", function () {
 
       let Messages = await removeFunding();
 
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 5000)); // 10000
 
       userLPTokenBalanceAfter = await getBalance(cpmm, walletAddress);
       cpmmLPTokenBalanceAfter = await getBalance(cpmm, cpmm);
@@ -1703,7 +1703,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should return collected fees after remove funding", async () => {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
         process: cpmm,
@@ -1735,7 +1735,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should return fees withdrawable after remove funding", async () => {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
         process: cpmm,
@@ -1767,7 +1767,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should withdraw fees", async () => {
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
         process: cpmm,
