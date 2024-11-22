@@ -128,10 +128,10 @@ Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(m
     Denomination = tostring(Denomination),
     ConditionId = CPMM.conditionId,
     CollateralToken = CPMM.collateralToken,
-    ConditionalTokens = CPMM.conditionalTokens,
-    Fee = CPMM.fee,
-    FeePoolWeight = CPMM.feePoolWeight,
-    TotalWithdrawnFees = CPMM.totalWithdrawnFees,
+    LpFee = CPMM.fee,
+    LpFeePoolWeight = CPMM.feePoolWeight,
+    LpFeeTotalWithdrawn = CPMM.totalWithdrawnFees,
+    TakeFee = ConditionalTokens.takeFeePercentage
   })
 end)
 
@@ -147,7 +147,6 @@ Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(m
   assert(CPMM.initialized == false, "Market already initialized!")
   assert(msg.Tags.MarketId, "MarketId is required!")
   assert(msg.Tags.ConditionId, "ConditionId is required!")
-  assert(msg.Tags.ConditionalTokens, "ConditionalTokens is required!")
   assert(msg.Tags.CollateralToken, "CollateralToken is required!")
   assert(msg.Tags.CollectionIds, "CollectionIds is required!!")
   local collectionIds = json.decode(msg.Tags.CollectionIds)
@@ -161,7 +160,7 @@ Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(m
   assert(msg.Tags.Ticker, "Ticker is required!")
   assert(msg.Tags.Logo, "Logo is required!")
 
-  CPMM:init(msg.Tags.CollateralToken, msg.Tags.ConditionalTokens, msg.Tags.MarketId, msg.Tags.ConditionId, collectionIds, positionIds, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo, msg)
+  CPMM:init(msg.Tags.CollateralToken, ao.id, msg.Tags.MarketId, msg.Tags.ConditionId, collectionIds, positionIds, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo, msg)
 end)
 
 -- Add Funding

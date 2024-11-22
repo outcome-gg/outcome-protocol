@@ -346,7 +346,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Init" },
           { name: "MarketId", value: marketId },
           { name: "ConditionId", value: conditionId },
-          { name: "ConditionalTokens", value: conditionalTokens },
+          // { name: "ConditionalTokens", value: conditionalTokens }, // not required for market.lua
           { name: "CollateralToken", value: collateralToken },
           { name: "CollectionIds", value: JSON.stringify([collectionIdIN, collectionIdOUT]) },
           { name: "PositionIds", value: JSON.stringify([positionIdIN, positionIdOUT]) },
@@ -403,7 +403,7 @@ describe("cpmm.integration.test", function () {
         process: cpmm,
         tags: [
           { name: "Action", value: "Init" },
-          { name: "ConditionalTokens", value: conditionalTokens },
+          // { name: "ConditionalTokens", value: conditionalTokens }, // not required for market.lua
           { name: "CollateralToken", value: collateralToken },
           { name: "ConditionId", value: "" },
           { name: "CollectionIds", value: JSON.stringify([collectionIdIN, collectionIdOUT]) },
@@ -466,16 +466,18 @@ describe("cpmm.integration.test", function () {
 
       expect(Messages.length).to.be.equal(1)
 
+      console.log(Messages[0].Tags)
+
       const name_ = Messages[0].Tags.find(t => t.name === 'Name').value
       const ticker_ = Messages[0].Tags.find(t => t.name === 'Ticker').value
       const logo_ = Messages[0].Tags.find(t => t.name === 'Logo').value
       const denomination_ = Messages[0].Tags.find(t => t.name === 'Denomination').value
       const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
       const collateralToken_ = Messages[0].Tags.find(t => t.name === 'CollateralToken').value
-      const conditionalTokens_ = Messages[0].Tags.find(t => t.name === 'ConditionalTokens').value
-      const feePoolWeight_ = Messages[0].Tags.find(t => t.name === 'FeePoolWeight').value
-      const totalWithdrawnFees = Messages[0].Tags.find(t => t.name === 'TotalWithdrawnFees').value
-      const fee_ = Messages[0].Tags.find(t => t.name === 'Fee').value
+      const lpFee_ = Messages[0].Tags.find(t => t.name === 'LpFee').value
+      const lpFeePoolWeight_ = Messages[0].Tags.find(t => t.name === 'LpFeePoolWeight').value
+      const lpFeeTotalWithdrawn_ = Messages[0].Tags.find(t => t.name === 'LpFeeTotalWithdrawn').value
+      const takeFee_ = Messages[0].Tags.find(t => t.name === 'TakeFee').value
 
       expect(name_).to.equal("Outcome DAI LP Token 1")
       expect(ticker_).to.equal("ODAI-LP-1")
@@ -483,10 +485,10 @@ describe("cpmm.integration.test", function () {
       expect(denomination_).to.equal("12")
       expect(conditionId_).to.equal(conditionId)
       expect(collateralToken_).to.equal(collateralToken)
-      expect(conditionalTokens_).to.equal(conditionalTokens)
-      expect(feePoolWeight_).to.equal("0")
-      expect(totalWithdrawnFees).to.equal("0")
-      expect(fee_).to.equal("10000000000")
+      expect(lpFeePoolWeight_).to.equal("0")
+      expect(lpFeeTotalWithdrawn_).to.equal("0")
+      expect(lpFee_).to.equal("10000000000") // 1%
+      expect(takeFee_).to.equal("25000000000") // 2.5%
     })
   })
 
