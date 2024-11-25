@@ -6,7 +6,7 @@ MarketFactoryNotices = {}
 -- @dev Emitted upon the successful creation of a market.
 -- @param target The address to send the notice to.
 -- @param marketId The market Id.
-function MarketFactoryNotices.marketCreatedNotice(target, marketId, processId, resolutionAgent, question, questionId, conditionId, conditionalTokens, collateralToken, parentCollectionId, collectionIds, positionIds, outcomeSlotCount, partition, distribution, quantity)
+function MarketFactoryNotices.marketCreatedNotice(target, marketId, processId, resolutionAgent, question, questionId, conditionId, collateralToken, parentCollectionId, collectionIds, positionIds, outcomeSlotCount, partition, distribution, quantity)
   -- TODO: Decide if to be sent to user and/or Data Index
   ao.send({
     Target = target,
@@ -17,7 +17,6 @@ function MarketFactoryNotices.marketCreatedNotice(target, marketId, processId, r
     Question = question,
     QuestionId = questionId,
     ConditionId = conditionId,
-    ConditionalTokens = conditionalTokens,
     CollateralToken = collateralToken,
     ParentCollectionId = parentCollectionId,
     CollectionIds = json.encode(collectionIds),

@@ -47,30 +47,19 @@ function ConditionalTokens:new(config)
 end
 
 -- @dev This function prepares a condition by initializing a payout vector associated with the condition.
--- @param resolutionAgent The process assigned to report the result for the prepared condition.
--- @param questionId An identifier for the question to be answered by the resolutionAgent.
+-- @param conditionId The condition's ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(questionId, resolutionAgent, outcomeSlotCount))``.
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
-function ConditionalTokensMethods:prepareCondition(msg)
-  local data = json.decode(msg.Data)
-  assert(data.resolutionAgent, "resolutionAgent is required!")
-  assert(data.questionId, "questionId is required!")
-  assert(data.outcomeSlotCount, "outcomeSlotCount is required!")
-  assert(type(data.outcomeSlotCount) == 'number', "outcomeSlotCount must be a number!")
-  -- Limit of 256 because we use a partition array that is a number of 256 bits.
-  assert(data.outcomeSlotCount <= 256, "too many outcome slots")
-  assert(data.outcomeSlotCount > 1, "there should be more than one outcome slot")
-  -- Contruct conditionId from resolutionAgent, questionId, and outcomeSlotCount
-  local conditionId = self.getConditionId(data.resolutionAgent, data.questionId, tostring(data.outcomeSlotCount))
+function ConditionalTokensMethods:prepareCondition(conditionId, outcomeSlotCount, msg)
   assert(self.payoutNumerators[conditionId] == nil, "condition already prepared")
   -- Initialize the payout vector associated with the condition.
   self.payoutNumerators[conditionId] = {}
-  for _ = 1, data.outcomeSlotCount do
+  for _ = 1, outcomeSlotCount do
     table.insert(self.payoutNumerators[conditionId], 0)
   end
   -- Initialize the denominator to zero to indicate that the condition has not been resolved.
   self.payoutDenominator[conditionId] = 0
   -- Send the condition preparation notice.
-  self:conditionPreparationNotice(conditionId, data.resolutionAgent, data.questionId, data.outcomeSlotCount, msg)
+  self:conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
 end
 
 -- @dev Called by the resolutionAgent for reporting results of conditions. Will set the payout vector for the condition with the ID `keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount))`, 

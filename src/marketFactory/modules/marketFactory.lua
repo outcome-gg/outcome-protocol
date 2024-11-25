@@ -1,7 +1,7 @@
 local ao = require('.ao')
 local json = require('json')
 local sqlite3 = require('lsqlite3')
-local cpmmSourceCode = require('modules.cpmmSourceCode')
+local marketSourceCode = require('modules.marketSourceCode')
 local MarketFactoryHelpers = require('modules.marketFactoryHelpers')
 
 local MarketFactory = {}
@@ -20,6 +20,8 @@ function MarketFactory:new(config)
     lookup = config.lookup,
     counters = config.counters,
     delay = config.delay,
+    payoutNumerators = config.payoutNumerators,
+    payoutDenominator = config.payoutDenominator
   }
   -- Set metatable for method lookups from MarketFactoryMethods, MarketFactoryHelpers and MarketFactoryNotices
   setmetatable(obj, {
@@ -44,86 +46,71 @@ end
 -- Create Market
 function MarketFactoryMethods:createMarket(question, resolutionAgent, outcomeSlotCount, partition, distribution, parentCollectionId, quantity, collateralToken, sender)
   assert(self.lookup[collateralToken], 'Collateral Token not approved!')
-  local conditionalTokens = self.lookup[collateralToken].conditionalTokens
 
   -- Get Ids
   local questionId = self.getQuestionId(question)
   local conditionId = self.getConditionId(resolutionAgent, questionId, outcomeSlotCount)
   local marketId = self.getMarketId(collateralToken, parentCollectionId, conditionId, sender)
 
-  -- Check if condition is already prepared
-  local payoutNumerators = ao.send({
-    Target = conditionalTokens,
-    Action = 'Get-Payout-Numerators',
-    ConditionId = conditionId
-  }).receive().Data
-
-  -- Prepare condition if not already prepared
-  if tostring(payoutNumerators) == 'null' then
-    ao.send({
-      Target = conditionalTokens,
-      Action = 'Prepare-Condition',
-      Data = json.encode({
-        questionId = questionId,
-        resolutionAgent = resolutionAgent,
-        outcomeSlotCount = tonumber(outcomeSlotCount)
-      })
-    }).receive()
+  -- Prepare Condition
+  local success = self:prepareCondition(conditionId, tonumber(outcomeSlotCount))
+  if not success then
+    return false, 'Condition already resolved!'
   end
 
-  -- Get Collection Ids
-  local collectionIds = ao.send({
-    Target = conditionalTokens,
-    Action = 'Get-Collection-Ids',
-    ParentCollectionId = parentCollectionId,
-    ConditionId = conditionId,
-    IndexSets = json.encode(self.generateBasicPartition(outcomeSlotCount))
-  }).receive().Data
-  local collectionIdsString = self.join(json.decode(collectionIds))
-
-  -- Get Position Ids
-  local positionIds = ao.send({
-    Target = conditionalTokens,
-    Action = 'Get-Position-Ids',
-    CollateralToken = collateralToken,
-    CollectionIds = collectionIds,
-  }).receive().Data
-  local positionIdsString = self.join(json.decode(positionIds))
-
-  -- Get Token Name and Ticker
-  local tokenNumber = self.counters[collateralToken] or 1
-  self.counters[collateralToken] = tokenNumber + 1
-  local tokenName = string.format('Outcome %s LP Token %s', self.lookup[collateralToken].ticker, tokenNumber)
-  local tokenTicker = string.format('O%s-LP-%s', self.lookup[collateralToken].ticker, tokenNumber)
-
   -- Spawn process
-  local cpmm = ao.spawn(ao.env.Module.Id, {
+  local market = ao.spawn(ao.env.Module.Id, {
     ["Authority"] = ao.authorities[1]
   }).receive()
+  print("market.Process: " .. market.Process)
 
   -- Add Source Code
   ao.send({
-    Target = cpmm.Process,
+    Target = market.Process,
     Action = 'Eval',
-    Data = cpmmSourceCode
+    Data = marketSourceCode
   })
+
+  -- Get Token Name and Ticker
+  local tokenRef = string.format('%s%s', string.sub(market.Process, 0, 4), string.sub(market.Process, -4))
+  local tokenName = string.format('Outcome %s Market %s', self.lookup[collateralToken].ticker, tokenRef)
+  local tokenTicker = string.format('O%s-%s', self.lookup[collateralToken].ticker, tokenRef)
+
+  -- Get Collection Ids
+  local collectionIds = {}
+  local indexSets = self.generateBasicPartition(outcomeSlotCount)
+  for i = 1, #indexSets do
+    local collectionId = self.getCollectionId('', conditionId, indexSets[i])
+    table.insert(collectionIds, collectionId)
+  end
+  local collectionIdsString = self.join(collectionIds)
+
+  -- Get Position Ids
+  local positionIds = {}
+  for i = 1, #collectionIds do
+    local positionId = self.getPositionId(collateralToken, collectionIds[i])
+    table.insert(positionIds, positionId)
+  end
+  local positionIdsString = self.join(positionIds)
 
   -- Insert into Markets table
   self.db:exec(
     string.format([[
-      INSERT INTO Markets (id, condition_id, question_id, question, conditional_tokens, quantity, collateral_token, parent_collection_id, outcome_slot_count, collection_ids, position_ids, partition, distribution, resolution_agent, process_id, token_name, token_ticker, created_by, created_at, status)
-      VALUES ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "created");
-    ]], marketId, conditionId, questionId, question, conditionalTokens, quantity, collateralToken, parentCollectionId, tostring(outcomeSlotCount), collectionIdsString, positionIdsString, json.encode(partition), json.encode(distribution), resolutionAgent, cpmm.Process, tokenName, tokenTicker, sender, os.time())
+      INSERT INTO Markets (id, condition_id, question_id, question, quantity, collateral_token, parent_collection_id, outcome_slot_count, collection_ids, position_ids, partition, distribution, resolution_agent, process_id, token_name, token_ticker, created_by, created_at, status)
+      VALUES ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "created");
+    ]], marketId, conditionId, questionId, question, quantity, collateralToken, parentCollectionId, tostring(outcomeSlotCount), collectionIdsString, positionIdsString, json.encode(partition), json.encode(distribution), resolutionAgent, market.Process, tokenName, tokenTicker, sender, os.time())
   )
+
+  print("marketId: " .. marketId)
 
   -- Check market was created 
   local marketData = self:getMarketById(marketId, 'created')
   if not marketData then
-    return false, marketId
+    return false, marketId, 'Market not created!'
   end
 
-  self.marketCreatedNotice(sender, marketId, cpmm.Process, resolutionAgent, question, questionId, conditionId, conditionalTokens, collateralToken, parentCollectionId, collectionIds, positionIds, outcomeSlotCount, partition, distribution, quantity)
-  return true, marketId
+  self.marketCreatedNotice(sender, marketId, market.Process, resolutionAgent, question, questionId, conditionId, collateralToken, parentCollectionId, collectionIds, positionIds, outcomeSlotCount, partition, distribution, quantity)
+  return true, marketId, ''
 end
 
 -- Init Market
@@ -138,13 +125,12 @@ function MarketFactoryMethods:initMarket(marketId, msg)
   local collectionIds = self.split(marketData.collection_ids, ',')
   local positionIds = self.split(marketData.position_ids, ',')
 
-  -- Init market
+  -- Init market (Prepares a condition and initializes a market)
   ao.send({
     Target = marketData.process_id,
     Action = 'Init',
     MarketId = marketData.id,
     ConditionId = marketData.condition_id,
-    ConditionalTokens = marketData.conditional_tokens,
     CollateralToken = marketData.collateral_token,
     CollectionIds = json.encode(collectionIds),
     PositionIds = json.encode(positionIds),
@@ -203,6 +189,110 @@ function MarketFactoryMethods:fundingAdded(marketProcessId)
   return true
 end
 
+-- Report Payouts
+function MarketFactoryMethods:reportPayouts(marketId, payoutNumerators, from)
+  -- Get market data
+  local marketData = self:getMarketById(marketId, 'funded')
+
+  -- Check market exists
+  if not marketData then
+    return false, 'Market not found!'
+  end
+
+  -- Check market resolve notice came from the market process
+  local marketProcessId = marketData.process_id
+  local resolutionAgent = marketData.resolution_agent
+  print("marketProcessId == from : " .. marketProcessId .. " == " .. from)
+  if not (marketProcessId == from or resolutionAgent == from) then
+    return false, 'Invalid resolver!'
+  end
+
+  -- Update Payout Numerators
+  local conditionId = marketData.condition_id
+
+  self.payoutNumerators[conditionId] = payoutNumerators
+
+  -- TODO: Send notice
+  -- self.marketResolvedNotice(marketData.created_by, marketData.id)
+  return true, ''
+end
+
+-- Create Parlay
+function MarketFactoryMethods:createParlay(marketIds, indexSets, distribution, collateralToken, msg)
+  print("createParlay")
+  assert(self.lookup[collateralToken], 'Collateral Token not approved!')
+
+  -- Retrieve Ids
+  local conditionIds = {}
+  for i = 1, #marketIds do
+    local marketData = self:getMarketById(marketIds[i], 'funded')
+    -- Assert market exists
+    if not marketData then
+      return false, 'Market not found!'
+    end
+    -- Assert indexSets are valid
+    if indexSets[i] > marketData.outcome_slot_count then
+      return false, 'Index set exceeds outcome slot count!'
+    end
+    table.insert(conditionIds, marketData.condition_id)
+  end
+
+  -- Sort Condition Ids
+  table.sort(conditionIds)
+  print('conditionIds: ' .. json.encode(conditionIds))
+
+  -- Set Parlay ConditionId 
+  local outcomeSlotCount = 2 -- Binary Parlays Only
+  local conditionId = self.getConditionId(ao.id, self.join(conditionIds), outcomeSlotCount)
+  local marketId = self.getMarketId("collateralToken", "", conditionId, '', msg.From)
+  print("marketId: " .. marketId)
+  
+  -- Prepare Condition
+  local success = self:prepareCondition(conditionId, tonumber(outcomeSlotCount))
+  if not success then
+    return false, 'Condition already resolved!'
+  end
+
+  -- Spawn process
+  local market = ao.spawn(ao.env.Module.Id, {
+    ["Authority"] = ao.authorities[1]
+  }).receive()
+  print("market.Process: " .. market.Process)
+
+  -- Get Token Name and Ticker
+  local tokenRef = string.format('%s%s', string.sub(market.Process, 0, 4), string.sub(market.Process, -4))
+  local tokenName = string.format('Outcome %s Market %s', self.lookup[collateralToken].ticker, tokenRef)
+  local tokenTicker = string.format('O%s-%s', self.lookup[collateralToken].ticker, tokenRef)
+
+  -- Get Collection Ids
+  local collectionIds = {}
+  local parlayIndexSets = self.generateBasicPartition(outcomeSlotCount)
+  for i = 1, #parlayIndexSets do
+    local collectionId = self.getCollectionId('', conditionId, parlayIndexSets[i])
+    table.insert(collectionIds, collectionId)
+  end
+  local collectionIdsString = self.join(collectionIds)
+
+  -- Get Position Ids
+  local positionIds = {}
+  for i = 1, #collectionIds do
+    local positionId = self.getPositionId(collateralToken, collectionIds[i])
+    table.insert(positionIds, positionId)
+  end
+  local positionIdsString = self.join(positionIds)
+
+  -- -- Insert into Markets table
+  -- self.db:exec(
+  --   string.format([[
+  --     INSERT INTO Markets (id, condition_id, question_id, question, quantity, collateral_token, parent_collection_id, outcome_slot_count, collection_ids, position_ids, partition, distribution, resolution_agent, process_id, token_name, token_ticker, created_by, created_at, status)
+  --     VALUES ("%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "%s", "created");
+  --   ]], marketId, conditionId, questionId, question, quantity, collateralToken, parentCollectionId, tostring(outcomeSlotCount), collectionIdsString, positionIdsString, json.encode(partition), json.encode(distribution), resolutionAgent, market.Process, tokenName, tokenTicker, sender, os.time())
+  -- )
+
+  print("TODO: insert into Markets table")
+
+  return true, ''
+end
 
 ---------------------------------------------------------------------------------
 -- READ FUNCTIONS ---------------------------------------------------------------

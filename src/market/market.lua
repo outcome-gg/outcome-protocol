@@ -16,23 +16,9 @@ if not Config or Config.resetState then Config = config:new() end
 if not CPMM or Config.resetState then CPMM = cpmm:new(Config) end
 if not ConditionalTokens or Config.resetState then ConditionalTokens = conditionalTokens:new(Config) end
 
--- @dev Link expected namespace variables
-Name = CPMM.token.name
-Ticker = CPMM.token.ticker
-Logo = CPMM.token.logo
-Balances = CPMM.token.balances
-TotalSupply = CPMM.token.totalSupply
-Denomination = CPMM.token.denomination
-BalancesById = ConditionalTokens.tokens.balancesById
-TotalSupplyById = ConditionalTokens.tokens.totalSupplyById
-PayoutNumerators = ConditionalTokens.payoutNumerators
-PayoutDenominator = ConditionalTokens.payoutDenominator
-DataIndex = config.DataIndex
-
 ---------------------------------------------------------------------------------
 -- MATCHING ---------------------------------------------------------------------
 ---------------------------------------------------------------------------------
-
 -- CPMM
 local function isAddFunding(msg)
   if msg.From == CPMM.collateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
@@ -122,10 +108,10 @@ end
 -- Info
 Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(msg)
   msg.reply({
-    Name = Name,
-    Ticker = Ticker,
-    Logo = Logo,
-    Denomination = tostring(Denomination),
+    Name = CPMM.token.name,
+    Ticker = CPMM.token.ticker,
+    Logo = CPMM.token.logo,
+    Denomination = tostring(CPMM.token.denomination),
     ConditionId = CPMM.conditionId,
     CollateralToken = CPMM.collateralToken,
     LpFee = CPMM.fee,
@@ -156,10 +142,14 @@ Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(m
   assert(#positionIds == 2, "Must have two positionIds!")
   assert(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount is required!")
   local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
+  -- Limit of 256 because we use a partition array that is a number of 256 bits.
+  assert(outcomeSlotCount <= 256, "Too many outcome slots!")
+  assert(outcomeSlotCount > 1, "There should be more than one outcome slot!")
   assert(msg.Tags.Name, "Name is required!")
   assert(msg.Tags.Ticker, "Ticker is required!")
   assert(msg.Tags.Logo, "Logo is required!")
 
+  ConditionalTokens:prepareCondition(msg.Tags.ConditionId, outcomeSlotCount, msg)
   CPMM:init(msg.Tags.CollateralToken, ao.id, msg.Tags.MarketId, msg.Tags.ConditionId, collectionIds, positionIds, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo, msg)
 end)
 
@@ -762,5 +752,19 @@ Handlers.add('Update-Logo', Handlers.utils.hasMatchingTag('Action', 'Update-Logo
 
   msg.reply({Action = 'Logo-Updated', Data = tostring(msg.Tags.Logo)})
 end)
+
+---------------------------------------------------------------------------------
+-- EVAL HANDLER -----------------------------------------------------------------
+---------------------------------------------------------------------------------
+
+-- Eval
+Handlers.once("Complete-Eval", Handlers.utils.hasMatchingTag("Action", "Complete-Eval"), function(msg)
+  msg.forward('NRKvM8X3TqjGGyrqyB677aVbxgONo5fBHkbxbUSa_Ug', {
+    Action = 'Eval-Completed',
+    Data = 'Eval-Completed'
+  })
+end)
+
+ao.send({Target = ao.id, Action = 'Complete-Eval'})
 
 return "ok"

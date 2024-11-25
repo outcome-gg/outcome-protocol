@@ -33,17 +33,26 @@ local function isFundingAdded(msg)
   end
 end
 
+-- Create Parlay
+local function isCreateParlay(msg)
+  if msg.Action == "Credit-Single-Notice" and msg["X-Action"] == "Create-Parlay" then
+      return true
+  else
+      return false
+  end
+end
+
 ---------------------------------------------------------------------------------
 -- WRITE HANDLERS ---------------------------------------------------------------
 ---------------------------------------------------------------------------------
--- Update Conditional Tokens
-Handlers.add('updateConditionalTokens', Handlers.utils.hasMatchingTag('Action', 'Update-Conditional-Tokens'), function(msg)
-  assert(type(msg.Tags['Collateral-Token']) == 'string', 'Collateral-Token is required!')
-  assert(type(msg.Tags['Conditional-Tokens']) == 'string', 'Conditional-Tokens is required!')
-  config.updateConditionalTokens(msg.Tags['Collateral-Token'], msg.Tags['Conditional-Tokens'])
+-- -- Update Conditional Tokens
+-- Handlers.add('updateConditionalTokens', Handlers.utils.hasMatchingTag('Action', 'Update-Conditional-Tokens'), function(msg)
+--   assert(type(msg.Tags['Collateral-Token']) == 'string', 'Collateral-Token is required!')
+--   assert(type(msg.Tags['Conditional-Tokens']) == 'string', 'Conditional-Tokens is required!')
+--   config.updateConditionalTokens(msg.Tags['Collateral-Token'], msg.Tags['Conditional-Tokens'])
 
-  msg.reply({ Action = 'Conditional-Tokens-Updated', CollateralToken = msg.Tags['Collateral-Token'], ConditionalTokens = msg.Tags['Conditional-Tokens'] })
-end)
+--   msg.reply({ Action = 'Conditional-Tokens-Updated', CollateralToken = msg.Tags['Collateral-Token'], ConditionalTokens = msg.Tags['Conditional-Tokens'] })
+-- end)
 
 -- Create Market
 --@dev TODO: decide if this should be open to anyone
@@ -54,6 +63,7 @@ Handlers.add('createMarket', isCreateMarket, function(msg)
   assert(msg.Tags['X-ResolutionAgent'], 'X-ResolutionAgent is required!')
   assert(msg.Tags['X-OutcomeSlotCount'], 'X-OutcomeSlotCount is required!')
   assert(bint.__lt(1, bint(msg.Tags['X-OutcomeSlotCount'])), 'X-OutcomeSlotCount must be greater than zero!')
+  assert(bint.__le(bint(msg.Tags['X-OutcomeSlotCount']), 256), 'X-OutcomeSlotCount must be less than or equal to 256!')
   assert(msg.Tags['X-Partition'], 'X-Partition is required!')
   local partition = json.decode(msg.Tags['X-Partition'])
   assert(type(partition) == 'table', 'X-Partition must be a table!')
@@ -63,7 +73,7 @@ Handlers.add('createMarket', isCreateMarket, function(msg)
   assert(type(distribution) == 'table', 'X-Distribution must be a table!')
 
   -- Create market
-  local success, marketId = MarketFactory:createMarket(msg.Tags['X-Question'], msg.Tags['X-ResolutionAgent'], msg.Tags['X-OutcomeSlotCount'], partition, distribution, msg.Tags['X-ParentCollectionId'], msg.Tags.Quantity, msg.From, msg.Tags['Sender'])
+  local success, marketId, message = MarketFactory:createMarket(msg.Tags['X-Question'], msg.Tags['X-ResolutionAgent'], msg.Tags['X-OutcomeSlotCount'], partition, distribution, msg.Tags['X-ParentCollectionId'], msg.Tags.Quantity, msg.From, msg.Tags['Sender'])
 
   if not success then
     -- Return funds
@@ -72,7 +82,7 @@ Handlers.add('createMarket', isCreateMarket, function(msg)
       Action = 'Transfer',
       Quantity = msg.Tags.Quantity,
       Recipient = msg.Tags['Sender'],
-      Error = 'Market-Created-Error: ' .. marketId
+      Error = 'Market-Created-Error: ' .. marketId .. ': ' .. message
     })
     -- Return error
     msg.forward(msg.Tags['Sender'], {
@@ -100,13 +110,63 @@ Handlers.add('initMarket', Handlers.utils.hasMatchingTag('Action', 'Init-Market'
   end
 end)
 
+Handlers.add('reportPayouts', Handlers.utils.hasMatchingTag("Action", "Report-Payouts"), function(msg)
+  assert(msg.Tags.MarketId, 'MarketId is required!')
+  assert(msg.Tags.PayoutNumerators, 'PayoutNumerators is required!')
+  local payoutNumerators = json.decode(msg.Tags.PayoutNumerators)
+
+  -- Resolve market
+  local success, errorMessage = MarketFactory:reportPayouts(msg.Tags.MarketId, payoutNumerators, msg.From)
+  print('resolveMarket' .. " " .. tostring(success) .. " " .. errorMessage)
+
+  if success then
+    msg.reply({
+      Action = 'Payouts-Reported',
+      MarketId = msg.Tags.MarketId
+    })
+  else
+    msg.reply({
+      Action = 'Report-Payouts-Error',
+      MarketId = msg.Tags.MarketId,
+      Error = errorMessage
+    })
+  end
+end)
+
+-- @dev TODO: update such that Parlay-Market is an X-Action
+Handlers.add('parlayMarket', Handlers.utils.hasMatchingTag("Action", "Create-Parlay"), function(msg)
+  assert(msg.Tags['MarketIds'], 'MarketIds is required!')
+  local marketIds = json.decode(msg.Tags['MarketIds'])
+  assert(type(marketIds) == 'table', 'MarketIds must be a table!')
+  assert(msg.Tags['IndexSets'], 'IndexSets is required!')
+  local indexSets = json.decode(msg.Tags['IndexSets'])
+  assert(type(indexSets) == 'table', 'IndexSets must be a table!')
+  assert(#indexSets == #marketIds, '@dev -1: IndexSets length must be one minus that of MarketIds!')
+  assert(msg.Tags['Distribution'], 'Distribution is required!')
+  local distribution = json.decode(msg.Tags['Distribution'])
+  assert(type(distribution) == 'table', 'Distribution must be a table!')
+
+  -- Create parlay
+  local success, errorMessage = MarketFactory:createParlay(marketIds, indexSets, distribution, 'bSKuupolDlqMoRggE6hDt1BBi9VZCOMSQLY0695-BkI', msg)
+
+  if not success then
+    -- Return error
+    msg.reply({
+      Action = 'Parlay-Initialized-Error',
+      MarketId = msg.MarketId,
+      Error = errorMessage
+    })
+    return
+  end
+end)
+
 ---------------------------------------------------------------------------------
 -- READ HANDLERS ----------------------------------------------------------------
 ---------------------------------------------------------------------------------
--- Get Lookup
-Handlers.add('updateConditionalTokens', Handlers.utils.hasMatchingTag('Action', 'Get-Lookup'), function(msg)
-  msg.reply({Action = 'Lookup', Data = MarketFactory.lookup})
-end)
+-- -- Get Lookup
+-- Handlers.add('updateConditionalTokens', Handlers.utils.hasMatchingTag('Action', 'Get-Lookup'), function(msg)
+--   msg.reply({Action = 'Lookup', Data = MarketFactory.lookup})
+-- end)
 
 -- Get Market
 Handlers.add('getMarketData', Handlers.utils.hasMatchingTag('Action', 'Get-Market-Data'), function(msg)
@@ -119,6 +179,15 @@ Handlers.add('getMarketData', Handlers.utils.hasMatchingTag('Action', 'Get-Marke
     MarketId = msg.Tags.MarketId,
     Data = json.encode(marketData)
   })
+end)
+
+-- Get Collection Id
+Handlers.add("Get-Collection-Id", Handlers.utils.hasMatchingTag("Action", "Get-Collection-Id"), function(msg)
+  assert(msg.Tags.ParentCollectionId, "ParentCollectionId is required!")
+  assert(msg.Tags.ConditionId, "ConditionId is required!")
+  assert(msg.Tags.IndexSet, "IndexSet is required!")
+  local collectionId = MarketFactory.getCollectionId(msg.Tags.ParentCollectionId, msg.Tags.ConditionId, msg.Tags.IndexSet)
+  msg.reply({ Action = "Collection-Id", MarketId = msg.Tags.MarketId, Data = collectionId })
 end)
 
 ---------------------------------------------------------------------------------
@@ -135,10 +204,9 @@ end)
 Handlers.add('updateLookup', Handlers.utils.hasMatchingTag('Action', 'Update-Lookup'), function(msg)
   assert(msg.Tags['CollateralToken'], 'CollateralToken is required!')
   assert(msg.Tags['CollateralTokenTicker'], 'CollateralTokenTicker is required!')
-  assert(msg.Tags['ConditionalTokens'], 'ConditionalTokens is required!')
   assert(msg.Tags['LpTokenLogo'], 'LpTokenLogo is required!')
 
-  local data = Config:updateLookup(msg.Tags['CollateralToken'], msg.Tags['CollateralTokenTicker'], msg.Tags['ConditionalTokens'], msg.Tags['LpTokenLogo'])
+  local data = Config:updateLookup(msg.Tags['CollateralToken'], msg.Tags['CollateralTokenTicker'], msg.Tags['LpTokenLogo'])
   msg.reply({
     Action = 'Lookup-Updated',
     Data = data

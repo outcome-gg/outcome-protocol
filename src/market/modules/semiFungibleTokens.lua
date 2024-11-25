@@ -44,10 +44,11 @@ function SemiFungibleTokensMethods:batchMint(to, ids, quantities)
   assert(#ids == #quantities, 'Ids and quantities must have the same lengths')
 
   for i = 1, #ids do
-    if not self.balancesById[ids[i]] then self.balancesById[ids[i]] = {} end
-    if not self.balancesById[ids[i]][to] then self.balancesById[ids[i]][to] = "0" end
+    -- @dev spacing to resolve text to code eval issue
+    if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end
+    if not self.balancesById[ ids[i] ][to] then self.balancesById[ ids[i] ][to] = "0" end
 
-    self.balancesById[ids[i]][to] = tostring(bint.__add(self.balancesById[ids[i]][to], quantities[i]))
+    self.balancesById[ ids[i] ][to] = tostring(bint.__add(self.balancesById[ ids[i] ][to], quantities[i]))
   end
 
   -- Send notice
@@ -80,17 +81,17 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)
 
   for i = 1, #ids do
     assert(bint.__lt(0, quantities[i]), 'Quantity must be greater than zero!')
-    assert(self.balancesById[ids[i]], 'Id must exist! ' .. ids[i])
-    assert(self.balancesById[ids[i]][from], 'User must hold token! ' .. ids[i])
-    assert(bint.__le(quantities[i], self.balancesById[ids[i]][from]), 'User must have sufficient tokens!')
+    assert(self.balancesById[ ids[i] ], 'Id must exist! ' .. ids[i])
+    assert(self.balancesById[ ids[i] ][from], 'User must hold token! ' .. ids[i])
+    assert(bint.__le(quantities[i], self.balancesById[ ids[i] ][from]), 'User must have sufficient tokens!')
   end
 
   local remainingBalances = {}
 
   -- Burn tokens
   for i = 1, #ids do
-    self.balancesById[ids[i]][from] = tostring(bint.__sub(self.balancesById[ids[i]][from], quantities[i]))
-    remainingBalances[i] = self.balancesById[ids[i]][from]
+    self.balancesById[ ids[i] ][from] = tostring(bint.__sub(self.balancesById[ ids[i] ][from], quantities[i]))
+    remainingBalances[i] = self.balancesById[ ids[i] ][from]
   end
   -- Draft notice
   local notice = {
@@ -151,16 +152,16 @@ function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantitie
   local quantities_ = {}
 
   for i = 1, #ids do
-    if not self.balancesById[ids[i]] then self.balancesById[ids[i]] = {} end
-    if not self.balancesById[ids[i]][from] then self.balancesById[ids[i]][from] = "0" end
-    if not self.balancesById[ids[i]][recipient] then self.balancesById[ids[i]][recipient] = "0" end
+    if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end
+    if not self.balancesById[ ids[i] ][from] then self.balancesById[ ids[i] ][from] = "0" end
+    if not self.balancesById[ ids[i] ][recipient] then self.balancesById[ ids[i] ][recipient] = "0" end
 
     local qty = bint(quantities[i])
-    local balance = bint(self.balancesById[ids[i]][from])
+    local balance = bint(self.balancesById[ ids[i] ][from])
 
     if bint.__le(qty, balance) then
-      self.balancesById[ids[i]][from] = tostring(bint.__sub(balance, qty))
-      self.balancesById[ids[i]][recipient] = tostring(bint.__add(self.balancesById[ids[i]][recipient], qty))
+      self.balancesById[ ids[i] ][from] = tostring(bint.__sub(balance, qty))
+      self.balancesById[ ids[i] ][recipient] = tostring(bint.__add(self.balancesById[ ids[i] ][recipient], qty))
       table.insert(ids_, ids[i])
       table.insert(quantities_, quantities[i])
     else
@@ -195,9 +196,9 @@ function SemiFungibleTokensMethods:getBatchBalance(recipients, tokenIds)
 
   for i = 1, #recipients do
     table.insert(bals, '0')
-    if self.balancesById[tokenIds[i]] then
-      if self.balancesById[tokenIds[i]][recipients[i]] then
-        bals[i] = self.balancesById[tokenIds[i]][recipients[i]]
+    if self.balancesById[ tokenIds[i] ] then
+      if self.balancesById[ tokenIds[i] ][ recipients[i] ] then
+        bals[i] = self.balancesById[ tokenIds[i] ][ recipients[i] ]
       end
     end
   end
@@ -218,9 +219,9 @@ function SemiFungibleTokensMethods:getBatchBalances(tokenIds)
   local bals = {}
 
   for i = 1, #tokenIds do
-    bals[tokenIds[i]] = {}
-    if self.balancesById[tokenIds[i]] then
-      bals[tokenIds[i]] = self.balancesById[tokenIds[i]]
+    bals[ tokenIds[i] ] = {}
+    if self.balancesById[ tokenIds[i] ] then
+      bals[ tokenIds[i] ] = self.balancesById[ tokenIds[i] ]
     end
   end
   -- return balances

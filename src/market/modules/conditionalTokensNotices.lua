@@ -6,17 +6,13 @@ local ConditionalTokensNotices = {}
 -- @dev Emitted upon the successful preparation of a condition.
 -- @param sender The address of the account that prepared the condition.
 -- @param conditionId The condition's ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(questionId, resolutionAgent, outcomeSlotCount))``.
--- @param resolutionAgent The process assigned to report the result for the prepared condition.
--- @param questionId An identifier for the question to be answered by the resolutionAgent.
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
 -- @param msg For sending msg.reply
-function ConditionalTokensNotices:conditionPreparationNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, msg)
+function ConditionalTokensNotices:conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
   -- TODO: Decide if to be sent to user and/or Data Index
   msg.reply({
     Action = "Condition-Preparation-Notice",
     ConditionId = conditionId,
-    ResolutionAgent = resolutionAgent,
-    QuestionId = questionId,
     OutcomeSlotCount = tostring(outcomeSlotCount)
   })
 end

@@ -29,12 +29,12 @@ function Config:new()
   obj.cpmm = cpmm
   -- Add LP Token
   local token = {
-    name = 'Outcome DAI LP Token 1',  -- LP Token Name
-    ticker = 'ODAI-LP-1',             -- LP Token Ticker
-    logo = '',                        -- LP Token Logo
-    balances = {},                    -- LP Token Balances
-    totalSupply = '0',                -- LP Token Total Supply
-    denomination = 12                 -- LP Token Denomination
+    name = '',                -- LP Token Name
+    ticker = '',              -- LP Token Ticker
+    logo = '',                -- LP Token Logo
+    balances = {},            -- LP Token Balances
+    totalSupply = '0',        -- LP Token Total Supply
+    denomination = 12         -- LP Token Denomination
   }
   obj.token = token
   -- Add Conditional Tokens

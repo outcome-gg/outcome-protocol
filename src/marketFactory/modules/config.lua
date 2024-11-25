@@ -11,9 +11,11 @@ function Config:new()
     version = '1.0.1',                -- Code version
     configurator = '',                -- Configurator process Id
     incentives = '',                  -- Incentives process Id
-    lookup = {},                      -- Lookup Table: { [CollateralToken Process Id] = { Name = [CollateralToken Name], ConditionalTokens = [ConditionalTokens Process Id], Logo = [Collateral LP Token Logo] } }
+    lookup = {},                      -- Lookup Table: { [CollateralToken Process Id] = { Name = [CollateralToken Name], Logo = [Collateral LP Token Logo] } }
     counters = {},                    -- Counters Table for TokenIds: { [CollateralToken Process Id] = [Counter Value] }
-    delay = 1000 * 60 * 60 * 24 * 3   -- Delay between update staging and action, in milliseconds, e.g. 3 days
+    delay = 1000 * 60 * 60 * 24 * 3,  -- Delay between update staging and action, in milliseconds, e.g. 3 days
+    payoutNumerators = {},            -- Payout Numerators for each outcomeSlot
+    payoutDenominator = {}            -- Payout Denominator
   }
   -- Add derived metadata
   obj.resetState = obj.env == 'DEV' or false
@@ -24,10 +26,9 @@ function Config:new()
 end
 
 -- Update Methods
-function ConfigMethods:updateLookup(collateralToken, collateralTokenTicker, conditionalTokens, lpTokenLogo)
+function ConfigMethods:updateLookup(collateralToken, collateralTokenTicker, lpTokenLogo)
   local lookupItem = {
     ticker = collateralTokenTicker,
-    conditionalTokens = conditionalTokens,
     logo = lpTokenLogo
   }
   self.lookup[collateralToken] = lookupItem
