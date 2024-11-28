@@ -751,6 +751,42 @@ describe("cpmm.integration.test", function () {
       expect(cpmmBalanceAfter).to.equal(parseAmount(0, 12))
     })
 
+    it("+ve should check positions after remove funding", async () => {
+      // await new Promise(resolve => setTimeout(resolve, 5000));
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+  
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+  
+      if (Error) {
+        console.log(Error)
+      }
+  
+      expect(Messages.length).to.be.equal(1)
+  
+      const balances = JSON.parse(Messages[0].Data)
+  
+      expect(balances[0][cpmm]).to.equal('150000000000000')
+      expect(balances[1][cpmm]).to.equal('150000000000000')
+
+      expect(balances[0][walletAddress]).to.equal('50000000000000')
+      expect(balances[1][walletAddress]).to.equal('50000000000000')
+    })
+
     it("-ve should fail to remove funding greater than balance", async () => {
       let messageId;
       let userBalanceBefore;
@@ -875,7 +911,7 @@ describe("cpmm.integration.test", function () {
 
       const buyAmount_ = Messages[0].Data
       
-      expect(buyAmount_).to.equal('89179358717434')
+      expect(buyAmount_).to.equal('86718045112781')
     })
   })
 
@@ -916,7 +952,7 @@ describe("cpmm.integration.test", function () {
 
       const sellAmount_ = Messages[0].Data
       
-      expect(sellAmount_).to.equal('118072618072620')
+      expect(sellAmount_).to.equal('126647182484748')
     })
   })
 
@@ -953,11 +989,11 @@ describe("cpmm.integration.test", function () {
   
       const balances = JSON.parse(Messages[0].Data)
   
-      expect(balances[0][cpmm]).to.equal('200000000000000')
-      expect(balances[1][cpmm]).to.equal('200000000000000')
+      expect(balances[0][cpmm]).to.equal('150000000000000')
+      expect(balances[1][cpmm]).to.equal('150000000000000')
 
-      expect(balances[0][walletAddress]).to.equal(undefined)
-      expect(balances[1][walletAddress]).to.equal(undefined)
+      expect(balances[0][walletAddress]).to.equal('50000000000000')
+      expect(balances[1][walletAddress]).to.equal('50000000000000')
     })
 
     it("+ve should buy position tokens", async () => {
@@ -1094,11 +1130,11 @@ describe("cpmm.integration.test", function () {
   
       const balances = JSON.parse(Messages[0].Data)
   
-      expect(balances[0][cpmm]).to.equal('190566936636494')
-      expect(balances[1][cpmm]).to.equal('209900000000000')
+      expect(balances[0][cpmm]).to.equal('140712945590995')
+      expect(balances[1][cpmm]).to.equal('159900000000000')
 
-      expect(balances[0][walletAddress]).to.equal('19333063363506')
-      expect(balances[1][walletAddress]).to.equal(undefined)
+      expect(balances[0][walletAddress]).to.equal('69187054409005')
+      expect(balances[1][walletAddress]).to.equal('50000000000000')
     })
 
     it("+ve should buy more position tokens", async () => {
@@ -1234,14 +1270,12 @@ describe("cpmm.integration.test", function () {
       expect(Messages.length).to.be.equal(1)
   
       const balances = JSON.parse(Messages[0].Data)
-      
-      expect(balances[0][cpmm]).to.equal('181983621474068')
-      expect(balances[1][cpmm]).to.equal('219800000000000')
+      expect(balances[0][cpmm]).to.equal('132508833922263')
+      expect(balances[1][cpmm]).to.equal('169800000000000')
 
       // @dev as expected, the user balance has increased by less than previous buy
-      // ie. 19333063363506 vs (19333063363506-849748201080)
-      expect(balances[0][walletAddress]).to.equal('37816378525932')
-      expect(balances[1][walletAddress]).to.equal(undefined)
+      expect(balances[0][walletAddress]).to.equal('87291166077737')
+      expect(balances[1][walletAddress]).to.equal('50000000000000')
     })
   })
 
@@ -1436,12 +1470,11 @@ describe("cpmm.integration.test", function () {
       expect(Messages.length).to.be.equal(1)
   
       const balances = JSON.parse(Messages[0].Data)
-  
-      expect(balances[0][cpmm]).to.equal('181983621474068')
-      expect(balances[1][cpmm]).to.equal('210507070707070')
+      expect(balances[0][cpmm]).to.equal('132508833922263')
+      expect(balances[1][cpmm]).to.equal('160507070707070')
 
-      expect(balances[0][walletAddress]).to.equal('28523449233002')
-      expect(balances[1][walletAddress]).to.equal(undefined)
+      expect(balances[0][walletAddress]).to.equal('77998236784807')
+      expect(balances[1][walletAddress]).to.equal('50000000000000')
     })
   })
 
@@ -1659,11 +1692,11 @@ describe("cpmm.integration.test", function () {
       const balances = JSON.parse(Messages[0].Data)
       
       // @dev unchanged
-      expect(balances[0][cpmm]).to.equal('181983621474068')
-      expect(balances[1][cpmm]).to.equal('210507070707070')
+      expect(balances[0][cpmm]).to.equal('132508833922263')
+      expect(balances[1][cpmm]).to.equal('160507070707070')
 
-      expect(balances[0][walletAddress]).to.equal('28523449233002')
-      expect(balances[1][walletAddress]).to.equal(undefined)
+      expect(balances[0][walletAddress]).to.equal('77998236784807')
+      expect(balances[1][walletAddress]).to.equal('50000000000000')
     })
 
     it("+ve should return collected fees after remove funding", async () => {

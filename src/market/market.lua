@@ -119,7 +119,7 @@ Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
   assert(msg.Tags.Quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
   if CPMM:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
-    CPMM:removeFunding(msg.Tags.Sender, msg.Tags.Quantity)
+    CPMM:removeFunding(msg.Tags.Sender, msg.Tags.Quantity, msg)
   end
 end)
 

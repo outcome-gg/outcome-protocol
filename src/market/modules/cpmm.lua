@@ -145,7 +145,7 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
   end
   -- Send back conditional tokens should there be an uneven distribution
   if #nonZeroAmounts ~= 0 then
-    ao.send({ Target = self.conditionalTokens, Action = "Transfer-Batch", Recipient = onBehalfOf, TokenIds = json.encode(nonZeroPositionIds), Quantities = json.encode(nonZeroAmounts)})
+    self.tokens:transferBatch(ao.id, onBehalfOf, self.positionIds, nonZeroAmounts, true, msg)
   end
   -- Transform sendBackAmounts to array of amounts added
   for i = 1, #sendBackAmounts do
@@ -156,7 +156,7 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
 end
 
 -- Remove Funding 
-function CPMMMethods:removeFunding(from, sharesToBurn)
+function CPMMMethods:removeFunding(from, sharesToBurn, msg)
   assert(bint.__lt(0, bint(sharesToBurn)), "funding must be non-zero")
   -- Get poolBalances
   local poolBalances = self:getPoolBalances()
@@ -175,7 +175,7 @@ function CPMMMethods:removeFunding(from, sharesToBurn)
     ao.send({ Target = self.collateralToken, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
   end
   -- Send conditionalTokens amounts
-  ao.send({ Target = self.conditionalTokens, Action = "Transfer-Batch", Recipient = from, TokenIds = json.encode(self.positionIds), Quantities = json.encode(sendAmounts)}).receive()
+  self.tokens:transferBatch(ao.id, from, self.positionIds, sendAmounts, false, msg)
   -- Send notice
   self.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
 end
