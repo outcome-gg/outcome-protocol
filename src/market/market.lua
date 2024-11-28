@@ -284,13 +284,6 @@ end)
 -- CTF WRITE HANDLERS -----------------------------------------------------------
 ---------------------------------------------------------------------------------
 
--- Merge Positions
-Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-Positions"), function(msg)
-  local data = json.decode(msg.Data)
-  assert(data.quantity, "Quantity is required!")
-  CPMM.tokens:mergePositions(msg.From, data.quantity, msg)
-end)
-
 -- Report Payouts
 Handlers.add("Report-Payouts", Handlers.utils.hasMatchingTag("Action", "Report-Payouts"), function(msg)
   CPMM.tokens:reportPayouts(msg)
