@@ -29,15 +29,6 @@ local function isAddFunding(msg)
   end
 end
 
-local function isAddFundingPosition(msg)
-  -- @dev was from CPMM.conditionalTokens. TODO: refactor/remove
-  if msg.From == ao.id  and msg.Action == "Split-Position-Notice" and msg.Tags["X-PositionId"] == "0" then
-    return true
-  else
-    return false
-  end
-end
-
 local function isRemoveFunding(msg)
   if msg.From == ao.id  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Remove-Funding" then
     return true
@@ -232,25 +223,6 @@ end)
 -- @dev Returns fees withdrawable by the message sender
 Handlers.add("Fees-Withdrawable", Handlers.utils.hasMatchingTag("Action", "Fees-Withdrawable"), function(msg)
   msg.reply({ Data = CPMM:feesWithdrawableBy(msg.From) })
-end)
-
----------------------------------------------------------------------------------
--- CPMM CALLBACK HANDLERS -------------------------------------------------------
----------------------------------------------------------------------------------
-
--- Add Funding Success
--- @dev called on split-position-notice from conditionalTokens with X-PositionId == 0
-Handlers.add('Add-Funding-Position', isAddFundingPosition, function(msg)
-  assert(msg.Tags.Quantity, 'Quantity is required!')
-  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
-  assert(msg.Tags['X-Sender'], 'X-Sender is required!')
-  assert(msg.Tags['X-OnBehalfOf'], 'X-OnBehalfOf is required!')
-  assert(msg.Tags['X-LPTokensMintAmount'], 'X-LPTokensMintAmount is required!')
-  assert(bint.__lt(0, bint(msg.Tags['X-LPTokensMintAmount'])), 'X-LPTokensMintAmount must be greater than zero!')
-  assert(msg.Tags['X-SendBackAmounts'], 'X-SendBackAmounts is required!')
-  local sendBackAmounts = json.decode(msg.Tags['X-SendBackAmounts'])
-
-  CPMM:addFundingPosition(msg.Tags['X-Sender'], msg.Tags['X-OnBehalfOf'], msg.Tags['Quantity'],  msg.Tags['X-LPTokensMintAmount'], sendBackAmounts)
 end)
 
 ---------------------------------------------------------------------------------
