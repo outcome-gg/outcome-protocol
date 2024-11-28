@@ -8,25 +8,31 @@ function Config:new()
   local obj = {
     env = 'DEV',                      -- Set to "PROD" for production, "DEV" to Reset State on each run
     version = '1.0.1',                -- Code version
-    incentives = '',                  -- Incentives process Id
-    configurator = '',                -- Configurator process Id
-    collateralToken = ''              -- Approved Collateral Token
+    incentives = '',                  -- Process ID of Incentives
+    configurator = '',                -- Process ID of Configurator 
+    collateralToken = '',             -- Process ID of Collateral Tokens
+    conditionalTokens = '',           -- Process ID of Conditional Tokens
+    marketFactory = '',               -- Process ID of Market Factory
+    marketId = '',                    -- Market ID
+    initialized = false               -- Initialized
   }
   -- Add CPMM
   local cpmm = {
-    marketFactory = '',       -- Market Factory process Id
-    conditionalTokens = '',   -- Process ID of Conditional Tokens
-    marketId = '',            -- Market ID
-    conditionId = '',         -- Condition ID
-    feePoolWeight = '0',      -- Fee Pool Weight
-    totalWithdrawnFees = '0', -- Total Withdrawn Fees
-    withdrawnFees = {},       -- Withdrawn Fees
-    collectionIds = {},       -- Collection IDs
-    positionIds = {},         -- Position IDs   
     poolBalances = {},        -- Pool Balances
-    outomeSlotCount = 2,      -- Outcome Slot Count
+    withdrawnFees = {},       -- Withdrawn Fees
+    totalWithdrawnFees = '0', -- Total Withdrawn Fees
+    feePoolWeight = '0',      -- Fee Pool Weight
   }
   obj.cpmm = cpmm
+  -- add CTF
+  local ctf = {
+    conditionId = '',         -- Condition ID
+    outomeSlotCount = nil,    -- Outcome Slot Count
+    positionIds = {},         -- Position IDs
+    payoutNumerators = {},    -- Payout Numerators, indexded by conditionalId to ensure payouts reported by resolution agent    
+    payoutDenominator = {}    -- Payout Denominator, indexded by conditionalId to ensure payouts reported by resolution agent 
+  }
+  obj.ctf = ctf
   -- Add LP Token
   local token = {
     name = '',                -- LP Token Name
@@ -49,7 +55,7 @@ function Config:new()
   obj.tokens = tokens
   -- Add LP Fee
   local lpFee = {
-    Percentage = tostring(bint(bint.__div(bint.__pow(10, obj.token.denomination), 100))), -- Fee Percentage, i.e. 1%
+    percentage = tostring(bint(bint.__div(bint.__pow(10, obj.token.denomination), 100))), -- Fee Percentage, i.e. 1%
     ONE = tostring(bint(bint.__pow(10, obj.token.denomination)))
   }
   obj.lpFee = lpFee

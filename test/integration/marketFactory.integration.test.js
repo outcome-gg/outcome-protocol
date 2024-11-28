@@ -112,6 +112,53 @@ describe("marketFactory.integration.test", function () {
     
   ))
 
+  /************************************************************************ 
+  * ConditionalTokens.Setup
+  ************************************************************************/
+  describe("cpmm.ConditionalTokens.Setup", function () {
+    it("+ve should get conditionId", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Get-Condition-Id" },
+          { name: "ResolutionAgent", value: resolutionAgent },
+          { name: "QuestionId", value: questionId },
+          { name: "OutcomeSlotCount", value: "2" }, 
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const questionId_ = Messages[0].Tags.find(t => t.name === 'QuestionId').value
+      const resolutionAgent_ = Messages[0].Tags.find(t => t.name === 'ResolutionAgent').value
+      const outcomeSlotCount_ = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
+
+      expect(action_).to.equal("Condition-Id")
+      expect(conditionId_).to.equal(conditionId)
+      expect(questionId_).to.equal(questionId)
+      expect(resolutionAgent_).to.equal(resolutionAgent)
+      expect(outcomeSlotCount_).to.equal("2")
+    })
+  })
+
   /***********************************************************************
   * MarketFactory: CREATE MARKET
   ************************************************************************/

@@ -81,4 +81,12 @@ function ConditionalTokensHelpers:returnTotalPayoutMinusTakeFee(collateralToken,
   })
 end
 
+function ConditionalTokensHelpers.generatePositionIds(outcomeSlotCount)
+  local partition = {}
+  for i = 0, outcomeSlotCount - 1 do
+    table.insert(partition, 1 << i)
+  end
+  return partition
+end
+
 return ConditionalTokensHelpers

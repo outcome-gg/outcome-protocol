@@ -1,36 +1,39 @@
 local json = require('json')
 local bint = require('.bint')(256)
 local ao = require('.ao')
-local Token = require('modules.token')
+local utils = require(".utils")
+local token = require('modules.token')
+local conditionalTokens = require('modules.conditionalTokens')
 local CPMMHelpers = require('modules.cpmmHelpers')
 
 local CPMM = {}
 local CPMMMethods = require('modules.cpmmNotices')
 local LPToken = {}
+local ConditionalTokens = {}
 
 -- Constructor for CPMM 
 function CPMM:new(config)
   -- Initialize Tokens and store the object
-  LPToken = Token:new(config.token.name, config.token.ticker, config.token.logo, config.token.balances, config.token.totalSupply, config.token.denomination)
-
+  LPToken = token:new(config.token.name, config.token.ticker, config.token.logo, config.token.balances, config.token.totalSupply, config.token.denomination)
+  ConditionalTokens = conditionalTokens:new(config)
   -- Create a new CPMM object
   local obj = {
-    -- LP Token Vars
-    token = LPToken,
-    -- CPMM Vars
-    initialized = false,
+    -- Market metadata vars
+    marketId = config.marketId,
     collateralToken = config.collateralToken,
-    conditionalTokens = config.cpmm.conditionalTokens,
-    conditionId = config.cpmm.conditionId,
-    collectionIds = config.cpmm.collectionIds,
-    positionIds = config.cpmm.positionIds,
+    initialized = config.initialized,
+    -- CPMM vars
+    poolBalances = config.cpmm.poolBalances,
     feePoolWeight = config.cpmm.feePoolWeight,
     totalWithdrawnFees = config.cpmm.totalWithdrawnFees,
     withdrawnFees = config.cpmm.withdrawnFees,
-    outcomeSlotCount = config.cpmm.outcomeSlotCount,
-    poolBalances = config.cpmm.poolBalances,
-    fee = config.lpFee.Percentage,
-    ONE = config.lpFee.ONE
+    -- ConditionalTokens vars
+    tokens = ConditionalTokens,
+    -- LP Token vars
+    token = LPToken,
+    -- LP Fee vars
+    fee = config.lpFee.percentage,
+    ONE = config.lpFee.ONE,
   }
 
   -- Set metatable for method lookups
@@ -42,6 +45,11 @@ function CPMM:new(config)
       -- Then, check in CPMMHelpers
       elseif CPMMHelpers[k] then
         return CPMMHelpers[k]
+      -- Lastly, look up the key in the ConditionalTokens methods
+      elseif ConditionalTokens[k] then
+        return ConditionalTokens[k]
+      else
+        return nil
       end
     end
   })
@@ -53,25 +61,23 @@ end
 ---------------------------------------------------------------------------------
 
 -- Init
-function CPMMMethods:init(collateralToken, conditionalTokens, marketId, conditionId, collectionIds, positionIds, outcomeSlotCount, name, ticker, logo, msg)
-  -- Set CPMM vars
+function CPMMMethods:init(collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, msg)
+  -- Set Market metadata vars
   self.marketId = marketId
-  self.conditionId = conditionId
-  self.conditionalTokens = conditionalTokens
+  -- Set CPMM vars
   self.collateralToken = collateralToken
-  self.collectionIds = collectionIds
-  self.positionIds = positionIds
-  self.outcomeSlotCount = outcomeSlotCount
-
+  -- Set Conditional Tokens vars
+  self.tokens.conditionId = conditionId
+  self.tokens.positionIds = positionIds
+  self.tokens.outcomeSlotCount = outcomeSlotCount
   -- Set LP Token vars
   self.token.name = name
   self.token.ticker = ticker
   self.token.logo = logo
-
   -- Initialized
   self.initialized = true
 
-  self.newMarketNotice(collateralToken, conditionalTokens, marketId, conditionId, collectionIds, positionIds, outcomeSlotCount, name, ticker, logo, msg)
+  self.newMarketNotice(collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, msg)
 end
 
 -- Add Funding 
@@ -79,30 +85,33 @@ end
 -- @dev: TODO: test that adding subsquent funding does not alter the probability distribution
 function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, msg)
   assert(bint.__lt(0, bint(addedFunds)), "funding must be non-zero")
-
   local sendBackAmounts = {}
   local poolShareSupply = self.token.totalSupply
   local mintAmount = '0'
 
   if bint.__lt(0, bint(poolShareSupply)) then
+    -- Additional Liquidity 
     assert(#distributionHint == 0, "cannot use distribution hint after initial funding")
-    local poolBalances = self.poolBalances
+    -- Get poolBalances
+    local poolBalances = self:getPoolBalances()
+    -- Calculate poolWeight
     local poolWeight = 0
-
     for i = 1, #poolBalances do
       local balance = poolBalances[i]
       if bint.__lt(poolWeight, bint(balance)) then
         poolWeight = bint(balance)
       end
     end
-
+    -- Calculate sendBackAmounts
     for i = 1, #poolBalances do
       local remaining = (addedFunds * poolBalances[i]) / poolWeight
       sendBackAmounts[i] = addedFunds - remaining
     end
+    -- Calculate mintAmount
     ---@diagnostic disable-next-line: param-type-mismatch
     mintAmount = tostring(math.floor(tostring(bint.__div(bint.__mul(addedFunds, poolShareSupply), poolWeight))))
   else
+    -- Initial Liquidity
     if #distributionHint > 0 then
       local maxHint = 0
       for i = 1, #distributionHint do
@@ -111,22 +120,19 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
           maxHint = hint
         end
       end
-
+      -- Calculate sendBackAmounts
       for i = 1, #distributionHint do
         local remaining = (addedFunds * distributionHint[i]) / maxHint
         assert(remaining > 0, "must hint a valid distribution")
         sendBackAmounts[i] = addedFunds - remaining
       end
     end
-
+    -- Calculate mintAmount
     mintAmount = tostring(addedFunds)
   end
-  -- @dev awaits via handlers before running CPMMMethods:addFundingPosition
-  self:createPosition(from, onBehalfOf, addedFunds, '0', '0', mintAmount, sendBackAmounts, msg)
-end
-
--- @dev Run on completion of self:createPosition external call
-function CPMMMethods:addFundingPosition(from, onBehalfOf, addedFunds, mintAmount, sendBackAmounts)
+  -- Mint Conditional Positions
+  self.tokens:splitPosition(ao.id, self.collateralToken, addedFunds, msg)
+  -- Mint LP Tokens
   self:mint(onBehalfOf, mintAmount)
   -- Remove non-zero items before transfer-batch
   local nonZeroAmounts = {}
@@ -152,8 +158,9 @@ end
 -- Remove Funding 
 function CPMMMethods:removeFunding(from, sharesToBurn)
   assert(bint.__lt(0, bint(sharesToBurn)), "funding must be non-zero")
-  -- Calculate conditionalTokens amounts
-  local poolBalances = self.poolBalances
+  -- Get poolBalances
+  local poolBalances = self:getPoolBalances()
+  -- Calculate sendAmounts
   local sendAmounts = {}
   for i = 1, #poolBalances do
     sendAmounts[i] = (poolBalances[i] * sharesToBurn) / self.token.totalSupply
@@ -174,18 +181,17 @@ function CPMMMethods:removeFunding(from, sharesToBurn)
 end
 
 -- Calc Buy Amount 
-function CPMMMethods:calcBuyAmount(investmentAmount, outcomeIndex)
+function CPMMMethods:calcBuyAmount(investmentAmount, positionId)
   assert(bint.__lt(0, investmentAmount), 'InvestmentAmount must be greater than zero!')
-  assert(bint.__lt(0, outcomeIndex), 'OutcomeIndex must be greater than zero!')
-  assert(bint.__le(outcomeIndex, #self.positionIds), 'OutcomeIndex must be less than or equal to PositionIds length!')
+  assert(utils.includes(positionId, self.positionIds), 'PositionId must be valid!')
 
-  local poolBalances = self.poolBalances
+  local poolBalances = self:getPoolBalances()
   local investmentAmountMinusFees = investmentAmount - ((investmentAmount * self.fee) / self.ONE)
-  local buyTokenPoolBalance = poolBalances[outcomeIndex]
+  local buyTokenPoolBalance = poolBalances[positionId]
   local endingOutcomeBalance = buyTokenPoolBalance * self.ONE
 
   for i = 1, #poolBalances do
-    if i ~= outcomeIndex then
+    if i ~= positionId then
       local poolBalance = poolBalances[i]
       endingOutcomeBalance = CPMMHelpers.ceildiv(tonumber(endingOutcomeBalance * poolBalance), tonumber(poolBalance + investmentAmountMinusFees))
     end
@@ -196,18 +202,17 @@ function CPMMMethods:calcBuyAmount(investmentAmount, outcomeIndex)
 end
 
 -- Calc Sell Amount
-function CPMMMethods:calcSellAmount(returnAmount, outcomeIndex)
+function CPMMMethods:calcSellAmount(returnAmount, positionId)
   assert(bint.__lt(0, returnAmount), 'ReturnAmount must be greater than zero!')
-  assert(bint.__lt(0, outcomeIndex), 'OutcomeIndex must be greater than zero!')
-  assert(bint.__le(outcomeIndex, #self.positionIds), 'OutcomeIndex must be less than or equal to PositionIds length!')
+  assert(utils.includes(positionId, self.positionIds), 'PositionId must be valid!')
 
-  local poolBalances = self.poolBalances
+  local poolBalances = self:getPoolBalances()
   local returnAmountPlusFees = CPMMHelpers.ceildiv(tonumber(returnAmount * self.ONE), tonumber(self.ONE - self.fee))
-  local sellTokenPoolBalance = poolBalances[outcomeIndex]
+  local sellTokenPoolBalance = poolBalances[positionId]
   local endingOutcomeBalance = sellTokenPoolBalance * self.ONE
 
   for i = 1, #poolBalances do
-    if i ~= outcomeIndex then
+    if i ~= positionId then
       local poolBalance = poolBalances[i]
       endingOutcomeBalance = CPMMHelpers.ceildiv(tonumber(endingOutcomeBalance * poolBalance), tonumber(poolBalance - returnAmountPlusFees))
     end
@@ -218,34 +223,51 @@ function CPMMMethods:calcSellAmount(returnAmount, outcomeIndex)
 end
 
 -- Buy 
-function CPMMMethods:buy(from, onBehalfOf, investmentAmount, outcomeIndex, minOutcomeTokensToBuy, msg)
-  local outcomeTokensToBuy = self:calcBuyAmount(investmentAmount, outcomeIndex)
+function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minOutcomeTokensToBuy, msg)
+  local outcomeTokensToBuy = self:calcBuyAmount(investmentAmount, positionId)
   assert(bint.__le(minOutcomeTokensToBuy, bint(outcomeTokensToBuy)), "Minimum outcome tokens not reached!")
-
+  -- Calculate investmentAmountMinusFees.
   local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(investmentAmount, self.fee), self.ONE)))
   self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
   local investmentAmountMinusFees = tostring(bint.__sub(investmentAmount, bint(feeAmount)))
   -- Split position through all conditions
-  self:createPosition(from, onBehalfOf, investmentAmountMinusFees, outcomeIndex, outcomeTokensToBuy, 0, {}, msg)
-  -- Send notice (Process continued via "BuyOrderCompletion" handler)
-  self.buyNotice(from, investmentAmount, feeAmount, outcomeIndex, outcomeTokensToBuy)
+  self.tokens:splitPosition(ao.id, self.collateralToken, investmentAmountMinusFees, msg)
+  -- Transfer buy position to sender
+  self.tokens:transferSingle(ao.id, from, positionId, outcomeTokensToBuy, false, msg)
+  -- Send notice.
+  self.buyNotice(from, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
 end
 
 -- Sell 
-function CPMMMethods:sell(from, returnAmount, outcomeIndex, maxOutcomeTokensToSell)
-  local outcomeTokensToSell = self:calcSellAmount(returnAmount, outcomeIndex)
+function CPMMMethods:sell(from, returnAmount, positionId, quantity, maxOutcomeTokensToSell, msg)
+  -- Calculate outcome tokens to sell.
+  local outcomeTokensToSell = self:calcSellAmount(returnAmount, positionId)
   assert(bint.__le(bint(outcomeTokensToSell), bint(maxOutcomeTokensToSell)), "Maximum sell amount exceeded!")
-
+  -- Calculate returnAmountPlusFees.
   local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(returnAmount, self.fee), bint.__sub(self.ONE, self.fee))))
   self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
   local returnAmountPlusFees = tostring(bint.__add(returnAmount, bint(feeAmount)))
-  -- Check sufficient liquidity in the conditional tokens process or revert
-  local collataralBalance = ao.send({Target = self.collateralToken, Recipient = self.conditionalTokens, Action = "Balance"}).receive().Data
+  -- Check sufficient liquidity within the process or revert.
+  local collataralBalance = ao.send({Target = self.collateralToken, Action = "Balance"}).receive().Data
   assert(bint.__le(bint(returnAmountPlusFees), bint(collataralBalance)), "Insufficient liquidity!")
-  -- Merge positions through all conditions
-  self:mergePositions(from, returnAmount, returnAmountPlusFees, outcomeIndex, outcomeTokensToSell)
+  -- Check user balance and transfer outcomeTokensToSell to process before merge.
+  local balance = self.tokens:getBalance(from, nil, positionId)
+  assert(bint.__le(bint(quantity), bint(balance)), 'Insufficient balance')
+  self.tokens:transferSingle(from, ao.id, positionId, outcomeTokensToSell, true, msg)
+  -- Merge positions through all conditions (burns returnAmountPlusFees).
+  self.tokens:mergePositions(ao.id, returnAmountPlusFees, msg)
+  -- Returns collateral to the user
+  ao.send({
+    Target = self.collateralToken,
+    Action = "Transfer",
+    Quantity = returnAmount,
+    Recipient = from
+  }).receive()
+  -- Returns unburned conditional tokens to user 
+  local unburned = bint.__sub(bint(quantity), bint(returnAmountPlusFees))
+  self.tokens:transferSingle(ao.id, from, positionId, unburned, true, msg)
   -- Send notice (Process continued via "SellOrderCompletionCollateralToken" and "SellOrderCompletionConditionalTokens" handlers)
-  self.sellNotice(from, returnAmount, feeAmount, outcomeIndex, outcomeTokensToSell)
+  self.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)
 end
 
 -- Fees

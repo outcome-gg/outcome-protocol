@@ -3,14 +3,12 @@ local json = require('json')
 
 local CPMMNotices = {}
 
-function CPMMNotices.newMarketNotice(collateralToken, conditionalTokens, marketId, conditionId, collectionIds, positionIds, outcomeSlotCount, name, ticker, logo, msg)
+function CPMMNotices.newMarketNotice(collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, msg)
   msg.reply({
     Action = "New-Market-Notice",
     MarketId = marketId,
     ConditionId = conditionId,
-    ConditionalTokens = conditionalTokens,
     CollateralToken = collateralToken,
-    CollectionIds = json.encode(collectionIds),
     PositionIds = json.encode(positionIds),
     OutcomeSlotCount = tostring(outcomeSlotCount),
     Name = name,
@@ -41,25 +39,25 @@ function CPMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFr
   })
 end
 
-function CPMMNotices.buyNotice(from, investmentAmount, feeAmount, outcomeIndex, outcomeTokensToBuy)
+function CPMMNotices.buyNotice(from, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
   ao.send({
     Target = from,
     Action = "Buy-Notice",
     InvestmentAmount = tostring(investmentAmount),
     FeeAmount = tostring(feeAmount),
-    OutcomeIndex = tostring(outcomeIndex),
+    PositionId = positionId,
     OutcomeTokensToBuy = tostring(outcomeTokensToBuy),
     Data = "Successfully buy order"
   })
 end
 
-function CPMMNotices.sellNotice(from, returnAmount, feeAmount, outcomeIndex, outcomeTokensToSell)
+function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)
   ao.send({
     Target = from,
     Action = "Sell-Notice",
     ReturnAmount = tostring(returnAmount),
     FeeAmount = tostring(feeAmount),
-    OutcomeIndex = tostring(outcomeIndex),
+    PositionId = positionId,
     OutcomeTokensToSell = tostring(outcomeTokensToSell),
     Data = "Successfully sell order"
   })

@@ -39,20 +39,16 @@ end
 -- @dev Emitted when a position is successfully split.
 -- @param from The address of the account that split the position.
 -- @param collateralToken The address of the collateral token.
--- @param parentCollectionId The parent collection ID.
 -- @param conditionId The condition ID.
--- @param partition The partition.
 -- @param quantity The quantity.
 -- @param msg For sending X-Tags
-function ConditionalTokensNotices:positionSplitNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity, msg)
+function ConditionalTokensNotices:positionSplitNotice(from, collateralToken, conditionId, quantity, msg)
   local notice = {
     Action = "Split-Position-Notice",
     Process = ao.id,
     Stakeholder = from,
     CollateralToken = collateralToken,
-    ParentCollectionId = parentCollectionId,
     ConditionId = conditionId,
-    Partition = json.encode(partition),
     Quantity = quantity
   }
   -- Forward tags
@@ -69,19 +65,13 @@ end
 
 -- @dev Emitted when positions are successfully merged.
 -- @param from The address of the account that merged the positions.
--- @param collateralToken The address of the collateral token.
--- @param parentCollectionId The parent collection ID.
 -- @param conditionId The condition ID.
--- @param partition The partition.
 -- @param quantity The quantity.
-function ConditionalTokensNotices:positionsMergeNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
+function ConditionalTokensNotices:positionsMergeNotice(from, conditionId, quantity)
   ao.send({
     Target = from,
     Action = "Merge-Positions-Notice",
-    CollateralToken = collateralToken,
-    ParentCollectionId = parentCollectionId,
     ConditionId = conditionId,
-    Partition = json.encode(partition),
     Quantity = quantity
   })
 end

@@ -18,8 +18,11 @@ function ConditionalTokens:new(config)
   local obj = {
     -- SemiFungible Tokens
     tokens = SemiFungibleTokens,
-    payoutNumerators = {},
-    payoutDenominator = {},
+    conditionId = config.ctf.conditionId,
+    positionIds = config.ctf.positionIds,
+    outcomeSlotCount = config.ctf.outcomeSlotCount,
+    payoutNumerators = config.ctf.payoutNumerators,
+    payoutDenominator = config.ctf.payoutDenominator,
     takeFeePercentage = config.takeFee.percentage,
     takeFeeTarget = config.takeFee.target,
     ONE = config.takeFee.ONE,
@@ -91,59 +94,23 @@ function ConditionalTokensMethods:reportPayouts(msg)
   self:conditionResolutionNotice(conditionId, msg.From, data.questionId, outcomeSlotCount, json.encode(self.payoutNumerators[conditionId]))
 end
 
--- @dev This function splits a position. If splitting from the collateral, this contract will attempt to transfer `amount` collateral from the message sender to itself. 
--- Otherwise, this contract will burn `quantity` stake held by the message sender in the position being split worth of semi-fungible tokens. 
--- Regardless, if successful, `quantity` stake will be minted in the split target positions. If any of the transfers, mints, or burns fail, the transaction will revert.
--- The transaction will also revert if the given partition is trivial, invalid, or refers to more slots than the condition is prepared with.
+-- @dev This function splits a position from collateral. This contract will attempt to transfer `amount` collateral from the message sender to itself. 
+-- If successful, `quantity` stake will be minted in the split target positions. If any of the transfers, mints, or burns fail, the transaction will revert.
 -- @param from The initiator of the original Split-Position / Create-Position action message.
 -- @param collateralToken The address of the positions' backing collateral token.
--- @param parentCollectionId The ID of the outcome collections common to the position being split and the split target positions. May be null, in which only the collateral is shared.
--- @param conditionId The ID of the condition to split on.
--- @param partition An array of disjoint index sets representing a nontrivial partition of the outcome slots of the given condition. E.g. A|B and C but not A|B and B|C (is not disjoint). Each element's a number which, together with the condition, represents the outcome collection. E.g. 0b110 is A|B, 0b010 is B, etc.
 -- @param quantity The quantity of collateral or stake to split.
--- @param isCreate True if the position is being split from the collateralToken.
 -- @param msg Msg passed to retrieve x-tags
-function ConditionalTokensMethods:splitPosition(from, collateralToken, parentCollectionId, conditionId, partition, quantity, isCreate, msg)
-  assert(#partition > 1, "got empty or singleton partition")
-  assert(self.payoutNumerators[conditionId] and #self.payoutNumerators[conditionId] > 0, "condition not prepared yet")
-
-  local outcomeSlotCount = #self.payoutNumerators[conditionId]
-
-  -- For a condition with 4 outcomes fullIndexSet's 0b1111; for 5 it's 0b11111...
-  local fullIndexSet = (1 << outcomeSlotCount) - 1
-
-  -- freeIndexSet starts as the full collection
-  local freeIndexSet = fullIndexSet
-
-  -- This loop checks that all condition sets are disjoint (the same outcome is not part of more than 1 set)
-  local positionIds = {}
+function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)
+  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] > 0, "condition not prepared yet")
+  -- Create equal split positions.
   local quantities = {}
-  for i = 1, #partition do
-    local indexSet = partition[i]
-    assert(indexSet > 0 and indexSet < fullIndexSet, "got invalid index set " .. "partition: " .. json.encode(partition) .. tostring(indexSet) .. " " .. tostring(fullIndexSet))
-    assert((indexSet & freeIndexSet) == indexSet, "partition not disjoint")
-    freeIndexSet = freeIndexSet ~ indexSet
-    positionIds[i] = self.getPositionId(collateralToken, self.getCollectionId(parentCollectionId, conditionId, indexSet))
-    quantities[i] = quantity
+  for _ = 1, #self.positionIds do
+    table.insert(quantities, quantity)
   end
-
-  if freeIndexSet == 0 then
-    -- Partitioning the full set of outcomes for the condition in this branch
-    if parentCollectionId == "" then
-      assert(isCreate, "could not receive collateral tokens")
-    else
-      SemiFungibleTokens:burn(from, self.getPositionId(collateralToken, parentCollectionId), quantity)
-    end
-  else
-    -- Partitioning a subset of outcomes for the condition in this branch.
-    -- For example, for a condition with three outcomes A, B, and C, this branch
-    -- allows the splitting of a position $:(A|C) to positions $:(A) and $:(C).
-    SemiFungibleTokens:burn(from, self.getPositionId(collateralToken, parentCollectionId), quantity)
-  end
-
-  SemiFungibleTokens:batchMint(from, positionIds, quantities)
-
-  self:positionSplitNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity, msg)
+  -- Mint the stake in the split target positions.
+  SemiFungibleTokens:batchMint(from, self.positionIds, quantities)
+  -- Send notice.
+  self:positionSplitNotice(from, collateralToken, self.conditionId, quantity, msg)
 end
 
 -- @dev This function merges positions. If merging to the collateral, this contract will attempt to transfer `quantity` collateral to the message sender.
@@ -156,59 +123,30 @@ end
 -- @param partition An array of disjoint index sets representing a nontrivial partition of the outcome slots of the given condition. E.g. A|B and C but not A|B and B|C (is not disjoint). Each element's a number which, together with the condition, represents the outcome collection. E.g. 0b110 is A|B, 0b010 is B, etc.
 -- @param quantity The quantity of collateral or stake to merge.
 -- @param msg Msg passed to retrieve x-tags
-function ConditionalTokensMethods:mergePositions(from, collateralToken, parentCollectionId, conditionId, partition, quantity, msg)
-  assert(#partition > 1, "got empty or singleton partition")
-  assert(self.payoutNumerators[conditionId] and #self.payoutNumerators[conditionId] > 0, "condition not prepared yet")
+function ConditionalTokensMethods:mergePositions(from, quantity, msg)
+  -- assert(#partition > 1, "got empty or singleton partition")
+  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] > 0, "condition not prepared yet")
 
-  local outcomeSlotCount = #self.payoutNumerators[conditionId]
-
-  -- For a condition with 4 outcomes fullIndexSet's 0b1111; for 5 it's 0b11111...
-  local fullIndexSet = (1 << outcomeSlotCount) - 1
-
-  -- freeIndexSet starts as the full collection
-  local freeIndexSet = fullIndexSet
-  -- This loop checks that all condition sets are disjoint (the same outcome is not part of more than 1 set)
-  local positionIds = {}
+  -- Create equal merge positions.
   local quantities = {}
-  for i = 1, #partition do
-    local indexSet = partition[i]
-    assert(indexSet > 0 and indexSet < fullIndexSet, "got invalid index set partition: " .. json.encode(partition) .. tostring(indexSet) .. " " .. tostring(fullIndexSet))
-    assert((indexSet & freeIndexSet) == indexSet, "partition not disjoint")
-    freeIndexSet = freeIndexSet ~ indexSet
-    positionIds[i] = self.getPositionId(collateralToken, self.getCollectionId(parentCollectionId, conditionId, indexSet))
-    quantities[i] = quantity
+  for _ = 1, #self.positionIds do
+    table.insert(quantities, quantity)
   end
 
-  SemiFungibleTokens:batchBurn(from, positionIds, quantities, msg)
+  self.tokens:batchBurn(from, self.positionIds, quantities, msg)
 
-  local mergeToCollateral = false
+  -- ao.send({
+  --   Target = self.collateralToken,
+  --   Action = "Transfer",
+  --   Recipient = from,
+  --   Quantity = tostring(quantity),
+  --   ['X-Action'] = "Merge-Positions-Completion",
+  --   ['X-ConditionId'] = self.conditionId,
+  --   ['X-Sender'] = msg.Tags['X-Sender'], -- for amm
+  --   ['X-ReturnAmount'] = msg.Tags['X-ReturnAmount'], -- for amm
+  -- }).receive() -- await
 
-  if freeIndexSet == 0 then
-    if parentCollectionId == "" then
-      mergeToCollateral = true
-      ao.send({
-        Target = collateralToken,
-        Action = "Transfer",
-        Recipient = from,
-        Quantity = tostring(quantity),
-        ['X-Action'] = "Merge-Positions-Completion",
-        ['X-CollateralToken'] = collateralToken,
-        ['X-ParentCollectionId'] = parentCollectionId,
-        ['X-ConditionId'] = conditionId,
-        ['X-Partition'] = json.encode(partition),
-        ['X-Sender'] = msg.Tags['X-Sender'], -- for amm
-        ['X-ReturnAmount'] = msg.Tags['X-ReturnAmount'], -- for amm
-      })
-    else
-      SemiFungibleTokens:mint(from, self.getPositionId(collateralToken, parentCollectionId), quantity)
-    end
-  else
-    SemiFungibleTokens:mint(from, self.getPositionId(collateralToken, self.getCollectionId(parentCollectionId, conditionId, fullIndexSet ~ freeIndexSet)), quantity, "")
-  end
-
-  if not mergeToCollateral then
-    self:positionsMergeNotice(from, collateralToken, parentCollectionId, conditionId, partition, quantity)
-  end
+  self:positionsMergeNotice(from, self.conditionId, quantity)
 end
 
 -- @dev This function redeems positions. If redeeming to the collateral, this contract will attempt to transfer the payout to the message sender.

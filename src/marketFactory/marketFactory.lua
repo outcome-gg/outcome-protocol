@@ -181,6 +181,15 @@ Handlers.add('getMarketData', Handlers.utils.hasMatchingTag('Action', 'Get-Marke
   })
 end)
 
+-- Get Condition Id
+Handlers.add("Get-Condition-Id", Handlers.utils.hasMatchingTag("Action", "Get-Condition-Id"), function(msg)
+  assert(msg.Tags.ResolutionAgent, "ResolutionAgent is required!")
+  assert(msg.Tags.QuestionId, "QuestionId is required!")
+  assert(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount is required!")
+  local conditionId = MarketFactory.getConditionId(msg.Tags.ResolutionAgent, msg.Tags.QuestionId, msg.Tags.OutcomeSlotCount)
+  msg.reply({ Action = "Condition-Id", ResolutionAgent = msg.Tags.ResolutionAgent, QuestionId = msg.Tags.QuestionId, OutcomeSlotCount = msg.Tags.OutcomeSlotCount, ConditionId = conditionId })
+end)
+
 -- Get Collection Id
 Handlers.add("Get-Collection-Id", Handlers.utils.hasMatchingTag("Action", "Get-Collection-Id"), function(msg)
   assert(msg.Tags.ParentCollectionId, "ParentCollectionId is required!")

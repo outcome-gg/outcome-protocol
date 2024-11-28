@@ -1,5 +1,4 @@
 local bint = require('.bint')(256)
-local json = require('json')
 local ao = require('.ao')
 
 local CPMMHelpers = {}
@@ -12,11 +11,11 @@ function CPMMHelpers.ceildiv(x, y)
   return math.floor(x / y)
 end
 
--- Generate basic partition
+
 --@dev generates basic partition based on outcomesSlotCount
-function CPMMHelpers:generateBasicPartition()
+function CPMMHelpers.generateBasicPartition(outcomeSlotCount)
   local partition = {}
-  for i = 0, self.outcomeSlotCount - 1 do
+  for i = 0, outcomeSlotCount - 1 do
     table.insert(partition, 1 << i)
   end
   return partition
@@ -34,7 +33,7 @@ function CPMMHelpers:validateAddFunding(from, quantity, distribution)
   elseif not error then
     if bint.iszero(bint(self.token.totalSupply)) then
       -- Ensure distribution is set across all position ids
-      if #distribution ~= #self.positionIds then
+      if #distribution ~= #self.tokens.positionIds then
         error = true
         errorMessage = "Distribution length mismatch"
       end
@@ -63,7 +62,7 @@ end
 function CPMMHelpers:validateRemoveFunding(from, quantity)
   local error = false
   local balance = self.token.balances[from] or '0'
-  if not bint.__lt(bint(quantity), bint(balance)) then
+  if not bint.__le(bint(quantity), bint(balance)) then
     error = true
     ao.send({
       Target = ao.id,
@@ -76,56 +75,14 @@ function CPMMHelpers:validateRemoveFunding(from, quantity)
   return not error
 end
 
--- @dev creates a position within the conditionalTokens process
-function CPMMHelpers:createPosition(from, onBehalfOf, quantity, outcomeIndex, outcomeTokensToBuy, lpTokensMintAmount, sendBackAmounts, msg)
-  msg.forward(self.collateralToken, {
-    Action = "Transfer",
-    Quantity = quantity,
-    Recipient = self.conditionalTokens,
-    ['X-Action'] = "Create-Position",
-    ['X-ParentCollectionId'] = "",
-    ['X-ConditionId'] = self.conditionId,
-    ['X-Partition'] = json.encode(self:generateBasicPartition()),
-    ['X-OutcomeIndex'] = tostring(outcomeIndex),
-    ['X-OutcomeTokensToBuy'] = tostring(outcomeTokensToBuy),
-    ['X-LPTokensMintAmount'] = tostring(lpTokensMintAmount),
-    ['X-SendBackAmounts'] = json.encode(sendBackAmounts),
-    ['X-Sender'] = from,
-    ['X-OnBehalfOf'] = onBehalfOf
-  })
-end
-
--- @dev merges positions within the conditionalTokens process
-function CPMMHelpers:mergePositions(from, returnAmount, returnAmountPlusFees, outcomeIndex, outcomeTokensToSell)
-  ao.send({
-    Target = self.conditionalTokens,
-    Action = "Merge-Positions",
-    ['X-Sender'] = from,
-    ['X-ReturnAmount'] = returnAmount,
-    ['X-OutcomeIndex'] = tostring(outcomeIndex),
-    ['X-OutcomeTokensToSell'] = tostring(outcomeTokensToSell),
-    Data = json.encode({
-      collateralToken = self.collateralToken,
-      parentCollectionId = '',
-      conditionId = self.conditionId,
-      partition = self:generateBasicPartition(),
-      quantity = returnAmountPlusFees
-    })
-  })
-end
-
 -- @dev get pool balances
 function CPMMHelpers:getPoolBalances()
-  local thises = {}
-  for i = 1, #self.positionIds do
-    thises[i] = ao.id
+  -- Get poolBalances
+  local selves = {}
+  for _ = 1, #self.tokens.positionIds do
+    table.insert(selves, ao.id)
   end
-  local poolBalances = ao.send({
-    Target = self.conditionalTokens,
-    Action = "Batch-Balance",
-    Recipients = json.encode(thises),
-    TokenIds = json.encode(self.positionIds)
-  }).receive().Data
+  local poolBalances = self.tokens:getBatchBalance(selves, self.tokens.positionIds)
   return poolBalances
 end
 
