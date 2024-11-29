@@ -25,7 +25,6 @@ end
 function CPMMHelpers:validateAddFunding(from, quantity, distribution)
   local error = false
   local errorMessage = ''
-
   -- Ensure distribution
   if not distribution then
     error = true

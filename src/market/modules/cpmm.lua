@@ -60,7 +60,9 @@ end
 ---------------------------------------------------------------------------------
 
 -- Init
-function CPMMMethods:init(collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, msg)
+function CPMMMethods:init(collateralToken, marketId, conditionId, outcomeSlotCount, name, ticker, logo, msg)
+  -- Generate Position Ids
+  local positionIds = self.tokens.generatePositionIds(outcomeSlotCount)
   -- Set Conditional Tokens vars
   self.tokens.collateralToken = collateralToken
   self.tokens.conditionId = conditionId
@@ -73,7 +75,9 @@ function CPMMMethods:init(collateralToken, marketId, conditionId, positionIds, o
   -- Initialized
   self.marketId = marketId
   self.initialized = true
-
+  -- Prepare Condition
+  self.tokens:prepareCondition(conditionId, outcomeSlotCount, msg)
+  -- Init CPMM with market details
   self.newMarketNotice(collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, msg)
 end
 
@@ -150,6 +154,7 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
   end
   -- Send notice with amounts added
   self.fundingAddedNotice(from, sendBackAmounts, mintAmount)
+ 
 end
 
 -- Remove Funding 
@@ -184,11 +189,11 @@ function CPMMMethods:calcBuyAmount(investmentAmount, positionId)
 
   local poolBalances = self:getPoolBalances()
   local investmentAmountMinusFees = investmentAmount - ((investmentAmount * self.fee) / self.ONE)
-  local buyTokenPoolBalance = poolBalances[positionId]
+  local buyTokenPoolBalance = poolBalances[tonumber(positionId)]
   local endingOutcomeBalance = buyTokenPoolBalance * self.ONE
 
   for i = 1, #poolBalances do
-    if i ~= positionId then
+    if i ~= tonumber(positionId) then
       local poolBalance = poolBalances[i]
       endingOutcomeBalance = CPMMHelpers.ceildiv(tonumber(endingOutcomeBalance * poolBalance), tonumber(poolBalance + investmentAmountMinusFees))
     end
@@ -205,11 +210,11 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
 
   local poolBalances = self:getPoolBalances()
   local returnAmountPlusFees = CPMMHelpers.ceildiv(tonumber(returnAmount * self.ONE), tonumber(self.ONE - self.fee))
-  local sellTokenPoolBalance = poolBalances[positionId]
+  local sellTokenPoolBalance = poolBalances[tonumber(positionId)]
   local endingOutcomeBalance = sellTokenPoolBalance * self.ONE
 
   for i = 1, #poolBalances do
-    if i ~= positionId then
+    if i ~= tonumber(positionId) then
       local poolBalance = poolBalances[i]
       endingOutcomeBalance = CPMMHelpers.ceildiv(tonumber(endingOutcomeBalance * poolBalance), tonumber(poolBalance - returnAmountPlusFees))
     end

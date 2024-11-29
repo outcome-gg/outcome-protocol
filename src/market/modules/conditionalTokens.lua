@@ -156,7 +156,7 @@ function ConditionalTokensMethods:redeemPositions(from, msg)
   local totalPayout = 0
   for i = 1, #self.positionIds do
     local positionId = self.positionIds[i]
-    local payoutNumerator = self.payoutNumerators[self.conditionId][positionId]
+    local payoutNumerator = self.payoutNumerators[self.conditionId][tonumber(positionId)]
 
     -- Get the stake to redeem.
     if not self.tokens.balancesById[positionId] then self.tokens.balancesById[positionId] = {} end

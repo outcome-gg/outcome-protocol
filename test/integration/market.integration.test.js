@@ -11,9 +11,9 @@ import exp from "constants";
 
 dotenv.config();
 
-const cpmm = process.env.TEST_MARKET3;
+const cpmm = process.env.TEST_MARKET4;
+const conditionalTokens = cpmm;
 const collateralToken = process.env.TEST_COLLATERAL_TOKEN3;
-const conditionalTokens = process.env.TEST_MARKET3;
 
 console.log("CPMM: ", cpmm)
 console.log("COLLATERAL TOKEN: ", collateralToken)
@@ -119,31 +119,30 @@ describe("cpmm.integration.test", function () {
 
       expect(Messages.length).to.be.equal(2)
 
-      expect(Messages[0].Data).to.be.equal('Successfully created market')
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const conditionId_0 = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const outcomeSlotCount_0 = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
 
-      const action_1 = Messages[0].Tags.find(t => t.name === 'Action').value
-      const conditionId_1 = Messages[0].Tags.find(t => t.name === 'ConditionId').value
-      const collateralToken_1 = Messages[0].Tags.find(t => t.name === 'CollateralToken').value
-      const positionIds_1 = Messages[0].Tags.find(t => t.name === 'PositionIds').value
-      const name_1 = Messages[0].Tags.find(t => t.name === 'Name').value
-      const ticker_1 = Messages[0].Tags.find(t => t.name === 'Ticker').value
-      const logo_1 = Messages[0].Tags.find(t => t.name === 'Logo').value
-
-      const action_0 = Messages[1].Tags.find(t => t.name === 'Action').value
-      const conditionId_0 = Messages[1].Tags.find(t => t.name === 'ConditionId').value
-      const outcomeSlotCount_0 = Messages[1].Tags.find(t => t.name === 'OutcomeSlotCount').value
-
-      expect(action_1).to.equal("New-Market-Notice")
-      expect(conditionId_1).to.equal(conditionId)
-      expect(collateralToken_1).to.equal(collateralToken)
-      expect(positionIds_1).to.equal(JSON.stringify([1, 2]))
-      expect(name_1).to.equal("Outcome ETH LP Token 2")
-      expect(ticker_1).to.equal("OETH-LP-2")
-      expect(logo_1).to.equal("")
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const conditionId_1 = Messages[1].Tags.find(t => t.name === 'ConditionId').value
+      const collateralToken_1 = Messages[1].Tags.find(t => t.name === 'CollateralToken').value
+      const positionIds_1 = Messages[1].Tags.find(t => t.name === 'PositionIds').value
+      const name_1 = Messages[1].Tags.find(t => t.name === 'Name').value
+      const ticker_1 = Messages[1].Tags.find(t => t.name === 'Ticker').value
+      const logo_1 = Messages[1].Tags.find(t => t.name === 'Logo').value
 
       expect(action_0).to.equal("Condition-Preparation-Notice")
       expect(conditionId_0).to.equal(conditionId)
       expect(outcomeSlotCount_0).to.equal('2')
+
+      expect(Messages[1].Data).to.be.equal('Successfully created market')
+      expect(action_1).to.equal("New-Market-Notice")
+      expect(conditionId_1).to.equal(conditionId)
+      expect(collateralToken_1).to.equal(collateralToken)
+      expect(positionIds_1).to.equal(JSON.stringify(["1", "2"]))
+      expect(name_1).to.equal("Outcome ETH LP Token 2")
+      expect(ticker_1).to.equal("OETH-LP-2")
+      expect(logo_1).to.equal("")
     })
 
     it("+ve should fail to init cpmm after initialized", async () => {
@@ -402,8 +401,8 @@ describe("cpmm.integration.test", function () {
       const balances = JSON.parse(Messages[0].Data)
 
       // Note that now we have sequential positionIds where Ids "1" and "2" are for IN and OUT, indexed 0 and 1, respectively
-      expect(balances[0][cpmm]).to.equal(parseAmount(100, 12))
-      expect(balances[1][cpmm]).to.equal(parseAmount(100, 12))
+      expect(balances['1'][cpmm]).to.equal(parseAmount(100, 12))
+      expect(balances['2'][cpmm]).to.equal(parseAmount(100, 12))
     })
 
     it("+ve should add subsequent funding w/o distribution", async () => {
@@ -529,8 +528,8 @@ describe("cpmm.integration.test", function () {
 
       const balances = JSON.parse(Messages[0].Data)
 
-      expect(balances[0][cpmm]).to.equal(parseAmount(200, 12))
-      expect(balances[1][cpmm]).to.equal(parseAmount(200, 12))
+      expect(balances['1'][cpmm]).to.equal(parseAmount(200, 12))
+      expect(balances['2'][cpmm]).to.equal(parseAmount(200, 12))
     })
 
     it("-ve should fail to add subsequent funding w/ distribution", async () => {
@@ -780,11 +779,11 @@ describe("cpmm.integration.test", function () {
   
       const balances = JSON.parse(Messages[0].Data)
   
-      expect(balances[0][cpmm]).to.equal('150000000000000')
-      expect(balances[1][cpmm]).to.equal('150000000000000')
+      expect(balances['1'][cpmm]).to.equal('150000000000000')
+      expect(balances['2'][cpmm]).to.equal('150000000000000')
 
-      expect(balances[0][walletAddress]).to.equal('50000000000000')
-      expect(balances[1][walletAddress]).to.equal('50000000000000')
+      expect(balances['1'][walletAddress]).to.equal('50000000000000')
+      expect(balances['2'][walletAddress]).to.equal('50000000000000')
     })
 
     it("-ve should fail to remove funding greater than balance", async () => {
@@ -989,11 +988,11 @@ describe("cpmm.integration.test", function () {
   
       const balances = JSON.parse(Messages[0].Data)
   
-      expect(balances[0][cpmm]).to.equal('150000000000000')
-      expect(balances[1][cpmm]).to.equal('150000000000000')
+      expect(balances['1'][cpmm]).to.equal('150000000000000')
+      expect(balances['2'][cpmm]).to.equal('150000000000000')
 
-      expect(balances[0][walletAddress]).to.equal('50000000000000')
-      expect(balances[1][walletAddress]).to.equal('50000000000000')
+      expect(balances['1'][walletAddress]).to.equal('50000000000000')
+      expect(balances['2'][walletAddress]).to.equal('50000000000000')
     })
 
     it("+ve should buy position tokens", async () => {
@@ -1130,11 +1129,11 @@ describe("cpmm.integration.test", function () {
   
       const balances = JSON.parse(Messages[0].Data)
   
-      expect(balances[0][cpmm]).to.equal('140712945590995')
-      expect(balances[1][cpmm]).to.equal('159900000000000')
+      expect(balances['1'][cpmm]).to.equal('140712945590995')
+      expect(balances['2'][cpmm]).to.equal('159900000000000')
 
-      expect(balances[0][walletAddress]).to.equal('69187054409005')
-      expect(balances[1][walletAddress]).to.equal('50000000000000')
+      expect(balances['1'][walletAddress]).to.equal('69187054409005')
+      expect(balances['2'][walletAddress]).to.equal('50000000000000')
     })
 
     it("+ve should buy more position tokens", async () => {
@@ -1270,12 +1269,12 @@ describe("cpmm.integration.test", function () {
       expect(Messages.length).to.be.equal(1)
   
       const balances = JSON.parse(Messages[0].Data)
-      expect(balances[0][cpmm]).to.equal('132508833922263')
-      expect(balances[1][cpmm]).to.equal('169800000000000')
+      expect(balances['1'][cpmm]).to.equal('132508833922263')
+      expect(balances['2'][cpmm]).to.equal('169800000000000')
 
       // @dev as expected, the user balance has increased by less than previous buy
-      expect(balances[0][walletAddress]).to.equal('87291166077737')
-      expect(balances[1][walletAddress]).to.equal('50000000000000')
+      expect(balances['1'][walletAddress]).to.equal('87291166077737')
+      expect(balances['2'][walletAddress]).to.equal('50000000000000')
     })
   })
 
@@ -1470,11 +1469,11 @@ describe("cpmm.integration.test", function () {
       expect(Messages.length).to.be.equal(1)
   
       const balances = JSON.parse(Messages[0].Data)
-      expect(balances[0][cpmm]).to.equal('132508833922263')
-      expect(balances[1][cpmm]).to.equal('160507070707070')
+      expect(balances['1'][cpmm]).to.equal('132508833922263')
+      expect(balances['2'][cpmm]).to.equal('160507070707070')
 
-      expect(balances[0][walletAddress]).to.equal('77998236784807')
-      expect(balances[1][walletAddress]).to.equal('50000000000000')
+      expect(balances['1'][walletAddress]).to.equal('77998236784807')
+      expect(balances['2'][walletAddress]).to.equal('50000000000000')
     })
   })
 
@@ -1692,11 +1691,11 @@ describe("cpmm.integration.test", function () {
       const balances = JSON.parse(Messages[0].Data)
       
       // @dev unchanged
-      expect(balances[0][cpmm]).to.equal('132508833922263')
-      expect(balances[1][cpmm]).to.equal('160507070707070')
+      expect(balances['1'][cpmm]).to.equal('132508833922263')
+      expect(balances['2'][cpmm]).to.equal('160507070707070')
 
-      expect(balances[0][walletAddress]).to.equal('77998236784807')
-      expect(balances[1][walletAddress]).to.equal('50000000000000')
+      expect(balances['1'][walletAddress]).to.equal('77998236784807')
+      expect(balances['2'][walletAddress]).to.equal('50000000000000')
     })
 
     it("+ve should return collected fees after remove funding", async () => {
@@ -1859,11 +1858,11 @@ describe("cpmm.integration.test", function () {
   
       const balances = JSON.parse(Messages[0].Data)
 
-      expect(balances[0][cpmm]).to.equal('132508833922263')
-      expect(balances[1][cpmm]).to.equal('160507070707070')
+      expect(balances['1'][cpmm]).to.equal('132508833922263')
+      expect(balances['2'][cpmm]).to.equal('160507070707070')
 
-      expect(balances[0][walletAddress]).to.equal('77998236784807')
-      expect(balances[1][walletAddress]).to.equal('50000000000000')
+      expect(balances['1'][walletAddress]).to.equal('77998236784807')
+      expect(balances['2'][walletAddress]).to.equal('50000000000000')
     })
 
     it("+ve should check collateral balances (before merge)", async () => {
@@ -1931,8 +1930,8 @@ describe("cpmm.integration.test", function () {
       const conditionId_2 = Messages[2].Tags.find(t => t.name === 'ConditionId').value
 
       expect(action_0).to.equal("Burn-Batch-Notice")
-      expect(tokenIds_0[0]).to.equal(1)
-      expect(tokenIds_0[1]).to.equal(2)
+      expect(tokenIds_0[0]).to.equal('1')
+      expect(tokenIds_0[1]).to.equal('2')
       expect(quantities_0[0]).to.equal("50000000000000")
       expect(quantities_0[1]).to.equal("50000000000000")
       expect(remainingBalances_0[0]).to.equal("27998236784807")
@@ -1976,11 +1975,11 @@ describe("cpmm.integration.test", function () {
   
       const balances = JSON.parse(Messages[0].Data)
 
-      expect(balances[0][cpmm]).to.equal('132508833922263')
-      expect(balances[1][cpmm]).to.equal('160507070707070')
+      expect(balances['1'][cpmm]).to.equal('132508833922263')
+      expect(balances['2'][cpmm]).to.equal('160507070707070')
 
-      expect(balances[0][walletAddress]).to.equal('27998236784807')
-      expect(balances[1][walletAddress]).to.equal('0')
+      expect(balances['1'][walletAddress]).to.equal('27998236784807')
+      expect(balances['2'][walletAddress]).to.equal('0')
     })
 
     it("+ve should verify merge (via collateral balances)", async () => {
@@ -2075,7 +2074,7 @@ describe("cpmm.integration.test", function () {
 
       expect(action_).to.equal("Transfer-Error")
       expect(error_).to.equal("Insufficient Balance!")
-      expect(tokenId_).to.equal(1)
+      expect(tokenId_).to.equal('1')
     })
 
     it("+ve [balance] should check balance remains unchanged", async () => {
@@ -2159,7 +2158,7 @@ describe("cpmm.integration.test", function () {
         process: conditionalTokens,
         tags: [
           { name: "Action", value: "Transfer-Batch" },
-          { name: "TokenIds", value: JSON.stringify([2]) },
+          { name: "TokenIds", value: JSON.stringify(['2']) },
           { name: "Quantities", value: JSON.stringify(['11']) },
           { name: "Recipient", value: walletAddress2 }
         ],
@@ -2184,7 +2183,7 @@ describe("cpmm.integration.test", function () {
 
       expect(action_).to.equal("Transfer-Error")
       expect(error_).to.equal("Insufficient Balance!")
-      expect(tokenId_).to.equal(2)
+      expect(tokenId_).to.equal('2')
     })
 
     it("+ve should send batch transfer (with notice)", async () => {
@@ -2193,7 +2192,7 @@ describe("cpmm.integration.test", function () {
         process: conditionalTokens,
         tags: [
           { name: "Action", value: "Transfer-Batch" },
-          { name: "TokenIds", value: JSON.stringify([1]) },
+          { name: "TokenIds", value: JSON.stringify(['1']) },
           { name: "Quantities", value: JSON.stringify(['10']) },
           { name: "Recipient", value: walletAddress2 }
         ],
@@ -2224,12 +2223,12 @@ describe("cpmm.integration.test", function () {
     
       expect(action_0).to.equal("Debit-Batch-Notice")
       expect(quantities_0[0]).to.equal("10")
-      expect(tokenIds_0[0]).to.equal(1)
+      expect(tokenIds_0[0]).to.equal('1')
       expect(recipient_0).to.equal(walletAddress2)
 
       expect(action_1).to.equal("Credit-Batch-Notice")
       expect(quantities_1[0]).to.equal("10")
-      expect(tokenIds_1[0]).to.equal(1)
+      expect(tokenIds_1[0]).to.equal('1')
       expect(sender_1).to.equal(walletAddress)
     })
   })
@@ -2592,8 +2591,8 @@ describe("cpmm.integration.test", function () {
       expect(Messages.length).to.be.equal(1)
 
       const balances_ = JSON.parse(Messages[0].Data)
-      expect(balances_[0][walletAddress]).to.be.equal('0')
-      expect(balances_[1][walletAddress]).to.be.equal('0')
+      expect(balances_['1'][walletAddress]).to.be.equal('0')
+      expect(balances_['2'][walletAddress]).to.be.equal('0')
     })
   })
 })
