@@ -54,7 +54,7 @@ function ConditionalTokensHelpers.getPositionId(collateralToken, collectionId)
   return crypto.digest.keccak256(collateralToken .. collectionId).asHex()
 end
 
-function ConditionalTokensHelpers:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, parentCollectionId, conditionId, indexSets)
+function ConditionalTokensHelpers:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)
   local takeFee = tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.takeFeePercentage), self.ONE)))
   local totalPayoutMinusFee = tostring(bint.__sub(totalPayout, bint(takeFee)))
 
@@ -71,13 +71,7 @@ function ConditionalTokensHelpers:returnTotalPayoutMinusTakeFee(collateralToken,
     Target = collateralToken,
     Action = "Transfer",
     Recipient = from,
-    Quantity = totalPayoutMinusFee,
-    ['X-Action'] = "Redeem-Positions-Completion",
-    ['X-CollateralToken'] = collateralToken,
-    ['X-ParentCollectionId'] = parentCollectionId,
-    ['X-ConditionId'] = conditionId,
-    ['X-IndexSets'] = json.encode(indexSets),
-    ['X-TotalPayout'] = json.encode(totalPayout)
+    Quantity = totalPayoutMinusFee
   })
 end
 

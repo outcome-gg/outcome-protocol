@@ -4,7 +4,7 @@ import { expect, use } from "chai";
 import { readFileSync } from "fs";
 import { fileURLToPath } from 'url';
 import path, { parse } from "path";
-import { error } from "console";
+import { assert, error } from "console";
 import dotenv from 'dotenv';
 import keccak256 from 'keccak256'
 import exp from "constants";
@@ -594,7 +594,7 @@ describe("cpmm.integration.test", function () {
       balanceBefore = await getBalance();
       await addFundingWithDistributionAfterInitialFunding();
       // wait for failed forwarded call transfer of funds to be returned
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 10000
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 10000
       balanceAfter = await getBalance();
 
       expect(balanceBefore).to.be.equal(balanceAfter)
@@ -752,7 +752,7 @@ describe("cpmm.integration.test", function () {
     })
 
     it("+ve should check positions after remove funding", async () => {
-      // await new Promise(resolve => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 5000));
       let messageId;
       await message({
         process: conditionalTokens,
@@ -1793,6 +1793,807 @@ describe("cpmm.integration.test", function () {
       const withdrawnFees = JSON.parse(Messages[0].Data)
 
       expect(withdrawnFees).to.equal(0)
+    })
+  })
+
+  /************************************************************************ 
+  * Merge Positions
+  ************************************************************************/
+  describe("Merge Positions", function () {
+    it("-ve should not merge (amount exceed balances in to-be-merged positions)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Merge-Positions" },
+          { name: "Quantity", value: "50000000000001" }  
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      // Error: User must have sufficient tokens!
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const error_ = Messages[0].Data
+      expect(action_).to.equal("Error")
+      expect(error_).to.equal("Insufficient tokens! PositionId: 2")
+    })
+
+    it("+ve should check position balances (before merge)", async () => {
+      // await new Promise(resolve => setTimeout(resolve, 5000));
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+  
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+  
+      if (Error) {
+        console.log(Error)
+      }
+  
+      expect(Messages.length).to.be.equal(1)
+  
+      const balances = JSON.parse(Messages[0].Data)
+
+      expect(balances[0][cpmm]).to.equal('132508833922263')
+      expect(balances[1][cpmm]).to.equal('160507070707070')
+
+      expect(balances[0][walletAddress]).to.equal('77998236784807')
+      expect(balances[1][walletAddress]).to.equal('50000000000000')
+    })
+
+    it("+ve should check collateral balances (before merge)", async () => {
+      let messageId;
+      await message({
+        process: collateralToken,
+        tags: [
+          { name: "Action", value: "Balance" },
+          { name: "Recipient", value: walletAddress },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: collateralToken,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balance_ = JSON.parse(Messages[0].Data).toString()
+      expect(balance_).to.be.equal('9789492929292930')
+    })
+
+    it("+ve should merge (to non-collateral-parent and send notice)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Merge-Positions" },
+          { name: "Quantity", value: "50000000000000" }  
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(3)
+
+      // conditional-token notice
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const tokenIds_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'TokenIds').value)
+      const quantities_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'Quantities').value)
+      const remainingBalances_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'RemainingBalances').value)
+
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
+      const recipient_1 = Messages[1].Tags.find(t => t.name === 'Recipient').value
+
+      const action_2 = Messages[2].Tags.find(t => t.name === 'Action').value
+      const quantity_2 = Messages[2].Tags.find(t => t.name === 'Quantity').value
+      const conditionId_2 = Messages[2].Tags.find(t => t.name === 'ConditionId').value
+
+      expect(action_0).to.equal("Burn-Batch-Notice")
+      expect(tokenIds_0[0]).to.equal(1)
+      expect(tokenIds_0[1]).to.equal(2)
+      expect(quantities_0[0]).to.equal("50000000000000")
+      expect(quantities_0[1]).to.equal("50000000000000")
+      expect(remainingBalances_0[0]).to.equal("27998236784807")
+      expect(remainingBalances_0[1]).to.equal("0")
+
+      expect(action_1).to.equal("Transfer")
+      expect(quantity_1).to.equal("50000000000000")
+      expect(recipient_1).to.equal(walletAddress)
+
+      expect(action_2).to.equal("Merge-Positions-Notice")
+      expect(quantity_2).to.equal("50000000000000")
+      expect(conditionId_2).to.equal(conditionId) 
+    })
+
+    it("+ve should verify merge (via position balances)", async () => {
+      // await new Promise(resolve => setTimeout(resolve, 5000));
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+  
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+  
+      if (Error) {
+        console.log(Error)
+      }
+  
+      expect(Messages.length).to.be.equal(1)
+  
+      const balances = JSON.parse(Messages[0].Data)
+
+      expect(balances[0][cpmm]).to.equal('132508833922263')
+      expect(balances[1][cpmm]).to.equal('160507070707070')
+
+      expect(balances[0][walletAddress]).to.equal('27998236784807')
+      expect(balances[1][walletAddress]).to.equal('0')
+    })
+
+    it("+ve should verify merge (via collateral balances)", async () => {
+      let messageId;
+      await message({
+        process: collateralToken,
+        tags: [
+          { name: "Action", value: "Balance" },
+          { name: "Recipient", value: walletAddress },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: collateralToken,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balance_ = JSON.parse(Messages[0].Data).toString()
+      // @dev: an increase by 50000000000000
+      expect(balance_).to.be.equal('9839492929292930')
+    })
+  })
+
+  /************************************************************************ 
+  * Transfer Position
+  ************************************************************************/
+  describe("Transfer Position", function () {
+    it("+ve [balance] should get balance", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balance-By-Id" },
+          { name: "TokenId", value: "1" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balance_ = JSON.parse(Messages[0].Data)
+
+      expect(balance_).to.equal(27998236784807)
+    })
+
+    it("-ve should not send single transfer (more than balance)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Transfer-Single" },
+          { name: "TokenId", value: "1" },
+          { name: "Quantity", value: "27998236784808" },
+          { name: "Recipient", value: walletAddress2 }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
+      const tokenId_ = Messages[0].Tags.find(t => t.name === 'Token-Id').value
+
+      expect(action_).to.equal("Transfer-Error")
+      expect(error_).to.equal("Insufficient Balance!")
+      expect(tokenId_).to.equal(1)
+    })
+
+    it("+ve [balance] should check balance remains unchanged", async () => {
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balance-By-Id" },
+          { name: "TokenId", value: "1" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balance_ = JSON.parse(Messages[0].Data)
+
+      expect(balance_).to.equal(27998236784807)
+    })
+
+    it("+ve should send single transfer (with notice)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Transfer-Single" },
+          { name: "TokenId", value: "1" },
+          { name: "Quantity", value: "7" },
+          { name: "Recipient", value: walletAddress2 }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(2)
+
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const quantity_0 = Messages[0].Tags.find(t => t.name === 'Quantity').value
+      const tokenId_0 = Messages[0].Tags.find(t => t.name === 'TokenId').value
+      const recipient_0 = Messages[0].Tags.find(t => t.name === 'Recipient').value
+    
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
+      const tokenId_1 = Messages[1].Tags.find(t => t.name === 'TokenId').value
+      const sender_1 = Messages[1].Tags.find(t => t.name === 'Sender').value
+    
+      expect(action_0).to.equal("Debit-Single-Notice")
+      expect(quantity_0).to.equal("7")
+      expect(tokenId_0).to.equal("1")
+      expect(recipient_0).to.equal(walletAddress2)
+
+      expect(action_1).to.equal("Credit-Single-Notice")
+      expect(quantity_1).to.equal("7")
+      expect(tokenId_1).to.equal("1")
+      expect(sender_1).to.equal(walletAddress)
+    })
+
+    it("-ve should not send batch transfer (more than balance)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Transfer-Batch" },
+          { name: "TokenIds", value: JSON.stringify([2]) },
+          { name: "Quantities", value: JSON.stringify(['11']) },
+          { name: "Recipient", value: walletAddress2 }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
+      const tokenId_ = Messages[0].Tags.find(t => t.name === 'Token-Id').value
+
+      expect(action_).to.equal("Transfer-Error")
+      expect(error_).to.equal("Insufficient Balance!")
+      expect(tokenId_).to.equal(2)
+    })
+
+    it("+ve should send batch transfer (with notice)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Transfer-Batch" },
+          { name: "TokenIds", value: JSON.stringify([1]) },
+          { name: "Quantities", value: JSON.stringify(['10']) },
+          { name: "Recipient", value: walletAddress2 }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(2)
+
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const quantities_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'Quantities').value)
+      const tokenIds_0 = JSON.parse(Messages[0].Tags.find(t => t.name === 'TokenIds').value)
+      const recipient_0 = Messages[0].Tags.find(t => t.name === 'Recipient').value
+    
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const quantities_1 = JSON.parse(Messages[1].Tags.find(t => t.name === 'Quantities').value)
+      const tokenIds_1 = JSON.parse(Messages[1].Tags.find(t => t.name === 'TokenIds').value)
+      const sender_1 = Messages[1].Tags.find(t => t.name === 'Sender').value
+    
+      expect(action_0).to.equal("Debit-Batch-Notice")
+      expect(quantities_0[0]).to.equal("10")
+      expect(tokenIds_0[0]).to.equal(1)
+      expect(recipient_0).to.equal(walletAddress2)
+
+      expect(action_1).to.equal("Credit-Batch-Notice")
+      expect(quantities_1[0]).to.equal("10")
+      expect(tokenIds_1[0]).to.equal(1)
+      expect(sender_1).to.equal(walletAddress)
+    })
+  })
+
+  /************************************************************************ 
+  * Reporting
+  ************************************************************************/
+  describe("Reporting", function () {
+    it("-ve should not allow reporting (incorrect resolution agent)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+          { name: "QuestionId", value: questionId },
+          { name: "Payouts", value: JSON.stringify([1, 0]) }, // A wins
+        ],
+        signer: createDataItemSigner(wallet), // not resolution agent
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      // Error: condition not prepared or found (resolution agent id contained within hash)
+      expect(Messages.length).to.be.equal(0)
+    })
+
+    it("-ve should not allow reporting (incorrect question id)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+          { name: "QuestionId", value: "foo" }, // incorrect question id
+          { name: "Payouts", value: JSON.stringify([1, 0]) }, // A wins
+        ],
+        signer: createDataItemSigner(wallet2), // correct resolution agent
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      // Error: condition not prepared or found
+      expect(Messages.length).to.be.equal(0)
+    })
+
+    it("-ve should not allow reporting (no slots)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+          { name: "QuestionId", value: questionId }, // correct question id
+          { name: "Payouts", value: JSON.stringify([]) }, // no slots
+        ],
+        signer: createDataItemSigner(wallet2), // correct resolution agent
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      // Error: there should be more than one outcome slot
+      expect(Messages.length).to.be.equal(0)
+    })
+
+    it("-ve should not allow reporting (wrong number of slots)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+          { name: "QuestionId", value: questionId }, // correct question id
+          { name: "Payouts", value: JSON.stringify([1,0,0]) }, // incorrect number of slots
+        ],
+        signer: createDataItemSigner(wallet2), // correct resolution agent
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      // Error: condition not prepared or found
+      expect(Messages.length).to.be.equal(0)
+    })
+
+    it("-ve should not allow reporting (zero payouts in all slots)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+          { name: "QuestionId", value: questionId }, // correct question id
+          { name: "Payouts", value: JSON.stringify([0,0]) }, // no winner
+        ],
+        signer: createDataItemSigner(wallet2), // correct resolution agent
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      // Error: payout is all zeros
+      expect(Messages.length).to.be.equal(0)
+    })
+
+    it("+ve should allow reporting (and send notice)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Report-Payouts" },
+          { name: "QuestionId", value: questionId }, // correct question id
+          { name: "Payouts", value: JSON.stringify([1,0]) }, // A wins
+        ],
+        signer: createDataItemSigner(wallet2), // correct resolution agent
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const resolutionAgent_ = Messages[0].Tags.find(t => t.name === 'ResolutionAgent').value
+      const outcomeSlotCount_ = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
+      const questionId_ = Messages[0].Tags.find(t => t.name === 'QuestionId').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const payoutNumerators_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'PayoutNumerators').value)
+
+      expect(action_).to.equal("Condition-Resolution-Notice")
+      expect(resolutionAgent_).to.equal(resolutionAgent)
+      expect(outcomeSlotCount_).to.equal('2')
+      expect(questionId_).to.equal(questionId)
+      expect(conditionId_).to.equal(keccak256(resolutionAgent + questionId + '2').toString('hex'))
+      expect(payoutNumerators_[0]).to.equal(1)
+      expect(payoutNumerators_[1]).to.equal(0)
+    })
+
+    it("+ve should get payout numerators (post reporting)", async () => {
+      const conditionId = keccak256(resolutionAgent + questionId + '2').toString('hex')
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Get-Payout-Numerators" },
+          { name: "ConditionId", value: conditionId },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const payoutNumerators_ = Messages[0].Data
+
+      expect(action_).to.equal("Payout-Numerators")
+      expect(conditionId_).to.equal(conditionId)
+      expect(payoutNumerators_).to.equal(JSON.stringify([1,0]))
+    })
+
+    it("+ve should get payout denominator (post reporting)", async () => {
+      const conditionId = keccak256(resolutionAgent + questionId + '2').toString('hex')
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Get-Payout-Denominator" },
+          { name: "ConditionId", value: conditionId },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
+      const payoutDenominator_ = Messages[0].Data
+    
+      expect(action_).to.equal("Payout-Denominator")
+      expect(conditionId_).to.equal(conditionId)
+      expect(payoutDenominator_).to.equal(1)
+    })
+  })
+
+  /************************************************************************ 
+  * Redeeming
+  ************************************************************************/
+  describe("Redeeming", function () {
+    it("+ve should redeem (and send notice)", async () => {
+      const conditionId = keccak256(resolutionAgent + questionId + '2').toString('hex')
+
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Redeem-Positions" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(4)
+
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const tokenId_0 = Messages[0].Tags.find(t => t.name === 'TokenId').value
+      const quantity_0 = Messages[0].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const recipient_1 = Messages[1].Tags.find(t => t.name === 'Recipient').value
+      const quantity_1 = Messages[1].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_2 = Messages[2].Tags.find(t => t.name === 'Action').value
+      const recipient_2 = Messages[2].Tags.find(t => t.name === 'Recipient').value
+      const quantity_2 = Messages[2].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_3 = Messages[3].Tags.find(t => t.name === 'Action').value
+      const payout_3 = Messages[3].Tags.find(t => t.name === 'Payout').value
+      const collateralToken_3 = Messages[3].Tags.find(t => t.name === 'CollateralToken').value
+      const conditionId_3 = Messages[3].Tags.find(t => t.name === 'ConditionId').value
+
+      expect(action_0).to.equal("Burn-Single-Notice")
+      expect(tokenId_0).to.equal("1")
+      expect(quantity_0).to.equal("27998236784790")
+    
+      expect(action_1).to.equal("Transfer")
+      expect(recipient_1).to.equal(walletAddress2)
+      expect(quantity_1).to.equal((Math.ceil(27998236784790*0.025)).toString()) // 2.5% market creator fee
+
+      expect(action_2).to.equal("Transfer")
+      expect(recipient_2).to.equal(walletAddress)
+      expect(quantity_2).to.equal((27998236784790 - Math.ceil(27998236784790*0.025)).toString()) // 97.5% returned to user
+
+      expect(action_3).to.equal("Payout-Redemption-Notice")
+      expect(payout_3).to.equal("27998236784790")
+      expect(collateralToken_3).to.equal(collateralToken)
+      expect(conditionId_3).to.equal(conditionId)
+    })
+
+    it("+ve should should redeem (verify take fee)", async () => {
+      await new Promise(r => setTimeout(r, 10000));
+      let messageId;
+      await message({
+        process: collateralToken,
+        tags: [
+          { name: "Action", value: "Balances" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: collateralToken,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+      
+      // initial balance + 2.5% fee
+      expect(balances_[walletAddress2]).to.equal((1e16 + Math.ceil(27998236784790*0.025)).toString())
+    })
+
+    it("+ve should verify zerod-out redeemed positions (and not affect others)", async () => {
+      let messageId;
+      await message({
+        process: conditionalTokens,
+        tags: [
+          { name: "Action", value: "Balances-All" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: conditionalTokens,
+      });
+
+      expect(Messages.length).to.be.equal(1)
+
+      const balances_ = JSON.parse(Messages[0].Data)
+      expect(balances_[0][walletAddress]).to.be.equal('0')
+      expect(balances_[1][walletAddress]).to.be.equal('0')
     })
   })
 })

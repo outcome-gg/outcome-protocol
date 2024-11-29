@@ -8,6 +8,7 @@ local SemiFungibleTokensNotices = {}
 -- @param id ID of the token to be minted
 -- @param quantity Quantity of the token to be minted
 function SemiFungibleTokensNotices:mintSingleNotice(to, id, quantity)
+  print("ao send mintSingleNotice")
   ao.send({
     Target = to,
     TokenId = tostring(id),

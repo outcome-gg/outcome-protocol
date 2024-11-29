@@ -48,7 +48,7 @@ function CPMMHelpers:validateAddFunding(from, quantity, distribution)
   if error then
     -- Return funds and assert error
     ao.send({
-      Target = self.collateralToken,
+      Target = self.tokens.collateralToken,
       Action = 'Transfer',
       Recipient = from,
       Quantity = quantity,

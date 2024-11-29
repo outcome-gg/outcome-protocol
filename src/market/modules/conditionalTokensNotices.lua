@@ -67,9 +67,8 @@ end
 -- @param from The address of the account that merged the positions.
 -- @param conditionId The condition ID.
 -- @param quantity The quantity.
-function ConditionalTokensNotices:positionsMergeNotice(from, conditionId, quantity)
-  ao.send({
-    Target = from,
+function ConditionalTokensNotices:positionsMergeNotice(conditionId, quantity, msg)
+  msg.reply({
     Action = "Merge-Positions-Notice",
     ConditionId = conditionId,
     Quantity = quantity
@@ -79,20 +78,15 @@ end
 -- @dev Emitted when a position is successfully redeemed.
 -- @param redeemer The address of the account that redeemed the position.
 -- @param collateralToken The address of the collateral token.
--- @param parentCollectionId The parent collection ID.
 -- @param conditionId The condition ID.
--- @param indexSets The index sets.
 -- @param payout The payout amount.
-function ConditionalTokensNotices:payoutRedemptionNotice(redeemer, collateralToken, parentCollectionId, conditionId, indexSets, payout)
+function ConditionalTokensNotices:payoutRedemptionNotice(collateralToken, conditionId, payout, msg)
   -- TODO: Decide if to be sent to user and/or Data Index
-  ao.send({
-    Target = redeemer,
+  msg.reply({
     Action = "Payout-Redemption-Notice",
     Process = ao.id,
     CollateralToken = collateralToken,
-    ParentCollectionId = parentCollectionId,
     ConditionId = conditionId,
-    IndexSets = json.encode(indexSets),
     Payout = tostring(payout)
   })
 end

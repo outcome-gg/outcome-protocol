@@ -69,21 +69,18 @@ end
 -- where ResolutionAgent is the message sender, QuestionId is one of the parameters of this function, and OutcomeSlotCount is the length of the payouts parameter, which contains the payoutNumerators for each outcome slot of the condition.
 -- @param QuestionId The question ID the oracle is answering for
 -- @param Payouts The oracle's answer
-function ConditionalTokensMethods:reportPayouts(msg)
-  local data = json.decode(msg.Data)
-  assert(data.questionId, "QuestionId is required!")
-  assert(data.payouts, "Payouts is required!")
+function ConditionalTokensMethods:reportPayouts(questionId, payouts, msg)
   -- IMPORTANT, the payouts length accuracy is enforced because outcomeSlotCount is part of the hash.
-  local outcomeSlotCount = #data.payouts
+  local outcomeSlotCount = #payouts
   assert(outcomeSlotCount > 1, "there should be more than one outcome slot")
   -- IMPORTANT, the resolutionAgent is enforced to be the sender because it's part of the hash.
-  local conditionId = self.getConditionId(msg.From, data.questionId, tostring(outcomeSlotCount))
+  local conditionId = self.getConditionId(msg.From, questionId, tostring(outcomeSlotCount))
   assert(self.payoutNumerators[conditionId] and #self.payoutNumerators[conditionId] == outcomeSlotCount, "condition not prepared or found")
   assert(self.payoutDenominator[conditionId] == 0, "payout denominator already set")
   -- Set the payout vector for the condition.
   local den = 0
   for i = 1, outcomeSlotCount do
-    local num = data.payouts[i]
+    local num = payouts[i]
     den = den + num
     assert(self.payoutNumerators[conditionId][i] == 0, "payout numerator already set")
     self.payoutNumerators[conditionId][i] = num
@@ -91,7 +88,7 @@ function ConditionalTokensMethods:reportPayouts(msg)
   assert(den > 0, "payout is all zeroes")
   self.payoutDenominator[conditionId] = den
   -- Send the condition resolution notice.
-  self:conditionResolutionNotice(conditionId, msg.From, data.questionId, outcomeSlotCount, json.encode(self.payoutNumerators[conditionId]))
+  self:conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, json.encode(self.payoutNumerators[conditionId]))
 end
 
 -- @dev This function splits a position from collateral. This contract will attempt to transfer `amount` collateral from the message sender to itself. 
@@ -117,36 +114,31 @@ end
 -- Otherwise, this contract will burn `quantity` stake held by the message sender in the positions being merged worth of semi-fungible tokens.
 -- If successful, `quantity` stake will be minted in the merged position. If any of the transfers, mints, or burns fail, the transaction will revert.
 -- @param from The initiator of the original Merge-Positions action message.
--- @param collateralToken The address of the positions' backing collateral token.
--- @param parentCollectionId The ID of the outcome collections common to the positions being merged and the merged position. May be null, in which only the collateral is shared.
--- @param conditionId The ID of the condition to merge on.
--- @param partition An array of disjoint index sets representing a nontrivial partition of the outcome slots of the given condition. E.g. A|B and C but not A|B and B|C (is not disjoint). Each element's a number which, together with the condition, represents the outcome collection. E.g. 0b110 is A|B, 0b010 is B, etc.
+-- @param onBehalfOf The address that will receive the collateral.
 -- @param quantity The quantity of collateral or stake to merge.
 -- @param msg Msg passed to retrieve x-tags
-function ConditionalTokensMethods:mergePositions(from, quantity, msg)
-  -- assert(#partition > 1, "got empty or singleton partition")
+function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)
   assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] > 0, "condition not prepared yet")
-
   -- Create equal merge positions.
   local quantities = {}
   for _ = 1, #self.positionIds do
     table.insert(quantities, quantity)
   end
-
+  -- Burn equal quantiies from user positions.
   self.tokens:batchBurn(from, self.positionIds, quantities, msg)
-
-  -- ao.send({
-  --   Target = self.collateralToken,
-  --   Action = "Transfer",
-  --   Recipient = from,
-  --   Quantity = tostring(quantity),
-  --   ['X-Action'] = "Merge-Positions-Completion",
-  --   ['X-ConditionId'] = self.conditionId,
-  --   ['X-Sender'] = msg.Tags['X-Sender'], -- for amm
-  --   ['X-ReturnAmount'] = msg.Tags['X-ReturnAmount'], -- for amm
-  -- }).receive() -- await
-
-  self:positionsMergeNotice(from, self.conditionId, quantity)
+  -- @dev below already handled within the sell method. 
+  -- sell method w/ a different quantity and recipient.
+  if not isSell then
+    -- Return the collateral to the user.
+    ao.send({
+      Target = self.collateralToken,
+      Action = "Transfer",
+      Quantity = quantity,
+      Recipient = onBehalfOf
+    })
+  end
+  -- Send notice.
+  self:positionsMergeNotice(self.conditionId, quantity, msg)
 end
 
 -- @dev This function redeems positions. If redeeming to the collateral, this contract will attempt to transfer the payout to the message sender.
@@ -157,47 +149,32 @@ end
 -- @param parentCollectionId The ID of the outcome collections common to the positions being redeemed and the parent position. May be null, in which only the collateral is shared.
 -- @param conditionId The ID of the condition to redeem on.
 -- @param indexSets An array of index sets representing the outcome slots of the given condition. E.g. A|B and C but not A|B and B|C (is not disjoint). Each element's a number which, together with the condition, represents the outcome collection. E.g. 0b110 is A|B, 0b010 is B, etc.
-function ConditionalTokensMethods:redeemPositions(from, collateralToken, parentCollectionId, conditionId, indexSets)
-  local den = self.payoutDenominator[conditionId]
+function ConditionalTokensMethods:redeemPositions(from, msg)
+  local den = self.payoutDenominator[self.conditionId]
   assert(den > 0, "result for condition not received yet")
-  assert(self.payoutNumerators[conditionId] and #self.payoutNumerators[conditionId] > 0, "condition not prepared yet")
-
-  local outcomeSlotCount = #self.payoutNumerators[conditionId]
+  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] > 0, "condition not prepared yet")
   local totalPayout = 0
-  local fullIndexSet = (1 << outcomeSlotCount) - 1
+  for i = 1, #self.positionIds do
+    local positionId = self.positionIds[i]
+    local payoutNumerator = self.payoutNumerators[self.conditionId][positionId]
 
-  for i = 1, #indexSets do
-    local indexSet = indexSets[i]
-    assert(indexSet > 0 and indexSet < fullIndexSet, "got invalid index set")
-
-    local positionId = self.getPositionId(collateralToken, self.getCollectionId(parentCollectionId, conditionId, indexSet))
-    local payoutNumerator = 0
-
-    for j = 0, outcomeSlotCount - 1 do
-      if indexSet & (1 << j) ~= 0 then
-        payoutNumerator = payoutNumerator + self.payoutNumerators[conditionId][j + 1]
-      end
-    end
-
-    assert(self.tokens.balancesById[positionId], "invalid position")
+    -- Get the stake to redeem.
+    if not self.tokens.balancesById[positionId] then self.tokens.balancesById[positionId] = {} end
     if not self.tokens.balancesById[positionId][from] then self.tokens.balancesById[positionId][from] = "0" end
     local payoutStake = self.tokens.balancesById[positionId][from]
+    -- Calculate the payout and burn position.
     if bint.__lt(0, bint(payoutStake)) then
-      totalPayout = totalPayout + (payoutStake * payoutNumerator) / den
+      totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
       self:burn(from, positionId, payoutStake)
     end
   end
-
+  -- Return totla payout minus take fee.
   if totalPayout > 0 then
     totalPayout = math.floor(totalPayout)
-    if parentCollectionId == "" then
-      self:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, parentCollectionId, conditionId, indexSets)
-    else
-      SemiFungibleTokens:mint(from, self.getPositionId(collateralToken, parentCollectionId), totalPayout)
-    end
+    self:returnTotalPayoutMinusTakeFee(self.collateralToken, from, totalPayout)
   end
-
-  self:payoutRedemptionNotice(from, collateralToken, parentCollectionId, conditionId, indexSets, totalPayout)
+  -- Send notice.
+  self:payoutRedemptionNotice(self.collateralToken, self.conditionId, totalPayout, msg)
 end
 
 -- @dev Gets the outcome slot count of a condition.

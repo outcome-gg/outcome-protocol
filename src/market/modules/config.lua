@@ -10,8 +10,6 @@ function Config:new()
     version = '1.0.1',                -- Code version
     incentives = '',                  -- Process ID of Incentives
     configurator = '',                -- Process ID of Configurator 
-    collateralToken = '',             -- Process ID of Collateral Tokens
-    conditionalTokens = '',           -- Process ID of Conditional Tokens
     marketFactory = '',               -- Process ID of Market Factory
     marketId = '',                    -- Market ID
     initialized = false               -- Initialized
@@ -26,6 +24,7 @@ function Config:new()
   obj.cpmm = cpmm
   -- add CTF
   local ctf = {
+    collateralToken = '',     -- Process ID of Collateral Tokens
     conditionId = '',         -- Condition ID
     outomeSlotCount = nil,    -- Outcome Slot Count
     positionIds = {},         -- Position IDs
