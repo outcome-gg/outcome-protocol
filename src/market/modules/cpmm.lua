@@ -203,7 +203,7 @@ function CPMMMethods:calcBuyAmount(investmentAmount, positionId)
   local endingOutcomeBalance = buyTokenPoolBalance * 1e4
 
   for i = 1, #poolBalances do
-    if i ~= tonumber(positionId) then
+    if not bint.__eq(bint(i), bint(positionId)) then
       local poolBalance = poolBalances[i]
       endingOutcomeBalance = CPMMHelpers.ceildiv(tonumber(endingOutcomeBalance * poolBalance), tonumber(poolBalance + investmentAmountMinusFees))
     end

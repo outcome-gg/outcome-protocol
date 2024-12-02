@@ -60,15 +60,25 @@ end
 -- @dev validates removeFunding
 function CPMMHelpers:validateRemoveFunding(from, quantity)
   local error = false
+  local errorMessage = ''
+  -- Get balance
   local balance = self.token.balances[from] or '0'
-  if not bint.__le(bint(quantity), bint(balance)) then
+  -- Check for errors
+  if from == self.creatorFeeTarget then
     error = true
+    errorMessage = 'Remove-Funding Error: Creator liquidity locked until market resolution!'
+  elseif not bint.__le(bint(quantity), bint(balance)) then
+    error = true
+    errorMessage = 'Remove-Funding Error: Quantity must be less than balance!'
+  end
+  -- Return funds on error.
+  if error then
     ao.send({
       Target = ao.id,
       Action = 'Transfer',
       Recipient = from,
       Quantity = quantity,
-      Error = 'Remove-Funding Error: Quantity must be less than balance!'
+      Error = errorMessage
     })
   end
   return not error
