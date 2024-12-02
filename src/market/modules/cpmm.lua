@@ -2,6 +2,7 @@ local json = require('json')
 local bint = require('.bint')(256)
 local ao = require('.ao')
 local utils = require(".utils")
+local config = require('modules.config')
 local token = require('modules.token')
 local conditionalTokens = require('modules.conditionalTokens')
 local CPMMHelpers = require('modules.cpmmHelpers')
@@ -12,27 +13,27 @@ local LPToken = {}
 local ConditionalTokens = {}
 
 -- Constructor for CPMM 
-function CPMM:new(config)
+function CPMM:new()
+  Config = config:new()
   -- Initialize Tokens and store the object
-  LPToken = token:new(config.token.name, config.token.ticker, config.token.logo, config.token.balances, config.token.totalSupply, config.token.denomination)
-  ConditionalTokens = conditionalTokens:new(config)
+  LPToken = token:new(Config.token.name, Config.token.ticker, Config.token.logo, Config.token.balances, Config.token.totalSupply, Config.token.denomination)
+  ConditionalTokens = conditionalTokens:new(Config)
   -- Create a new CPMM object
   local obj = {
-    -- Market metadata vars
-    marketId = config.marketId,
-    initialized = config.initialized,
+    -- Market vars
+    marketId = Config.marketId,
+    initialized = Config.initialized,
+    configurator = Config.configurator,
     -- CPMM vars
-    poolBalances = config.cpmm.poolBalances,
-    feePoolWeight = config.cpmm.feePoolWeight,
-    totalWithdrawnFees = config.cpmm.totalWithdrawnFees,
-    withdrawnFees = config.cpmm.withdrawnFees,
+    poolBalances = Config.cpmm.poolBalances,
+    feePoolWeight = Config.cpmm.feePoolWeight,
+    totalWithdrawnFees = Config.cpmm.totalWithdrawnFees,
+    withdrawnFees = Config.cpmm.withdrawnFees,
     -- ConditionalTokens vars
     tokens = ConditionalTokens,
-    -- LP Token vars
+    -- LP vars
     token = LPToken,
-    -- LP Fee vars
-    fee = config.lpFee.percentage,
-    ONE = config.lpFee.ONE,
+    lpFee = Config.lpFee
   }
 
   -- Set metatable for method lookups
@@ -44,9 +45,12 @@ function CPMM:new(config)
       -- Then, check in CPMMHelpers
       elseif CPMMHelpers[k] then
         return CPMMHelpers[k]
-      -- Lastly, look up the key in the ConditionalTokens methods
+      -- Then, look up the key in the ConditionalTokens methods
       elseif ConditionalTokens[k] then
         return ConditionalTokens[k]
+      -- Lastly, look up the key in the Config methods
+      elseif Config[k] then
+        return Config[k]
       else
         return nil
       end
@@ -60,14 +64,18 @@ end
 ---------------------------------------------------------------------------------
 
 -- Init
-function CPMMMethods:init(collateralToken, marketId, conditionId, outcomeSlotCount, name, ticker, logo, msg)
+function CPMMMethods:init(configurator, collateralToken, marketId, conditionId, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
   -- Generate Position Ids
   local positionIds = self.tokens.generatePositionIds(outcomeSlotCount)
   -- Set Conditional Tokens vars
-  self.tokens.collateralToken = collateralToken
   self.tokens.conditionId = conditionId
   self.tokens.positionIds = positionIds
   self.tokens.outcomeSlotCount = outcomeSlotCount
+  self.tokens.collateralToken = collateralToken
+  self.tokens.creatorFee = tonumber(creatorFee)
+  self.tokens.creatorFeeTarget = creatorFeeTarget
+  self.tokens.protocolFee = tonumber(protocolFee)
+  self.tokens.protocolFeeTarget = protocolFeeTarget
   -- Set LP Token vars
   self.token.name = name
   self.token.ticker = ticker
@@ -75,10 +83,12 @@ function CPMMMethods:init(collateralToken, marketId, conditionId, outcomeSlotCou
   -- Initialized
   self.marketId = marketId
   self.initialized = true
+  self.configurator = configurator
+  self.lpFee = tonumber(lpFee)
   -- Prepare Condition
   self.tokens:prepareCondition(conditionId, outcomeSlotCount, msg)
   -- Init CPMM with market details
-  self.newMarketNotice(collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, msg)
+  self.newMarketNotice(configurator, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
 end
 
 -- Add Funding 
@@ -188,9 +198,9 @@ function CPMMMethods:calcBuyAmount(investmentAmount, positionId)
   assert(utils.includes(positionId, self.positionIds), 'PositionId must be valid!')
 
   local poolBalances = self:getPoolBalances()
-  local investmentAmountMinusFees = investmentAmount - ((investmentAmount * self.fee) / self.ONE)
+  local investmentAmountMinusFees = investmentAmount - ((investmentAmount * self.lpFee) / 1e4) -- converts fee from basis points to decimal
   local buyTokenPoolBalance = poolBalances[tonumber(positionId)]
-  local endingOutcomeBalance = buyTokenPoolBalance * self.ONE
+  local endingOutcomeBalance = buyTokenPoolBalance * 1e4
 
   for i = 1, #poolBalances do
     if i ~= tonumber(positionId) then
@@ -200,7 +210,7 @@ function CPMMMethods:calcBuyAmount(investmentAmount, positionId)
   end
 
   assert(endingOutcomeBalance > 0, "must have non-zero balances")
-  return tostring(bint.ceil(buyTokenPoolBalance + investmentAmountMinusFees - CPMMHelpers.ceildiv(endingOutcomeBalance, self.ONE)))
+  return tostring(bint.ceil(buyTokenPoolBalance + investmentAmountMinusFees - CPMMHelpers.ceildiv(endingOutcomeBalance, 1e4)))
 end
 
 -- Calc Sell Amount
@@ -209,9 +219,9 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
   assert(utils.includes(positionId, self.positionIds), 'PositionId must be valid!')
 
   local poolBalances = self:getPoolBalances()
-  local returnAmountPlusFees = CPMMHelpers.ceildiv(tonumber(returnAmount * self.ONE), tonumber(self.ONE - self.fee))
+  local returnAmountPlusFees = CPMMHelpers.ceildiv(tonumber(returnAmount * 1e4), tonumber(1e4 - self.lpFee))
   local sellTokenPoolBalance = poolBalances[tonumber(positionId)]
-  local endingOutcomeBalance = sellTokenPoolBalance * self.ONE
+  local endingOutcomeBalance = sellTokenPoolBalance * 1e4
 
   for i = 1, #poolBalances do
     if i ~= tonumber(positionId) then
@@ -221,7 +231,7 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
   end
 
   assert(endingOutcomeBalance > 0, "must have non-zero balances")
-  return tostring(bint.ceil(returnAmountPlusFees + CPMMHelpers.ceildiv(endingOutcomeBalance, self.ONE) - sellTokenPoolBalance))
+  return tostring(bint.ceil(returnAmountPlusFees + CPMMHelpers.ceildiv(endingOutcomeBalance, 1e4) - sellTokenPoolBalance))
 end
 
 -- Buy 
@@ -229,7 +239,7 @@ function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minOutc
   local outcomeTokensToBuy = self:calcBuyAmount(investmentAmount, positionId)
   assert(bint.__le(minOutcomeTokensToBuy, bint(outcomeTokensToBuy)), "Minimum outcome tokens not reached!")
   -- Calculate investmentAmountMinusFees.
-  local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(investmentAmount, self.fee), self.ONE)))
+  local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(investmentAmount, self.lpFee), 1e4)))
   self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
   local investmentAmountMinusFees = tostring(bint.__sub(investmentAmount, bint(feeAmount)))
   -- Split position through all conditions
@@ -246,7 +256,7 @@ function CPMMMethods:sell(from, returnAmount, positionId, quantity, maxOutcomeTo
   local outcomeTokensToSell = self:calcSellAmount(returnAmount, positionId)
   assert(bint.__le(bint(outcomeTokensToSell), bint(maxOutcomeTokensToSell)), "Maximum sell amount exceeded!")
   -- Calculate returnAmountPlusFees.
-  local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(returnAmount, self.fee), bint.__sub(self.ONE, self.fee))))
+  local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(returnAmount, self.lpFee), bint.__sub(1e4, self.lpFee))))
   self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
   local returnAmountPlusFees = tostring(bint.__add(returnAmount, bint(feeAmount)))
   -- Check sufficient liquidity within the process or revert.

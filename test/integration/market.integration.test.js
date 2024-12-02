@@ -86,6 +86,45 @@ describe("cpmm.integration.test", function () {
   * cpmm.Init
   ************************************************************************/
   describe("cpmm.Init", function () {
+    it("+ve should fail to init cpmm when take fee > 10%", async () => {
+      let messageId;
+      await message({
+        process: cpmm,
+        tags: [
+          { name: "Action", value: "Init" },
+          { name: "MarketId", value: marketId },
+          { name: "CollateralToken", value: collateralToken },
+          { name: "ConditionId", value: conditionId },
+          { name: "OutcomeSlotCount", value: "2" },
+          { name: "Name", value: "Outcome ETH LP Token" }, 
+          { name: "Ticker", value: "OETH" }, 
+          { name: "Logo", value: "" }, 
+          { name: "LpFee", value: "100" }, 
+          { name: "CreatorFee", value: "250" }, // 2.5%
+          { name: "CreatorFeeTarget", value: walletAddress2 }, 
+          { name: "ProtocolFee", value: "751" }, // 7.51% 
+          { name: "ProtocolFeeTarget", value: walletAddress2 }, 
+          { name: "Configurator", value: walletAddress2 }, 
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: cpmm,
+      });
+
+      // aoconnect Error not capturing the error message
+      // but present in the AOS process logs
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Take Fee capped at 10%!")
+    })
+
     it("+ve should init cpmm", async () => {
       let messageId;
       await message({
@@ -99,6 +138,12 @@ describe("cpmm.integration.test", function () {
           { name: "Name", value: "Outcome ETH LP Token 2" }, 
           { name: "Ticker", value: "OETH-LP-2" }, 
           { name: "Logo", value: "" }, 
+          { name: "LpFee", value: "100" }, 
+          { name: "CreatorFee", value: "250" }, // 2.5%
+          { name: "CreatorFeeTarget", value: walletAddress2 }, 
+          { name: "ProtocolFee", value: "250" }, 
+          { name: "ProtocolFeeTarget", value: walletAddress2 }, 
+          { name: "Configurator", value: walletAddress2 }, 
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -123,6 +168,10 @@ describe("cpmm.integration.test", function () {
       const conditionId_0 = Messages[0].Tags.find(t => t.name === 'ConditionId').value
       const outcomeSlotCount_0 = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
 
+      expect(action_0).to.equal("Condition-Preparation-Notice")
+      expect(conditionId_0).to.equal(conditionId)
+      expect(outcomeSlotCount_0).to.equal('2')
+
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
       const conditionId_1 = Messages[1].Tags.find(t => t.name === 'ConditionId').value
       const collateralToken_1 = Messages[1].Tags.find(t => t.name === 'CollateralToken').value
@@ -130,10 +179,12 @@ describe("cpmm.integration.test", function () {
       const name_1 = Messages[1].Tags.find(t => t.name === 'Name').value
       const ticker_1 = Messages[1].Tags.find(t => t.name === 'Ticker').value
       const logo_1 = Messages[1].Tags.find(t => t.name === 'Logo').value
-
-      expect(action_0).to.equal("Condition-Preparation-Notice")
-      expect(conditionId_0).to.equal(conditionId)
-      expect(outcomeSlotCount_0).to.equal('2')
+      const configurator_1 = Messages[1].Tags.find(t => t.name === 'Configurator').value
+      const lpFee_1 = Messages[1].Tags.find(t => t.name === 'LpFee').value
+      const creatorFee_1 = Messages[1].Tags.find(t => t.name === 'CreatorFee').value
+      const creatorFeeTarget_1 = Messages[1].Tags.find(t => t.name === 'CreatorFeeTarget').value
+      const protocolFee_1 = Messages[1].Tags.find(t => t.name === 'ProtocolFee').value
+      const protocolFeeTarget_1 = Messages[1].Tags.find(t => t.name === 'ProtocolFeeTarget').value
 
       expect(Messages[1].Data).to.be.equal('Successfully created market')
       expect(action_1).to.equal("New-Market-Notice")
@@ -143,6 +194,12 @@ describe("cpmm.integration.test", function () {
       expect(name_1).to.equal("Outcome ETH LP Token 2")
       expect(ticker_1).to.equal("OETH-LP-2")
       expect(logo_1).to.equal("")
+      expect(configurator_1).to.equal(walletAddress2)
+      expect(lpFee_1).to.equal("100")
+      expect(creatorFee_1).to.equal("250")
+      expect(creatorFeeTarget_1).to.equal(walletAddress2)
+      expect(protocolFee_1).to.equal("250")
+      expect(protocolFeeTarget_1).to.equal(walletAddress2)
     })
 
     it("+ve should fail to init cpmm after initialized", async () => {
@@ -151,11 +208,19 @@ describe("cpmm.integration.test", function () {
         process: cpmm,
         tags: [
           { name: "Action", value: "Init" },
+          { name: "MarketId", value: marketId },
           { name: "CollateralToken", value: collateralToken },
           { name: "ConditionId", value: conditionId },
+          { name: "OutcomeSlotCount", value: "2" },
           { name: "Name", value: "Outcome ETH LP Token" }, 
           { name: "Ticker", value: "OETH" }, 
           { name: "Logo", value: "" }, 
+          { name: "LpFee", value: "100" }, 
+          { name: "CreatorFee", value: "250" }, // 2.5%
+          { name: "CreatorFeeTarget", value: walletAddress }, 
+          { name: "ProtocolFee", value: "250" }, 
+          { name: "ProtocolFeeTarget", value: walletAddress2 }, 
+          { name: "Configurator", value: walletAddress2 }, 
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -170,13 +235,10 @@ describe("cpmm.integration.test", function () {
         process: cpmm,
       });
 
-      if (Error) {
-        console.log(Error)
-      }
-
       // aoconnect Error not capturing the error message
       // but present in the AOS process logs
       expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Market already initialized!")
     })
   })
 
@@ -210,8 +272,6 @@ describe("cpmm.integration.test", function () {
 
       expect(Messages.length).to.be.equal(1)
 
-      console.log(Messages[0].Tags)
-
       const name_ = Messages[0].Tags.find(t => t.name === 'Name').value
       const ticker_ = Messages[0].Tags.find(t => t.name === 'Ticker').value
       const logo_ = Messages[0].Tags.find(t => t.name === 'Logo').value
@@ -221,7 +281,11 @@ describe("cpmm.integration.test", function () {
       const lpFee_ = Messages[0].Tags.find(t => t.name === 'LpFee').value
       const lpFeePoolWeight_ = Messages[0].Tags.find(t => t.name === 'LpFeePoolWeight').value
       const lpFeeTotalWithdrawn_ = Messages[0].Tags.find(t => t.name === 'LpFeeTotalWithdrawn').value
-      const takeFee_ = Messages[0].Tags.find(t => t.name === 'TakeFee').value
+      const creatorFee_ = Messages[0].Tags.find(t => t.name === 'CreatorFee').value
+      const creatorFeeTarget_ = Messages[0].Tags.find(t => t.name === 'CreatorFeeTarget').value
+      const protocolFee_ = Messages[0].Tags.find(t => t.name === 'ProtocolFee').value
+      const protocolFeeTarget_ = Messages[0].Tags.find(t => t.name === 'ProtocolFeeTarget').value
+      const configurator_ = Messages[0].Tags.find(t => t.name === 'Configurator').value
 
       expect(name_).to.equal("Outcome ETH LP Token 2")
       expect(ticker_).to.equal("OETH-LP-2")
@@ -231,8 +295,12 @@ describe("cpmm.integration.test", function () {
       expect(collateralToken_).to.equal(collateralToken)
       expect(lpFeePoolWeight_).to.equal("0")
       expect(lpFeeTotalWithdrawn_).to.equal("0")
-      expect(lpFee_).to.equal("0.01") // 1%
-      expect(takeFee_).to.equal("0.025") // 2.5%
+      expect(lpFee_).to.equal("100") // 100bps, 1%
+      expect(configurator_).to.equal(walletAddress2)
+      expect(creatorFee_).to.equal("250") // 250bps, 2.5%
+      expect(creatorFeeTarget_).to.equal(walletAddress2)
+      expect(protocolFee_).to.equal("250") // 250bps, 2.5%
+      expect(protocolFeeTarget_).to.equal(walletAddress2)
     })
   })
 
@@ -2502,7 +2570,7 @@ describe("cpmm.integration.test", function () {
         process: conditionalTokens,
       });
 
-      expect(Messages.length).to.be.equal(4)
+      expect(Messages.length).to.be.equal(5)
 
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
       const tokenId_0 = Messages[0].Tags.find(t => t.name === 'TokenId').value
@@ -2515,11 +2583,15 @@ describe("cpmm.integration.test", function () {
       const action_2 = Messages[2].Tags.find(t => t.name === 'Action').value
       const recipient_2 = Messages[2].Tags.find(t => t.name === 'Recipient').value
       const quantity_2 = Messages[2].Tags.find(t => t.name === 'Quantity').value
-    
+
       const action_3 = Messages[3].Tags.find(t => t.name === 'Action').value
-      const payout_3 = Messages[3].Tags.find(t => t.name === 'Payout').value
-      const collateralToken_3 = Messages[3].Tags.find(t => t.name === 'CollateralToken').value
-      const conditionId_3 = Messages[3].Tags.find(t => t.name === 'ConditionId').value
+      const recipient_3 = Messages[3].Tags.find(t => t.name === 'Recipient').value
+      const quantity_3 = Messages[3].Tags.find(t => t.name === 'Quantity').value
+    
+      const action_4 = Messages[4].Tags.find(t => t.name === 'Action').value
+      const payout_4 = Messages[4].Tags.find(t => t.name === 'Payout').value
+      const collateralToken_4 = Messages[4].Tags.find(t => t.name === 'CollateralToken').value
+      const conditionId_4 = Messages[4].Tags.find(t => t.name === 'ConditionId').value
 
       expect(action_0).to.equal("Burn-Single-Notice")
       expect(tokenId_0).to.equal("1")
@@ -2527,16 +2599,20 @@ describe("cpmm.integration.test", function () {
     
       expect(action_1).to.equal("Transfer")
       expect(recipient_1).to.equal(walletAddress2)
-      expect(quantity_1).to.equal((Math.ceil(27998236784790*0.025)).toString()) // 2.5% market creator fee
+      expect(quantity_1).to.equal((Math.ceil(27998236784790*0.025)).toString()) // 2.5% market protocol fee
 
       expect(action_2).to.equal("Transfer")
-      expect(recipient_2).to.equal(walletAddress)
-      expect(quantity_2).to.equal((27998236784790 - Math.ceil(27998236784790*0.025)).toString()) // 97.5% returned to user
+      expect(recipient_2).to.equal(walletAddress2)
+      expect(quantity_2).to.equal((Math.ceil(27998236784790*0.025)).toString()) // 2.5% market creator fee
 
-      expect(action_3).to.equal("Payout-Redemption-Notice")
-      expect(payout_3).to.equal("27998236784790")
-      expect(collateralToken_3).to.equal(collateralToken)
-      expect(conditionId_3).to.equal(conditionId)
+      expect(action_3).to.equal("Transfer")
+      expect(recipient_3).to.equal(walletAddress)
+      expect(quantity_3).to.equal((27998236784790 - Math.ceil(27998236784790*0.05)).toString()) // 95% returned to user
+
+      expect(action_4).to.equal("Payout-Redemption-Notice")
+      expect(payout_4).to.equal("27998236784790")
+      expect(collateralToken_4).to.equal(collateralToken)
+      expect(conditionId_4).to.equal(conditionId)
     })
 
     it("+ve should should redeem (verify take fee)", async () => {
@@ -2564,8 +2640,8 @@ describe("cpmm.integration.test", function () {
 
       const balances_ = JSON.parse(Messages[0].Data)
       
-      // initial balance + 2.5% fee
-      expect(balances_[walletAddress2]).to.equal((1e16 + Math.ceil(27998236784790*0.025)).toString())
+      // initial balance + 2.5% protocol fee + 2.5% creators fee
+      expect(balances_[walletAddress2]).to.equal((1e16 + Math.ceil(27998236784790*0.05)).toString())
     })
 
     it("+ve should verify zerod-out redeemed positions (and not affect others)", async () => {

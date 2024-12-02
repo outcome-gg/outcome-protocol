@@ -55,15 +55,25 @@ function ConditionalTokensHelpers.getPositionId(collateralToken, collectionId)
 end
 
 function ConditionalTokensHelpers:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)
-  local takeFee = tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.takeFeePercentage), self.ONE)))
+  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))
+  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))
+  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))
   local totalPayoutMinusFee = tostring(bint.__sub(totalPayout, bint(takeFee)))
 
-  -- Send Take Fee to Take Fee Target
+  -- Send Protocol Fee
   ao.send({
     Target = collateralToken,
     Action = "Transfer",
-    Recipient = self.takeFeeTarget,
-    Quantity = takeFee,
+    Recipient = self.protocolFeeTarget,
+    Quantity = protocolFee,
+  })
+
+  -- Send Creator Fee
+  ao.send({
+    Target = collateralToken,
+    Action = "Transfer",
+    Recipient = self.creatorFeeTarget,
+    Quantity = creatorFee,
   })
 
   -- Return Total Payout minus Take Fee

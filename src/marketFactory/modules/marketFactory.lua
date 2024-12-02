@@ -131,6 +131,7 @@ function MarketFactoryMethods:initMarket(marketId, msg)
     Action = 'Init',
     MarketId = marketData.id,
     ConditionId = marketData.condition_id,
+    Configurator = self.configurator,
     CollateralToken = marketData.collateral_token,
     CollectionIds = json.encode(collectionIds),
     PositionIds = json.encode(positionIds),

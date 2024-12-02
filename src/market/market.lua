@@ -4,16 +4,13 @@ local json = require('json')
 local bint = require('.bint')(256)
 local utils = require('.utils')
 local cpmm = require('modules.cpmm')
-local config = require('modules.config')
 
 
 ---------------------------------------------------------------------------------
 -- MARKET -----------------------------------------------------------------------
 ---------------------------------------------------------------------------------
--- @dev Load config
-if not Config or Config.resetState then Config = config:new() end
 -- @dev Reset state while in DEV mode
-if not CPMM or Config.resetState then CPMM = cpmm:new(Config) end
+if not CPMM or Config.resetState then CPMM = cpmm:new() end
 
 Name = CPMM.token.name
 Ticker = CPMM.token.ticker
@@ -60,10 +57,14 @@ Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(m
     ConditionId = CPMM.tokens.conditionId,
     PositionIds = json.encode(CPMM.tokens.positionIds),
     CollateralToken = CPMM.tokens.collateralToken,
-    LpFee = tostring(bint.__div(CPMM.fee, CPMM.ONE)),
+    Configurator = CPMM.configurator,
+    LpFee = tostring(CPMM.lpFee),
     LpFeePoolWeight = CPMM.feePoolWeight,
     LpFeeTotalWithdrawn = CPMM.totalWithdrawnFees,
-    TakeFee = tostring(bint.__div(CPMM.tokens.takeFeePercentage, CPMM.tokens.ONE))
+    CreatorFee = tostring(CPMM.tokens.creatorFee),
+    CreatorFeeTarget = CPMM.tokens.creatorFeeTarget,
+    ProtocolFee = tostring(CPMM.tokens.protocolFee),
+    ProtocolFeeTarget = CPMM.tokens.protocolFeeTarget
   })
 end)
 
@@ -84,13 +85,24 @@ Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(m
   -- Limit of 256 because we use a partition array that is a number of 256 bits.
   assert(outcomeSlotCount <= 256, "Too many outcome slots!")
   assert(outcomeSlotCount > 1, "There should be more than one outcome slot!")
+  -- LP Token Parameters
   assert(msg.Tags.Name, "Name is required!")
   assert(msg.Tags.Ticker, "Ticker is required!")
   assert(msg.Tags.Logo, "Logo is required!")
+  -- Fee Parameters
+  assert(msg.Tags.LpFee, "LpFee is required!")
+  assert(msg.Tags.CreatorFee, "CreatorFee is required!")
+  assert(msg.Tags.CreatorFeeTarget, "CreatorFeeTarget is required!")
+  assert(msg.Tags.ProtocolFee, "ProtocolFee is required!")
+  assert(msg.Tags.ProtocolFeeTarget, "ProtocolFeeTarget is required!")
+  -- Take Fee Capped at 1000 bps, ie. 10%
+  assert(bint.__le(bint.__add(bint(msg.Tags.CreatorFee), bint(msg.Tags.ProtocolFee)), 1000), 'Take Fee capped at 10%!')
+  -- Admin Parameter
+  assert(msg.Tags.Configurator, "Configurator is required!")
   -- @dev TODO: include "resolve-by" field to enable fallback resolution
 
   -- Init CPMM with market details
-  CPMM:init(msg.Tags.CollateralToken, msg.Tags.MarketId, msg.Tags.ConditionId, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo, msg)
+  CPMM:init(msg.Tags.Configurator, msg.Tags.CollateralToken, msg.Tags.MarketId, msg.Tags.ConditionId, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo, msg.Tags.LpFee, msg.Tags.CreatorFee, msg.Tags.CreatorFeeTarget, msg.Tags.ProtocolFee, msg.Tags.ProtocolFeeTarget, msg)
 end)
 
 -- Add Funding
@@ -119,7 +131,6 @@ Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
     CPMM:removeFunding(msg.Tags.Sender, msg.Tags.Quantity, msg)
   end
 end)
-
 
 -- Buy
 -- @dev called on credit-notice from collateralToken with X-Action == 'Buy'
@@ -437,51 +448,33 @@ end)
 ---------------------------------------------------------------------------------
 
 -- Update Take Fee Percentage
-Handlers.add('Update-Take-Fee-Percentage', Handlers.utils.hasMatchingTag('Action', 'Update-Take-Fee-Percentage'), function(msg)
-  assert(msg.From == config.Configurator, 'Sender must be configurator!')
-  assert(msg.Tags.Percentage, 'Percentage is required!')
-  assert(bint.__lt(0, bint(msg.Tags.Percentage)), 'Percentage must be greater than 0')
-  assert(bint.__le(bint(msg.Tags.Percentage), 10), 'Percentage must be less than than or equal to 10')
+-- @dev TODO: REMOVE?
+Handlers.add('Update-Take-Fee', Handlers.utils.hasMatchingTag('Action', 'Update-Take-Fee'), function(msg)
+  assert(msg.From == CPMM.configurator, 'Sender must be configurator!')
+  assert(msg.Tags.CreatorFee, 'CreatorFee is required!')
+  assert(msg.Tags.ProtocolFee, 'ProtocolFee is required!')
+  assert(bint.__lt(0, bint(msg.Tags.CreatorFee)), 'CreatorFee must be greater than 0')
+  assert(bint.__lt(0, bint(msg.Tags.ProtocolFee)), 'ProtocolFee must be greater than 0')
+  assert(bint.__le(bint.__add(bint(msg.Tags.CreatorFee), bint(msg.Tags.ProtocolFee)), 10), 'Net fee must be less than than or equal to 10')
 
-  local formattedPercentage = tostring(bint(bint.__div(bint.__mul(bint.__pow(10, Denomination), bint(msg.Tags.Percentage)), 100)))
-  Config:updateTakeFeePercentage(formattedPercentage)
+  Config:updateTakeFee(msg.Tags.CreatorFee, msg.Tags.ProtocolFee)
 
-  msg.reply({Action = 'Take-Fee-Percentage-Updated', Data = tostring(msg.Tags.Percentage)})
+  msg.reply({Action = 'Take-Fee-Updated', CreatorFee = msg.Tags.CreatorFee, ProtocolFee = msg.Tags.ProtocolFee})
 end)
 
--- Update Take Fee Target
-Handlers.add('Update-Take-Fee-Target', Handlers.utils.hasMatchingTag('Action', 'Update-Take-Fee-Target'), function(msg)
-  assert(msg.From == config.Configurator, 'Sender must be configurator!')
+-- Update Protocol Fee Target
+Handlers.add('Update-Protocol-Fee-Target', Handlers.utils.hasMatchingTag('Action', 'Update-Take-Fee-Target'), function(msg)
+  assert(msg.From == CPMM.configurator, 'Sender must be configurator!')
   assert(msg.Tags.Target, 'Target is required!')
 
-  Config:updateTakeFeeTarget(msg.Tags.Target)
+  Config:updateProtocolFeeTarget(msg.Tags.Target)
 
-  msg.reply({Action = 'Take-Fee-Target-Updated', Data = tostring(msg.Tags.Target)})
-end)
-
--- Update Name
-Handlers.add('Update-Name', Handlers.utils.hasMatchingTag('Action', 'Update-Name'), function(msg)
-  assert(msg.From == config.Configurator, 'Sender must be configurator!')
-  assert(msg.Tags.Name, 'Name is required!')
-
-  Config:updateName(msg.Tags.Name)
-
-  msg.reply({Action = 'Name-Updated', Data = tostring(msg.Tags.Name)})
-end)
-
--- Update Ticker
-Handlers.add('Update-Ticker', Handlers.utils.hasMatchingTag('Action', 'Update-Ticker'), function(msg)
-  assert(msg.From == config.Configurator, 'Sender must be configurator!')
-  assert(msg.Tags.Ticker, 'Ticker is required!')
-
-  Config:updateTicker(msg.Tags.Ticker)
-
-  msg.reply({Action = 'Ticker-Updated', Data = tostring(msg.Tags.Ticker)})
+  msg.reply({Action = 'Protocol-Fee-Target-Updated', Data = tostring(msg.Tags.Target)})
 end)
 
 -- Update Logo
 Handlers.add('Update-Logo', Handlers.utils.hasMatchingTag('Action', 'Update-Logo'), function(msg)
-  assert(msg.From == config.Configurator, 'Sender must be configurator!')
+  assert(msg.From == CPMM.configurator, 'Sender must be configurator!')
   assert(msg.Tags.Logo, 'Logo is required!')
 
   Config:updateLogo(msg.Tags.Logo)
@@ -501,6 +494,7 @@ Handlers.once("Complete-Eval", Handlers.utils.hasMatchingTag("Action", "Complete
   })
 end)
 
+-- @dev TODO: remove?
 ao.send({Target = ao.id, Action = 'Complete-Eval'})
 
 return "ok"

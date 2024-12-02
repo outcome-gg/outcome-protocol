@@ -23,10 +23,11 @@ function ConditionalTokens:new(config)
     outcomeSlotCount = config.ctf.outcomeSlotCount,
     payoutNumerators = config.ctf.payoutNumerators,
     payoutDenominator = config.ctf.payoutDenominator,
-    takeFeePercentage = config.takeFee.percentage,
-    takeFeeTarget = config.takeFee.target,
-    ONE = config.takeFee.ONE,
-    resetState = config.resetState
+    -- Take Fee vars
+    creatorFee = config.takeFee.creatorFee,
+    creatorFeeTarget = config.takeFee.creatorFeeTarget,
+    protocolFee = config.takeFee.protocolFee,
+    protocolFeeTarget = config.takeFee.protocolFeeTarget
   }
 
   -- Set metatable for method lookups from ConditionalTokensMethods, SemiFungibleTokensMethods, and ConditionalTokensHelpers

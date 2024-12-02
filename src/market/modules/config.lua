@@ -24,12 +24,12 @@ function Config:new()
   obj.cpmm = cpmm
   -- add CTF
   local ctf = {
-    collateralToken = '',     -- Process ID of Collateral Tokens
-    conditionId = '',         -- Condition ID
-    outomeSlotCount = nil,    -- Outcome Slot Count
-    positionIds = {},         -- Position IDs
-    payoutNumerators = {},    -- Payout Numerators, indexded by conditionalId to ensure payouts reported by resolution agent    
-    payoutDenominator = {}    -- Payout Denominator, indexded by conditionalId to ensure payouts reported by resolution agent 
+    collateralToken = '',               -- Collateral Token Process ID
+    conditionId = '',                   -- Condition ID
+    outomeSlotCount = nil,              -- Outcome Slot Count
+    positionIds = {},                   -- Position IDs
+    payoutNumerators = {},              -- Payout Numerators, indexded by conditionalId to ensure payouts reported by resolution agent    
+    payoutDenominator = {}              -- Payout Denominator, indexded by conditionalId to ensure payouts reported by resolution agent 
   }
   obj.ctf = ctf
   -- Add LP Token
@@ -44,25 +44,21 @@ function Config:new()
   obj.token = token
   -- Add Conditional Tokens
   local tokens = {
-    name = 'Outcome DAI Conditional Tokens',  -- Collateral-specific Name
-    ticker = 'CDAI',                          -- Collateral-specific Ticker
-    logo = '',                                -- Logo
-    balancesById = {},                        -- Balances by id 
-    totalSupplyById = {},                     -- TotalSupply by id
-    denomination = 12                         -- Denomination
+    name = '',                           -- Conditional Token Name
+    ticker = '',                         -- Conditional Token Ticker
+    logo = '',                           -- Conditional Token Logo
+    balancesById = {},                   -- Conditional Token Balances by ID 
+    totalSupplyById = {},                -- Conditional Token TotalSupply by ID
   }
   obj.tokens = tokens
   -- Add LP Fee
-  local lpFee = {
-    percentage = tostring(bint(bint.__div(bint.__pow(10, obj.token.denomination), 100))), -- Fee Percentage, i.e. 1%
-    ONE = tostring(bint(bint.__pow(10, obj.token.denomination)))
-  }
-  obj.lpFee = lpFee
+  obj.lpFee = 0           -- LP Fee in basis points, e.g. 100 for 1%
   -- Add Take fee
   local takeFee = {
-    percentage = tostring(bint(bint.__div(bint.__mul(bint.__pow(10, obj.tokens.denomination), 2.5), 100))), -- Fee Percentage, i.e. 2.5%
-    target = 'm6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0',                                          -- Fee Target
-    ONE = tostring(bint(bint.__pow(10, obj.tokens.denomination)))
+    creatorFee = 0,         -- Creator Fee in basis points, where Max Take Fee (Creator + Protocol) is 1000, i.e. 10%
+    creatorFeeTarget = '',  -- Creator Fee Target
+    protocolFee = 0,        -- Protocol Fee in basis points, where Max Take Fee (Creator + Protocol) is 1000, i.e. 10%
+    protocolFeeTarget = ''  -- Protocol Fee Target
   }
   obj.takeFee = takeFee
   -- Add derived metadata
@@ -79,14 +75,6 @@ end
 
 function ConfigMethods:updateTakeFeeTarget(target)
   self.takeFee.target = target
-end
-
-function ConfigMethods:updateName(name)
-  self.name = name
-end
-
-function ConfigMethods:updateTicker(ticker)
-  self.ticker = ticker
 end
 
 function ConfigMethods:updateLogo(logo)

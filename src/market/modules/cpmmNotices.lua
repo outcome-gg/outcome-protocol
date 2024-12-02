@@ -3,14 +3,20 @@ local json = require('json')
 
 local CPMMNotices = {}
 
-function CPMMNotices.newMarketNotice(collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, msg)
+function CPMMNotices.newMarketNotice(configurator, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
   msg.reply({
     Action = "New-Market-Notice",
     MarketId = marketId,
     ConditionId = conditionId,
+    Configurator = configurator,
     CollateralToken = collateralToken,
     PositionIds = json.encode(positionIds),
     OutcomeSlotCount = tostring(outcomeSlotCount),
+    LpFee = lpFee,
+    CreatorFee = creatorFee,
+    CreatorFeeTarget = creatorFeeTarget,
+    ProtocolFee = protocolFee,
+    ProtocolFeeTarget = protocolFeeTarget,
     Name = name,
     Ticker = ticker,
     Logo = logo,
