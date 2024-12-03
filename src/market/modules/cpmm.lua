@@ -224,7 +224,7 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
   local endingOutcomeBalance = sellTokenPoolBalance * 1e4
 
   for i = 1, #poolBalances do
-    if i ~= tonumber(positionId) then
+    if not bint.__eq(bint(i), bint(positionId)) then
       local poolBalance = poolBalances[i]
       endingOutcomeBalance = CPMMHelpers.ceildiv(tonumber(endingOutcomeBalance * poolBalance), tonumber(poolBalance - returnAmountPlusFees))
     end
