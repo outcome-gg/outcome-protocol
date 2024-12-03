@@ -1,5 +1,6 @@
 local bint = require('.bint')(256)
 local ao = require('.ao')
+local json = require('json')
 
 local CPMMHelpers = {}
 
@@ -64,12 +65,12 @@ function CPMMHelpers:validateRemoveFunding(from, quantity)
   -- Get balance
   local balance = self.token.balances[from] or '0'
   -- Check for errors
-  if from == self.creatorFeeTarget then
+  if from == self.creatorFeeTarget and self.payoutDenominator[self.conditionId] and self.payoutDenominator[self.conditionId] == 0 then
     error = true
-    errorMessage = 'Remove-Funding Error: Creator liquidity locked until market resolution!'
+    errorMessage = 'Creator liquidity locked until market resolution!'
   elseif not bint.__le(bint(quantity), bint(balance)) then
     error = true
-    errorMessage = 'Remove-Funding Error: Quantity must be less than balance!'
+    errorMessage = 'Quantity must be less than balance!'
   end
   -- Return funds on error.
   if error then

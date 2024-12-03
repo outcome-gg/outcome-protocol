@@ -65,7 +65,7 @@ Denomination = 12
 
 if not Balances or ResetState then Balances = { 
   ['XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I'] = utils.toBalanceValue(10000 * 10 ^ Denomination),
-  ['m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0'] = utils.toBalanceValue(10000 * 10 ^ Denomination),
+  ['m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0'] = utils.toBalanceValue(20000 * 10 ^ Denomination),
 } end
 
 if Name ~= 'Points Coin' or ResetState then Name = 'Points Coin' end

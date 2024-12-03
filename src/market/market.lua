@@ -429,7 +429,6 @@ Handlers.add("Batch-Balance", Handlers.utils.hasMatchingTag("Action", "Batch-Bal
   msg.reply({ Data = bals })
 end)
 
-
 -- Batch Balances (Filtered by Ids, only)
 Handlers.add('Batch-Balances', Handlers.utils.hasMatchingTag('Action', 'Batch-Balances'), function(msg)
   assert(msg.Tags.TokenIds, "TokenIds is required!")

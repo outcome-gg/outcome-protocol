@@ -150,13 +150,13 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
   local nonZeroPositionIds = {}
   for i = 1, #sendBackAmounts do
     if sendBackAmounts[i] > 0 then
-      table.insert(nonZeroAmounts, sendBackAmounts[i])
+      table.insert(nonZeroAmounts, tostring(math.floor(sendBackAmounts[i])))
       table.insert(nonZeroPositionIds, self.positionIds[i])
     end
   end
   -- Send back conditional tokens should there be an uneven distribution
   if #nonZeroAmounts ~= 0 then
-    self.tokens:transferBatch(ao.id, onBehalfOf, self.positionIds, nonZeroAmounts, true, msg)
+    self.tokens:transferBatch(ao.id, onBehalfOf, nonZeroPositionIds, nonZeroAmounts, true, msg)
   end
   -- Transform sendBackAmounts to array of amounts added
   for i = 1, #sendBackAmounts do
@@ -164,7 +164,6 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
   end
   -- Send notice with amounts added
   self.fundingAddedNotice(from, sendBackAmounts, mintAmount)
- 
 end
 
 -- Remove Funding 
@@ -175,13 +174,13 @@ function CPMMMethods:removeFunding(from, sharesToBurn, msg)
   -- Calculate sendAmounts
   local sendAmounts = {}
   for i = 1, #poolBalances do
-    sendAmounts[i] = (poolBalances[i] * sharesToBurn) / self.token.totalSupply
+    sendAmounts[i] = tostring(math.floor((poolBalances[i] * sharesToBurn) / self.token.totalSupply))
   end
   -- Calculate collateralRemovedFromFeePool
   local poolFeeBalance = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
   self:burn(from, sharesToBurn)
   local collateralRemovedFromFeePool = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
-  collateralRemovedFromFeePool = poolFeeBalance - collateralRemovedFromFeePool
+  collateralRemovedFromFeePool = tostring(math.floor(poolFeeBalance - collateralRemovedFromFeePool))
   -- Send collateralRemovedFromFeePool
   if bint(collateralRemovedFromFeePool) > 0 then
     ao.send({ Target = self.tokens.collateralToken, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
