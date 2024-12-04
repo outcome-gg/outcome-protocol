@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Outcome Protocol",
   "scripts": {
+    "test": "bash ./scripts/test.sh",
     "test:unit": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test test/unit/**/*.test.js",
     "test:unit:agents": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test test/unit/agents/*.test.js",
     "test:unit:agents:dataAgent": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test --test test/unit/agents/dataAgent.unit.test.js",

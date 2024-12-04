@@ -10,23 +10,19 @@ if not Config then Config = config:new() end
 -- @dev Reset state on load while in DEV mode
 if Configurator.resetState then Configurator = configurator:new(Config) end
 
+Name = 'Configurator'
+
 --[[
     Info
 ]]
 Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(msg)
-  assert(msg.From == Configurator.admin, 'Sender must be admin!')
-  assert(type(msg.Tags.UpdateProcess) == 'string', 'UpdateProcess is required!')
-  assert(type(msg.Tags.UpdateAction) == 'string', 'UpdateAction is required!')
-  assert(type(msg.Tags.UpdateTagName) == 'string', 'UpdateTagName is required!')
-  assert(type(msg.Tags.UpdateTagValue) == 'string', 'UpdateTagValue is required!')
-
-  Configurator:stageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, msg.Tags.UpdateTagName, msg.Tags.UpdateTagValue)
-
-  msg.reply({
-    Admin = Configurator.admin,
-    Delay = Configurator.delay,
-    Staged = json.encode(Configurator.staged)
-  })
+  print("msg " .. json.encode(msg))
+  -- msg.reply({ Data = "foo"})
+  -- msg.reply({
+  --   Admin = Configurator.admin,
+  --   Delay = Configurator.delay,
+  --   Staged = json.encode(Configurator.staged)
+  -- })
 end)
 
 --[[
