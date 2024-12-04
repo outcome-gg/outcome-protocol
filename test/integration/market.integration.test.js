@@ -31,19 +31,10 @@ let wallet2;
 let walletAddress;
 let walletAddress2;
 
-// Conditional Token variables
+// Market variables
 let resolutionAgent;
 let questionId;
 let conditionId
-let outcomeSlotCount;
-let parentCollectionId;
-let indexSetIN;
-let indexSetOUT;
-let collectionIdIN;
-let collectionIdOUT;
-let positionIdIN;
-let positionIdOUT;
-
 let marketId;
 
 /* 
@@ -61,24 +52,10 @@ describe("cpmm.integration.test", function () {
     walletAddress = 'XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I',
     walletAddress2 = 'm6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0',
 
-    // Conditional Token variables
-
-    // to get conditionId
+    // Market variables
     questionId = 'trump-becomes-the-47th-president-of-the-usa',
     resolutionAgent = walletAddress2,
-
-    // to get collectionId
-    parentCollectionId = "", // from collateral
-    indexSetIN = "1", // 1 for IN, 2 for OUT
-    indexSetOUT = "2", // 1 for IN, 2 for OUT
-    
-    // Expected:
     conditionId = "2d175f731624549c34fe14840990e92d610d63ea205028af076ec5cbef4e231c",
-    collectionIdIN = "45f9415be8dff7be6a906246c469f46730bccd9984486f4ad316cf90eb2e951d",
-    collectionIdOUT = "4c028af9b5b5f60457c96be27af32080a9adce728390919566bb2fcbd03d65f9",
-    positionIdIN = "35ba13152a8b2086a40393fb611dae5c74a8ada28a80effda1e58381b9edc2f4",
-    positionIdOUT = "b52a990678dd524169490cfaa7300fc1c58bc3f06e0bd252e837cda920b93101",
-
     marketId = "123"
   ))
 
