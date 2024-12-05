@@ -23,6 +23,7 @@ function CPMM:new()
     -- Market vars
     marketId = Config.marketId,
     initialized = Config.initialized,
+    incentives = Config.incentives,
     configurator = Config.configurator,
     -- CPMM vars
     poolBalances = Config.cpmm.poolBalances,
@@ -64,7 +65,7 @@ end
 ---------------------------------------------------------------------------------
 
 -- Init
-function CPMMMethods:init(configurator, collateralToken, marketId, conditionId, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
+function CPMMMethods:init(configurator, incentives, collateralToken, marketId, conditionId, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
   -- Generate Position Ids
   local positionIds = self.tokens.generatePositionIds(outcomeSlotCount)
   -- Set Conditional Tokens vars
@@ -84,11 +85,12 @@ function CPMMMethods:init(configurator, collateralToken, marketId, conditionId, 
   self.marketId = marketId
   self.initialized = true
   self.configurator = configurator
+  self.incentives = incentives
   self.lpFee = tonumber(lpFee)
   -- Prepare Condition
   self.tokens:prepareCondition(conditionId, outcomeSlotCount, msg)
   -- Init CPMM with market details
-  self.newMarketNotice(configurator, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
+  self.newMarketNotice(configurator, incentives, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
 end
 
 -- Add Funding 
@@ -342,6 +344,33 @@ end
 function CPMMMethods:transfer(from, recipient, quantity, cast, msg)
   self:_beforeTokenTransfer(from, recipient, quantity, msg)
   self.token:transfer(from, recipient, quantity, cast, msg.Tags, msg.Id)
+end
+
+-- @dev updates configurator
+function CPMMMethods:updateConfigurator(configurator)
+  self.configurator = configurator
+end
+
+-- @dev updates incentives
+function CPMMMethods:updateIncentives(incentives)
+  self.incentives = incentives
+end
+
+-- @dev Updates the take fee
+function CPMMMethods:updateTakeFee(creatorFee, protocolFee)
+  self.tokens.creatorFee = creatorFee
+  self.tokens.protocolFee = protocolFee
+end
+
+-- @dev Updtes the protocol fee target
+function CPMMMethods:updateProtocolFeeTarget(target)
+  self.tokens.protocolFeeTarget = target
+end
+
+-- @dev Updtes the logo
+function CPMMMethods:updateLogo(logo)
+  self.token.logo = logo
+  self.tokens.logo = logo
 end
 
 return CPMM

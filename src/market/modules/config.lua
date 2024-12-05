@@ -68,25 +68,4 @@ function Config:new()
   return obj
 end
 
--- Update Methods
-function ConfigMethods:updateTakeFeePercentage(percentage)
-  self.takeFee.percentage = percentage
-end
-
-function ConfigMethods:updateTakeFeeTarget(target)
-  self.takeFee.target = target
-end
-
-function ConfigMethods:updateLogo(logo)
-  self.logo = logo
-end
-
-function ConfigMethods:updateIncentives(incentives)
-  self.incentives = incentives
-end
-
-function ConfigMethods:updateConfigurator(configurator)
-  self.configurator = configurator
-end
-
 return Config

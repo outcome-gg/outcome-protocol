@@ -3,12 +3,13 @@ local json = require('json')
 
 local CPMMNotices = {}
 
-function CPMMNotices.newMarketNotice(configurator, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
+function CPMMNotices.newMarketNotice(configurator, incentives, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
   msg.reply({
     Action = "New-Market-Notice",
     MarketId = marketId,
     ConditionId = conditionId,
     Configurator = configurator,
+    Incentives = incentives,
     CollateralToken = collateralToken,
     PositionIds = json.encode(positionIds),
     OutcomeSlotCount = tostring(outcomeSlotCount),
@@ -53,7 +54,7 @@ function CPMMNotices.buyNotice(from, investmentAmount, feeAmount, positionId, ou
     FeeAmount = tostring(feeAmount),
     PositionId = positionId,
     OutcomeTokensToBuy = tostring(outcomeTokensToBuy),
-    Data = "Successfully buy order"
+    Data = "Successful buy order"
   })
 end
 
@@ -65,7 +66,44 @@ function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, outco
     FeeAmount = tostring(feeAmount),
     PositionId = positionId,
     OutcomeTokensToSell = tostring(outcomeTokensToSell),
-    Data = "Successfully sell order"
+    Data = "Successful sell order"
+  })
+end
+
+function CPMMNotices.updateConfiguratorNotice(configurator, msg)
+  msg.reply({
+    Action = "Configurator-Updated",
+    Data = configurator
+  })
+end
+
+function CPMMNotices.updateIncentivesNotice(incentives, msg)
+  msg.reply({
+    Action = "Incentives-Updated",
+    Data = incentives
+  })
+end
+
+function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)
+  msg.reply({
+    Action = "Take-Fee-Updated",
+    CreatorFee = creatorFee,
+    ProtocolFee = protocolFee,
+    Data = takeFee
+  })
+end
+
+function CPMMNotices.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)
+  msg.reply({
+    Action = "Protocol-Fee-Target-Updated",
+    Data = protocolFeeTarget
+  })
+end
+
+function CPMMNotices.updateLogoNotice(logo, msg)
+  msg.reply({
+    Action = "Logo-Updated",
+    Data = logo
   })
 end
 

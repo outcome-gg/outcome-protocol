@@ -4,6 +4,7 @@ local json = require('json')
 local bint = require('.bint')(256)
 local utils = require('.utils')
 local cpmm = require('modules.cpmm')
+local validation = require('modules.validation')
 
 
 ---------------------------------------------------------------------------------
@@ -58,6 +59,7 @@ Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(m
     PositionIds = json.encode(CPMM.tokens.positionIds),
     CollateralToken = CPMM.tokens.collateralToken,
     Configurator = CPMM.configurator,
+    Incentives = CPMM.incentives,
     LpFee = tostring(CPMM.lpFee),
     LpFeePoolWeight = CPMM.feePoolWeight,
     LpFeeTotalWithdrawn = CPMM.totalWithdrawnFees,
@@ -75,48 +77,19 @@ end)
 -- Init
 -- @dev to only enable shallow markets on launch, i.e. where parentCollectionId = ""
 Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(msg)
-  -- ownable.onlyOwner(msg) -- access control TODO: test after spawning is enabled
-  assert(CPMM.initialized == false, "Market already initialized!")
-  assert(msg.Tags.MarketId, "MarketId is required!")
-  assert(msg.Tags.ConditionId, "ConditionId is required!")
-  assert(msg.Tags.CollateralToken, "CollateralToken is required!")
-  assert(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount is required!")
+  validation.init(msg)
   local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
-  -- Limit of 256 because we use a partition array that is a number of 256 bits.
-  assert(outcomeSlotCount <= 256, "Too many outcome slots!")
-  assert(outcomeSlotCount > 1, "There should be more than one outcome slot!")
-  -- LP Token Parameters
-  assert(msg.Tags.Name, "Name is required!")
-  assert(msg.Tags.Ticker, "Ticker is required!")
-  assert(msg.Tags.Logo, "Logo is required!")
-  -- Fee Parameters
-  assert(msg.Tags.LpFee, "LpFee is required!")
-  assert(msg.Tags.CreatorFee, "CreatorFee is required!")
-  assert(msg.Tags.CreatorFeeTarget, "CreatorFeeTarget is required!")
-  assert(msg.Tags.ProtocolFee, "ProtocolFee is required!")
-  assert(msg.Tags.ProtocolFeeTarget, "ProtocolFeeTarget is required!")
-  -- Take Fee Capped at 1000 bps, ie. 10%
-  assert(bint.__le(bint.__add(bint(msg.Tags.CreatorFee), bint(msg.Tags.ProtocolFee)), 1000), 'Take Fee capped at 10%!')
-  -- Admin Parameter
-  assert(msg.Tags.Configurator, "Configurator is required!")
-  -- @dev TODO: include "resolve-by" field to enable fallback resolution
-
-  -- Init CPMM with market details
-  CPMM:init(msg.Tags.Configurator, msg.Tags.CollateralToken, msg.Tags.MarketId, msg.Tags.ConditionId, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo, msg.Tags.LpFee, msg.Tags.CreatorFee, msg.Tags.CreatorFeeTarget, msg.Tags.ProtocolFee, msg.Tags.ProtocolFeeTarget, msg)
+  CPMM:init(msg.Tags.Configurator, msg.Tags.Incentives, msg.Tags.CollateralToken, msg.Tags.MarketId, msg.Tags.ConditionId, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo, msg.Tags.LpFee, msg.Tags.CreatorFee, msg.Tags.CreatorFeeTarget, msg.Tags.ProtocolFee, msg.Tags.ProtocolFeeTarget, msg)
 end)
 
 -- Add Funding
 -- @dev called on credit-notice from collateralToken with X-Action == 'Add-Funding'
 Handlers.add('Add-Funding', isAddFunding, function(msg)
-  assert(msg.Tags.Quantity, 'Quantity is required!')
-  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
-  assert(msg.Tags['X-Distribution'], 'X-Distribution is required!')
+  validation.addFunding(msg)
   local distribution = json.decode(msg.Tags['X-Distribution'])
-
-  -- Enable actioning on behalf of others
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
 
-  -- @dev returns fudning if invalid
+  -- @dev returns funding if invalid
   if CPMM:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
     CPMM:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, distribution, msg)
   end
@@ -125,8 +98,7 @@ end)
 -- Remove Funding
 -- @dev called on credit-notice from ao.id with X-Action == 'Remove-Funding'
 Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
-  assert(msg.Tags.Quantity, 'Quantity is required!')
-  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
+  validation.removeFunding(msg)
   if CPMM:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
     CPMM:removeFunding(msg.Tags.Sender, msg.Tags.Quantity, msg)
   end
@@ -135,10 +107,7 @@ end)
 -- Buy
 -- @dev called on credit-notice from collateralToken with X-Action == 'Buy'
 Handlers.add("Buy", isBuy, function(msg)
-  assert(msg.Tags.Quantity, 'Quantity is required!')
-  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
-
-  -- Enable actioning on behalf of others
+  validation.buy(msg)
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
 
   local error = false
@@ -178,16 +147,9 @@ end)
 -- Sell
 -- @dev refactoring as now within same process
 Handlers.add("Sell", Handlers.utils.hasMatchingTag("Action", "Sell"), function(msg)
-  assert(msg.Tags.PositionId, 'PositionId is required!')
-  assert(msg.Tags.Quantity, 'Quantity is required!')
-  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than zero!')
-  assert(msg.Tags['ReturnAmount'], 'ReturnAmount is required!')
-  assert(bint.__lt(0, bint(msg.Tags['ReturnAmount'])), 'ReturnAmount must be greater than zero!')
-  assert(msg.Tags['MaxOutcomeTokensToSell'], 'MaxOutcomeTokensToSell is required!')
-  assert(bint.__lt(0, bint(msg.Tags['MaxOutcomeTokensToSell'])), 'MaxOutcomeTokensToSell must be greater than zero!')
+  validation.sell(msg)
   local outcomeTokensToSell = CPMM:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   assert(bint.__le(bint(outcomeTokensToSell), bint(msg.Tags.MaxOutcomeTokensToSell)), 'Maximum sell amount not sufficient!')
-
   CPMM:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
 end)
 
@@ -203,21 +165,15 @@ end)
 
 -- Calc Buy Amount
 Handlers.add("Calc-Buy-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Buy-Amount"), function(msg)
-  assert(msg.Tags.InvestmentAmount, 'InvestmentAmount is required!')
-  assert(msg.Tags.PositionId, 'PositionId is required!')
-
+  validation.calcBuyAmount(msg)
   local buyAmount = CPMM:calcBuyAmount(msg.Tags.InvestmentAmount, msg.Tags.PositionId)
-
   msg.reply({ Data = buyAmount })
 end)
 
 -- Calc Sell Amount
 Handlers.add("Calc-Sell-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Sell-Amount"), function(msg)
-  assert(msg.Tags.ReturnAmount, 'ReturnAmount is required!')
-  assert(msg.Tags.PositionId, 'PositionId is required!')
-
+  validation.calcSellAmount(msg)
   local sellAmount = CPMM:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
-
   msg.reply({ Data = sellAmount })
 end)
 
@@ -239,9 +195,7 @@ end)
 
 -- Transfer
 Handlers.add('Transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), function(msg)
-  assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
-  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
-  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than 0')
+  validation.transfer(msg)
   CPMM:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg)
 end)
 
@@ -273,19 +227,13 @@ Handlers.add('Balance', Handlers.utils.hasMatchingTag('Action', 'Balance'), func
 end)
 
 -- Balances
-Handlers.add('Balances', Handlers.utils.hasMatchingTag('Action', 'Balances'),
-  function(msg) msg.reply({ Data = json.encode(CPMM.token.balances) })
+Handlers.add('Balances', Handlers.utils.hasMatchingTag('Action', 'Balances'), function(msg) 
+  msg.reply({ Data = json.encode(CPMM.token.balances) })
 end)
 
 -- Total Supply
 Handlers.add('Total-Supply', Handlers.utils.hasMatchingTag('Action', 'Total-Supply'), function(msg)
-  assert(msg.From ~= ao.id, 'Cannot call Total-Supply from the same process!')
-
-  msg.reply({
-    Action = 'Total-Supply',
-    Data = CPMM.token.totalSupply,
-    Ticker = CPMM.ticker
-  })
+  msg.reply({ Data = json.encode(CPMM.token.totalSupply) })
 end)
 
 ---------------------------------------------------------------------------------
@@ -294,7 +242,7 @@ end)
 
 -- Merge Positions
 Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-Positions"), function(msg)
-  assert(msg.Tags.Quantity, "Quantity is required!")
+  validation.merge(msg)
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.From
   -- Check user balances
   local error = false
@@ -323,8 +271,7 @@ end)
 
 -- Report Payouts
 Handlers.add("Report-Payouts", Handlers.utils.hasMatchingTag("Action", "Report-Payouts"), function(msg)
-  assert(msg.Tags.QuestionId, "QuestionId is required!")
-  assert(msg.Tags.Payouts, "Payouts is required!")
+  validation.reportPayouts(msg)
   local payouts = json.decode(msg.Tags.Payouts)
   CPMM.tokens:reportPayouts(msg.Tags.QuestionId, payouts, msg)
 end)
@@ -363,27 +310,15 @@ end)
 
 -- Transfer Single
 Handlers.add('Transfer-Single', Handlers.utils.hasMatchingTag('Action', 'Transfer-Single'), function(msg)
-  assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
-  assert(type(msg.Tags.TokenId) == 'string', 'TokenId is required!')
-  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
-  assert(bint.__lt(0, bint(msg.Tags.Quantity)), 'Quantity must be greater than 0')
+  validation.transferSingle(msg)
   CPMM.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.TokenId, msg.Tags.Quantity, msg.Tags.Cast, msg)
 end)
 
 -- Transfer Batch
 Handlers.add('Transfer-Batch', Handlers.utils.hasMatchingTag('Action', 'Transfer-Batch'), function(msg)
-  assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
-  assert(type(msg.Tags.TokenIds) == 'string', 'TokenIds is required!')
+  validation.transferBatch(msg)
   local tokenIds = json.decode(msg.Tags.TokenIds)
-  assert(type(msg.Tags.Quantities) == 'string', 'Quantities is required!')
   local quantities = json.decode(msg.Tags.Quantities)
-  assert(#tokenIds == #quantities, 'Input array lengths must match!')
-  for i = 1, #quantities do
-    assert(bint.__lt(0, bint(quantities[i])), 'Quantity must be greater than 0')
-  end
-  for i = 1, #tokenIds do
-    assert(utils.includes(tokenIds[i], CPMM.tokens.positionIds), 'Invalid tokenId!')
-  end
   CPMM.tokens:transferBatch(msg.From, msg.Tags.Recipient, tokenIds, quantities, msg.Tags.Cast, msg)
 end)
 
@@ -393,45 +328,37 @@ end)
 
 -- Balance By Id
 Handlers.add("Balance-By-Id", Handlers.utils.hasMatchingTag("Action", "Balance-By-Id"), function(msg)
-  assert(msg.Tags.TokenId, "TokenId is required!")
-  assert(bint.__lt(0, bint(msg.Tags.TokenId)), 'TokenId must be greater than 0')
-  local bal = CPMM:getBalance(msg.From, msg.Tags.Recipient, msg.Tags.TokenId)
-
+  validation.balanceById(msg)
+  local account = msg.Tags.Recipient or msg.From
+  local bal = CPMM:getBalance(msg.From, account, msg.Tags.TokenId)
   msg.reply({
     Balance = bal,
     TokenId = msg.Tags.TokenId,
     Ticker = Ticker,
-    Account = msg.Tags.Recipient or msg.From,
+    Account = account,
     Data = bal
   })
 end)
 
 -- Balances By Id
 Handlers.add('Balances-By-Id', Handlers.utils.hasMatchingTag('Action', 'Balances-By-Id'), function(msg)
-  assert(msg.Tags.TokenId, "TokenId is required!")
-  assert(bint.__lt(0, bint(msg.Tags.TokenId)), 'TokenId must be greater than 0')
+  validation.balancesById(msg)
   local bals = CPMM.tokens:getBalances(msg.Tags.TokenId)
   msg.reply({ Data = bals })
 end)
 
 -- Batch Balance (Filtered by users and ids)
 Handlers.add("Batch-Balance", Handlers.utils.hasMatchingTag("Action", "Batch-Balance"), function(msg)
-  assert(msg.Tags.Recipients, "Recipients is required!")
+  validation.batchBalance(msg)
   local recipients = json.decode(msg.Tags.Recipients)
-  assert(msg.Tags.TokenIds, "TokenIds is required!")
   local tokenIds = json.decode(msg.Tags.TokenIds)
-  assert(#recipients == #tokenIds, "Recipients and TokenIds must have same lengths")
-  for i = 1, #tokenIds do
-    assert(utils.includes(tokenIds[i], CPMM.tokens.positionIds), 'Invalid tokenId!')
-  end
-
   local bals = CPMM.tokens:getBatchBalance(recipients, tokenIds)
   msg.reply({ Data = bals })
 end)
 
 -- Batch Balances (Filtered by Ids, only)
 Handlers.add('Batch-Balances', Handlers.utils.hasMatchingTag('Action', 'Batch-Balances'), function(msg)
-  assert(msg.Tags.TokenIds, "TokenIds is required!")
+  validation.batchBalances(msg)
   local tokenIds = json.decode(msg.Tags.TokenIds)
   local bals = CPMM.tokens:getBatchBalances(tokenIds)
   msg.reply({ Data = bals })
@@ -446,39 +373,40 @@ end)
 -- CONFIG HANDLERS --------------------------------------------------------------
 ---------------------------------------------------------------------------------
 
+-- Update Configurator
+Handlers.add('Update-Configurator', Handlers.utils.hasMatchingTag('Action', 'Update-Configurator'), function(msg)
+  validation.updateConfigurator(msg)
+  CPMM:updateConfigurator(msg.Tags.Configurator)
+  CPMM.updateConfiguratorNotice(msg.Tags.Configurator, msg)
+end)
+
+-- Update Incentives
+Handlers.add('Update-Incentives', Handlers.utils.hasMatchingTag('Action', 'Update-Incentives'), function(msg)
+  validation.updateIncentives(msg)
+  CPMM:updateIncentives(msg.Tags.Incentives)
+  CPMM.updateIncentivesNotice(msg.Tags.Incentives, msg)
+end)
+
 -- Update Take Fee Percentage
--- @dev TODO: REMOVE?
 Handlers.add('Update-Take-Fee', Handlers.utils.hasMatchingTag('Action', 'Update-Take-Fee'), function(msg)
-  assert(msg.From == CPMM.configurator, 'Sender must be configurator!')
-  assert(msg.Tags.CreatorFee, 'CreatorFee is required!')
-  assert(msg.Tags.ProtocolFee, 'ProtocolFee is required!')
-  assert(bint.__lt(0, bint(msg.Tags.CreatorFee)), 'CreatorFee must be greater than 0')
-  assert(bint.__lt(0, bint(msg.Tags.ProtocolFee)), 'ProtocolFee must be greater than 0')
-  assert(bint.__le(bint.__add(bint(msg.Tags.CreatorFee), bint(msg.Tags.ProtocolFee)), 10), 'Net fee must be less than than or equal to 10')
-
-  Config:updateTakeFee(msg.Tags.CreatorFee, msg.Tags.ProtocolFee)
-
-  msg.reply({Action = 'Take-Fee-Updated', CreatorFee = msg.Tags.CreatorFee, ProtocolFee = msg.Tags.ProtocolFee})
+  validation.updateTakeFee(msg)
+  CPMM:updateTakeFee(tonumber(msg.Tags.CreatorFee), tonumber(msg.Tags.ProtocolFee))
+  local takeFee = tonumber(msg.Tags.CreatorFee) + tonumber(msg.Tags.ProtocolFee)
+  CPMM.updateTakeFeeNotice(msg.Tags.CreatorFee, msg.Tags.ProtocolFee, takeFee, msg)
 end)
 
 -- Update Protocol Fee Target
-Handlers.add('Update-Protocol-Fee-Target', Handlers.utils.hasMatchingTag('Action', 'Update-Take-Fee-Target'), function(msg)
-  assert(msg.From == CPMM.configurator, 'Sender must be configurator!')
-  assert(msg.Tags.Target, 'Target is required!')
-
-  Config:updateProtocolFeeTarget(msg.Tags.Target)
-
-  msg.reply({Action = 'Protocol-Fee-Target-Updated', Data = tostring(msg.Tags.Target)})
+Handlers.add('Update-Protocol-Fee-Target', Handlers.utils.hasMatchingTag('Action', 'Update-Protocol-Fee-Target'), function(msg)
+  validation.updateProtocolFeeTarget(msg)
+  CPMM:updateProtocolFeeTarget(msg.Tags.ProtocolFeeTarget)
+  CPMM.updateProtocolFeeTargetNotice(msg.Tags.ProtocolFeeTarget, msg)
 end)
 
 -- Update Logo
 Handlers.add('Update-Logo', Handlers.utils.hasMatchingTag('Action', 'Update-Logo'), function(msg)
-  assert(msg.From == CPMM.configurator, 'Sender must be configurator!')
-  assert(msg.Tags.Logo, 'Logo is required!')
-
-  Config:updateLogo(msg.Tags.Logo)
-
-  msg.reply({Action = 'Logo-Updated', Data = tostring(msg.Tags.Logo)})
+  validation.updateLogo(msg)
+  CPMM:updateLogo(msg.Tags.Logo)
+  CPMM.updateLogoNotice(msg.Tags.Logo, msg)
 end)
 
 ---------------------------------------------------------------------------------
