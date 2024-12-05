@@ -1,1 +1,1668 @@
-// TODO
+import { message, createDataItemSigner, result, results } from "@permaweb/aoconnect";
+import { getMessageData, getNoticeData, getNoticeAction, getErrorMessage, parseAmount, parseBalances } from "./utils.js";
+import { expect, use } from "chai";
+import { readFileSync } from "fs";
+import { fileURLToPath } from 'url';
+import path, { parse } from "path";
+import { assert, error } from "console";
+import dotenv from 'dotenv';
+import keccak256 from 'keccak256'
+import exp from "constants";
+
+dotenv.config();
+
+const configurator = process.env.TEST_CONFIGURATOR;
+
+console.log("CONFIGURATOR: ", configurator)
+
+// Get the current file path
+const __filename = fileURLToPath(import.meta.url);
+
+// Get the directory name of the current module
+const __dirname = path.dirname(__filename);
+
+// Txn execution variables
+let wallet;
+let wallet2;
+let walletAddress;
+let walletAddress2;
+
+// Configurator variables
+let admin;
+let delay;
+let staged;
+let updateProcess;
+let updateAction;
+let updateTagName;
+let updateTagValue;
+let updateDelay;
+let updateAdmin;
+let hash;
+let hashAdmin;
+let hashDelay;
+
+/* 
+* Tests
+*/
+describe("cpmm.integration.test", function () {
+  before(async () => ( 
+    // Txn execution variables
+    wallet = JSON.parse(
+      readFileSync(path.join(__dirname, '../../wallet.json')).toString(),
+    ),
+    wallet2 = JSON.parse(
+      readFileSync(path.join(__dirname, '../../wallet2.json')).toString(),
+    ),
+    walletAddress = 'XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I',
+    walletAddress2 = 'm6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0',
+
+    // Configurator variables
+    admin = walletAddress2,
+    delay = 5000, 
+    staged = {},
+    updateProcess = "UPDATE_PROCESS",
+    updateAction = "UPDATE_ACTION",
+    updateTagName = "UPDATE_TAG_NAME",
+    updateTagValue = "UPDATE_TAG_VALUE",
+    updateAdmin = walletAddress,
+    updateDelay = 4000,
+    hash = keccak256(updateProcess + updateAction + updateTagName + updateTagValue).toString('hex'),
+    hashAdmin = keccak256(walletAddress).toString('hex'),
+    hashDelay = keccak256(updateDelay.toString()).toString('hex')
+  ))
+
+  /************************************************************************ 
+  * configurator.Info
+  ************************************************************************/
+  describe("configurator.Info", function () {
+    it("+ve should get info", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Info" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const admin_ = Messages[0].Tags.find(t => t.name === 'Admin').value
+      const delay_ = Messages[0].Tags.find(t => t.name === 'Delay').value
+      const staged_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Staged').value)
+      
+      expect(admin_).to.equal(admin)
+      expect(delay_).to.equal(delay)
+      expect(Object.keys(staged_).length).to.equal(0)
+    })
+  })
+
+  /************************************************************************ 
+  * configurator.Stage-Update
+  ************************************************************************/
+  describe("configurator.Stage-Update", function () {
+    it("+ve should fail to stage update (non-admin)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Sender must be admin!")
+    })
+
+    it("+ve should fail to stage update (missing updateProcess)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateProcess is required!")
+    })
+
+    it("+ve should fail to stage update (missing updateAction)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+          { name: "UpdateProcess", value: updateProcess},
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateAction is required!")
+    })
+
+    it("+ve should fail to stage update (missing updateTagName)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateTagName is required!")
+    })
+
+    it("+ve should fail to stage update (missing updateTagValue)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTagName", value: updateTagName },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateTagValue is required!")
+    })
+
+    it("+ve should stage update", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTagName", value: updateTagName },
+          { name: "UpdateTagValue", value: updateTagValue },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const updateProcess_ = Messages[0].Tags.find(t => t.name === 'UpdateProcess').value
+      const updateAction_ = Messages[0].Tags.find(t => t.name === 'UpdateAction').value
+      const updateTagName_ = Messages[0].Tags.find(t => t.name === 'UpdateTagName').value
+      const updateTagValue_ = Messages[0].Tags.find(t => t.name === 'UpdateTagValue').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+      const timestamp_ = Messages[0].Tags.find(t => t.name === 'Timestamp').value
+
+      expect(action_).to.equal("Update-Staged")
+      expect(updateProcess_).to.equal(updateProcess)
+      expect(updateAction_).to.equal(updateAction)
+      expect(updateTagName_).to.equal(updateTagName)
+      expect(updateTagValue_).to.equal(updateTagValue)
+      expect(hash_).to.equal(hash)
+      expect(timestamp_).to.be.a('number')
+    })
+
+    it("+ve should have updated info (staged)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Info" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const staged_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Staged').value)
+      expect(Object.keys(staged_).length).to.equal(1)
+    })
+  })
+
+  /************************************************************************ 
+  * configurator.Unstage-Update
+  ************************************************************************/
+  describe("configurator.Unstage-Update", function () {
+    it("+ve should fail to unstage update (non-admin)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Sender must be admin!")
+    })
+
+    it("+ve should fail to unstage update (missing updateProcess)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update" },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateProcess is required!")
+    })
+
+    it("+ve should fail to unstage update (missing updateAction)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateAction is required!")
+    })
+
+    it("+ve should fail to unstage update (missing updateTagName)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateTagName is required!")
+    })
+
+    it("+ve should fail to unstage update (missing updateTagValue)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTagName", value: updateTagName },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateTagValue is required!")
+    })
+
+    it("+ve should fail to unstage update (unstaged)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update" },
+          { name: "UpdateProcess", value: "FOO" },
+          { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTagName", value: updateTagName },
+          { name: "UpdateTagValue", value: updateTagValue },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Update not staged!")
+    })
+
+    it("+ve should unstage update", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTagName", value: updateTagName },
+          { name: "UpdateTagValue", value: updateTagValue },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Unstaged")
+      expect(hash_).to.equal(hash)
+    })
+
+    it("+ve should have updated info (unstaged)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Info" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const staged_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Staged').value)
+      expect(Object.keys(staged_).length).to.equal(0)
+    })
+  })
+
+  /************************************************************************ 
+  * configurator.Action-Update
+  ************************************************************************/
+  describe("configurator.Action-Update", function () {
+    it("+ve should fail to action update (non-admin)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Sender must be admin!")
+    })
+
+    it("+ve should fail to action update (missing updateProcess)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update" },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateProcess is required!")
+    })
+
+    it("+ve should fail to action update (missing updateAction)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateAction is required!")
+    })
+
+    it("+ve should fail to action update (missing updateTagName)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateTagName is required!")
+    })
+
+    it("+ve should fail to action update (missing updateTagValue)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTagName", value: updateTagName },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateTagValue is required!")
+    })
+
+    it("+ve should fail to action update (update not staged)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTagName", value: updateTagName },
+          { name: "UpdateTagValue", value: updateTagValue },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Update not staged!")
+    })
+
+    it("+ve should stage update", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTagName", value: updateTagName },
+          { name: "UpdateTagValue", value: updateTagValue },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Staged")
+      expect(hash_).to.equal(hash)
+    })
+
+    it("+ve should fail to action update (delay not passed)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTagName", value: updateTagName },
+          { name: "UpdateTagValue", value: updateTagValue },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Update not staged long enough!")
+    })
+
+    it("+ve should action update", async () => {
+      await new Promise(r => setTimeout(r, delay + 1));
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTagName", value: updateTagName },
+          { name: "UpdateTagValue", value: updateTagValue },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(2)
+
+      const target_0 = Messages[0].Target
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      
+      const tagValue_0 = Messages[0].Tags.find(t => t.name === updateTagName).value
+
+      expect(target_0).to.equal(updateProcess)
+      expect(action_0).to.equal(updateAction)
+      expect(tagValue_0).to.equal(updateTagValue)
+
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const hash_1 = Messages[1].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_1).to.equal("Update-Actioned")
+      expect(hash_1).to.equal(hash)
+    })
+
+    it("+ve should have updated info (unstaged)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Info" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const staged_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Staged').value)
+      expect(Object.keys(staged_).length).to.equal(0)
+    })
+  })
+
+  /************************************************************************ 
+  * configurator.Stage-Update-Admin
+  ************************************************************************/
+  describe("configurator.Stage-Update-Admin", function () {
+    it("+ve should fail to stage update admin (non-admin)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update-Admin" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Sender must be admin!")
+    })
+
+    it("+ve should fail to stage update admin (missing updateAdmin)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update-Admin" },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateAdmin is required!")
+    })
+
+    it("+ve should stage update admin", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update-Admin" },
+          { name: "UpdateAdmin", value: walletAddress },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Admin-Staged")
+      expect(hash_).to.equal(hashAdmin)
+    })
+  })
+
+  /************************************************************************ 
+  * configurator.Unstage-Update-Admin
+  ************************************************************************/
+  describe("configurator.Unstage-Update-Admin", function () {
+    it("+ve should fail to unstage update admin (non-admin)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update-Admin" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Sender must be admin!")
+    })
+
+    it("+ve should fail to unstage update admin (update not staged)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update-Admin" },
+          { name: "UpdateAdmin", value: "FOO" }, 
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Update not staged!")
+    })
+
+    it("+ve should unstage update admin", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update-Admin" },
+          { name: "UpdateAdmin", value: updateAdmin },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Admin-Unstaged")
+      expect(hash_).to.equal(hashAdmin)
+    })
+  })
+
+  /************************************************************************ 
+  * configurator.Action-Update-Admin
+  ************************************************************************/
+  describe("configurator.Action-Update-Admin", function () {
+    it("+ve should stage update admin", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update-Admin" },
+          { name: "UpdateAdmin", value: updateAdmin },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Admin-Staged")
+      expect(hash_).to.equal(hashAdmin)
+    })
+
+    it("+ve should fail to action update admin (non-admin)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update-Admin" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Sender must be admin!")
+    })
+
+    it("+ve should fail to action update admin (unstaged)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update-Admin" },
+          { name: "UpdateAdmin", value: "FOO" },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Update not staged!")
+    })
+
+    it("+ve should fail to action update admin (delay not passed)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update-Admin" },
+          { name: "UpdateAdmin", value: updateAdmin },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Update not staged long enough!")
+    })
+
+    it("+ve should action update admin", async () => {
+      await new Promise(r => setTimeout(r, delay + 1));
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update-Admin" },
+          { name: "UpdateAdmin", value: updateAdmin },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Admin-Actioned")
+      expect(hash_).to.equal(hashAdmin)
+    })
+
+    it("+ve should have updated info (admin)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Info" },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const admin_ = Messages[0].Tags.find(t => t.name === 'Admin').value
+      const delay_ = Messages[0].Tags.find(t => t.name === 'Delay').value
+      const staged_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Staged').value)
+      
+      expect(admin_).to.equal(updateAdmin)
+      expect(delay_).to.equal(delay)
+      expect(Object.keys(staged_).length).to.equal(0)
+    })
+  })
+
+  /************************************************************************ 
+  * configurator.Stage-Update-Delay
+  ************************************************************************/
+  describe("configurator.Stage-Update-Delay", function () {
+    it("+ve should fail to stage update delay (non-admin)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update-Delay" },
+        ],
+        signer: createDataItemSigner(wallet2), // no longer admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Sender must be admin!")
+    })
+
+    it("+ve should fail to stage update delay (missing updateDelay)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update-Delay" },
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateDelay is required!")
+    })
+
+    it("+ve should fail to stage update delay (non-integer)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update-Delay" },
+          { name: "UpdateDelay", value: "FOO" },
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateDelay must be a number!")
+    })
+
+    it("+ve should fail to stage update delay (negative)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update-Delay" },
+          { name: "UpdateDelay", value: "-123" },
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateDelay must be greater than zero!")
+    })
+
+    it("+ve should fail to stage update delay (zero)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update-Delay" },
+          { name: "UpdateDelay", value: "0" },
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateDelay must be greater than zero!")
+    })
+
+    it("+ve should fail to stage update delay (decimal)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update-Delay" },
+          { name: "UpdateDelay", value: "1.1" },
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("UpdateDelay must be an integer!")
+    })
+
+    it("+ve should stage update delay", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update-Delay" },
+          { name: "UpdateDelay", value: updateDelay.toString() },
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const updateDelay_ = Messages[0].Tags.find(t => t.name === 'UpdateDelay').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+      const timestamp_ = Messages[0].Tags.find(t => t.name === 'Timestamp').value
+
+      expect(action_).to.equal("Update-Delay-Staged")
+      expect(updateDelay_).to.equal(updateDelay.toString())
+      expect(hash_).to.equal(hashDelay)
+      expect(timestamp_).to.be.a('number')
+    })
+  })
+
+  /************************************************************************ 
+  * configurator.Unstage-Update-Delay
+  ************************************************************************/
+  describe("configurator.Unstage-Update-Delay", function () {
+    it("+ve should fail to unstage update delay (non-admin)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update-Delay" },
+        ],
+        signer: createDataItemSigner(wallet2), // no longer admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Sender must be admin!")
+    })
+
+    it("+ve should fail to unstage update delay (update not staged)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update-Delay" },
+          { name: "UpdateDelay", value: "123" }, 
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Update not staged!")
+    })
+
+    it("+ve should unstage update delay", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Unstage-Update-Delay" },
+          { name: "UpdateDelay", value: updateDelay.toString() },
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Delay-Unstaged")
+      expect(hash_).to.equal(hashDelay)
+    })
+  })
+
+  /************************************************************************ 
+  * configurator.Action-Update-Delay
+  ************************************************************************/
+  describe("configurator.Action-Update-Delay", function () {
+    it("+ve should stage update delay", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update-Delay" },
+          { name: "UpdateDelay", value: updateDelay.toString() },
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Delay-Staged")
+      expect(hash_).to.equal(hashDelay)
+    })
+
+    it("+ve should fail to action update delay (non-admin)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update-Delay" },
+        ],
+        signer: createDataItemSigner(wallet2), // no longer admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Sender must be admin!")
+    })
+
+    it("+ve should fail to action update delay (unstaged)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update-Delay" },
+          { name: "UpdateDelay", value: "123" },
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Update not staged!")
+    })
+
+    it("+ve should fail to action update delay (delay not passed)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update-Delay" },
+          { name: "UpdateDelay", value: updateDelay.toString() },
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      expect(Messages.length).to.be.equal(0)
+      expect(Error).to.include("Update not staged long enough!")
+    })
+
+    it("+ve should action update delay", async () => {
+      await new Promise(r => setTimeout(r, delay + 1));
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update-Delay" },
+          { name: "UpdateDelay", value: updateDelay.toString() },
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Delay-Actioned")
+      expect(hash_).to.equal(hashDelay)
+    })
+
+    it("+ve should have updated info (delay)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Info" },
+        ],
+        signer: createDataItemSigner(wallet), // new admin
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const admin_ = Messages[0].Tags.find(t => t.name === 'Admin').value
+      const delay_ = Messages[0].Tags.find(t => t.name === 'Delay').value
+      const staged_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Staged').value)
+      
+      expect(admin_).to.equal(updateAdmin)
+      expect(delay_).to.equal(updateDelay.toString())
+      expect(Object.keys(staged_).length).to.equal(0)
+    })
+  })
+})
