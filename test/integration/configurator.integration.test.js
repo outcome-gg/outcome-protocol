@@ -33,13 +33,15 @@ let delay;
 let staged;
 let updateProcess;
 let updateAction;
-let updateTagName;
-let updateTagValue;
+let updateTags;
+let updateData;
 let updateDelay;
 let updateAdmin;
 let hash;
 let hashAdmin;
 let hashDelay;
+let hashNoTags;
+let hashNoData;
 
 /* 
 * Tests
@@ -62,13 +64,15 @@ describe("cpmm.integration.test", function () {
     staged = {},
     updateProcess = "UPDATE_PROCESS",
     updateAction = "UPDATE_ACTION",
-    updateTagName = "UPDATE_TAG_NAME",
-    updateTagValue = "UPDATE_TAG_VALUE",
+    updateTags = JSON.stringify({"TAG1": "FOO", "TAG2": "BAR"}),
+    updateData = JSON.stringify({"DATA": 123}),
     updateAdmin = walletAddress,
     updateDelay = 4000,
-    hash = keccak256(updateProcess + updateAction + updateTagName + updateTagValue).toString('hex'),
+    hash = keccak256(updateProcess + updateAction + updateTags + updateData).toString('hex'),
     hashAdmin = keccak256(walletAddress).toString('hex'),
-    hashDelay = keccak256(updateDelay.toString()).toString('hex')
+    hashDelay = keccak256(updateDelay.toString()).toString('hex'),
+    hashNoTags = keccak256(updateProcess + updateAction + "" + updateData).toString('hex'),
+    hashNoData = keccak256(updateProcess + updateAction + updateTags + "").toString('hex')
   ))
 
   /************************************************************************ 
@@ -188,7 +192,7 @@ describe("cpmm.integration.test", function () {
       expect(Error).to.include("UpdateAction is required!")
     })
 
-    it("+ve should fail to stage update (missing updateTagName)", async () => {
+    it("+ve should fail to stage update (invalid updateTags)", async () => {
       let messageId;
       await message({
         process: configurator,
@@ -196,6 +200,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Stage-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTags", value: "FOO" },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -211,10 +216,10 @@ describe("cpmm.integration.test", function () {
       });
 
       expect(Messages.length).to.be.equal(0)
-      expect(Error).to.include("UpdateTagName is required!")
+      expect(Error).to.include("UpdateTags must be valid JSON!")
     })
 
-    it("+ve should fail to stage update (missing updateTagValue)", async () => {
+    it("+ve should fail to stage update (invalid updateData)", async () => {
       let messageId;
       await message({
         process: configurator,
@@ -222,7 +227,8 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Stage-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value: updateAction },
-          { name: "UpdateTagName", value: updateTagName },
+          { name: "UpdateTags", value: updateTags },
+          { name: "UpdateData", value: "FOO" },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -238,10 +244,10 @@ describe("cpmm.integration.test", function () {
       });
 
       expect(Messages.length).to.be.equal(0)
-      expect(Error).to.include("UpdateTagValue is required!")
+      expect(Error).to.include("UpdateData must be valid JSON!")
     })
 
-    it("+ve should stage update", async () => {
+    it("+ve should stage update (no tags)", async () => {
       let messageId;
       await message({
         process: configurator,
@@ -249,8 +255,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Stage-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value: updateAction },
-          { name: "UpdateTagName", value: updateTagName },
-          { name: "UpdateTagValue", value: updateTagValue },
+          { name: "UpdateData", value: updateData },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -274,16 +279,109 @@ describe("cpmm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const updateProcess_ = Messages[0].Tags.find(t => t.name === 'UpdateProcess').value
       const updateAction_ = Messages[0].Tags.find(t => t.name === 'UpdateAction').value
-      const updateTagName_ = Messages[0].Tags.find(t => t.name === 'UpdateTagName').value
-      const updateTagValue_ = Messages[0].Tags.find(t => t.name === 'UpdateTagValue').value
+      const updateTags_ = Messages[0].Tags.find(t => t.name === 'UpdateTags').value
+      const updateData_ = Messages[0].Tags.find(t => t.name === 'UpdateData').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
       const timestamp_ = Messages[0].Tags.find(t => t.name === 'Timestamp').value
 
       expect(action_).to.equal("Update-Staged")
       expect(updateProcess_).to.equal(updateProcess)
       expect(updateAction_).to.equal(updateAction)
-      expect(updateTagName_).to.equal(updateTagName)
-      expect(updateTagValue_).to.equal(updateTagValue)
+      expect(updateTags_).to.equal("")
+      expect(updateData_).to.equal(updateData)
+      expect(hash_).to.equal(hashNoTags)
+      expect(timestamp_).to.be.a('number')
+    })
+
+    it("+ve should stage update (no data)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTags", value: updateTags },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const updateProcess_ = Messages[0].Tags.find(t => t.name === 'UpdateProcess').value
+      const updateAction_ = Messages[0].Tags.find(t => t.name === 'UpdateAction').value
+      const updateTags_ = Messages[0].Tags.find(t => t.name === 'UpdateTags').value
+      const updateData_ = Messages[0].Tags.find(t => t.name === 'UpdateData').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+      const timestamp_ = Messages[0].Tags.find(t => t.name === 'Timestamp').value
+
+      expect(action_).to.equal("Update-Staged")
+      expect(updateProcess_).to.equal(updateProcess)
+      expect(updateAction_).to.equal(updateAction)
+      expect(updateTags_).to.equal(updateTags)
+      expect(updateData_).to.equal("")
+      expect(hash_).to.equal(hashNoData)
+      expect(timestamp_).to.be.a('number')
+    })
+
+    it("+ve should stage update", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTags", value: updateTags },
+          { name: "UpdateData", value: updateData },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const updateProcess_ = Messages[0].Tags.find(t => t.name === 'UpdateProcess').value
+      const updateAction_ = Messages[0].Tags.find(t => t.name === 'UpdateAction').value
+      const updateTags_ = Messages[0].Tags.find(t => t.name === 'UpdateTags').value
+      const updateData_ = Messages[0].Tags.find(t => t.name === 'UpdateData').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+      const timestamp_ = Messages[0].Tags.find(t => t.name === 'Timestamp').value
+
+      expect(action_).to.equal("Update-Staged")
+      expect(updateProcess_).to.equal(updateProcess)
+      expect(updateAction_).to.equal(updateAction)
+      expect(updateTags_).to.equal(updateTags)
+      expect(updateData_).to.equal(updateData)
       expect(hash_).to.equal(hash)
       expect(timestamp_).to.be.a('number')
     })
@@ -315,7 +413,7 @@ describe("cpmm.integration.test", function () {
       expect(Messages.length).to.be.equal(1)
 
       const staged_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Staged').value)
-      expect(Object.keys(staged_).length).to.equal(1)
+      expect(Object.keys(staged_).length).to.equal(3)
     })
   })
 
@@ -396,7 +494,7 @@ describe("cpmm.integration.test", function () {
       expect(Error).to.include("UpdateAction is required!")
     })
 
-    it("+ve should fail to unstage update (missing updateTagName)", async () => {
+    it("+ve should fail to unstage update (invalid updateTags)", async () => {
       let messageId;
       await message({
         process: configurator,
@@ -404,6 +502,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Unstage-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTags", value: "FOO" },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -419,10 +518,10 @@ describe("cpmm.integration.test", function () {
       });
 
       expect(Messages.length).to.be.equal(0)
-      expect(Error).to.include("UpdateTagName is required!")
+      expect(Error).to.include("UpdateTags must be valid JSON!")
     })
 
-    it("+ve should fail to unstage update (missing updateTagValue)", async () => {
+    it("+ve should fail to unstage update (invalid updateData)", async () => {
       let messageId;
       await message({
         process: configurator,
@@ -430,7 +529,8 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Unstage-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value: updateAction },
-          { name: "UpdateTagName", value: updateTagName },
+          { name: "UpdateTags", value: updateTags },
+          { name: "UpdateData", value: "FOO" },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -446,7 +546,7 @@ describe("cpmm.integration.test", function () {
       });
 
       expect(Messages.length).to.be.equal(0)
-      expect(Error).to.include("UpdateTagValue is required!")
+      expect(Error).to.include("UpdateData must be valid JSON!")
     })
 
     it("+ve should fail to unstage update (unstaged)", async () => {
@@ -457,8 +557,8 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Unstage-Update" },
           { name: "UpdateProcess", value: "FOO" },
           { name: "UpdateAction", value: updateAction },
-          { name: "UpdateTagName", value: updateTagName },
-          { name: "UpdateTagValue", value: updateTagValue },
+          { name: "UpdateTags", value: updateTags },
+          { name: "UpdateData", value: updateData },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -485,8 +585,8 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Unstage-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value: updateAction },
-          { name: "UpdateTagName", value: updateTagName },
-          { name: "UpdateTagValue", value: updateTagValue },
+          { name: "UpdateTags", value: updateTags },
+          { name: "UpdateData", value: updateData },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -541,7 +641,7 @@ describe("cpmm.integration.test", function () {
       expect(Messages.length).to.be.equal(1)
 
       const staged_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Staged').value)
-      expect(Object.keys(staged_).length).to.equal(0)
+      expect(Object.keys(staged_).length).to.equal(2)
     })
   })
 
@@ -622,7 +722,7 @@ describe("cpmm.integration.test", function () {
       expect(Error).to.include("UpdateAction is required!")
     })
 
-    it("+ve should fail to action update (missing updateTagName)", async () => {
+    it("+ve should fail to action update (invalid updateTags)", async () => {
       let messageId;
       await message({
         process: configurator,
@@ -630,6 +730,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Action-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value: updateAction },
+          { name: "UpdateTags", value: "FOO" },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -645,10 +746,10 @@ describe("cpmm.integration.test", function () {
       });
 
       expect(Messages.length).to.be.equal(0)
-      expect(Error).to.include("UpdateTagName is required!")
+      expect(Error).to.include("UpdateTags must be valid JSON!")
     })
 
-    it("+ve should fail to action update (missing updateTagValue)", async () => {
+    it("+ve should fail to action update (invalid updateData)", async () => {
       let messageId;
       await message({
         process: configurator,
@@ -656,7 +757,8 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Action-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value: updateAction },
-          { name: "UpdateTagName", value: updateTagName },
+          { name: "UpdateTags", value: updateTags },
+          { name: "UpdateData", value: "FOO" },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -672,7 +774,7 @@ describe("cpmm.integration.test", function () {
       });
 
       expect(Messages.length).to.be.equal(0)
-      expect(Error).to.include("UpdateTagValue is required!")
+      expect(Error).to.include("UpdateData must be valid JSON!")
     })
 
     it("+ve should fail to action update (update not staged)", async () => {
@@ -683,8 +785,8 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Action-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value: updateAction },
-          { name: "UpdateTagName", value: updateTagName },
-          { name: "UpdateTagValue", value: updateTagValue },
+          { name: "UpdateTags", value: updateTags },
+          { name: "UpdateData", value: updateData },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -711,8 +813,8 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Stage-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value: updateAction },
-          { name: "UpdateTagName", value: updateTagName },
-          { name: "UpdateTagValue", value: updateTagValue },
+          { name: "UpdateTags", value: updateTags },
+          { name: "UpdateData", value: updateData },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -748,8 +850,8 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Action-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value: updateAction },
-          { name: "UpdateTagName", value: updateTagName },
-          { name: "UpdateTagValue", value: updateTagValue },
+          { name: "UpdateTags", value: updateTags },
+          { name: "UpdateData", value: updateData },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -777,8 +879,8 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Action-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value: updateAction },
-          { name: "UpdateTagName", value: updateTagName },
-          { name: "UpdateTagValue", value: updateTagValue },
+          { name: "UpdateTags", value: updateTags },
+          { name: "UpdateData", value: updateData },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -801,12 +903,15 @@ describe("cpmm.integration.test", function () {
 
       const target_0 = Messages[0].Target
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
-      
-      const tagValue_0 = Messages[0].Tags.find(t => t.name === updateTagName).value
+      const tag1_0 = Messages[0].Tags.find(t => t.name === 'TAG1').value
+      const tag2_0 = Messages[0].Tags.find(t => t.name === 'TAG2').value
+      const data_0 = Messages[0].Data
 
       expect(target_0).to.equal(updateProcess)
       expect(action_0).to.equal(updateAction)
-      expect(tagValue_0).to.equal(updateTagValue)
+      expect(tag1_0).to.contain("FOO")
+      expect(tag2_0).to.contain("BAR")
+      expect(data_0).to.equal(updateData)
 
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
       const hash_1 = Messages[1].Tags.find(t => t.name === 'Hash').value
@@ -842,7 +947,7 @@ describe("cpmm.integration.test", function () {
       expect(Messages.length).to.be.equal(1)
 
       const staged_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Staged').value)
-      expect(Object.keys(staged_).length).to.equal(0)
+      expect(Object.keys(staged_).length).to.equal(2)
     })
   })
 
@@ -1200,7 +1305,7 @@ describe("cpmm.integration.test", function () {
       
       expect(admin_).to.equal(updateAdmin)
       expect(delay_).to.equal(delay)
-      expect(Object.keys(staged_).length).to.equal(0)
+      expect(Object.keys(staged_).length).to.equal(2)
     })
   })
 
@@ -1662,7 +1767,7 @@ describe("cpmm.integration.test", function () {
       
       expect(admin_).to.equal(updateAdmin)
       expect(delay_).to.equal(updateDelay.toString())
-      expect(Object.keys(staged_).length).to.equal(0)
+      expect(Object.keys(staged_).length).to.equal(2)
     })
   })
 })

@@ -1,3 +1,4 @@
+local json = require('json')
 local crypto = require('.crypto')
 local config = require('modules.config')
 local configuratorNotices = require('modules.configuratorNotices')
@@ -29,19 +30,19 @@ end
 --[[
     Stage Update
 ]]
-function configuratorMethods:stageUpdate(process, action, tagName, tagValue, msg)
-  local hash = tostring(crypto.digest.keccak256(process .. action .. tagName .. tagValue).asHex())
+function configuratorMethods:stageUpdate(process, action, tags, data, msg)
+  local hash = tostring(crypto.digest.keccak256(process .. action .. tags .. data).asHex())
   -- stage
   self.staged[hash] = os.time()
   -- stage notice
-  self.stageUpdateNotice(process, action, tagName, tagValue, hash, self.staged[hash], msg)
+  self.stageUpdateNotice(process, action, tags, data, hash, self.staged[hash], msg)
 end
 
 --[[
     Unstage Update
 ]]
-function configuratorMethods:unstageUpdate(process, action, tagName, tagValue, msg)
-  local hash = tostring(crypto.digest.keccak256(process .. action .. tagName.. tagValue).asHex())
+function configuratorMethods:unstageUpdate(process, action, tags, data, msg)
+  local hash = tostring(crypto.digest.keccak256(process .. action .. tags.. data).asHex())
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   -- unstage
   self.staged[hash] = nil
@@ -52,13 +53,21 @@ end
 --[[
     Action Update
 ]]
-function configuratorMethods:actionUpdate(process, action, tagName, tagValue, msg)
-  local hash = crypto.digest.keccak256(process .. action .. tagName .. tagValue).asHex()
+function configuratorMethods:actionUpdate(process, action, tags, data, msg)
+  local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   local remaining = self.staged[hash] + self.delay - os.time()
   assert(remaining < 0, 'Update not staged long enough! Remaining: ' .. remaining .. ' ms')
   -- action update
-  ao.send({ Target = process, Action = action, [tagName] = tagValue })
+  local message = {
+    Target = process,
+    Action = action,
+    Data = data ~= '' and json.decode(data) or nil
+  }
+  for tagName, tagValue in pairs(json.decode(tags)) do
+    message[tagName] = tagValue
+  end
+  ao.send(message)
   -- unstage
   self.staged[hash] = nil
   -- action notice

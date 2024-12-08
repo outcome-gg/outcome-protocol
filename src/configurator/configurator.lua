@@ -30,20 +30,26 @@ end)
 -- Stage Update
 Handlers.add("Stage-Update", Handlers.utils.hasMatchingTag("Action", "Stage-Update"), function(msg)
   validation.stageUpdate(msg)
-  Configurator:stageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, msg.Tags.UpdateTagName, msg.Tags.UpdateTagValue, msg)
+  local updateTags = msg.UpdateTags or ""
+  local updateData = msg.UpdateData or ""
+  Configurator:stageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
 end)
 
 -- Unstage Update
 Handlers.add("Unstage-Update", Handlers.utils.hasMatchingTag("Action", "Unstage-Update"), function(msg)
   validation.unstageUpdate(msg)
-  Configurator:unstageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, msg.Tags.UpdateTagName, msg.Tags.UpdateTagValue, msg)
+  local updateTags = msg.UpdateTags or ""
+  local updateData = msg.UpdateData or ""
+  Configurator:unstageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
 end)
 
 
 -- Action Update
 Handlers.add("Action-Update", Handlers.utils.hasMatchingTag("Action", "Action-Update"), function(msg)
   validation.actionUpdate(msg)
-  Configurator:actionUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, msg.Tags.UpdateTagName, msg.Tags.UpdateTagValue, msg)
+  local updateTags = msg.UpdateTags or ""
+  local updateData = msg.UpdateData or ""
+  Configurator:actionUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
 end)
 
 ---------------------------------------------------------------------------------

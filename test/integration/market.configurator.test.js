@@ -8,6 +8,7 @@ import { assert, error } from "console";
 import dotenv from 'dotenv';
 import keccak256 from 'keccak256'
 import exp from "constants";
+import { hash } from "crypto";
 
 dotenv.config();
 
@@ -39,18 +40,39 @@ let resolutionAgent;
 // Configurator variables
 let delay;
 
+// update variables
+let updateProcess = market;
+
+// Update incentives variables
+let updateIncentivesAction;
+let updateIncentivesTags;
+let updateIncentivesData;
+let hashUpdateIncentives;
+
+// Update take fee variables
+let updateTakeFeeAction;
+let updateTakeFeeTags;
+let updateTakeFeeData;
+let hashUpdateTakeFee;
+
 // Update protocol fee target variables
-let updateProtocolFeeTargetProcess;
 let updateProtocolFeeTargetAction;
-let updateProtocolFeeTargetTagName;
-let updateProtocolFeeTargetTagValue;
+let updateProtocolFeeTargetTags;
+let updateProtocolFeeTargetData;
 let hashUpdateProtocolFeeTarget;
 
-
-let hashUpdateConfigurator;
-let hashUpdateIncentives;
-let hashUpdateTakeFee;
+// Update logo variables
+let updateLogoAction;
+let updateLogoTags;
+let updateLogoData;
 let hashUpdateLogo;
+
+// Update configurator variables
+let updateConfiguratorAction;
+let updateConfiguratorTags;
+let updateConfiguratorData;
+let hashUpdateConfigurator;
+
 
 /* 
 * Tests
@@ -76,12 +98,38 @@ describe("market.configurator.test", function () {
     // Configurator variables
     delay = 5000,
 
+    // Update variables
+    updateProcess = market,
+
+    // Update incentives variables
+    updateIncentivesAction = "Update-Incentives",
+    updateIncentivesTags = JSON.stringify({"Incentives" : "FOO"}),
+    updateIncentivesData = "",
+    hashUpdateIncentives = keccak256(updateProcess + updateIncentivesAction + updateIncentivesTags + updateIncentivesData).toString('hex'),
+
+    // Update take fee variables
+    updateTakeFeeAction = "Update-Take-Fee",
+    updateTakeFeeTags = JSON.stringify({"CreatorFee" : "123", "ProtocolFee" : "456"}),
+    updateTakeFeeData = "",
+    hashUpdateTakeFee = keccak256(updateProcess + updateTakeFeeAction + updateTakeFeeTags + updateTakeFeeData).toString('hex'),
+
     // Update protocol fee target variables
-    updateProtocolFeeTargetProcess = market,
     updateProtocolFeeTargetAction = "Update-Protocol-Fee-Target",
-    updateProtocolFeeTargetTagName = "ProtocolFeeTarget",
-    updateProtocolFeeTargetTagValue = "BAR",
-    hashUpdateProtocolFeeTarget = keccak256(updateProtocolFeeTargetProcess + updateProtocolFeeTargetAction + updateProtocolFeeTargetTagName + updateProtocolFeeTargetTagValue).toString('hex')
+    updateProtocolFeeTargetTags = JSON.stringify({"ProtocolFeeTarget" : "FOO"}),
+    updateProtocolFeeTargetData = "",
+    hashUpdateProtocolFeeTarget = keccak256(updateProcess + updateProtocolFeeTargetAction + updateProtocolFeeTargetTags + updateProtocolFeeTargetData).toString('hex'),
+
+    // Update logo variables
+    updateLogoAction = "Update-Logo",
+    updateLogoTags = JSON.stringify({"Logo" : "FOO"}),
+    updateLogoData = "",
+    hashUpdateLogo = keccak256(updateProcess + updateLogoAction + updateLogoTags + updateLogoData).toString('hex'),
+
+    // Update configurator variables
+    updateConfiguratorAction = "Update-Configurator",
+    updateConfiguratorTags = JSON.stringify({"Configurator" : "FOO"}),
+    updateConfiguratorData = "",
+    hashUpdateConfigurator = keccak256(updateProcess + updateConfiguratorAction + updateConfiguratorTags + updateConfiguratorData).toString('hex')
   ))
 
   /************************************************************************ 
@@ -931,6 +979,248 @@ describe("market.configurator.test", function () {
   })
 
   /************************************************************************ 
+  * market.Update-Market-Via-Configurator.Incentives
+  ************************************************************************/
+  describe("market.Update-Market-Via-Configurator.Incentives", function () {
+    it("+ve should stage update (update incentives)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value:  updateIncentivesAction },
+          { name: "UpdateTags", value: updateIncentivesTags },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Staged")
+      expect(hash_).to.equal(hashUpdateIncentives)
+    })
+
+    it("+ve should action update", async () => {
+      await new Promise(r => setTimeout(r, delay + 1));
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value:  updateIncentivesAction },
+          { name: "UpdateTags", value: updateIncentivesTags },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(2)
+
+      const target_0 = Messages[0].Target
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      
+      const tag_0 = Messages[0].Tags.find(t => t.name === "Incentives").value
+
+      expect(target_0).to.equal(updateProcess)
+      expect(action_0).to.equal(updateIncentivesAction)
+      expect(tag_0).to.equal("FOO")
+
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const hash_1 = Messages[1].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_1).to.equal("Update-Actioned")
+      expect(hash_1).to.equal(hashUpdateIncentives)
+    })
+
+    it("+ve should get info (updated incentives)", async () => {
+      await new Promise(r => setTimeout(r, delay));
+      let messageId;
+      await message({
+        process: market,
+        tags: [
+          { name: "Action", value: "Info" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: market,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const incentives_ = Messages[0].Tags.find(t => t.name === 'Incentives').value
+
+      expect(incentives_).to.equal("FOO")
+    })
+  })
+
+  /************************************************************************ 
+  * market.Update-Market-Via-Configurator.TakeFee
+  ************************************************************************/
+  describe("market.Update-Market-Via-Configurator.TakeFee", function () {
+    it("+ve should stage update (update takeFee)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value:  updateTakeFeeAction },
+          { name: "UpdateTags", value: updateTakeFeeTags },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Staged")
+      expect(hash_).to.equal(hashUpdateTakeFee)
+    })
+
+    it("+ve should action update", async () => {
+      await new Promise(r => setTimeout(r, delay + 1));
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value:  updateTakeFeeAction },
+          { name: "UpdateTags", value: updateTakeFeeTags },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(2)
+
+      const target_0 = Messages[0].Target
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      
+      const tag1_0 = Messages[0].Tags.find(t => t.name === "CreatorFee").value
+      const tag2_0 = Messages[0].Tags.find(t => t.name === "ProtocolFee").value
+
+      expect(target_0).to.equal(updateProcess)
+      expect(action_0).to.equal(updateTakeFeeAction)
+      expect(tag1_0).to.equal("123")
+      expect(tag2_0).to.equal("456")
+
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const hash_1 = Messages[1].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_1).to.equal("Update-Actioned")
+      expect(hash_1).to.equal(hashUpdateTakeFee)
+    })
+
+    it("+ve should get info (updated creator + protocol fees)", async () => {
+      await new Promise(r => setTimeout(r, delay));
+      let messageId;
+      await message({
+        process: market,
+        tags: [
+          { name: "Action", value: "Info" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: market,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const creatorFee_ = Messages[0].Tags.find(t => t.name === 'CreatorFee').value
+      const protocolFee_ = Messages[0].Tags.find(t => t.name === 'ProtocolFee').value
+
+      expect(creatorFee_).to.equal("123")
+      expect(protocolFee_).to.equal("456")
+    })
+  })
+
+  /************************************************************************ 
   * market.Update-Market-Via-Configurator.Protocol-Fee-Target
   ************************************************************************/
   describe("market.Update-Market-Via-Configurator.Protocol-Fee-Target", function () {
@@ -940,10 +1230,9 @@ describe("market.configurator.test", function () {
         process: configurator,
         tags: [
           { name: "Action", value: "Stage-Update" },
-          { name: "UpdateProcess", value: updateProtocolFeeTargetProcess },
+          { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value:  updateProtocolFeeTargetAction },
-          { name: "UpdateTagName", value: updateProtocolFeeTargetTagName },
-          { name: "UpdateTagValue", value: updateProtocolFeeTargetTagValue },
+          { name: "UpdateTags", value: updateProtocolFeeTargetTags },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -978,10 +1267,9 @@ describe("market.configurator.test", function () {
         process: configurator,
         tags: [
           { name: "Action", value: "Action-Update" },
-          { name: "UpdateProcess", value: updateProtocolFeeTargetProcess },
+          { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value:  updateProtocolFeeTargetAction },
-          { name: "UpdateTagName", value: updateProtocolFeeTargetTagName },
-          { name: "UpdateTagValue", value: updateProtocolFeeTargetTagValue },
+          { name: "UpdateTags", value: updateProtocolFeeTargetTags },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -1005,17 +1293,255 @@ describe("market.configurator.test", function () {
       const target_0 = Messages[0].Target
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
       
-      const tagValue_0 = Messages[0].Tags.find(t => t.name === updateProtocolFeeTargetTagName).value
+      const tag_0 = Messages[0].Tags.find(t => t.name === "ProtocolFeeTarget").value
 
-      expect(target_0).to.equal(updateProtocolFeeTargetProcess)
+      expect(target_0).to.equal(updateProcess)
       expect(action_0).to.equal(updateProtocolFeeTargetAction)
-      expect(tagValue_0).to.equal(updateProtocolFeeTargetTagValue)
+      expect(tag_0).to.equal("FOO")
 
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
       const hash_1 = Messages[1].Tags.find(t => t.name === 'Hash').value
 
       expect(action_1).to.equal("Update-Actioned")
       expect(hash_1).to.equal(hashUpdateProtocolFeeTarget)
+    })
+
+    it("+ve should get info (updated protocol fee target)", async () => {
+      await new Promise(r => setTimeout(r, delay));
+      let messageId;
+      await message({
+        process: market,
+        tags: [
+          { name: "Action", value: "Info" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: market,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const protocolFeeTarget_ = Messages[0].Tags.find(t => t.name === 'ProtocolFeeTarget').value
+
+      expect(protocolFeeTarget_).to.equal("FOO")
+    })
+  })
+
+  /************************************************************************ 
+  * market.Update-Market-Via-Configurator.Logo
+  ************************************************************************/
+  describe("market.Update-Market-Via-Configurator.Logo", function () {
+    it("+ve should stage update (update logo)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value:  updateLogoAction },
+          { name: "UpdateTags", value: updateLogoTags },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Staged")
+      expect(hash_).to.equal(hashUpdateLogo)
+    })
+
+    it("+ve should action update", async () => {
+      await new Promise(r => setTimeout(r, delay + 1));
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value:  updateLogoAction },
+          { name: "UpdateTags", value: updateLogoTags },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(2)
+
+      const target_0 = Messages[0].Target
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      
+      const tag_0 = Messages[0].Tags.find(t => t.name === "Logo").value
+
+      expect(target_0).to.equal(updateProcess)
+      expect(action_0).to.equal(updateLogoAction)
+      expect(tag_0).to.equal("FOO")
+
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const hash_1 = Messages[1].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_1).to.equal("Update-Actioned")
+      expect(hash_1).to.equal(hashUpdateLogo)
+    })
+
+    it("+ve should get info (updated logo)", async () => {
+      await new Promise(r => setTimeout(r, delay));
+      let messageId;
+      await message({
+        process: market,
+        tags: [
+          { name: "Action", value: "Info" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: market,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const logo_ = Messages[0].Tags.find(t => t.name === 'Logo').value
+
+      expect(logo_).to.equal("FOO")
+    })
+  })
+
+  /************************************************************************ 
+  * market.Update-Market-Via-Configurator.Configurator
+  ************************************************************************/
+  describe("market.Update-Market-Via-Configurator.Configurator", function () {
+    it("+ve should stage update (update configurator)", async () => {
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Stage-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value:  updateConfiguratorAction },
+          { name: "UpdateTags", value: updateConfiguratorTags },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_).to.equal("Update-Staged")
+      expect(hash_).to.equal(hashUpdateConfigurator)
+    })
+
+    it("+ve should action update", async () => {
+      await new Promise(r => setTimeout(r, delay + 1));
+      let messageId;
+      await message({
+        process: configurator,
+        tags: [
+          { name: "Action", value: "Action-Update" },
+          { name: "UpdateProcess", value: updateProcess },
+          { name: "UpdateAction", value:  updateConfiguratorAction },
+          { name: "UpdateTags", value: updateConfiguratorTags },
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: configurator,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.equal(2)
+
+      const target_0 = Messages[0].Target
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      
+      const tag_0 = Messages[0].Tags.find(t => t.name === "Configurator").value
+
+      expect(target_0).to.equal(updateProcess)
+      expect(action_0).to.equal(updateConfiguratorAction)
+      expect(tag_0).to.equal("FOO")
+
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const hash_1 = Messages[1].Tags.find(t => t.name === 'Hash').value
+
+      expect(action_1).to.equal("Update-Actioned")
+      expect(hash_1).to.equal(hashUpdateConfigurator)
     })
 
     it("+ve should get info (updated configurator)", async () => {
@@ -1045,9 +1571,10 @@ describe("market.configurator.test", function () {
 
       expect(Messages.length).to.be.equal(1)
 
-      const protocolFeeTarget_ = Messages[0].Tags.find(t => t.name === 'ProtocolFeeTarget').value
+      const configurator_ = Messages[0].Tags.find(t => t.name === 'Configurator').value
 
-      expect(protocolFeeTarget_).to.equal(updateProtocolFeeTargetTagValue)
+      expect(configurator_).to.equal("FOO")
     })
   })
+
 })

@@ -1,12 +1,12 @@
 local ConfiguratorNotices = {}
 
-function ConfiguratorNotices.stageUpdateNotice(process, action, tagName, tagValue, hash, timestamp, msg)
+function ConfiguratorNotices.stageUpdateNotice(process, action, tags, data, hash, timestamp, msg)
   msg.reply({
     Action = 'Update-Staged',
     UpdateProcess = process,
     UpdateAction = action,
-    UpdateTagName = tagName,
-    UpdateTagValue = tagValue,
+    UpdateTags = tags,
+    UpdateData = data,
     Hash = hash,
     Timestamp = timestamp,
   })
