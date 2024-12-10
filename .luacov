@@ -1,0 +1,15 @@
+return {
+  statsfile = "coverage/luacov.stats.out",
+  reportfile = "coverage/luacov.report.html",
+  deleteStatsFile = false,
+  include = {
+    "src/",
+    "src/configurator/modules/"
+  },
+  exclude = {
+    "json"
+  },
+  reporter = "html",
+  html = {
+  }
+}

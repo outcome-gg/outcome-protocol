@@ -4,7 +4,11 @@
   "version": "1.0.0",
   "description": "Outcome Protocol",
   "scripts": {
-    "test:unit": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test test/unit/**/*.test.js",
+    "format:fix": "prettier --write .",
+    "lint": "luacheck src spec",
+    "test": "yarn format:fix && yarn test:unit && yarn test:integration",
+    "test:unit": "rm -rf coverage && mkdir -p coverage && busted . && luacov",
+    "test:coverage": "rm -rf coverage/html-report && yarn test:unit && luacov --reporter html && open coverage/luacov.report.html",
     "test:unit:agents": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test test/unit/agents/*.test.js",
     "test:unit:agents:dataAgent": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test --test test/unit/agents/dataAgent.unit.test.js",
     "test:unit:agents:resolutionAgent": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test --test test/unit/agents/resolutionAgent.unit.test.js",
@@ -41,6 +45,15 @@
     "mocha": "^10.2.0",
     "path": "^0.12.7",
     "yargs": "^17.2.1"
+  },
+  "lint-staged": {
+    "*.lua": [
+      "stylua",
+      "luacheck --config .luacheckrc"
+    ],
+    "*": [
+      "prettier --write ."
+    ]
   },
   "engines": {
     "node": ">=22"

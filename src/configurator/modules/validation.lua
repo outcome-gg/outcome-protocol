@@ -17,8 +17,8 @@ local function isSimpleValue(value)
     return true
   end
 
-  -- Check for boolean or null
-  if value == "true" or value == "false" or value == "null" then
+  -- Check for boolean
+  if value == "true" or value == "false" then
     return true
   end
 
@@ -54,57 +54,31 @@ local function isValidKeyValueJSON(str)
   return true
 end
 
-local function updateValidation(msg)
+local function isValidArweaveAddress(address)
+	return type(address) == "string" and #address == 43 and string.match(address, "^[%w-_]+$") ~= nil
+end
+
+function validation.updateProcess(msg)
   assert(msg.From == Configurator.admin, 'Sender must be admin!')
   assert(type(msg.Tags.UpdateProcess) == 'string', 'UpdateProcess is required!')
+  assert(isValidArweaveAddress(msg.Tags.UpdateProcess), 'UpdateProcess must be a valid Arweave address!')
   assert(type(msg.Tags.UpdateAction) == 'string', 'UpdateAction is required!')
-  assert(isValidKeyValueJSON(msg.Tags.UpdateTags) or msg.Tags.UpdateTags == nil, 'UpdateTags must be valid JSON! ' ..  json.encode(msg.Tags.UpdateTags))
+  assert(isValidKeyValueJSON(msg.Tags.UpdateTags) or msg.Tags.UpdateTags == nil, 'UpdateTags must be valid JSON!')
   assert(isValidKeyValueJSON(msg.Tags.UpdateData) or msg.Tags.UpdateData == nil, 'UpdateData must be valid JSON!')
 end
 
-function validation.stageUpdate(msg)
-  updateValidation(msg)
-end
-
-function validation.unstageUpdate(msg)
-  updateValidation(msg)
-end
-
-function validation.actionUpdate(msg)
-  updateValidation(msg)
-end
-
-function validation.stageAdminUpdate(msg)
+function validation.updateAdmin(msg)
   assert(msg.From == Configurator.admin, 'Sender must be admin!')
-  assert(msg.Tags.UpdateAdmin, 'UpdateAdmin is required!')
+  assert(type(msg.Tags.UpdateAdmin) == 'string', 'UpdateAdmin is required!')
+  assert(isValidArweaveAddress(msg.Tags.UpdateAdmin), 'UpdateAdmin must be a valid Arweave address!')
 end
 
-function validation.unstageAdminUpdate(msg)
-  assert(msg.From == Configurator.admin, 'Sender must be admin!')
-  assert(msg.Tags.UpdateAdmin, 'UpdateAdmin is required!')
-end
-
-function validation.actionAdminUpdate(msg)
-  assert(msg.From == Configurator.admin, 'Sender must be admin!')
-  assert(msg.Tags.UpdateAdmin, 'UpdateAdmin is required!')
-end
-
-function validation.stageDelayUpdate(msg)
+function validation.updateDelay(msg)
   assert(msg.From == Configurator.admin, 'Sender must be admin!')
   assert(msg.Tags.UpdateDelay, 'UpdateDelay is required!')
   assert(tonumber(msg.Tags.UpdateDelay), 'UpdateDelay must be a number!')
   assert(tonumber(msg.Tags.UpdateDelay) > 0, 'UpdateDelay must be greater than zero!')
   assert(tonumber(msg.Tags.UpdateDelay) % 1 == 0, 'UpdateDelay must be an integer!')
-end
-
-function validation.unstageDelayUpdate(msg)
-  assert(msg.From == Configurator.admin, 'Sender must be admin!')
-  assert(msg.Tags.UpdateDelay, 'UpdateDelay is required!')
-end
-
-function validation.actionDelayUpdate(msg)
-  assert(msg.From == Configurator.admin, 'Sender must be admin!')
-  assert(msg.Tags.UpdateDelay, 'UpdateDelay is required!')
 end
 
 return validation

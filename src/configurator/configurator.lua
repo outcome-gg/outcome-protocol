@@ -29,7 +29,7 @@ end)
 
 -- Stage Update
 Handlers.add("Stage-Update", Handlers.utils.hasMatchingTag("Action", "Stage-Update"), function(msg)
-  validation.stageUpdate(msg)
+  validation.updateProcess(msg)
   local updateTags = msg.UpdateTags or ""
   local updateData = msg.UpdateData or ""
   Configurator:stageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
@@ -37,7 +37,7 @@ end)
 
 -- Unstage Update
 Handlers.add("Unstage-Update", Handlers.utils.hasMatchingTag("Action", "Unstage-Update"), function(msg)
-  validation.unstageUpdate(msg)
+  validation.updateProcess(msg)
   local updateTags = msg.UpdateTags or ""
   local updateData = msg.UpdateData or ""
   Configurator:unstageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
@@ -46,7 +46,7 @@ end)
 
 -- Action Update
 Handlers.add("Action-Update", Handlers.utils.hasMatchingTag("Action", "Action-Update"), function(msg)
-  validation.actionUpdate(msg)
+  validation.updateProcess(msg)
   local updateTags = msg.UpdateTags or ""
   local updateData = msg.UpdateData or ""
   Configurator:actionUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
@@ -58,19 +58,19 @@ end)
 
 -- Stage Update Admin
 Handlers.add("Stage-Update-Admin", Handlers.utils.hasMatchingTag("Action", "Stage-Update-Admin"), function(msg)
-  validation.stageAdminUpdate(msg)
+  validation.updateAdmin(msg)
   Configurator:stageUpdateAdmin(msg.Tags.UpdateAdmin, msg)
 end)
 
 -- Unstage Update Admin
 Handlers.add("Unstage-Update-Admin", Handlers.utils.hasMatchingTag("Action", "Unstage-Update-Admin"), function(msg)
-  validation.unstageAdminUpdate(msg)
+  validation.updateAdmin(msg)
   Configurator:unstageUpdateAdmin(msg.Tags.UpdateAdmin, msg)
 end)
 
 -- Action Update Admin
 Handlers.add("Action-Update-Admin", Handlers.utils.hasMatchingTag("Action", "Action-Update-Admin"), function(msg)
-  validation.actionAdminUpdate(msg)
+  validation.updateAdmin(msg)
   Configurator:actionUpdateAdmin(msg.Tags.UpdateAdmin, msg)
 end)
 
@@ -80,18 +80,18 @@ end)
 
 -- Stage Update DelayTime
 Handlers.add("Stage-Update-Delay", Handlers.utils.hasMatchingTag("Action", "Stage-Update-Delay"), function(msg)
-  validation.stageDelayUpdate(msg)
+  validation.updateDelay(msg)
   Configurator:stageUpdateDelay(msg.Tags.UpdateDelay, msg)
 end)
 
 -- Unstage Update DelayTime
 Handlers.add("Unstage-Update-Delay", Handlers.utils.hasMatchingTag("Action", "Unstage-Update-Delay"), function(msg)
-  validation.unstageDelayUpdate(msg)
+  validation.updateDelay(msg)
   Configurator:unstageUpdateDelay(msg.Tags.UpdateDelay, msg)
 end)
 
 -- Action Update DelayTime
 Handlers.add("Action-Update-Delay", Handlers.utils.hasMatchingTag("Action", "Action-Update-Delay"), function(msg)
-  validation.actionDelayUpdate(msg)
+  validation.updateDelay(msg)
   Configurator:actionUpdateDelay(msg.Tags.UpdateDelay, msg)
 end)
