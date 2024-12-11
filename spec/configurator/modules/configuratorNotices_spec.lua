@@ -1,4 +1,3 @@
-require("luacov")
 local configuratorNotices = require("modules.configuratorNotices")
 
 -- Define variables

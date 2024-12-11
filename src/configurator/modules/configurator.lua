@@ -8,12 +8,12 @@ local Configurator = {}
 local configuratorMethods = configuratorNotices
 
 -- Constructor for ProcessProvider 
-function Configurator:new(admin, delay)
+function Configurator:new(env)
   -- Create a new configurator object
   local obj = {
-    admin = admin or 'm6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0',  -- Initial Admin Address
-    delay = delay or 5000,                                           -- Initial Update Delay in Seconds
-    staged = {},                                                     -- Staged Update Timestamps
+    admin = 'm6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0',  -- Initial Admin Address
+    delay = env == "DEV" and 1 or 3*24*60*60,               -- Initial Update Delay in Seconds (i.e. 1 second or 3 days)
+    staged = {},                                            -- Staged Update Timestamps
   }
   -- Set metatable for method lookups
   setmetatable(obj, { __index = configuratorMethods })

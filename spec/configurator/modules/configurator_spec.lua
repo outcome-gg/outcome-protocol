@@ -1,13 +1,8 @@
-require("luacov")
 local crypto = require(".crypto")
-local Configurator = require("modules.configurator")
-
--- Mock the Configurator object
--- _G.Configurator = { admin = "test-this-is-valid-arweave-wallet-address-1" }
+local configurator = require("modules.configurator")
 
 local admin = ""
 local delay = nil
-local configurator = {}
 local msg = {}
 local msgAdmin = {}
 local msgDelay = {}
@@ -15,13 +10,14 @@ local hash = ""
 local hashAdmin = ""
 local hashDelay = ""
 local timestamp = nil
+local Configurator = {}
 
 describe("configuratorValidation", function()
   before_each(function()
     -- set admin
     admin = "test-this-is-valid-arweave-wallet-address-1"
     -- instantiate configurator
-		configurator = Configurator:new(admin, 1) -- initial delay is 1 second
+		Configurator = configurator:new("DEV") -- in dev mode with delay == 1 second
     -- create a message object
     msg = {
       From = admin,
@@ -63,7 +59,7 @@ describe("configuratorValidation", function()
 
   it("should stage update", function()
     -- stage update
-    local notice = configurator:stageUpdate(
+    local notice = Configurator:stageUpdate(
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -73,7 +69,7 @@ describe("configuratorValidation", function()
     -- assert staged
     assert.are.same({
       [hash] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
     -- assert correct notice
     assert.are.same({
       Action = 'Update-Staged',
@@ -88,7 +84,7 @@ describe("configuratorValidation", function()
 
   it("should unstage update", function()
     -- stage update
-    configurator:stageUpdate(
+    Configurator:stageUpdate(
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -98,9 +94,9 @@ describe("configuratorValidation", function()
     -- assert staged
     assert.are.same({
       [hash] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
     -- unstage update
-    local notice = configurator:unstageUpdate(
+    local notice = Configurator:unstageUpdate(
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -108,7 +104,7 @@ describe("configuratorValidation", function()
       msg
     )
     -- assert unstaged
-    assert.are.same({}, configurator.staged)
+    assert.are.same({}, Configurator.staged)
     -- assert correct notice
     assert.are.same({
       Action = 'Update-Unstaged',
@@ -119,7 +115,7 @@ describe("configuratorValidation", function()
   it("should fail to unstage update if unstaged", function()
     -- should throw an error
     assert.has.error(function()
-      configurator:unstageUpdate(
+      Configurator:unstageUpdate(
         msg.Tags.UpdateProcess,
         msg.Tags.UpdateAction,
         msg.Tags.UpdateTags,
@@ -128,12 +124,12 @@ describe("configuratorValidation", function()
       )
     end, "Update not staged! Hash: " .. hash)
     -- nothing should be staged
-    assert.are.same({}, configurator.staged)
+    assert.are.same({}, Configurator.staged)
 	end)
 
   it("should action update", function()
     -- stage update
-    configurator:stageUpdate(
+    Configurator:stageUpdate(
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -143,11 +139,11 @@ describe("configuratorValidation", function()
     -- assert staged
     assert.are.same({
       [hash] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
     -- stub os.time to mock delay
     stub(os, "time", function() return timestamp + 2 end)
     -- action update
-    local notice = configurator:actionUpdate(
+    local notice = Configurator:actionUpdate(
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -155,7 +151,7 @@ describe("configuratorValidation", function()
       msg
     )
     -- assert unstaged
-    assert.are.same({}, configurator.staged)
+    assert.are.same({}, Configurator.staged)
     -- assert correct notice
     assert.are.same({
       Action = 'Update-Actioned',
@@ -167,7 +163,7 @@ describe("configuratorValidation", function()
 
   it("should fail to action update if not staged long enough", function()
     -- stage update
-    configurator:stageUpdate(
+    Configurator:stageUpdate(
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -177,10 +173,10 @@ describe("configuratorValidation", function()
     -- assert staged
     assert.are.same({
       [hash] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
     -- should throw an error
     assert.has.error(function()
-      configurator:actionUpdate(
+      Configurator:actionUpdate(
         msg.Tags.UpdateProcess,
         msg.Tags.UpdateAction,
         msg.Tags.UpdateTags,
@@ -191,13 +187,13 @@ describe("configuratorValidation", function()
     -- assert still staged
     assert.are.same({
       [hash] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
 	end)
 
   it("should fail to action update if unstaged", function()
     -- should throw an error
     assert.has.error(function()
-      configurator:actionUpdate(
+      Configurator:actionUpdate(
         msg.Tags.UpdateProcess,
         msg.Tags.UpdateAction,
         msg.Tags.UpdateTags,
@@ -206,19 +202,19 @@ describe("configuratorValidation", function()
       )
     end, "Update not staged! Hash: " .. hash)
     -- nothing should be staged
-    assert.are.same({}, configurator.staged)
+    assert.are.same({}, Configurator.staged)
 	end)
 
   it("should stage update admin", function()
     -- stage update admin
-    local notice = configurator:stageUpdateAdmin(
+    local notice = Configurator:stageUpdateAdmin(
       msgAdmin.Tags.UpdateAdmin,
       msgAdmin
     )
     -- assert staged
     assert.are.same({
       [hashAdmin] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
     -- assert correct notice
     assert.are.same({
       Action = 'Update-Admin-Staged',
@@ -230,21 +226,21 @@ describe("configuratorValidation", function()
 
   it("should unstage update admin", function()
     -- stage update admin
-    configurator:stageUpdateAdmin(
+    Configurator:stageUpdateAdmin(
       msgAdmin.Tags.UpdateAdmin,
       msgAdmin
     )
     -- assert staged
     assert.are.same({
       [hashAdmin] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
     -- unstage update admin
-    local notice = configurator:unstageUpdateAdmin(
+    local notice = Configurator:unstageUpdateAdmin(
       msgAdmin.Tags.UpdateAdmin,
       msgAdmin
     )
     -- assert unstaged
-    assert.are.same({}, configurator.staged)
+    assert.are.same({}, Configurator.staged)
     -- assert correct notice
     assert.are.same({
       Action = 'Update-Admin-Unstaged',
@@ -255,59 +251,59 @@ describe("configuratorValidation", function()
   it("should fail to unstage update admin if unstaged", function()
     -- should throw an error
     assert.has.error(function()
-      configurator:unstageUpdateAdmin(
+      Configurator:unstageUpdateAdmin(
         msgAdmin.Tags.UpdateAdmin,
         msgAdmin
       )
     end, "Update not staged! Hash: " .. hashAdmin)
     -- assert unstaged
-    assert.are.same({}, configurator.staged)
+    assert.are.same({}, Configurator.staged)
     -- assert correct notice
 	end)
 
   it("should action update admin", function()
     -- stage update admin
-    configurator:stageUpdateAdmin(
+    Configurator:stageUpdateAdmin(
       msgAdmin.Tags.UpdateAdmin,
       msgAdmin
     )
     -- assert staged
     assert.are.same({
       [hashAdmin] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
     -- stub os.time to mock delay
     stub(os, "time", function() return timestamp + 2 end)
     -- action update admin
-    local notice = configurator:actionUpdateAdmin(
+    local notice = Configurator:actionUpdateAdmin(
       msgAdmin.Tags.UpdateAdmin,
       msgAdmin
     )
     -- assert unstaged
-    assert.are.same({}, configurator.staged)
+    assert.are.same({}, Configurator.staged)
     -- assert correct notice
     assert.are.same({
       Action = 'Update-Admin-Actioned',
       Hash = hashAdmin,
     }, notice)
     -- assert admin updated
-    assert.are.same(admin, configurator.admin)
+    assert.are.same(admin, Configurator.admin)
     -- restore the original os.time
     os.time:revert()
 	end)
 
   it("should fail to action update admin if not staged long enough", function()
     -- stage update admin
-    configurator:stageUpdateAdmin(
+    Configurator:stageUpdateAdmin(
       msgAdmin.Tags.UpdateAdmin,
       msgAdmin
     )
     -- assert staged
     assert.are.same({
       [hashAdmin] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
     -- should throw an error
     assert.has.error(function()
-      configurator:actionUpdateAdmin(
+      Configurator:actionUpdateAdmin(
         msgAdmin.Tags.UpdateAdmin,
         msgAdmin
       )
@@ -315,31 +311,31 @@ describe("configuratorValidation", function()
     -- assert still staged
     assert.are.same({
       [hashAdmin] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
 	end)
 
   it("should fail to action update admin if unstaged", function()
     -- should throw an error
     assert.has.error(function()
-      configurator:actionUpdateAdmin(
+      Configurator:actionUpdateAdmin(
         msgAdmin.Tags.UpdateAdmin,
         msgAdmin
       )
     end, "Update not staged! Hash: " .. hashAdmin)
     -- nothing should be staged
-    assert.are.same({}, configurator.staged)
+    assert.are.same({}, Configurator.staged)
 	end)
 
   it("should stage update delay", function()
     -- stage update admin
-    local notice = configurator:stageUpdateDelay(
+    local notice = Configurator:stageUpdateDelay(
       msgDelay.Tags.UpdateDelay,
       msgDelay
     )
     -- assert staged
     assert.are.same({
       [hashDelay] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
     -- assert correct notice
     assert.are.same({
       Action = 'Update-Delay-Staged',
@@ -351,21 +347,21 @@ describe("configuratorValidation", function()
 
   it("should unstage update delay", function()
     -- stage update admin
-    configurator:stageUpdateDelay(
+    Configurator:stageUpdateDelay(
       msgDelay.Tags.UpdateDelay,
       msgDelay
     )
     -- assert staged
     assert.are.same({
       [hashDelay] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
     -- unstage update admin
-    local notice = configurator:unstageUpdateDelay(
+    local notice = Configurator:unstageUpdateDelay(
       msgDelay.Tags.UpdateDelay,
       msgDelay
     )
     -- assert unstaged
-    assert.are.same({}, configurator.staged)
+    assert.are.same({}, Configurator.staged)
     -- assert correct notice
     assert.are.same({
       Action = 'Update-Delay-Unstaged',
@@ -376,59 +372,59 @@ describe("configuratorValidation", function()
   it("should fail to unstage update delay if unstaged", function()
     -- should throw an error
     assert.has.error(function()
-      configurator:unstageUpdateDelay(
+      Configurator:unstageUpdateDelay(
         msgDelay.Tags.UpdateDelay,
         msgDelay
       )
     end, "Update not staged! Hash: " .. hashDelay)
     -- assert unstaged
-    assert.are.same({}, configurator.staged)
+    assert.are.same({}, Configurator.staged)
     -- assert correct notice
 	end)
 
   it("should action update delay", function()
     -- stage update admin
-    configurator:stageUpdateDelay(
+    Configurator:stageUpdateDelay(
       msgDelay.Tags.UpdateDelay,
       msgDelay
     )
     -- assert staged
     assert.are.same({
       [hashDelay] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
     -- stub os.time to mock delay
     stub(os, "time", function() return timestamp + 2 end)
     -- action update admin
-    local notice = configurator:actionUpdateDelay(
+    local notice = Configurator:actionUpdateDelay(
       msgDelay.Tags.UpdateDelay,
       msgDelay
     )
     -- assert unstaged
-    assert.are.same({}, configurator.staged)
+    assert.are.same({}, Configurator.staged)
     -- assert correct notice
     assert.are.same({
       Action = 'Update-Delay-Actioned',
       Hash = hashDelay,
     }, notice)
     -- assert delay updated
-    assert.are.same(delay, configurator.delay)
+    assert.are.same(delay, Configurator.delay)
     -- restore the original os.time
     os.time:revert()
 	end)
 
   it("should fail to action update delay if not staged long enough", function()
     -- stage update admin
-    configurator:stageUpdateDelay(
+    Configurator:stageUpdateDelay(
       msgDelay.Tags.UpdateDelay,
       msgDelay
     )
     -- assert staged
     assert.are.same({
       [hashDelay] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
     -- should throw an error
     assert.has.error(function()
-      configurator:actionUpdateDelay(
+      Configurator:actionUpdateDelay(
         msgDelay.Tags.UpdateDelay,
         msgDelay
       )
@@ -436,18 +432,18 @@ describe("configuratorValidation", function()
     -- assert still staged
     assert.are.same({
       [hashDelay] = timestamp
-    }, configurator.staged)
+    }, Configurator.staged)
 	end)
 
   it("should fail to action update delay if unstaged", function()
     -- should throw an error
     assert.has.error(function()
-      configurator:actionUpdateDelay(
+      Configurator:actionUpdateDelay(
         msgDelay.Tags.UpdateDelay,
         msgDelay
       )
     end, "Update not staged! Hash: " .. hashDelay)
     -- nothing should be staged
-    assert.are.same({}, configurator.staged)
+    assert.are.same({}, Configurator.staged)
 	end)
 end)

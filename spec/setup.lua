@@ -14,31 +14,38 @@ _G.ao = {
 }
 
 _G.Handlers = {
-	add = function()
-		return true
-	end,
+  registered = {},
+  add = function(name, condition, callback)
+    table.insert(_G.Handlers.registered, {
+      name = name,
+      condition = condition,
+      callback = callback
+    })
+    return true
+  end,
 	once = function()
 		return true
 	end,
-	utils = {
-		reply = function()
-			return true
-		end,
-		hasMatchingTag = function()
-			return true
-		end,
-	},
+  process = function(msg)
+    for _, handler in ipairs(_G.Handlers.registered) do
+      if handler.condition(msg) then
+        return handler.callback(msg)
+      end
+    end
+    error("No matching handler found for message")
+  end,
+  utils = {
+    hasMatchingTag = function(key, value)
+      return function(msg)
+        return msg.Tags[key] == value
+      end
+    end,
+    reply = function(msg)
+      print("Replying:", msg)
+      return msg
+    end
+  }
 }
-
--- _G.crypto = {
---   digest = {
---     keccak256 = function(input)
---       return {
---         asHex = function() return input end
---       }
---     end
---   }
--- }
 
 -- Force reload modules that may have been cached
 package.loaded["modules.configurator"] = nil
