@@ -2,7 +2,6 @@
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
-local utils = require('.utils')
 local cpmm = require('modules.cpmm')
 local validation = require('modules.validation')
 
@@ -10,9 +9,11 @@ local validation = require('modules.validation')
 ---------------------------------------------------------------------------------
 -- MARKET -----------------------------------------------------------------------
 ---------------------------------------------------------------------------------
+Env = 'DEV'
+Version = '1.0.1'
 -- @dev Reset state while in DEV mode
-if not CPMM or Config.resetState then CPMM = cpmm:new() end
-
+if not CPMM or Env == 'DEV' then CPMM = cpmm:new() end
+-- @dev Add expected namespace variables
 Name = CPMM.token.name
 Ticker = CPMM.token.ticker
 

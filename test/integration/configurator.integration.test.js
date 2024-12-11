@@ -62,7 +62,7 @@ describe("cpmm.integration.test", function () {
     admin = walletAddress2,
     delay = 5000, 
     staged = {},
-    updateProcess = "UPDATE_PROCESS",
+    updateProcess = "test-this-is-valid-arweave-wallet-address-1",
     updateAction = "UPDATE_ACTION",
     updateTags = JSON.stringify({"TAG1": "FOO", "TAG2": "BAR"}),
     updateData = JSON.stringify({"DATA": 123}),
@@ -555,7 +555,7 @@ describe("cpmm.integration.test", function () {
         process: configurator,
         tags: [
           { name: "Action", value: "Unstage-Update" },
-          { name: "UpdateProcess", value: "FOO" },
+          { name: "UpdateProcess", value: "test-this-is-valid-arweave-wallet-address-2" },
           { name: "UpdateAction", value: updateAction },
           { name: "UpdateTags", value: updateTags },
           { name: "UpdateData", value: updateData },
@@ -1072,7 +1072,7 @@ describe("cpmm.integration.test", function () {
         process: configurator,
         tags: [
           { name: "Action", value: "Unstage-Update-Admin" },
-          { name: "UpdateAdmin", value: "FOO" }, 
+          { name: "UpdateAdmin", value: "test-this-is-valid-arweave-wallet-address-2" }, 
         ],
         signer: createDataItemSigner(wallet2),
         data: "",
@@ -1194,7 +1194,7 @@ describe("cpmm.integration.test", function () {
         process: configurator,
         tags: [
           { name: "Action", value: "Action-Update-Admin" },
-          { name: "UpdateAdmin", value: "FOO" },
+          { name: "UpdateAdmin", value: "test-this-is-valid-arweave-wallet-address-2" },
         ],
         signer: createDataItemSigner(wallet2),
         data: "",

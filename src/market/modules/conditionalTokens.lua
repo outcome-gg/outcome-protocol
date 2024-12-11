@@ -10,24 +10,24 @@ local ConditionalTokens = {}
 local ConditionalTokensMethods = require('modules.conditionalTokensNotices')
 
 -- Constructor for ConditionalTokens 
-function ConditionalTokens:new(config)
+function ConditionalTokens:new()
   -- Initialize SemiFungibleTokens and store the object
-  SemiFungibleTokens = semiFungibleTokens:new(config.tokens.name, config.tokens.ticker, config.tokens.logo, config.tokens.balancesById, config.tokens.totalSupplyByIdOf, config.tokens.denomination)
+  SemiFungibleTokens = semiFungibleTokens:new()
 
   -- Create a new ConditionalTokens object
   local obj = {
     -- SemiFungible Tokens
     tokens = SemiFungibleTokens,
-    conditionId = config.ctf.conditionId,
-    positionIds = config.ctf.positionIds,
-    outcomeSlotCount = config.ctf.outcomeSlotCount,
-    payoutNumerators = config.ctf.payoutNumerators,
-    payoutDenominator = config.ctf.payoutDenominator,
+    conditionId = '',
+    outcomeSlotCount = nil,
+    positionIds = {},
+    payoutNumerators = {},
+    payoutDenominator = {},
     -- Take Fee vars
-    creatorFee = config.takeFee.creatorFee,
-    creatorFeeTarget = config.takeFee.creatorFeeTarget,
-    protocolFee = config.takeFee.protocolFee,
-    protocolFeeTarget = config.takeFee.protocolFeeTarget
+    creatorFee = 0,
+    creatorFeeTarget = '',
+    protocolFee = 0,
+    protocolFeeTarget = ''
   }
 
   -- Set metatable for method lookups from ConditionalTokensMethods, SemiFungibleTokensMethods, and ConditionalTokensHelpers

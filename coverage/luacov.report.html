@@ -316,23 +316,399 @@
 </head>
 <body onload="initialize()">
    <main>
-      <div class="file success-high total">
+      <div class="file success-medium total">
          <h1 class="title">
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 100.0%"></span>
-                  <span><strong>100.0%</strong> Coverage</span>
+                  <span class="bg" style="width: 76.5%"></span>
+                  <span><strong>76.5%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>41</strong> Hits</span>
-               <span class="miss"><strong>0</strong> Missed</span>
+               <span class="hits"><strong>153</strong> Hits</span>
+               <span class="miss"><strong>47</strong> Missed</span>
             </span>
          </h1>
       </div>
 
-      <div class="hidden file success-high" id="src-configurator-modules-validation">
+      <div class="hidden file danger" id="src-configurator-configurator">
          <h2 class="title">
-            src/configurator/modules/validation.lua
+            src/configurator/configurator.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 38.10%"></span>
+                  <span><strong>38.10%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>16</strong> Hits</span>
+               <span class="miss"><strong>26</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+<span class="fc" data-hits="1">local configurator = require(&#39;modules.configurator&#39;)</span>
+<span class="fc" data-hits="1">local configuratorValidation = require(&#39;modules.configuratorValidation&#39;)</span>
+
+---------------------------------------------------------------------------------
+-- CONFIGURATOR -----------------------------------------------------------------
+---------------------------------------------------------------------------------
+<span class="fc" data-hits="1">Env = &#39;DEV&#39;</span>
+<span class="fc" data-hits="1">Version = &#39;1.0.1&#39;</span>
+-- @dev Reset state on load while in DEV mode
+<span class="fc" data-hits="1">if not Configurator or Env == &#39;DEV&#39; then Configurator = configurator:new() end</span>
+
+---------------------------------------------------------------------------------
+-- READ HANDLER -----------------------------------------------------------------
+---------------------------------------------------------------------------------
+
+-- Info
+<span class="fc" data-hits="2">Handlers.add(&quot;Info&quot;, Handlers.utils.hasMatchingTag(&quot;Action&quot;, &quot;Info&quot;), function(msg)</span>
+<span class="nc">  msg.reply({</span>
+    Admin = Configurator.admin,
+    Delay = Configurator.delay,
+<span class="nc">    Staged = json.encode(Configurator.staged)</span>
+  })
+end)
+
+---------------------------------------------------------------------------------
+-- GENERAL WRITE HANDLERS -------------------------------------------------------
+---------------------------------------------------------------------------------
+
+-- Stage Update
+<span class="fc" data-hits="2">Handlers.add(&quot;Stage-Update&quot;, Handlers.utils.hasMatchingTag(&quot;Action&quot;, &quot;Stage-Update&quot;), function(msg)</span>
+<span class="nc">  configuratorValidation.updateProcess(msg)</span>
+<span class="nc">  local updateTags = msg.UpdateTags or &quot;&quot;</span>
+<span class="nc">  local updateData = msg.UpdateData or &quot;&quot;</span>
+<span class="nc">  Configurator:stageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)</span>
+end)
+
+-- Unstage Update
+<span class="fc" data-hits="2">Handlers.add(&quot;Unstage-Update&quot;, Handlers.utils.hasMatchingTag(&quot;Action&quot;, &quot;Unstage-Update&quot;), function(msg)</span>
+<span class="nc">  configuratorValidation.updateProcess(msg)</span>
+<span class="nc">  local updateTags = msg.UpdateTags or &quot;&quot;</span>
+<span class="nc">  local updateData = msg.UpdateData or &quot;&quot;</span>
+<span class="nc">  Configurator:unstageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)</span>
+end)
+
+
+-- Action Update
+<span class="fc" data-hits="2">Handlers.add(&quot;Action-Update&quot;, Handlers.utils.hasMatchingTag(&quot;Action&quot;, &quot;Action-Update&quot;), function(msg)</span>
+<span class="nc">  configuratorValidation.updateProcess(msg)</span>
+<span class="nc">  local updateTags = msg.UpdateTags or &quot;&quot;</span>
+<span class="nc">  local updateData = msg.UpdateData or &quot;&quot;</span>
+<span class="nc">  Configurator:actionUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)</span>
+end)
+
+---------------------------------------------------------------------------------
+-- ADMIN WRITE HANDLERS ---------------------------------------------------------
+---------------------------------------------------------------------------------
+
+-- Stage Update Admin
+<span class="fc" data-hits="2">Handlers.add(&quot;Stage-Update-Admin&quot;, Handlers.utils.hasMatchingTag(&quot;Action&quot;, &quot;Stage-Update-Admin&quot;), function(msg)</span>
+<span class="nc">  configuratorValidation.updateAdmin(msg)</span>
+<span class="nc">  Configurator:stageUpdateAdmin(msg.Tags.UpdateAdmin, msg)</span>
+end)
+
+-- Unstage Update Admin
+<span class="fc" data-hits="2">Handlers.add(&quot;Unstage-Update-Admin&quot;, Handlers.utils.hasMatchingTag(&quot;Action&quot;, &quot;Unstage-Update-Admin&quot;), function(msg)</span>
+<span class="nc">  configuratorValidation.updateAdmin(msg)</span>
+<span class="nc">  Configurator:unstageUpdateAdmin(msg.Tags.UpdateAdmin, msg)</span>
+end)
+
+-- Action Update Admin
+<span class="fc" data-hits="2">Handlers.add(&quot;Action-Update-Admin&quot;, Handlers.utils.hasMatchingTag(&quot;Action&quot;, &quot;Action-Update-Admin&quot;), function(msg)</span>
+<span class="nc">  configuratorValidation.updateAdmin(msg)</span>
+<span class="nc">  Configurator:actionUpdateAdmin(msg.Tags.UpdateAdmin, msg)</span>
+end)
+
+---------------------------------------------------------------------------------
+-- DELAY WRITE HANDLERS ---------------------------------------------------------
+---------------------------------------------------------------------------------
+
+-- Stage Update DelayTime
+<span class="fc" data-hits="2">Handlers.add(&quot;Stage-Update-Delay&quot;, Handlers.utils.hasMatchingTag(&quot;Action&quot;, &quot;Stage-Update-Delay&quot;), function(msg)</span>
+<span class="nc">  configuratorValidation.updateDelay(msg)</span>
+<span class="nc">  Configurator:stageUpdateDelay(msg.Tags.UpdateDelay, msg)</span>
+end)
+
+-- Unstage Update DelayTime
+<span class="fc" data-hits="2">Handlers.add(&quot;Unstage-Update-Delay&quot;, Handlers.utils.hasMatchingTag(&quot;Action&quot;, &quot;Unstage-Update-Delay&quot;), function(msg)</span>
+<span class="nc">  configuratorValidation.updateDelay(msg)</span>
+<span class="nc">  Configurator:unstageUpdateDelay(msg.Tags.UpdateDelay, msg)</span>
+end)
+
+-- Action Update DelayTime
+<span class="fc" data-hits="2">Handlers.add(&quot;Action-Update-Delay&quot;, Handlers.utils.hasMatchingTag(&quot;Action&quot;, &quot;Action-Update-Delay&quot;), function(msg)</span>
+<span class="nc">  configuratorValidation.updateDelay(msg)</span>
+<span class="nc">  Configurator:actionUpdateDelay(msg.Tags.UpdateDelay, msg)</span>
+end)
+</pre>
+      </div>
+
+      <div class="hidden file success-low" id="src-configurator-modules-configurator">
+         <h2 class="title">
+            src/configurator/modules/configurator.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 70.00%"></span>
+                  <span><strong>70.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>49</strong> Hits</span>
+               <span class="miss"><strong>21</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="2">local json = require(&#39;json&#39;)</span>
+<span class="fc" data-hits="2">local crypto = require(&#39;.crypto&#39;)</span>
+<span class="fc" data-hits="2">local configuratorNotices = require(&#39;modules.configuratorNotices&#39;)</span>
+
+<span class="fc" data-hits="2">local Configurator = {}</span>
+
+-- Add configurator notices
+<span class="fc" data-hits="2">local configuratorMethods = configuratorNotices</span>
+
+-- Constructor for ProcessProvider 
+<span class="fc" data-hits="2">function Configurator:new(admin, delay)</span>
+  -- Create a new configurator object
+<span class="fc" data-hits="10">  local obj = {</span>
+<span class="fc" data-hits="10">    admin = admin or &#39;m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0&#39;,  -- Initial Admin Address</span>
+<span class="fc" data-hits="10">    delay = delay or 5000,                                           -- Initial Update Delay in Seconds</span>
+<span class="fc" data-hits="10">    staged = {},                                                     -- Staged Update Timestamps</span>
+  }
+  -- Set metatable for method lookups
+<span class="fc" data-hits="10">  setmetatable(obj, { __index = configuratorMethods })</span>
+<span class="fc" data-hits="10">  return obj</span>
+end
+
+--[[
+    PROTOCOL ----------------------------------------------------------------
+]]
+
+--[[
+    Stage Update
+]]
+<span class="fc" data-hits="2">function configuratorMethods:stageUpdate(process, action, tags, data, msg)</span>
+<span class="fc" data-hits="4">  local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()</span>
+  -- stage
+<span class="fc" data-hits="4">  self.staged[hash] = os.time()</span>
+  -- stage notice
+<span class="fc" data-hits="4">  return self.stageUpdateNotice(process, action, tags, data, hash, self.staged[hash], msg)</span>
+end
+
+--[[
+    Unstage Update
+]]
+<span class="fc" data-hits="2">function configuratorMethods:unstageUpdate(process, action, tags, data, msg)</span>
+<span class="fc" data-hits="2">  local hash = crypto.digest.keccak256(process .. action .. tags.. data).asHex()</span>
+<span class="fc" data-hits="2">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
+  -- unstage
+<span class="fc" data-hits="1">  self.staged[hash] = nil</span>
+  -- unstage notice
+<span class="fc" data-hits="1">  return self.unstageUpdateNotice(hash, msg)</span>
+end
+
+--[[
+    Action Update
+]]
+<span class="fc" data-hits="2">function configuratorMethods:actionUpdate(process, action, tags, data, msg)</span>
+<span class="fc" data-hits="3">  local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()</span>
+<span class="fc" data-hits="3">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
+<span class="fc" data-hits="2">  local remaining = self.staged[hash] + self.delay - os.time()</span>
+<span class="fc" data-hits="2">  assert(remaining &lt;= 0, &#39;Update not staged long enough! Remaining: &#39; .. remaining .. &#39;s.&#39;)</span>
+  -- action update
+<span class="fc" data-hits="1">  local message = {</span>
+<span class="fc" data-hits="1">    Target = process,</span>
+<span class="fc" data-hits="1">    Action = action,</span>
+<span class="fc" data-hits="1">    Data = data ~= &#39;&#39; and json.decode(data) or nil</span>
+  }
+<span class="fc" data-hits="2">  for tagName, tagValue in pairs(json.decode(tags)) do</span>
+<span class="fc" data-hits="1">    message[tagName] = tagValue</span>
+  end
+<span class="fc" data-hits="1">  ao.send(message)</span>
+  -- unstage
+<span class="fc" data-hits="1">  self.staged[hash] = nil</span>
+  -- action notice
+<span class="fc" data-hits="1">  return self.actionUpdateNotice(hash, msg)</span>
+end
+
+--[[
+    ADMIN ----------------------------------------------------------------
+]]
+
+--[[
+    Stage Update: Admin
+]]
+<span class="fc" data-hits="2">function configuratorMethods:stageUpdateAdmin(updateAdmin, msg)</span>
+<span class="nc">  local hash = crypto.digest.keccak256(updateAdmin).asHex()</span>
+  -- stage
+<span class="nc">  self.staged[hash] = os.time()</span>
+  -- stage notice
+<span class="nc">  return self.stageUpdateAdminNotice(updateAdmin, hash, self.staged[hash], msg)</span>
+end
+
+--[[
+    Unstage Update: Admin
+]]
+<span class="fc" data-hits="2">function configuratorMethods:unstageUpdateAdmin(updateAdmin, msg)</span>
+<span class="nc">  local hash = crypto.digest.keccak256(updateAdmin).asHex()</span>
+<span class="nc">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
+  -- unstage 
+<span class="nc">  self.staged[hash] = nil</span>
+  -- unstage notice
+<span class="nc">  return self.unstageUpdateAdminNotice(hash, msg)</span>
+end
+
+--[[
+    Action Update: Admin
+]]
+<span class="fc" data-hits="2">function configuratorMethods:actionUpdateAdmin(updateAdmin, msg)</span>
+<span class="nc">  local hash = crypto.digest.keccak256(updateAdmin).asHex()</span>
+<span class="nc">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
+<span class="nc">  local remaining = self.staged[hash] + self.delay - os.time()</span>
+<span class="nc">  assert(remaining &lt;= 0, &#39;Update not staged long enough! Remaining: &#39; .. remaining .. &#39;s.&#39;)</span>
+  -- action update
+<span class="nc">  self.admin = updateAdmin</span>
+  -- unstage
+<span class="nc">  self.staged[hash] = nil</span>
+  -- action notice
+<span class="nc">  return self.actionUpdateAdminNotice(hash, msg)</span>
+end
+
+--[[
+    DELAY TIME ----------------------------------------------------------------
+]]
+
+--[[
+    Stage Update: DelayTime
+]]
+<span class="fc" data-hits="2">function configuratorMethods:stageUpdateDelay(delayInSeconds, msg)</span>
+<span class="fc" data-hits="2">  local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()</span>
+<span class="fc" data-hits="2">  self.staged[hash] = os.time()</span>
+  -- stage notice
+<span class="fc" data-hits="2">  return self.stageUpdateDelayNotice(delayInSeconds, hash, self.staged[hash], msg)</span>
+end
+
+--[[
+    Unstage Update: Delay
+]]
+<span class="fc" data-hits="2">function configuratorMethods:unstageUpdateDelay(delayInSeconds, msg)</span>
+<span class="fc" data-hits="2">  local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()</span>
+<span class="fc" data-hits="1">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
+  -- unstage
+<span class="fc" data-hits="1">  self.staged[hash] = nil</span>
+  -- unstage notice
+<span class="fc" data-hits="1">  return self.unstageUpdateDelayNotice(hash, msg)</span>
+end
+
+--[[
+    Action Update: Delay
+]]
+<span class="fc" data-hits="2">function configuratorMethods:actionUpdateDelay(delayInSeconds, msg)</span>
+<span class="nc">  local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()</span>
+<span class="nc">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
+<span class="nc">  local remaining = self.staged[hash] + self.delay - os.time()</span>
+<span class="nc">  assert(remaining &lt;= 0, &#39;Update not staged long enough! Remaining: &#39; .. remaining .. &#39;s.&#39;)</span>
+  -- action update
+<span class="nc">  self.delay = delayInSeconds</span>
+  -- unstage
+<span class="nc">  self.staged[hash] = nil</span>
+  -- action notice
+<span class="nc">  return self.actionUpdateDelayNotice(hash, msg)</span>
+end
+
+<span class="fc" data-hits="2">return Configurator</span>
+</pre>
+      </div>
+
+      <div class="hidden file success-high" id="src-configurator-modules-configuratornotices">
+         <h2 class="title">
+            src/configurator/modules/configuratorNotices.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>47</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="3">local ConfiguratorNotices = {}</span>
+
+<span class="fc" data-hits="3">function ConfiguratorNotices.stageUpdateNotice(process, action, tags, data, hash, timestamp, msg)</span>
+<span class="fc" data-hits="10">  return msg.reply({</span>
+<span class="fc" data-hits="5">    Action = &#39;Update-Staged&#39;,</span>
+<span class="fc" data-hits="5">    UpdateProcess = process,</span>
+<span class="fc" data-hits="5">    UpdateAction = action,</span>
+<span class="fc" data-hits="5">    UpdateTags = tags,</span>
+<span class="fc" data-hits="5">    UpdateData = data,</span>
+<span class="fc" data-hits="5">    Hash = hash,</span>
+<span class="fc" data-hits="5">    Timestamp = timestamp,</span>
+  })
+end
+
+<span class="fc" data-hits="3">function ConfiguratorNotices.unstageUpdateNotice(hash, msg)</span>
+<span class="fc" data-hits="4">  return msg.reply({</span>
+<span class="fc" data-hits="2">    Action = &#39;Update-Unstaged&#39;,</span>
+<span class="fc" data-hits="2">    Hash = hash</span>
+  })
+end
+
+<span class="fc" data-hits="3">function ConfiguratorNotices.actionUpdateNotice(hash, msg)</span>
+<span class="fc" data-hits="4">  return msg.reply({</span>
+<span class="fc" data-hits="2">    Action = &#39;Update-Actioned&#39;,</span>
+<span class="fc" data-hits="2">    Hash = hash</span>
+  })
+end
+
+<span class="fc" data-hits="3">function ConfiguratorNotices.stageUpdateAdminNotice(admin, hash, timestamp, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &#39;Update-Admin-Staged&#39;,</span>
+<span class="fc" data-hits="1">    UpdateAdmin = admin,</span>
+<span class="fc" data-hits="1">    Hash = hash,</span>
+<span class="fc" data-hits="1">    Timestamp = timestamp,</span>
+  })
+end
+
+<span class="fc" data-hits="3">function ConfiguratorNotices.unstageUpdateAdminNotice(hash, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &#39;Update-Admin-Unstaged&#39;,</span>
+<span class="fc" data-hits="1">    Hash = hash</span>
+  })
+end
+
+<span class="fc" data-hits="3">function ConfiguratorNotices.actionUpdateAdminNotice(hash, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &#39;Update-Admin-Actioned&#39;,</span>
+<span class="fc" data-hits="1">    Hash = hash</span>
+  })
+end
+
+<span class="fc" data-hits="3">function ConfiguratorNotices.stageUpdateDelayNotice(delay, hash, timestamp, msg)</span>
+<span class="fc" data-hits="6">  return msg.reply({</span>
+<span class="fc" data-hits="3">    Action = &#39;Update-Delay-Staged&#39;,</span>
+<span class="fc" data-hits="3">    UpdateDelay = delay,</span>
+<span class="fc" data-hits="3">    Hash = hash,</span>
+<span class="fc" data-hits="3">    Timestamp = timestamp,</span>
+  })
+end
+
+<span class="fc" data-hits="3">function ConfiguratorNotices.unstageUpdateDelayNotice(hash, msg)</span>
+<span class="fc" data-hits="4">  return msg.reply({</span>
+<span class="fc" data-hits="2">    Action = &#39;Update-Delay-Unstaged&#39;,</span>
+<span class="fc" data-hits="2">    Hash = hash</span>
+  })
+end
+
+<span class="fc" data-hits="3">function ConfiguratorNotices.actionUpdateDelayNotice(hash, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &#39;Update-Delay-Actioned&#39;,</span>
+<span class="fc" data-hits="1">    Hash = hash</span>
+  })
+end
+
+<span class="fc" data-hits="3">return ConfiguratorNotices</span>
+</pre>
+      </div>
+
+      <div class="hidden file success-high" id="src-configurator-modules-configuratorvalidation">
+         <h2 class="title">
+            src/configurator/modules/configuratorValidation.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
@@ -342,9 +718,9 @@
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="2">local json = require(&#39;json&#39;)</span>
 
-<span class="fc" data-hits="1">local validation = {}</span>
+<span class="fc" data-hits="2">local validation = {}</span>
 
 -- Function to validate if the extracted value is a valid JSON simple value
 local function isSimpleValue(value)
@@ -402,7 +778,7 @@ local function isValidArweaveAddress(address)
 <span class="fc" data-hits="18">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[%w-_]+$&quot;) ~= nil</span>
 end
 
-<span class="fc" data-hits="1">function validation.updateProcess(msg)</span>
+<span class="fc" data-hits="2">function validation.updateProcess(msg)</span>
 <span class="fc" data-hits="18">  assert(msg.From == Configurator.admin, &#39;Sender must be admin!&#39;)</span>
 <span class="fc" data-hits="17">  assert(type(msg.Tags.UpdateProcess) == &#39;string&#39;, &#39;UpdateProcess is required!&#39;)</span>
 <span class="fc" data-hits="16">  assert(isValidArweaveAddress(msg.Tags.UpdateProcess), &#39;UpdateProcess must be a valid Arweave address!&#39;)</span>
@@ -411,13 +787,13 @@ end
 <span class="fc" data-hits="8">  assert(isValidKeyValueJSON(msg.Tags.UpdateData) or msg.Tags.UpdateData == nil, &#39;UpdateData must be valid JSON!&#39;)</span>
 end
 
-<span class="fc" data-hits="1">function validation.updateAdmin(msg)</span>
+<span class="fc" data-hits="2">function validation.updateAdmin(msg)</span>
 <span class="fc" data-hits="4">  assert(msg.From == Configurator.admin, &#39;Sender must be admin!&#39;)</span>
 <span class="fc" data-hits="3">  assert(type(msg.Tags.UpdateAdmin) == &#39;string&#39;, &#39;UpdateAdmin is required!&#39;)</span>
 <span class="fc" data-hits="2">  assert(isValidArweaveAddress(msg.Tags.UpdateAdmin), &#39;UpdateAdmin must be a valid Arweave address!&#39;)</span>
 end
 
-<span class="fc" data-hits="1">function validation.updateDelay(msg)</span>
+<span class="fc" data-hits="2">function validation.updateDelay(msg)</span>
 <span class="fc" data-hits="7">  assert(msg.From == Configurator.admin, &#39;Sender must be admin!&#39;)</span>
 <span class="fc" data-hits="6">  assert(msg.Tags.UpdateDelay, &#39;UpdateDelay is required!&#39;)</span>
 <span class="fc" data-hits="5">  assert(tonumber(msg.Tags.UpdateDelay), &#39;UpdateDelay must be a number!&#39;)</span>
@@ -425,13 +801,13 @@ end
 <span class="fc" data-hits="2">  assert(tonumber(msg.Tags.UpdateDelay) % 1 == 0, &#39;UpdateDelay must be an integer!&#39;)</span>
 end
 
-<span class="fc" data-hits="1">return validation</span>
+<span class="fc" data-hits="2">return validation</span>
 </pre>
       </div>
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-10 11:31:11
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-11 08:06:36
    </footer>
 
    <script type="text/javascript">

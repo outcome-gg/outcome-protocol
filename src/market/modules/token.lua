@@ -6,15 +6,15 @@ local Token = {}
 local TokenMethods = require('modules.tokenNotices')
 
 -- Constructor for Token 
-function Token:new(name, ticker, logo, balances, totalSupply, denomination)
+function Token:new()
   -- This will store user balances of tokens and metadata
   local obj = {
-    name = name,
-    ticker = ticker,
-    logo = logo,
-    balances = balances,
-    totalSupply = totalSupply,
-    denomination = denomination
+    name = '',
+    ticker = '',
+    logo = '',
+    balances = {},
+    totalSupply = '0',
+    denomination = 12
   }
   setmetatable(obj, { __index = TokenMethods })
   return obj

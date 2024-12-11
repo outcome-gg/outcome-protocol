@@ -2,7 +2,6 @@ local json = require('json')
 local bint = require('.bint')(256)
 local ao = require('.ao')
 local utils = require(".utils")
-local config = require('modules.config')
 local token = require('modules.token')
 local conditionalTokens = require('modules.conditionalTokens')
 local CPMMHelpers = require('modules.cpmmHelpers')
@@ -14,27 +13,26 @@ local ConditionalTokens = {}
 
 -- Constructor for CPMM 
 function CPMM:new()
-  Config = config:new()
   -- Initialize Tokens and store the object
-  LPToken = token:new(Config.token.name, Config.token.ticker, Config.token.logo, Config.token.balances, Config.token.totalSupply, Config.token.denomination)
-  ConditionalTokens = conditionalTokens:new(Config)
+  LPToken = token:new()
+  ConditionalTokens = conditionalTokens:new()
   -- Create a new CPMM object
   local obj = {
     -- Market vars
-    marketId = Config.marketId,
-    initialized = Config.initialized,
-    incentives = Config.incentives,
-    configurator = Config.configurator,
+    marketId = '',
+    incentives = '',
+    configurator = '',
+    initialized = false,
     -- CPMM vars
-    poolBalances = Config.cpmm.poolBalances,
-    feePoolWeight = Config.cpmm.feePoolWeight,
-    totalWithdrawnFees = Config.cpmm.totalWithdrawnFees,
-    withdrawnFees = Config.cpmm.withdrawnFees,
+    poolBalances = {},
+    withdrawnFees = {},
+    feePoolWeight = '0',
+    totalWithdrawnFees = '0',
     -- ConditionalTokens vars
     tokens = ConditionalTokens,
     -- LP vars
     token = LPToken,
-    lpFee = Config.lpFee
+    lpFee = 0
   }
 
   -- Set metatable for method lookups

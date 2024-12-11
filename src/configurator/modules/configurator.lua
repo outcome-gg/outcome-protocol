@@ -1,6 +1,5 @@
 local json = require('json')
 local crypto = require('.crypto')
-local config = require('modules.config')
 local configuratorNotices = require('modules.configuratorNotices')
 
 local Configurator = {}
@@ -9,14 +8,12 @@ local Configurator = {}
 local configuratorMethods = configuratorNotices
 
 -- Constructor for ProcessProvider 
-function Configurator:new()
-  local Config = config:new()
+function Configurator:new(admin, delay)
   -- Create a new configurator object
   local obj = {
-    admin = Config.admin,     -- Admin Address
-    delay = Config.delay,     -- Update Delay
-    staged = Config.staged,    -- Staged Timestamps
-    foo = 12
+    admin = admin or 'm6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0',  -- Initial Admin Address
+    delay = delay or 5000,                                           -- Initial Update Delay in Seconds
+    staged = {},                                                     -- Staged Update Timestamps
   }
   -- Set metatable for method lookups
   setmetatable(obj, { __index = configuratorMethods })
@@ -31,23 +28,23 @@ end
     Stage Update
 ]]
 function configuratorMethods:stageUpdate(process, action, tags, data, msg)
-  local hash = tostring(crypto.digest.keccak256(process .. action .. tags .. data).asHex())
+  local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()
   -- stage
   self.staged[hash] = os.time()
   -- stage notice
-  self.stageUpdateNotice(process, action, tags, data, hash, self.staged[hash], msg)
+  return self.stageUpdateNotice(process, action, tags, data, hash, self.staged[hash], msg)
 end
 
 --[[
     Unstage Update
 ]]
 function configuratorMethods:unstageUpdate(process, action, tags, data, msg)
-  local hash = tostring(crypto.digest.keccak256(process .. action .. tags.. data).asHex())
+  local hash = crypto.digest.keccak256(process .. action .. tags.. data).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   -- unstage
   self.staged[hash] = nil
   -- unstage notice
-  self.unstageUpdateNotice(hash, msg)
+  return self.unstageUpdateNotice(hash, msg)
 end
 
 --[[
@@ -57,7 +54,7 @@ function configuratorMethods:actionUpdate(process, action, tags, data, msg)
   local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   local remaining = self.staged[hash] + self.delay - os.time()
-  assert(remaining < 0, 'Update not staged long enough! Remaining: ' .. remaining .. ' ms')
+  assert(remaining <= 0, 'Update not staged long enough! Remaining: ' .. remaining .. 's.')
   -- action update
   local message = {
     Target = process,
@@ -71,7 +68,7 @@ function configuratorMethods:actionUpdate(process, action, tags, data, msg)
   -- unstage
   self.staged[hash] = nil
   -- action notice
-  self.actionUpdateNotice(hash, msg)
+  return self.actionUpdateNotice(hash, msg)
 end
 
 --[[
@@ -82,11 +79,11 @@ end
     Stage Update: Admin
 ]]
 function configuratorMethods:stageUpdateAdmin(updateAdmin, msg)
-  local hash = tostring(crypto.digest.keccak256(updateAdmin).asHex())
+  local hash = crypto.digest.keccak256(updateAdmin).asHex()
   -- stage
   self.staged[hash] = os.time()
   -- stage notice
-  self.stageUpdateAdminNotice(updateAdmin, hash, self.staged[hash], msg)
+  return self.stageUpdateAdminNotice(updateAdmin, hash, self.staged[hash], msg)
 end
 
 --[[
@@ -98,7 +95,7 @@ function configuratorMethods:unstageUpdateAdmin(updateAdmin, msg)
   -- unstage 
   self.staged[hash] = nil
   -- unstage notice
-  self.unstageUpdateAdminNotice(hash, msg)
+  return self.unstageUpdateAdminNotice(hash, msg)
 end
 
 --[[
@@ -108,13 +105,13 @@ function configuratorMethods:actionUpdateAdmin(updateAdmin, msg)
   local hash = crypto.digest.keccak256(updateAdmin).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   local remaining = self.staged[hash] + self.delay - os.time()
-  assert(remaining < 0, 'Update not staged long enough! Remaining: ' .. remaining .. ' ms')
+  assert(remaining <= 0, 'Update not staged long enough! Remaining: ' .. remaining .. 's.')
   -- action update
   self.admin = updateAdmin
   -- unstage
   self.staged[hash] = nil
   -- action notice
-  self.actionUpdateAdminNotice(hash, msg)
+  return self.actionUpdateAdminNotice(hash, msg)
 end
 
 --[[
@@ -124,39 +121,39 @@ end
 --[[
     Stage Update: DelayTime
 ]]
-function configuratorMethods:stageUpdateDelay(delayInMilliseconds, msg)
-  local hash = crypto.digest.keccak256(tostring(delayInMilliseconds)).asHex()
+function configuratorMethods:stageUpdateDelay(delayInSeconds, msg)
+  local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()
   self.staged[hash] = os.time()
   -- stage notice
-  self.stageUpdateDelayNotice(delayInMilliseconds, hash, self.staged[hash], msg)
+  return self.stageUpdateDelayNotice(delayInSeconds, hash, self.staged[hash], msg)
 end
 
 --[[
     Unstage Update: Delay
 ]]
-function configuratorMethods:unstageUpdateDelay(delayInMilliseconds, msg)
-  local hash = crypto.digest.keccak256(tostring(delayInMilliseconds)).asHex()
+function configuratorMethods:unstageUpdateDelay(delayInSeconds, msg)
+  local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   -- unstage
   self.staged[hash] = nil
   -- unstage notice
-  self.unstageUpdateDelayNotice(hash, msg)
+  return self.unstageUpdateDelayNotice(hash, msg)
 end
 
 --[[
     Action Update: Delay
 ]]
-function configuratorMethods:actionUpdateDelay(delayInMilliseconds, msg)
-  local hash = crypto.digest.keccak256(tostring(delayInMilliseconds)).asHex()
+function configuratorMethods:actionUpdateDelay(delayInSeconds, msg)
+  local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   local remaining = self.staged[hash] + self.delay - os.time()
-  assert(remaining < 0, 'Update not staged long enough! Remaining: ' .. remaining .. ' ms')
+  assert(remaining <= 0, 'Update not staged long enough! Remaining: ' .. remaining .. 's.')
   -- action update
-  self.delay = delayInMilliseconds
+  self.delay = delayInSeconds
   -- unstage
   self.staged[hash] = nil
   -- action notice
-  self.actionUpdateDelayNotice(hash, msg)
+  return self.actionUpdateDelayNotice(hash, msg)
 end
 
 return Configurator
