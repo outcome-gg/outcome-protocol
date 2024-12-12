@@ -324,7 +324,7 @@
                   <span class="bg" style="width: 100.0%"></span>
                   <span><strong>100.0%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>202</strong> Hits</span>
+               <span class="hits"><strong>300</strong> Hits</span>
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h1>
@@ -465,14 +465,14 @@ end)
 -- Constructor for ProcessProvider 
 <span class="fc" data-hits="2">function Configurator:new(env)</span>
   -- Create a new configurator object
-<span class="fc" data-hits="1">  local obj = {</span>
-<span class="fc" data-hits="1">    admin = &#39;m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0&#39;,  -- Initial Admin Address</span>
-<span class="fc" data-hits="1">    delay = env == &quot;DEV&quot; and 1 or 3*24*60*60,               -- Initial Update Delay in Seconds (i.e. 1 second or 3 days)</span>
-<span class="fc" data-hits="1">    staged = {},                                            -- Staged Update Timestamps</span>
+<span class="fc" data-hits="19">  local obj = {</span>
+<span class="fc" data-hits="19">    admin = &#39;m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0&#39;,  -- Initial Admin Address</span>
+<span class="fc" data-hits="19">    delay = env == &quot;DEV&quot; and 1 or 3*24*60*60,               -- Initial Update Delay in Seconds (i.e. 1 second or 3 days)</span>
+<span class="fc" data-hits="19">    staged = {},                                            -- Staged Update Timestamps</span>
   }
   -- Set metatable for method lookups
-<span class="fc" data-hits="1">  setmetatable(obj, { __index = configuratorMethods })</span>
-<span class="fc" data-hits="1">  return obj</span>
+<span class="fc" data-hits="19">  setmetatable(obj, { __index = configuratorMethods })</span>
+<span class="fc" data-hits="19">  return obj</span>
 end
 
 --[[
@@ -483,47 +483,47 @@ end
     Stage Update
 ]]
 <span class="fc" data-hits="2">function configuratorMethods:stageUpdate(process, action, tags, data, msg)</span>
-<span class="fc" data-hits="3">  local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()</span>
+<span class="fc" data-hits="7">  local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()</span>
   -- stage
-<span class="fc" data-hits="3">  self.staged[hash] = os.time()</span>
+<span class="fc" data-hits="7">  self.staged[hash] = os.time()</span>
   -- stage notice
-<span class="fc" data-hits="3">  return self.stageUpdateNotice(process, action, tags, data, hash, self.staged[hash], msg)</span>
+<span class="fc" data-hits="7">  return self.stageUpdateNotice(process, action, tags, data, hash, self.staged[hash], msg)</span>
 end
 
 --[[
     Unstage Update
 ]]
 <span class="fc" data-hits="2">function configuratorMethods:unstageUpdate(process, action, tags, data, msg)</span>
-<span class="fc" data-hits="1">  local hash = crypto.digest.keccak256(process .. action .. tags.. data).asHex()</span>
-<span class="fc" data-hits="1">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
+<span class="fc" data-hits="3">  local hash = crypto.digest.keccak256(process .. action .. tags.. data).asHex()</span>
+<span class="fc" data-hits="3">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
   -- unstage
-<span class="fc" data-hits="1">  self.staged[hash] = nil</span>
+<span class="fc" data-hits="2">  self.staged[hash] = nil</span>
   -- unstage notice
-<span class="fc" data-hits="1">  return self.unstageUpdateNotice(hash, msg)</span>
+<span class="fc" data-hits="2">  return self.unstageUpdateNotice(hash, msg)</span>
 end
 
 --[[
     Action Update
 ]]
 <span class="fc" data-hits="2">function configuratorMethods:actionUpdate(process, action, tags, data, msg)</span>
-<span class="fc" data-hits="1">  local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()</span>
-<span class="fc" data-hits="1">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
-<span class="fc" data-hits="1">  local remaining = self.staged[hash] + self.delay - os.time()</span>
-<span class="fc" data-hits="1">  assert(remaining &lt;= 0, &#39;Update not staged long enough! Remaining: &#39; .. remaining .. &#39;s.&#39;)</span>
+<span class="fc" data-hits="4">  local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()</span>
+<span class="fc" data-hits="4">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
+<span class="fc" data-hits="3">  local remaining = self.staged[hash] + self.delay - os.time()</span>
+<span class="fc" data-hits="3">  assert(remaining &lt;= 0, &#39;Update not staged long enough! Remaining: &#39; .. remaining .. &#39;s.&#39;)</span>
   -- action update
-<span class="fc" data-hits="1">  local message = {</span>
-<span class="fc" data-hits="1">    Target = process,</span>
-<span class="fc" data-hits="1">    Action = action,</span>
-<span class="fc" data-hits="1">    Data = data ~= &#39;&#39; and json.decode(data) or nil</span>
+<span class="fc" data-hits="2">  local message = {</span>
+<span class="fc" data-hits="2">    Target = process,</span>
+<span class="fc" data-hits="2">    Action = action,</span>
+<span class="fc" data-hits="2">    Data = data ~= &#39;&#39; and json.decode(data) or nil</span>
   }
-<span class="fc" data-hits="2">  for tagName, tagValue in pairs(json.decode(tags)) do</span>
-<span class="fc" data-hits="1">    message[tagName] = tagValue</span>
+<span class="fc" data-hits="4">  for tagName, tagValue in pairs(json.decode(tags)) do</span>
+<span class="fc" data-hits="2">    message[tagName] = tagValue</span>
   end
-<span class="fc" data-hits="1">  ao.send(message)</span>
+<span class="fc" data-hits="2">  ao.send(message)</span>
   -- unstage
-<span class="fc" data-hits="1">  self.staged[hash] = nil</span>
+<span class="fc" data-hits="2">  self.staged[hash] = nil</span>
   -- action notice
-<span class="fc" data-hits="1">  return self.actionUpdateNotice(hash, msg)</span>
+<span class="fc" data-hits="2">  return self.actionUpdateNotice(hash, msg)</span>
 end
 
 --[[
@@ -534,39 +534,39 @@ end
     Stage Update: Admin
 ]]
 <span class="fc" data-hits="2">function configuratorMethods:stageUpdateAdmin(updateAdmin, msg)</span>
-<span class="fc" data-hits="3">  local hash = crypto.digest.keccak256(updateAdmin).asHex()</span>
+<span class="fc" data-hits="7">  local hash = crypto.digest.keccak256(updateAdmin).asHex()</span>
   -- stage
-<span class="fc" data-hits="3">  self.staged[hash] = os.time()</span>
+<span class="fc" data-hits="7">  self.staged[hash] = os.time()</span>
   -- stage notice
-<span class="fc" data-hits="3">  return self.stageUpdateAdminNotice(updateAdmin, hash, self.staged[hash], msg)</span>
+<span class="fc" data-hits="7">  return self.stageUpdateAdminNotice(updateAdmin, hash, self.staged[hash], msg)</span>
 end
 
 --[[
     Unstage Update: Admin
 ]]
 <span class="fc" data-hits="2">function configuratorMethods:unstageUpdateAdmin(updateAdmin, msg)</span>
-<span class="fc" data-hits="1">  local hash = crypto.digest.keccak256(updateAdmin).asHex()</span>
-<span class="fc" data-hits="1">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
+<span class="fc" data-hits="3">  local hash = crypto.digest.keccak256(updateAdmin).asHex()</span>
+<span class="fc" data-hits="3">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
   -- unstage 
-<span class="fc" data-hits="1">  self.staged[hash] = nil</span>
+<span class="fc" data-hits="2">  self.staged[hash] = nil</span>
   -- unstage notice
-<span class="fc" data-hits="1">  return self.unstageUpdateAdminNotice(hash, msg)</span>
+<span class="fc" data-hits="2">  return self.unstageUpdateAdminNotice(hash, msg)</span>
 end
 
 --[[
     Action Update: Admin
 ]]
 <span class="fc" data-hits="2">function configuratorMethods:actionUpdateAdmin(updateAdmin, msg)</span>
-<span class="fc" data-hits="1">  local hash = crypto.digest.keccak256(updateAdmin).asHex()</span>
-<span class="fc" data-hits="1">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
-<span class="fc" data-hits="1">  local remaining = self.staged[hash] + self.delay - os.time()</span>
-<span class="fc" data-hits="1">  assert(remaining &lt;= 0, &#39;Update not staged long enough! Remaining: &#39; .. remaining .. &#39;s.&#39;)</span>
+<span class="fc" data-hits="4">  local hash = crypto.digest.keccak256(updateAdmin).asHex()</span>
+<span class="fc" data-hits="4">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
+<span class="fc" data-hits="3">  local remaining = self.staged[hash] + self.delay - os.time()</span>
+<span class="fc" data-hits="3">  assert(remaining &lt;= 0, &#39;Update not staged long enough! Remaining: &#39; .. remaining .. &#39;s.&#39;)</span>
   -- action update
-<span class="fc" data-hits="1">  self.admin = updateAdmin</span>
+<span class="fc" data-hits="2">  self.admin = updateAdmin</span>
   -- unstage
-<span class="fc" data-hits="1">  self.staged[hash] = nil</span>
+<span class="fc" data-hits="2">  self.staged[hash] = nil</span>
   -- action notice
-<span class="fc" data-hits="1">  return self.actionUpdateAdminNotice(hash, msg)</span>
+<span class="fc" data-hits="2">  return self.actionUpdateAdminNotice(hash, msg)</span>
 end
 
 --[[
@@ -577,38 +577,38 @@ end
     Stage Update: DelayTime
 ]]
 <span class="fc" data-hits="2">function configuratorMethods:stageUpdateDelay(delayInSeconds, msg)</span>
-<span class="fc" data-hits="3">  local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()</span>
-<span class="fc" data-hits="3">  self.staged[hash] = os.time()</span>
+<span class="fc" data-hits="7">  local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()</span>
+<span class="fc" data-hits="7">  self.staged[hash] = os.time()</span>
   -- stage notice
-<span class="fc" data-hits="3">  return self.stageUpdateDelayNotice(delayInSeconds, hash, self.staged[hash], msg)</span>
+<span class="fc" data-hits="7">  return self.stageUpdateDelayNotice(delayInSeconds, hash, self.staged[hash], msg)</span>
 end
 
 --[[
     Unstage Update: Delay
 ]]
 <span class="fc" data-hits="2">function configuratorMethods:unstageUpdateDelay(delayInSeconds, msg)</span>
-<span class="fc" data-hits="1">  local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()</span>
-<span class="fc" data-hits="1">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
+<span class="fc" data-hits="3">  local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()</span>
+<span class="fc" data-hits="3">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
   -- unstage
-<span class="fc" data-hits="1">  self.staged[hash] = nil</span>
+<span class="fc" data-hits="2">  self.staged[hash] = nil</span>
   -- unstage notice
-<span class="fc" data-hits="1">  return self.unstageUpdateDelayNotice(hash, msg)</span>
+<span class="fc" data-hits="2">  return self.unstageUpdateDelayNotice(hash, msg)</span>
 end
 
 --[[
     Action Update: Delay
 ]]
 <span class="fc" data-hits="2">function configuratorMethods:actionUpdateDelay(delayInSeconds, msg)</span>
-<span class="fc" data-hits="1">  local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()</span>
-<span class="fc" data-hits="1">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
-<span class="fc" data-hits="1">  local remaining = self.staged[hash] + self.delay - os.time()</span>
-<span class="fc" data-hits="1">  assert(remaining &lt;= 0, &#39;Update not staged long enough! Remaining: &#39; .. remaining .. &#39;s.&#39;)</span>
+<span class="fc" data-hits="4">  local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()</span>
+<span class="fc" data-hits="4">  assert(self.staged[hash], &#39;Update not staged! Hash: &#39; .. hash)</span>
+<span class="fc" data-hits="3">  local remaining = self.staged[hash] + self.delay - os.time()</span>
+<span class="fc" data-hits="3">  assert(remaining &lt;= 0, &#39;Update not staged long enough! Remaining: &#39; .. remaining .. &#39;s.&#39;)</span>
   -- action update
-<span class="fc" data-hits="1">  self.delay = delayInSeconds</span>
+<span class="fc" data-hits="2">  self.delay = delayInSeconds</span>
   -- unstage
-<span class="fc" data-hits="1">  self.staged[hash] = nil</span>
+<span class="fc" data-hits="2">  self.staged[hash] = nil</span>
   -- action notice
-<span class="fc" data-hits="1">  return self.actionUpdateDelayNotice(hash, msg)</span>
+<span class="fc" data-hits="2">  return self.actionUpdateDelayNotice(hash, msg)</span>
 end
 
 <span class="fc" data-hits="2">return Configurator</span>
@@ -630,74 +630,74 @@ end
          <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="3">local ConfiguratorNotices = {}</span>
 
 <span class="fc" data-hits="3">function ConfiguratorNotices.stageUpdateNotice(process, action, tags, data, hash, timestamp, msg)</span>
-<span class="fc" data-hits="8">  return msg.reply({</span>
-<span class="fc" data-hits="4">    Action = &#39;Update-Staged&#39;,</span>
-<span class="fc" data-hits="4">    UpdateProcess = process,</span>
-<span class="fc" data-hits="4">    UpdateAction = action,</span>
-<span class="fc" data-hits="4">    UpdateTags = tags,</span>
-<span class="fc" data-hits="4">    UpdateData = data,</span>
-<span class="fc" data-hits="4">    Hash = hash,</span>
-<span class="fc" data-hits="4">    Timestamp = timestamp,</span>
+<span class="fc" data-hits="16">  return msg.reply({</span>
+<span class="fc" data-hits="8">    Action = &#39;Update-Staged&#39;,</span>
+<span class="fc" data-hits="8">    UpdateProcess = process,</span>
+<span class="fc" data-hits="8">    UpdateAction = action,</span>
+<span class="fc" data-hits="8">    UpdateTags = tags,</span>
+<span class="fc" data-hits="8">    UpdateData = data,</span>
+<span class="fc" data-hits="8">    Hash = hash,</span>
+<span class="fc" data-hits="8">    Timestamp = timestamp,</span>
   })
 end
 
 <span class="fc" data-hits="3">function ConfiguratorNotices.unstageUpdateNotice(hash, msg)</span>
-<span class="fc" data-hits="4">  return msg.reply({</span>
-<span class="fc" data-hits="2">    Action = &#39;Update-Unstaged&#39;,</span>
-<span class="fc" data-hits="2">    Hash = hash</span>
+<span class="fc" data-hits="6">  return msg.reply({</span>
+<span class="fc" data-hits="3">    Action = &#39;Update-Unstaged&#39;,</span>
+<span class="fc" data-hits="3">    Hash = hash</span>
   })
 end
 
 <span class="fc" data-hits="3">function ConfiguratorNotices.actionUpdateNotice(hash, msg)</span>
-<span class="fc" data-hits="4">  return msg.reply({</span>
-<span class="fc" data-hits="2">    Action = &#39;Update-Actioned&#39;,</span>
-<span class="fc" data-hits="2">    Hash = hash</span>
+<span class="fc" data-hits="6">  return msg.reply({</span>
+<span class="fc" data-hits="3">    Action = &#39;Update-Actioned&#39;,</span>
+<span class="fc" data-hits="3">    Hash = hash</span>
   })
 end
 
 <span class="fc" data-hits="3">function ConfiguratorNotices.stageUpdateAdminNotice(admin, hash, timestamp, msg)</span>
-<span class="fc" data-hits="8">  return msg.reply({</span>
-<span class="fc" data-hits="4">    Action = &#39;Update-Admin-Staged&#39;,</span>
-<span class="fc" data-hits="4">    UpdateAdmin = admin,</span>
-<span class="fc" data-hits="4">    Hash = hash,</span>
-<span class="fc" data-hits="4">    Timestamp = timestamp,</span>
+<span class="fc" data-hits="16">  return msg.reply({</span>
+<span class="fc" data-hits="8">    Action = &#39;Update-Admin-Staged&#39;,</span>
+<span class="fc" data-hits="8">    UpdateAdmin = admin,</span>
+<span class="fc" data-hits="8">    Hash = hash,</span>
+<span class="fc" data-hits="8">    Timestamp = timestamp,</span>
   })
 end
 
 <span class="fc" data-hits="3">function ConfiguratorNotices.unstageUpdateAdminNotice(hash, msg)</span>
-<span class="fc" data-hits="4">  return msg.reply({</span>
-<span class="fc" data-hits="2">    Action = &#39;Update-Admin-Unstaged&#39;,</span>
-<span class="fc" data-hits="2">    Hash = hash</span>
+<span class="fc" data-hits="6">  return msg.reply({</span>
+<span class="fc" data-hits="3">    Action = &#39;Update-Admin-Unstaged&#39;,</span>
+<span class="fc" data-hits="3">    Hash = hash</span>
   })
 end
 
 <span class="fc" data-hits="3">function ConfiguratorNotices.actionUpdateAdminNotice(hash, msg)</span>
-<span class="fc" data-hits="4">  return msg.reply({</span>
-<span class="fc" data-hits="2">    Action = &#39;Update-Admin-Actioned&#39;,</span>
-<span class="fc" data-hits="2">    Hash = hash</span>
+<span class="fc" data-hits="6">  return msg.reply({</span>
+<span class="fc" data-hits="3">    Action = &#39;Update-Admin-Actioned&#39;,</span>
+<span class="fc" data-hits="3">    Hash = hash</span>
   })
 end
 
 <span class="fc" data-hits="3">function ConfiguratorNotices.stageUpdateDelayNotice(delay, hash, timestamp, msg)</span>
-<span class="fc" data-hits="8">  return msg.reply({</span>
-<span class="fc" data-hits="4">    Action = &#39;Update-Delay-Staged&#39;,</span>
-<span class="fc" data-hits="4">    UpdateDelay = delay,</span>
-<span class="fc" data-hits="4">    Hash = hash,</span>
-<span class="fc" data-hits="4">    Timestamp = timestamp,</span>
+<span class="fc" data-hits="16">  return msg.reply({</span>
+<span class="fc" data-hits="8">    Action = &#39;Update-Delay-Staged&#39;,</span>
+<span class="fc" data-hits="8">    UpdateDelay = delay,</span>
+<span class="fc" data-hits="8">    Hash = hash,</span>
+<span class="fc" data-hits="8">    Timestamp = timestamp,</span>
   })
 end
 
 <span class="fc" data-hits="3">function ConfiguratorNotices.unstageUpdateDelayNotice(hash, msg)</span>
-<span class="fc" data-hits="4">  return msg.reply({</span>
-<span class="fc" data-hits="2">    Action = &#39;Update-Delay-Unstaged&#39;,</span>
-<span class="fc" data-hits="2">    Hash = hash</span>
+<span class="fc" data-hits="6">  return msg.reply({</span>
+<span class="fc" data-hits="3">    Action = &#39;Update-Delay-Unstaged&#39;,</span>
+<span class="fc" data-hits="3">    Hash = hash</span>
   })
 end
 
 <span class="fc" data-hits="3">function ConfiguratorNotices.actionUpdateDelayNotice(hash, msg)</span>
-<span class="fc" data-hits="4">  return msg.reply({</span>
-<span class="fc" data-hits="2">    Action = &#39;Update-Delay-Actioned&#39;,</span>
-<span class="fc" data-hits="2">    Hash = hash</span>
+<span class="fc" data-hits="6">  return msg.reply({</span>
+<span class="fc" data-hits="3">    Action = &#39;Update-Delay-Actioned&#39;,</span>
+<span class="fc" data-hits="3">    Hash = hash</span>
   })
 end
 
@@ -713,13 +713,55 @@ end
                   <span class="bg" style="width: 100.00%"></span>
                   <span><strong>100.00%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>41</strong> Hits</span>
+               <span class="hits"><strong>21</strong> Hits</span>
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="2">local json = require(&#39;json&#39;)</span>
+<span class="fc" data-hits="2">local sharedUtils = require(&#39;modules.sharedUtils&#39;)</span>
 
-<span class="fc" data-hits="2">local validation = {}</span>
+<span class="fc" data-hits="2">local configuratorValidation = {}</span>
+
+<span class="fc" data-hits="2">function configuratorValidation.updateProcess(msg)</span>
+<span class="fc" data-hits="23">  assert(msg.From == Configurator.admin, &#39;Sender must be admin!&#39;)</span>
+<span class="fc" data-hits="22">  assert(type(msg.Tags.UpdateProcess) == &#39;string&#39;, &#39;UpdateProcess is required!&#39;)</span>
+<span class="fc" data-hits="21">  assert(sharedUtils.isValidArweaveAddress(msg.Tags.UpdateProcess), &#39;UpdateProcess must be a valid Arweave address!&#39;)</span>
+<span class="fc" data-hits="20">  assert(type(msg.Tags.UpdateAction) == &#39;string&#39;, &#39;UpdateAction is required!&#39;)</span>
+<span class="fc" data-hits="19">  assert(sharedUtils.isValidKeyValueJSON(msg.Tags.UpdateTags) or msg.Tags.UpdateTags == nil, &#39;UpdateTags must be valid JSON!&#39;)</span>
+<span class="fc" data-hits="13">  assert(sharedUtils.isValidKeyValueJSON(msg.Tags.UpdateData) or msg.Tags.UpdateData == nil, &#39;UpdateData must be valid JSON!&#39;)</span>
+end
+
+<span class="fc" data-hits="2">function configuratorValidation.updateAdmin(msg)</span>
+<span class="fc" data-hits="9">  assert(msg.From == Configurator.admin, &#39;Sender must be admin!&#39;)</span>
+<span class="fc" data-hits="8">  assert(type(msg.Tags.UpdateAdmin) == &#39;string&#39;, &#39;UpdateAdmin is required!&#39;)</span>
+<span class="fc" data-hits="7">  assert(sharedUtils.isValidArweaveAddress(msg.Tags.UpdateAdmin), &#39;UpdateAdmin must be a valid Arweave address!&#39;)</span>
+end
+
+<span class="fc" data-hits="2">function configuratorValidation.updateDelay(msg)</span>
+<span class="fc" data-hits="12">  assert(msg.From == Configurator.admin, &#39;Sender must be admin!&#39;)</span>
+<span class="fc" data-hits="11">  assert(msg.Tags.UpdateDelay, &#39;UpdateDelay is required!&#39;)</span>
+<span class="fc" data-hits="10">  assert(tonumber(msg.Tags.UpdateDelay), &#39;UpdateDelay must be a number!&#39;)</span>
+<span class="fc" data-hits="9">  assert(tonumber(msg.Tags.UpdateDelay) &gt; 0, &#39;UpdateDelay must be greater than zero!&#39;)</span>
+<span class="fc" data-hits="7">  assert(tonumber(msg.Tags.UpdateDelay) % 1 == 0, &#39;UpdateDelay must be an integer!&#39;)</span>
+end
+
+<span class="fc" data-hits="2">return configuratorValidation</span>
+</pre>
+      </div>
+
+      <div class="hidden file success-high" id="src-configurator-modules-sharedutils">
+         <h2 class="title">
+            src/configurator/modules/sharedUtils.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>25</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="3">local sharedUtils = {}</span>
 
 -- Function to validate if the extracted value is a valid JSON simple value
 local function isSimpleValue(value)
@@ -744,7 +786,7 @@ local function isSimpleValue(value)
 <span class="fc" data-hits="2">  return false</span>
 end
 
-local function isValidKeyValueJSON(str)
+<span class="fc" data-hits="3">function sharedUtils.isValidKeyValueJSON(str)</span>
 <span class="fc" data-hits="32">  if type(str) ~= &quot;string&quot; then return false end</span>
 
   -- Trim whitespace
@@ -773,40 +815,220 @@ local function isValidKeyValueJSON(str)
 <span class="fc" data-hits="25">  return true</span>
 end
 
-local function isValidArweaveAddress(address)
-<span class="fc" data-hits="28">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[%w-_]+$&quot;) ~= nil</span>
+<span class="fc" data-hits="3">function sharedUtils.isValidArweaveAddress(address)</span>
+<span class="fc" data-hits="35">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[%w-_]+$&quot;) ~= nil</span>
 end
 
-<span class="fc" data-hits="2">function validation.updateProcess(msg)</span>
-<span class="fc" data-hits="23">  assert(msg.From == Configurator.admin, &#39;Sender must be admin!&#39;)</span>
-<span class="fc" data-hits="22">  assert(type(msg.Tags.UpdateProcess) == &#39;string&#39;, &#39;UpdateProcess is required!&#39;)</span>
-<span class="fc" data-hits="21">  assert(isValidArweaveAddress(msg.Tags.UpdateProcess), &#39;UpdateProcess must be a valid Arweave address!&#39;)</span>
-<span class="fc" data-hits="20">  assert(type(msg.Tags.UpdateAction) == &#39;string&#39;, &#39;UpdateAction is required!&#39;)</span>
-<span class="fc" data-hits="19">  assert(isValidKeyValueJSON(msg.Tags.UpdateTags) or msg.Tags.UpdateTags == nil, &#39;UpdateTags must be valid JSON!&#39;)</span>
-<span class="fc" data-hits="13">  assert(isValidKeyValueJSON(msg.Tags.UpdateData) or msg.Tags.UpdateData == nil, &#39;UpdateData must be valid JSON!&#39;)</span>
+<span class="fc" data-hits="3">return sharedUtils</span>
+</pre>
+      </div>
+
+      <div class="hidden file success-high" id="src-market-modules-tokeninternal">
+         <h2 class="title">
+            src/market/modules/tokenInternal.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>61</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+<span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
+
+<span class="fc" data-hits="1">local Token = {}</span>
+<span class="fc" data-hits="1">local TokenMethods = require(&#39;modules.tokenNotices&#39;)</span>
+
+-- Constructor for Token 
+<span class="fc" data-hits="1">function Token:new()</span>
+  -- This will store user balances of tokens and metadata
+<span class="fc" data-hits="5">  local obj = {</span>
+<span class="fc" data-hits="5">    name = &#39;&#39;,</span>
+<span class="fc" data-hits="5">    ticker = &#39;&#39;,</span>
+<span class="fc" data-hits="5">    logo = &#39;&#39;,</span>
+<span class="fc" data-hits="5">    balances = {},</span>
+<span class="fc" data-hits="5">    totalSupply = &#39;0&#39;,</span>
+<span class="fc" data-hits="5">    denomination = 12</span>
+  }
+<span class="fc" data-hits="5">  setmetatable(obj, { __index = TokenMethods })</span>
+<span class="fc" data-hits="5">  return obj</span>
 end
 
-<span class="fc" data-hits="2">function validation.updateAdmin(msg)</span>
-<span class="fc" data-hits="9">  assert(msg.From == Configurator.admin, &#39;Sender must be admin!&#39;)</span>
-<span class="fc" data-hits="8">  assert(type(msg.Tags.UpdateAdmin) == &#39;string&#39;, &#39;UpdateAdmin is required!&#39;)</span>
-<span class="fc" data-hits="7">  assert(isValidArweaveAddress(msg.Tags.UpdateAdmin), &#39;UpdateAdmin must be a valid Arweave address!&#39;)</span>
+-- @dev Internal function to mint a quantity of tokens
+-- @param to The address that will own the minted token
+-- @param quantity Quantity of the token to be minted
+<span class="fc" data-hits="1">function TokenMethods:mint(to, quantity, msg)</span>
+<span class="fc" data-hits="3">  assert(quantity, &#39;Quantity is required!&#39;)</span>
+<span class="fc" data-hits="3">  assert(bint.__lt(0, quantity), &#39;Quantity must be greater than zero!&#39;)</span>
+  -- Mint tokens
+<span class="fc" data-hits="3">  if not self.balances[to] then self.balances[to] = &#39;0&#39; end</span>
+<span class="fc" data-hits="3">  self.balances[to] = tostring(bint.__add(bint(self.balances[to]), quantity))</span>
+<span class="fc" data-hits="3">  self.totalSupply = tostring(bint.__add(bint(self.totalSupply), quantity))</span>
+  -- Send notice
+<span class="fc" data-hits="3">  return self.mintNotice(to, quantity, msg)</span>
 end
 
-<span class="fc" data-hits="2">function validation.updateDelay(msg)</span>
-<span class="fc" data-hits="12">  assert(msg.From == Configurator.admin, &#39;Sender must be admin!&#39;)</span>
-<span class="fc" data-hits="11">  assert(msg.Tags.UpdateDelay, &#39;UpdateDelay is required!&#39;)</span>
-<span class="fc" data-hits="10">  assert(tonumber(msg.Tags.UpdateDelay), &#39;UpdateDelay must be a number!&#39;)</span>
-<span class="fc" data-hits="9">  assert(tonumber(msg.Tags.UpdateDelay) &gt; 0, &#39;UpdateDelay must be greater than zero!&#39;)</span>
-<span class="fc" data-hits="7">  assert(tonumber(msg.Tags.UpdateDelay) % 1 == 0, &#39;UpdateDelay must be an integer!&#39;)</span>
+-- @dev Internal function to burn a quantity of tokens
+-- @param from The address that will burn the token
+-- @param quantity Quantity of the token to be burned
+<span class="fc" data-hits="1">function TokenMethods:burn(from, quantity, msg)</span>
+<span class="fc" data-hits="1">  assert(bint.__lt(0, quantity), &#39;Quantity must be greater than zero!&#39;)</span>
+<span class="fc" data-hits="1">  assert(self.balances[from], &#39;Must have token balance!&#39;)</span>
+<span class="fc" data-hits="1">  assert(bint.__le(quantity, self.balances[from]), &#39;Must have sufficient tokens!&#39;)</span>
+  -- Burn tokens
+<span class="fc" data-hits="1">  self.balances[from] = tostring(bint.__sub(self.balances[from], quantity))</span>
+<span class="fc" data-hits="1">  self.totalSupply = tostring(bint.__sub(bint(self.totalSupply), quantity))</span>
+  -- Send notice
+<span class="fc" data-hits="1">  return self.burnNotice(quantity, msg)</span>
 end
 
-<span class="fc" data-hits="2">return validation</span>
+-- @dev Internal function to transfer a quantity of tokens
+-- @param recipient The address that will send the token
+-- @param from The address that will receive the token
+-- @param quantity Quantity of the token to be burned
+-- @param cast Cast to silence the transfer notice
+-- @param msg The message (used for x-tag forwarding and reporting)
+<span class="fc" data-hits="1">function TokenMethods:transfer(from, recipient, quantity, cast, msg)</span>
+<span class="fc" data-hits="2">  if not self.balances[from] then self.balances[from] = &quot;0&quot; end</span>
+<span class="fc" data-hits="2">  if not self.balances[recipient] then self.balances[recipient] = &quot;0&quot; end</span>
+
+<span class="fc" data-hits="2">  local qty = bint(quantity)</span>
+<span class="fc" data-hits="2">  local balance = bint(self.balances[from])</span>
+
+<span class="fc" data-hits="2">  if bint.__le(qty, balance) then</span>
+<span class="fc" data-hits="1">    self.balances[from] = tostring(bint.__sub(balance, qty))</span>
+<span class="fc" data-hits="1">    self.balances[recipient] = tostring(bint.__add(self.balances[recipient], qty))</span>
+
+    -- Only send the notifications to the Sender and Recipient
+    -- if the Cast tag is not set on the Transfer message
+<span class="fc" data-hits="1">    if not cast then</span>
+      -- Debit-Notice message template, that is sent to the Sender of the transfer
+<span class="fc" data-hits="1">      local debitNotice = {</span>
+<span class="fc" data-hits="1">        Target = from,</span>
+<span class="fc" data-hits="1">        Action = &#39;Debit-Notice&#39;,</span>
+<span class="fc" data-hits="1">        Recipient = recipient,</span>
+<span class="fc" data-hits="1">        Quantity = quantity,</span>
+<span class="fc" data-hits="1">        Data = Colors.gray ..</span>
+<span class="fc" data-hits="1">            &quot;You transferred &quot; ..</span>
+<span class="fc" data-hits="1">            Colors.blue .. quantity .. Colors.gray .. &quot; to &quot; .. Colors.green .. recipient .. Colors.reset</span>
+      }
+      -- Credit-Notice message template, that is sent to the Recipient of the transfer
+<span class="fc" data-hits="1">      local creditNotice = {</span>
+<span class="fc" data-hits="1">        Target = recipient,</span>
+<span class="fc" data-hits="1">        Action = &#39;Credit-Notice&#39;,</span>
+<span class="fc" data-hits="1">        Sender = from,</span>
+<span class="fc" data-hits="1">        Quantity = quantity,</span>
+<span class="fc" data-hits="1">        Data = Colors.gray ..</span>
+<span class="fc" data-hits="1">            &quot;You received &quot; ..</span>
+<span class="fc" data-hits="1">            Colors.blue .. quantity .. Colors.gray .. &quot; from &quot; .. Colors.green .. from .. Colors.reset</span>
+      }
+
+      -- Add forwarded tags to the credit and debit notice messages
+<span class="fc" data-hits="5">      for tagName, tagValue in pairs(msg.Tags) do</span>
+        -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="fc" data-hits="4">        if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="fc" data-hits="1">          debitNotice[tagName] = tagValue</span>
+<span class="fc" data-hits="1">          creditNotice[tagName] = tagValue</span>
+        end
+      end
+
+      -- Send Debit-Notice and Credit-Notice
+<span class="fc" data-hits="1">      return self.transferNotices(debitNotice, creditNotice, msg)</span>
+    end
+  else
+<span class="fc" data-hits="1">    return self.transferErrorNotice(msg)</span>
+  end
+end
+
+<span class="fc" data-hits="1">return Token</span>
+</pre>
+      </div>
+
+      <div class="hidden file success-high" id="src-market-modules-tokennotices">
+         <h2 class="title">
+            src/market/modules/tokenNotices.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>21</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="2">local ao = require(&#39;.ao&#39;)</span>
+
+<span class="fc" data-hits="2">local TokenNotices = {}</span>
+
+<span class="fc" data-hits="2">function TokenNotices.mintNotice(recipient, quantity, msg)</span>
+<span class="fc" data-hits="8">  return msg.reply({</span>
+<span class="fc" data-hits="4">    Recipient = recipient,</span>
+<span class="fc" data-hits="4">    Quantity = tostring(quantity),</span>
+<span class="fc" data-hits="4">    Action = &#39;Mint-Notice&#39;,</span>
+<span class="fc" data-hits="4">    Data = Colors.gray .. &quot;Successfully minted &quot; .. Colors.blue .. tostring(quantity) .. Colors.reset</span>
+  })
+end
+
+<span class="fc" data-hits="2">function TokenNotices.burnNotice(quantity, msg)</span>
+<span class="fc" data-hits="4">  return msg.reply({</span>
+<span class="fc" data-hits="2">    Quantity = tostring(quantity),</span>
+<span class="fc" data-hits="2">    Action = &#39;Burn-Notice&#39;,</span>
+<span class="fc" data-hits="2">    Data = Colors.gray .. &quot;Successfully burned &quot; .. Colors.blue .. tostring(quantity) .. Colors.reset</span>
+  })
+end
+
+<span class="fc" data-hits="2">function TokenNotices.transferNotices(debitNotice, creditNotice, msg)</span>
+<span class="fc" data-hits="2">  return { msg.reply(debitNotice), ao.send(creditNotice) }</span>
+end
+
+<span class="fc" data-hits="2">function TokenNotices.transferErrorNotice(msg)</span>
+<span class="fc" data-hits="4">  return msg.reply({</span>
+<span class="fc" data-hits="2">    Action = &#39;Transfer-Error&#39;,</span>
+<span class="fc" data-hits="2">    [&#39;Message-Id&#39;] = msg.Id,</span>
+<span class="fc" data-hits="2">    Error = &#39;Insufficient Balance!&#39;</span>
+  })
+end
+
+<span class="fc" data-hits="2">return TokenNotices</span>
+</pre>
+      </div>
+
+      <div class="hidden file success-high" id="src-market-modules-tokenvalidation">
+         <h2 class="title">
+            src/market/modules/tokenValidation.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>11</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+<span class="fc" data-hits="1">local sharedUtils = require(&#39;modules.sharedUtils&#39;)</span>
+
+<span class="fc" data-hits="1">local tokenValidation = {}</span>
+
+<span class="fc" data-hits="1">function tokenValidation.transfer(msg)</span>
+<span class="fc" data-hits="8">  assert(type(msg.Tags.Recipient) == &#39;string&#39;, &#39;Recipient is required!&#39;)</span>
+<span class="fc" data-hits="7">  assert(sharedUtils.isValidArweaveAddress(msg.Tags.Recipient), &#39;Recipient must be a valid Arweave address!&#39;)</span>
+<span class="fc" data-hits="6">  assert(type(msg.Tags.Quantity) == &#39;string&#39;, &#39;Quantity is required!&#39;)</span>
+<span class="fc" data-hits="5">  assert(tonumber(msg.Tags.Quantity), &#39;Quantity must be a number!&#39;)</span>
+<span class="fc" data-hits="4">  assert(tonumber(msg.Tags.Quantity) &gt; 0, &#39;Quantity must be greater than zero!&#39;)</span>
+<span class="fc" data-hits="2">  assert(tonumber(msg.Tags.Quantity) % 1 == 0, &#39;Quantity must be an integer!&#39;)</span>
+end
+
+<span class="fc" data-hits="1">return tokenValidation</span>
 </pre>
       </div>
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-11 10:50:30
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-12 11:01:11
    </footer>
 
    <script type="text/javascript">

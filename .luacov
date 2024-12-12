@@ -3,11 +3,13 @@ return {
   reportfile = "coverage/luacov.report.html",
   deleteStatsFile = false,
   include = {
-    "src/",
-    "src/configurator/modules/"
+    "src/"
   },
   exclude = {
-    "json"
+    "ao",
+    "json",
+    "utils",
+    "crypto/"
   },
   reporter = "html",
   html = {

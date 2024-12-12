@@ -7,7 +7,7 @@ local msg = {}
 local hash = ""
 local timestamp = nil
 
-describe("configuratorValidation", function()
+describe("configurator.modules.configuratorNotices", function()
   before_each(function()
     -- set admin
     admin = "test-this-is-valid-arweave-wallet-address-1"

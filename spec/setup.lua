@@ -47,8 +47,18 @@ _G.Handlers = {
   }
 }
 
+_G.Colors = {
+	red = "",
+	blue = "",
+	green = "",
+	gray = "",
+	reset = "",
+}
+
 -- Force reload modules that may have been cached
 package.loaded["modules.configurator"] = nil
+package.loaded["modules.tokenNotices"] = nil
+package.loaded["modules.tokenValidation"] = nil
 package.loaded["crypto"] = nil
 
 print("Setup global ao mocks successfully...")

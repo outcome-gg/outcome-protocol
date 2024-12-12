@@ -2,7 +2,7 @@ local json = require('json')
 local bint = require('.bint')(256)
 local ao = require('.ao')
 local utils = require(".utils")
-local token = require('modules.token')
+local token = require('modules.tokenInternal')
 local conditionalTokens = require('modules.conditionalTokens')
 local CPMMHelpers = require('modules.cpmmHelpers')
 
@@ -144,7 +144,7 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
   -- Mint Conditional Positions
   self.tokens:splitPosition(ao.id, self.tokens.collateralToken, addedFunds, msg)
   -- Mint LP Tokens
-  self:mint(onBehalfOf, mintAmount)
+  self:mint(onBehalfOf, mintAmount, msg)
   -- Remove non-zero items before transfer-batch
   local nonZeroAmounts = {}
   local nonZeroPositionIds = {}
@@ -178,7 +178,7 @@ function CPMMMethods:removeFunding(from, sharesToBurn, msg)
   end
   -- Calculate collateralRemovedFromFeePool
   local poolFeeBalance = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
-  self:burn(from, sharesToBurn)
+  self:burn(from, sharesToBurn, msg)
   local collateralRemovedFromFeePool = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
   collateralRemovedFromFeePool = tostring(math.floor(poolFeeBalance - collateralRemovedFromFeePool))
   -- Send collateralRemovedFromFeePool
@@ -327,21 +327,21 @@ end
 
 -- LP Tokens
 -- @dev See tokensMethods:mint & _beforeTokenTransfer
-function CPMMMethods:mint(to, quantity)
+function CPMMMethods:mint(to, quantity, msg)
   self:_beforeTokenTransfer(nil, to, quantity)
-  self.token:mint(to, quantity)
+  self.token:mint(to, quantity, msg)
 end
 
 -- @dev See tokenMethods:burn & _beforeTokenTransfer
-function CPMMMethods:burn(from, quantity)
+function CPMMMethods:burn(from, quantity, msg)
   self:_beforeTokenTransfer(from, nil, quantity)
-  self.token:burn(from, quantity)
+  self.token:burn(from, quantity, msg)
 end
 
 -- @dev See tokenMethods:transfer & _beforeTokenTransfer
 function CPMMMethods:transfer(from, recipient, quantity, cast, msg)
   self:_beforeTokenTransfer(from, recipient, quantity, msg)
-  self.token:transfer(from, recipient, quantity, cast, msg.Tags, msg.Id)
+  self.token:transfer(from, recipient, quantity, cast, msg)
 end
 
 -- @dev updates configurator

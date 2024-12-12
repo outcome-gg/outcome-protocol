@@ -23,7 +23,7 @@ end
 -- @dev Internal function to mint a quantity of tokens
 -- @param to The address that will own the minted token
 -- @param quantity Quantity of the token to be minted
-function TokenMethods:mint(to, quantity)
+function TokenMethods:mint(to, quantity, msg)
   assert(quantity, 'Quantity is required!')
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
   -- Mint tokens
@@ -31,20 +31,21 @@ function TokenMethods:mint(to, quantity)
   self.balances[to] = tostring(bint.__add(bint(self.balances[to]), quantity))
   self.totalSupply = tostring(bint.__add(bint(self.totalSupply), quantity))
   -- Send notice
-  self.mintNotice(to, quantity)
+  return self.mintNotice(to, quantity, msg)
 end
 
 -- @dev Internal function to burn a quantity of tokens
 -- @param from The address that will burn the token
 -- @param quantity Quantity of the token to be burned
-function TokenMethods:burn(from, quantity)
+function TokenMethods:burn(from, quantity, msg)
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
-  assert(bint.__le(quantity, self.balances[ao.id]), 'Must have sufficient tokens!')
+  assert(self.balances[from], 'Must have token balance!')
+  assert(bint.__le(quantity, self.balances[from]), 'Must have sufficient tokens!')
   -- Burn tokens
-  self.balances[ao.id] = tostring(bint.__sub(self.balances[ao.id], quantity))
+  self.balances[from] = tostring(bint.__sub(self.balances[from], quantity))
   self.totalSupply = tostring(bint.__sub(bint(self.totalSupply), quantity))
   -- Send notice
-  self.burnNotice(from, quantity)
+  return self.burnNotice(quantity, msg)
 end
 
 -- @dev Internal function to transfer a quantity of tokens
@@ -52,14 +53,14 @@ end
 -- @param from The address that will receive the token
 -- @param quantity Quantity of the token to be burned
 -- @param cast Cast to silence the transfer notice
--- @param msgTags The message tags (used for x-tag forwarding)
--- @param msgId The message ID (used for error reporting)
-function TokenMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
+-- @param msg The message (used for x-tag forwarding and reporting)
+function TokenMethods:transfer(from, recipient, quantity, cast, msg)
   if not self.balances[from] then self.balances[from] = "0" end
   if not self.balances[recipient] then self.balances[recipient] = "0" end
 
   local qty = bint(quantity)
   local balance = bint(self.balances[from])
+
   if bint.__le(qty, balance) then
     self.balances[from] = tostring(bint.__sub(balance, qty))
     self.balances[recipient] = tostring(bint.__add(self.balances[recipient], qty))
@@ -89,8 +90,7 @@ function TokenMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
       }
 
       -- Add forwarded tags to the credit and debit notice messages
-      msgTags = msgTags or {}
-      for tagName, tagValue in pairs(msgTags) do
+      for tagName, tagValue in pairs(msg.Tags) do
         -- Tags beginning with "X-" are forwarded
         if string.sub(tagName, 1, 2) == "X-" then
           debitNotice[tagName] = tagValue
@@ -99,10 +99,10 @@ function TokenMethods:transfer(from, recipient, quantity, cast, msgTags, msgId)
       end
 
       -- Send Debit-Notice and Credit-Notice
-      self.transferNotices(debitNotice, creditNotice)
+      return self.transferNotices(debitNotice, creditNotice, msg)
     end
   else
-    self.transferErrorNotice(from, msgId)
+    return self.transferErrorNotice(msg)
   end
 end
 

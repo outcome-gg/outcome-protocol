@@ -1,2 +1,0 @@
--- require("luacov")
--- local marketFactory = require("marketFactory")

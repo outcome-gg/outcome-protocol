@@ -2,8 +2,6 @@ print("Loading .busted configuration...")
 
 return {
   default = {
-    root = "src",
-    pattern = "**/*_spec.lua$",
     helper = "spec/setup.lua",
     verbose = true,
     coverage = true,

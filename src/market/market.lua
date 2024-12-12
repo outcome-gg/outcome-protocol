@@ -4,7 +4,7 @@ local json = require('json')
 local bint = require('.bint')(256)
 local cpmm = require('modules.cpmm')
 local validation = require('modules.validation')
-
+local tokenValidation = require('modules.tokenValidation')
 
 ---------------------------------------------------------------------------------
 -- MARKET -----------------------------------------------------------------------
@@ -196,7 +196,7 @@ end)
 
 -- Transfer
 Handlers.add('Transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), function(msg)
-  validation.transfer(msg)
+  tokenValidation.transfer(msg)
   CPMM:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg)
 end)
 
