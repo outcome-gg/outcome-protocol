@@ -321,18 +321,18 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 100.0%"></span>
-                  <span><strong>100.0%</strong> Coverage</span>
+                  <span class="bg" style="width: 92.15%"></span>
+                  <span><strong>92.15%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>300</strong> Hits</span>
-               <span class="miss"><strong>0</strong> Missed</span>
+               <span class="hits"><strong>364</strong> Hits</span>
+               <span class="miss"><strong>31</strong> Missed</span>
             </span>
          </h1>
       </div>
 
-      <div class="hidden file success-high" id="src-configurator-configurator">
+      <div class="hidden file success-high" id="src-configurator">
          <h2 class="title">
-            src/configurator/configurator.lua
+            src/configurator.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
@@ -441,9 +441,9 @@ end)
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-configurator-modules-configurator">
+      <div class="hidden file success-high" id="src-modules-configurator">
          <h2 class="title">
-            src/configurator/modules/configurator.lua
+            src/modules/configurator.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
@@ -615,9 +615,9 @@ end
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-configurator-modules-configuratornotices">
+      <div class="hidden file success-high" id="src-modules-configuratornotices">
          <h2 class="title">
-            src/configurator/modules/configuratorNotices.lua
+            src/modules/configuratorNotices.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
@@ -705,9 +705,9 @@ end
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-configurator-modules-configuratorvalidation">
+      <div class="hidden file success-high" id="src-modules-configuratorvalidation">
          <h2 class="title">
-            src/configurator/modules/configuratorValidation.lua
+            src/modules/configuratorValidation.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
@@ -749,9 +749,269 @@ end
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-configurator-modules-sharedutils">
+      <div class="hidden file danger" id="src-modules-semifungibletokensnotices">
          <h2 class="title">
-            src/configurator/modules/sharedUtils.lua
+            src/modules/semiFungibleTokensNotices.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 34.04%"></span>
+                  <span><strong>34.04%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>16</strong> Hits</span>
+               <span class="miss"><strong>31</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+
+<span class="fc" data-hits="1">local SemiFungibleTokensNotices = {}</span>
+
+-- @dev Mint single token notice
+-- @param to The address that will own the minted token
+-- @param id ID of the token to be minted
+-- @param quantity Quantity of the token to be minted
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices:mintSingleNotice(id, quantity, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    TokenId = tostring(id),</span>
+<span class="fc" data-hits="1">    Quantity = tostring(quantity),</span>
+<span class="fc" data-hits="1">    Action = &#39;Mint-Single-Notice&#39;,</span>
+<span class="fc" data-hits="1">    Data = Colors.gray .. &quot;Successfully minted &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
+  })
+end
+
+-- @dev Mint batch notice
+-- @param to The address that will own the minted token
+-- @param ids IDs of the tokens to be minted
+-- @param quantities Quantities of the tokens to be minted
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices:mintBatchNotice(to, ids, quantities, msg)</span>
+<span class="nc">  ao.send({</span>
+    Target = to,
+    TokenIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+    Action = &#39;Mint-Batch-Notice&#39;,
+<span class="nc">    Data = &quot;Successfully minted batch&quot;</span>
+  })
+end
+
+-- @dev Burn single token notice
+-- @param from The address that will burn the token
+-- @param id ID of the token to be burned
+-- @param quantity Quantity of the token to be burned
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices:burnSingleNotice(id, quantity, msg)</span>
+<span class="nc">  msg.reply({</span>
+    TokenId = tostring(id),
+    Quantity = tostring(quantity),
+    Action = &#39;Burn-Single-Notice&#39;,
+<span class="nc">    Data = Colors.gray .. &quot;Successfully burned &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
+  })
+end
+
+-- @dev Burn batch tokens notice
+-- @param notice The prepared notice to be sent
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices:burnBatchNotice(notice)</span>
+<span class="nc">  ao.send(notice)</span>
+end
+
+-- @dev Transfer single token notices
+-- @param from The address to be debited
+-- @param to The address to be credited
+-- @param id ID of the tokens to be transferred
+-- @param quantity Quantity of the tokens to be transferred
+-- @param msg For sending X-Tags
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices:transferSingleNotices(from, to, id, quantity, msg)</span>
+  -- Prepare debit notice
+<span class="nc">  local debitNotice = {</span>
+    Action = &#39;Debit-Single-Notice&#39;,
+    Recipient = to,
+    TokenId = tostring(id),
+    Quantity = tostring(quantity),
+<span class="nc">    Data = Colors.gray .. &quot;You transferred &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; to &quot; .. Colors.green .. to .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      debitNotice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  msg.reply(debitNotice)</span>
+
+  -- Prepare credit notice
+<span class="nc">  local creditNotice = {</span>
+    Target = to,
+    Action = &#39;Credit-Single-Notice&#39;,
+    Sender = from,
+    TokenId = tostring(id),
+    Quantity = tostring(quantity),
+<span class="nc">    Data = Colors.gray .. &quot;You received &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; from &quot; .. Colors.green .. from .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      creditNotice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  ao.send(creditNotice)</span>
+end
+
+-- @dev Transfer batch tokens notices
+-- @param from The address to be debited
+-- @param to The address to be credited
+-- @param ids IDs of the tokens to be transferred
+-- @param quantities Quantities of the tokens to be transferred
+-- @param msg For sending X-Tags
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices:transferBatchNotices(from, to, ids, quantities, msg)</span>
+  -- Prepare debit notice
+<span class="nc">  local debitNotice = {</span>
+    Action = &#39;Debit-Batch-Notice&#39;,
+    Recipient = to,
+    TokenIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+<span class="nc">    Data = Colors.gray .. &quot;You transferred batch to &quot; .. Colors.green .. to .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      debitNotice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  msg.reply(debitNotice)</span>
+
+  -- Prepare credit notice
+<span class="nc">  local creditNotice = {</span>
+    Target = to,
+    Action = &#39;Credit-Batch-Notice&#39;,
+    Sender = from,
+    TokenIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+<span class="nc">    Data = Colors.gray .. &quot;You received batch from &quot; .. Colors.green .. from .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      creditNotice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  ao.send(creditNotice)</span>
+end
+
+-- @dev Transfer error notice
+-- @param from The address to be debited
+-- @param id ID of the tokens to be transferred
+-- @param msg The message
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices:transferErrorNotice(id, msg)</span>
+<span class="nc">  msg.reply({</span>
+    Action = &#39;Transfer-Error&#39;,
+    [&#39;Message-Id&#39;] = msg.Id,
+    [&#39;Token-Id&#39;] = id,
+<span class="nc">    Error = &#39;Insufficient Balance!&#39;</span>
+  })
+end
+
+<span class="fc" data-hits="1">return SemiFungibleTokensNotices</span>
+</pre>
+      </div>
+
+      <div class="hidden file success-high" id="src-modules-semifungibletokensvalidation">
+         <h2 class="title">
+            src/modules/semiFungibleTokensValidation.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>49</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local json = require(&quot;json&quot;)</span>
+<span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
+<span class="fc" data-hits="1">local utils = require(&#39;.utils&#39;)</span>
+<span class="fc" data-hits="1">local sharedUtils = require(&#39;modules.sharedUtils&#39;)</span>
+
+<span class="fc" data-hits="1">local semiFunctionalTokensValidation = {}</span>
+
+local function validateRecipient(recipient)
+<span class="fc" data-hits="29">  assert(type(recipient) == &#39;string&#39;, &#39;Recipient is required!&#39;)</span>
+<span class="fc" data-hits="27">  assert(sharedUtils.isValidArweaveAddress(recipient), &#39;Recipient must be a valid Arweave address!&#39;)</span>
+end
+
+local function validateTokenId(tokenId)
+<span class="fc" data-hits="44">  assert(type(tokenId) == &#39;string&#39;, &#39;TokenId is required!&#39;)</span>
+<span class="fc" data-hits="43">  assert(utils.includes(tokenId, CPMM.tokens.positionIds), &#39;Invalid tokenId!&#39;)</span>
+end
+
+local function validateQuantity(quantity)
+<span class="fc" data-hits="26">  assert(type(quantity) == &#39;string&#39;, &#39;Quantity is required!&#39;)</span>
+<span class="fc" data-hits="24">  assert(tonumber(quantity), &#39;Quantity must be a number!&#39;)</span>
+<span class="fc" data-hits="22">  assert(tonumber(quantity) &gt; 0, &#39;Quantity must be greater than zero!&#39;)</span>
+<span class="fc" data-hits="18">  assert(tonumber(quantity) % 1 == 0, &#39;Quantity must be an integer!&#39;)</span>
+end
+
+<span class="fc" data-hits="1">function semiFunctionalTokensValidation.transferSingle(msg)</span>
+<span class="fc" data-hits="10">  validateRecipient(msg.Tags.Recipient)</span>
+<span class="fc" data-hits="8">  validateTokenId(msg.Tags.TokenId)</span>
+<span class="fc" data-hits="6">  validateQuantity(msg.Tags.Quantity)</span>
+end
+
+<span class="fc" data-hits="1">function semiFunctionalTokensValidation.transferBatch(msg)</span>
+<span class="fc" data-hits="13">  validateRecipient(msg.Tags.Recipient)</span>
+<span class="fc" data-hits="11">  assert(type(msg.Tags.TokenIds) == &#39;string&#39;, &#39;TokenIds is required!&#39;)</span>
+<span class="fc" data-hits="10">  local tokenIds = json.decode(msg.Tags.TokenIds)</span>
+<span class="fc" data-hits="10">  assert(type(msg.Tags.Quantities) == &#39;string&#39;, &#39;Quantities is required!&#39;)</span>
+<span class="fc" data-hits="9">  local quantities = json.decode(msg.Tags.Quantities)</span>
+<span class="fc" data-hits="9">  assert(#tokenIds == #quantities, &#39;Input array lengths must match!&#39;)</span>
+<span class="fc" data-hits="8">  assert(#tokenIds &gt; 0, &quot;Input array length must be greater than zero!&quot;)</span>
+<span class="fc" data-hits="22">  for i = 1, #tokenIds do</span>
+<span class="fc" data-hits="21">    validateTokenId(tokenIds[i])</span>
+<span class="fc" data-hits="20">    validateQuantity(quantities[i])</span>
+  end
+end
+
+<span class="fc" data-hits="1">function semiFunctionalTokensValidation.balanceById(msg)</span>
+<span class="fc" data-hits="2">  validateTokenId(msg.Tags.TokenId)</span>
+end
+
+<span class="fc" data-hits="1">function semiFunctionalTokensValidation.balancesById(msg)</span>
+<span class="fc" data-hits="2">  validateTokenId(msg.Tags.TokenId)</span>
+end
+
+<span class="fc" data-hits="1">function semiFunctionalTokensValidation.batchBalance(msg)</span>
+<span class="fc" data-hits="4">  assert(msg.Tags.Recipients, &quot;Recipients is required!&quot;)</span>
+<span class="fc" data-hits="3">  local recipients = json.decode(msg.Tags.Recipients)</span>
+<span class="fc" data-hits="3">  assert(msg.Tags.TokenIds, &quot;TokenIds is required!&quot;)</span>
+<span class="fc" data-hits="3">  local tokenIds = json.decode(msg.Tags.TokenIds)</span>
+<span class="fc" data-hits="3">  assert(#recipients == #tokenIds, &quot;Input array lengths must match!&quot;)</span>
+<span class="fc" data-hits="3">  assert(#recipients &gt; 0, &quot;Input array length must be greater than zero!&quot;)</span>
+<span class="fc" data-hits="7">  for i = 1, #tokenIds do</span>
+<span class="fc" data-hits="6">    validateRecipient(recipients[i])</span>
+<span class="fc" data-hits="5">    validateTokenId(tokenIds[i])</span>
+  end
+end
+
+<span class="fc" data-hits="1">function semiFunctionalTokensValidation.batchBalances(msg)</span>
+<span class="fc" data-hits="4">  assert(msg.Tags.TokenIds, &quot;TokenIds is required!&quot;)</span>
+<span class="fc" data-hits="3">  local tokenIds = json.decode(msg.Tags.TokenIds)</span>
+<span class="fc" data-hits="3">  assert(#tokenIds &gt; 0, &quot;Input array length must be greater than zero!&quot;)</span>
+<span class="fc" data-hits="7">  for i = 1, #tokenIds do</span>
+<span class="fc" data-hits="6">    validateTokenId(tokenIds[i])</span>
+  end
+end
+
+<span class="fc" data-hits="1">return semiFunctionalTokensValidation</span>
+</pre>
+      </div>
+
+      <div class="hidden file success-high" id="src-modules-sharedutils">
+         <h2 class="title">
+            src/modules/sharedUtils.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
@@ -761,7 +1021,7 @@ end
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="3">local sharedUtils = {}</span>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="4">local sharedUtils = {}</span>
 
 -- Function to validate if the extracted value is a valid JSON simple value
 local function isSimpleValue(value)
@@ -786,7 +1046,7 @@ local function isSimpleValue(value)
 <span class="fc" data-hits="2">  return false</span>
 end
 
-<span class="fc" data-hits="3">function sharedUtils.isValidKeyValueJSON(str)</span>
+<span class="fc" data-hits="4">function sharedUtils.isValidKeyValueJSON(str)</span>
 <span class="fc" data-hits="32">  if type(str) ~= &quot;string&quot; then return false end</span>
 
   -- Trim whitespace
@@ -815,17 +1075,17 @@ end
 <span class="fc" data-hits="25">  return true</span>
 end
 
-<span class="fc" data-hits="3">function sharedUtils.isValidArweaveAddress(address)</span>
-<span class="fc" data-hits="35">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[%w-_]+$&quot;) ~= nil</span>
+<span class="fc" data-hits="4">function sharedUtils.isValidArweaveAddress(address)</span>
+<span class="fc" data-hits="62">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[%w-_]+$&quot;) ~= nil</span>
 end
 
-<span class="fc" data-hits="3">return sharedUtils</span>
+<span class="fc" data-hits="4">return sharedUtils</span>
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-market-modules-tokeninternal">
+      <div class="hidden file success-high" id="src-modules-tokeninternal">
          <h2 class="title">
-            src/market/modules/tokenInternal.lua
+            src/modules/tokenInternal.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
@@ -947,9 +1207,9 @@ end
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-market-modules-tokennotices">
+      <div class="hidden file success-high" id="src-modules-tokennotices">
          <h2 class="title">
-            src/market/modules/tokenNotices.lua
+            src/modules/tokenNotices.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
@@ -996,20 +1256,19 @@ end
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-market-modules-tokenvalidation">
+      <div class="hidden file success-high" id="src-modules-tokenvalidation">
          <h2 class="title">
-            src/market/modules/tokenValidation.lua
+            src/modules/tokenValidation.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
                   <span><strong>100.00%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>11</strong> Hits</span>
+               <span class="hits"><strong>10</strong> Hits</span>
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
-<span class="fc" data-hits="1">local sharedUtils = require(&#39;modules.sharedUtils&#39;)</span>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local sharedUtils = require(&#39;modules.sharedUtils&#39;)</span>
 
 <span class="fc" data-hits="1">local tokenValidation = {}</span>
 
@@ -1028,7 +1287,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-12 11:01:11
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-12 18:50:12
    </footer>
 
    <script type="text/javascript">

@@ -7,7 +7,7 @@
     "format:fix": "prettier --write .",
     "lint": "luacheck src spec",
     "test": "yarn format:fix && yarn test:unit && yarn test:integration",
-    "test:unit": "rm -rf -R coverage && mkdir -p coverage && busted . --coverage && luacov",
+    "test:unit": "rm -rf -R coverage && mkdir -p coverage && for file in spec/*_spec.lua; do echo Running tests in $(basename \"$file\"); busted \"$file\" --coverage; done && luacov",
     "test:coverage": "yarn test:unit && luacov --reporter html && open coverage/luacov.report.html",
     "test:unit:agents": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test test/unit/agents/*.test.js",
     "test:unit:agents:dataAgent": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test --test test/unit/agents/dataAgent.unit.test.js",

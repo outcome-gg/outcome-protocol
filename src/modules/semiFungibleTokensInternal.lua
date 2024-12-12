@@ -24,7 +24,7 @@ end
 -- @param to The address that will own the minted token
 -- @param id ID of the token to be minted
 -- @param quantity Quantity of the token to be minted
-function SemiFungibleTokensMethods:mint(to, id, quantity)
+function SemiFungibleTokensMethods:mint(to, id, quantity, msg)
   assert(quantity, 'Quantity is required!')
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
 
@@ -33,7 +33,7 @@ function SemiFungibleTokensMethods:mint(to, id, quantity)
 
   self.balancesById[id][to] = tostring(bint.__add(self.balancesById[id][to], quantity))
   -- Send notice
-  self:mintSingleNotice(to, id, quantity)
+  self:mintSingleNotice(id, quantity, msg)
 end
 
 -- @dev Batch mint quantities of tokens with the given IDs

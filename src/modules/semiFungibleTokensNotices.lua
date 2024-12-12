@@ -7,9 +7,8 @@ local SemiFungibleTokensNotices = {}
 -- @param to The address that will own the minted token
 -- @param id ID of the token to be minted
 -- @param quantity Quantity of the token to be minted
-function SemiFungibleTokensNotices:mintSingleNotice(to, id, quantity)
-  ao.send({
-    Target = to,
+function SemiFungibleTokensNotices:mintSingleNotice(id, quantity, msg)
+  return msg.reply({
     TokenId = tostring(id),
     Quantity = tostring(quantity),
     Action = 'Mint-Single-Notice',
@@ -21,7 +20,7 @@ end
 -- @param to The address that will own the minted token
 -- @param ids IDs of the tokens to be minted
 -- @param quantities Quantities of the tokens to be minted
-function SemiFungibleTokensNotices:mintBatchNotice(to, ids, quantities)
+function SemiFungibleTokensNotices:mintBatchNotice(to, ids, quantities, msg)
   ao.send({
     Target = to,
     TokenIds = json.encode(ids),
@@ -35,9 +34,8 @@ end
 -- @param from The address that will burn the token
 -- @param id ID of the token to be burned
 -- @param quantity Quantity of the token to be burned
-function SemiFungibleTokensNotices:burnSingleNotice(holder, id, quantity)
-  ao.send({
-    Target = holder,
+function SemiFungibleTokensNotices:burnSingleNotice(id, quantity, msg)
+  msg.reply({
     TokenId = tostring(id),
     Quantity = tostring(quantity),
     Action = 'Burn-Single-Notice',

@@ -2,7 +2,7 @@
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
-local semiFungibleTokens = require('modules.semiFungibleTokens')
+local semiFungibleTokens = require('modules.semiFungibleTokensInternal')
 local conditionalTokensHelpers = require('modules.conditionalTokensHelpers')
 
 local SemiFungibleTokens = {}
@@ -106,7 +106,7 @@ function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity,
     table.insert(quantities, quantity)
   end
   -- Mint the stake in the split target positions.
-  SemiFungibleTokens:batchMint(from, self.positionIds, quantities)
+  SemiFungibleTokens:batchMint(from, self.positionIds, quantities, msg)
   -- Send notice.
   self:positionSplitNotice(from, collateralToken, self.conditionId, quantity, msg)
 end
@@ -150,7 +150,7 @@ end
 -- @param parentCollectionId The ID of the outcome collections common to the positions being redeemed and the parent position. May be null, in which only the collateral is shared.
 -- @param conditionId The ID of the condition to redeem on.
 -- @param indexSets An array of index sets representing the outcome slots of the given condition. E.g. A|B and C but not A|B and B|C (is not disjoint). Each element's a number which, together with the condition, represents the outcome collection. E.g. 0b110 is A|B, 0b010 is B, etc.
-function ConditionalTokensMethods:redeemPositions(from, msg)
+function ConditionalTokensMethods:redeemPositions(msg)
   local den = self.payoutDenominator[self.conditionId]
   assert(den > 0, "result for condition not received yet")
   assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] > 0, "condition not prepared yet")
@@ -161,18 +161,18 @@ function ConditionalTokensMethods:redeemPositions(from, msg)
 
     -- Get the stake to redeem.
     if not self.tokens.balancesById[positionId] then self.tokens.balancesById[positionId] = {} end
-    if not self.tokens.balancesById[positionId][from] then self.tokens.balancesById[positionId][from] = "0" end
-    local payoutStake = self.tokens.balancesById[positionId][from]
+    if not self.tokens.balancesById[positionId][msg.From] then self.tokens.balancesById[positionId][msg.From] = "0" end
+    local payoutStake = self.tokens.balancesById[positionId][msg.From]
     -- Calculate the payout and burn position.
     if bint.__lt(0, bint(payoutStake)) then
       totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
-      self:burn(from, positionId, payoutStake)
+      self:burn(positionId, payoutStake, msg)
     end
   end
   -- Return totla payout minus take fee.
   if totalPayout > 0 then
     totalPayout = math.floor(totalPayout)
-    self:returnTotalPayoutMinusTakeFee(self.collateralToken, from, totalPayout)
+    self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)
   end
   -- Send notice.
   self:payoutRedemptionNotice(self.collateralToken, self.conditionId, totalPayout, msg)

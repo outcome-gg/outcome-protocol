@@ -5,6 +5,7 @@ local bint = require('.bint')(256)
 local cpmm = require('modules.cpmm')
 local validation = require('modules.validation')
 local tokenValidation = require('modules.tokenValidation')
+local semiFungibleTokensValidation = require('modules.semiFungibleTokensValidation')
 
 ---------------------------------------------------------------------------------
 -- MARKET -----------------------------------------------------------------------
@@ -279,7 +280,7 @@ end)
 
 -- Redeem Positions
 Handlers.add("Redeem-Positions", Handlers.utils.hasMatchingTag("Action", "Redeem-Positions"), function(msg)
-  CPMM.tokens:redeemPositions(msg.From, msg)
+  CPMM.tokens:redeemPositions(msg)
 end)
 
 ---------------------------------------------------------------------------------
@@ -311,13 +312,13 @@ end)
 
 -- Transfer Single
 Handlers.add('Transfer-Single', Handlers.utils.hasMatchingTag('Action', 'Transfer-Single'), function(msg)
-  validation.transferSingle(msg)
+  semiFungibleTokensValidation.transferSingle(msg)
   CPMM.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.TokenId, msg.Tags.Quantity, msg.Tags.Cast, msg)
 end)
 
 -- Transfer Batch
 Handlers.add('Transfer-Batch', Handlers.utils.hasMatchingTag('Action', 'Transfer-Batch'), function(msg)
-  validation.transferBatch(msg)
+  semiFungibleTokensValidation.transferBatch(msg)
   local tokenIds = json.decode(msg.Tags.TokenIds)
   local quantities = json.decode(msg.Tags.Quantities)
   CPMM.tokens:transferBatch(msg.From, msg.Tags.Recipient, tokenIds, quantities, msg.Tags.Cast, msg)
@@ -329,7 +330,7 @@ end)
 
 -- Balance By Id
 Handlers.add("Balance-By-Id", Handlers.utils.hasMatchingTag("Action", "Balance-By-Id"), function(msg)
-  validation.balanceById(msg)
+  semiFungibleTokensValidation.balanceById(msg)
   local account = msg.Tags.Recipient or msg.From
   local bal = CPMM:getBalance(msg.From, account, msg.Tags.TokenId)
   msg.reply({
@@ -343,14 +344,14 @@ end)
 
 -- Balances By Id
 Handlers.add('Balances-By-Id', Handlers.utils.hasMatchingTag('Action', 'Balances-By-Id'), function(msg)
-  validation.balancesById(msg)
+  semiFungibleTokensValidation.balancesById(msg)
   local bals = CPMM.tokens:getBalances(msg.Tags.TokenId)
   msg.reply({ Data = bals })
 end)
 
 -- Batch Balance (Filtered by users and ids)
 Handlers.add("Batch-Balance", Handlers.utils.hasMatchingTag("Action", "Batch-Balance"), function(msg)
-  validation.batchBalance(msg)
+  semiFungibleTokensValidation.batchBalance(msg)
   local recipients = json.decode(msg.Tags.Recipients)
   local tokenIds = json.decode(msg.Tags.TokenIds)
   local bals = CPMM.tokens:getBatchBalance(recipients, tokenIds)
@@ -359,7 +360,7 @@ end)
 
 -- Batch Balances (Filtered by Ids, only)
 Handlers.add('Batch-Balances', Handlers.utils.hasMatchingTag('Action', 'Batch-Balances'), function(msg)
-  validation.batchBalances(msg)
+  semiFungibleTokensValidation.batchBalances(msg)
   local tokenIds = json.decode(msg.Tags.TokenIds)
   local bals = CPMM.tokens:getBatchBalances(tokenIds)
   msg.reply({ Data = bals })

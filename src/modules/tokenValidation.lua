@@ -1,4 +1,3 @@
-local json = require('json')
 local sharedUtils = require('modules.sharedUtils')
 
 local tokenValidation = {}

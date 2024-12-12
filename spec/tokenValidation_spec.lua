@@ -40,7 +40,7 @@ describe("market.modules.tokenValidation", function()
 	end)
 
   it("should fail transfer validation when quantity is missing", function()
-		-- remove the UpdateDelay
+		-- remove the Quantity
     msg.Tags.Quantity = nil
     -- should throw an error
     assert.has.error(function()
@@ -49,7 +49,7 @@ describe("market.modules.tokenValidation", function()
 	end)
 
   it("should fail transfer validation when quantity not a number", function()
-		-- change the UpdateDelay to a string
+		-- change the Quantity to a string
     msg.Tags.Quantity = "not-a-number"
     -- should throw an error
     assert.has.error(function()
@@ -58,7 +58,7 @@ describe("market.modules.tokenValidation", function()
 	end)
 
   it("should fail transfer validation when quantity is zero", function()
-		-- change the UpdateDelay to zero
+		-- change the Quantity to zero
     msg.Tags.Quantity = "0"
     -- should throw an error
     assert.has.error(function()
@@ -67,7 +67,7 @@ describe("market.modules.tokenValidation", function()
 	end)
 
   it("should fail transfer validation when quantity is negative", function()
-		-- change the UpdateDelay to a negative number
+		-- change the Quantity to a negative number
     msg.Tags.Quantity = "-123"
     -- should throw an error
     assert.has.error(function()
@@ -76,7 +76,7 @@ describe("market.modules.tokenValidation", function()
 	end)
 
   it("should fail transfer validation when quantity is a decimal", function()
-		-- change the UpdateDelay to a decimal number
+		-- change the Quantity to a decimal number
     msg.Tags.Quantity = "123.456"
     -- should throw an error
     assert.has.error(function()

@@ -88,18 +88,6 @@ function validation.calcSellAmount(msg)
 end
 
 ---------------------------------------------------------------------------------
--- FUNGIBLE TOKEN VALIDATION ----------------------------------------------------
----------------------------------------------------------------------------------
-
-function validation.transfer(msg)
-  assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
-  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
-  assert(tonumber(msg.Tags.Quantity), 'Quantity must be a number!')
-  assert(tonumber(msg.Tags.Quantity) > 0, 'Quantity must be greater than zero!')
-  assert(tonumber(msg.Tags.Quantity) % 1 == 0, 'Quantity must be an integer!')
-end
-
----------------------------------------------------------------------------------
 -- CTF VALIDATION ---------------------------------------------------------------
 ---------------------------------------------------------------------------------
 
@@ -119,62 +107,62 @@ end
 -- SEMI-FUNGIBLE TOKEN VALIDATION -----------------------------------------------
 ---------------------------------------------------------------------------------
 
-function validation.transferSingle(msg)
-  assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
-  assert(type(msg.Tags.TokenId) == 'string', 'TokenId is required!')
-  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
-  assert(tonumber(msg.Tags.Quantity), 'Quantity must be a number!')
-  assert(tonumber(msg.Tags.Quantity) > 0, 'Quantity must be greater than zero!')
-  assert(tonumber(msg.Tags.Quantity) % 1 == 0, 'Quantity must be an integer!')
-end
+-- function validation.transferSingle(msg)
+--   assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
+--   assert(type(msg.Tags.TokenId) == 'string', 'TokenId is required!')
+--   assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
+--   assert(tonumber(msg.Tags.Quantity), 'Quantity must be a number!')
+--   assert(tonumber(msg.Tags.Quantity) > 0, 'Quantity must be greater than zero!')
+--   assert(tonumber(msg.Tags.Quantity) % 1 == 0, 'Quantity must be an integer!')
+-- end
 
-function validation.transferBatch(msg)
-  assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
-  assert(type(msg.Tags.TokenIds) == 'string', 'TokenIds is required!')
-  local tokenIds = json.decode(msg.Tags.TokenIds)
-  assert(type(msg.Tags.Quantities) == 'string', 'Quantities is required!')
-  local quantities = json.decode(msg.Tags.Quantities)
-  assert(#tokenIds == #quantities, 'Input array lengths must match!')
-  for i = 1, #quantities do
-    assert(bint.__lt(0, bint(quantities[i])), 'Quantity must be greater than 0')
-  end
-  for i = 1, #tokenIds do
-    assert(utils.includes(tokenIds[i], CPMM.tokens.positionIds), 'Invalid tokenId!')
-  end
-end
+-- function validation.transferBatch(msg)
+--   assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
+--   assert(type(msg.Tags.TokenIds) == 'string', 'TokenIds is required!')
+--   local tokenIds = json.decode(msg.Tags.TokenIds)
+--   assert(type(msg.Tags.Quantities) == 'string', 'Quantities is required!')
+--   local quantities = json.decode(msg.Tags.Quantities)
+--   assert(#tokenIds == #quantities, 'Input array lengths must match!')
+--   for i = 1, #quantities do
+--     assert(bint.__lt(0, bint(quantities[i])), 'Quantity must be greater than 0')
+--   end
+--   for i = 1, #tokenIds do
+--     assert(utils.includes(tokenIds[i], CPMM.tokens.positionIds), 'Invalid tokenId!')
+--   end
+-- end
 
-function validation.balanceById(msg)
-  assert(msg.Tags.TokenId, "TokenId is required!")
-  assert(tonumber(msg.Tags.TokenId), 'TokenId must be a number!')
-  assert(tonumber(msg.Tags.TokenId) > 0, 'TokenId must be greater than zero!')
-  assert(tonumber(msg.Tags.TokenId) % 1 == 0, 'TokenId must be an integer!')
-end
+-- function validation.balanceById(msg)
+--   assert(msg.Tags.TokenId, "TokenId is required!")
+--   assert(tonumber(msg.Tags.TokenId), 'TokenId must be a number!')
+--   assert(tonumber(msg.Tags.TokenId) > 0, 'TokenId must be greater than zero!')
+--   assert(tonumber(msg.Tags.TokenId) % 1 == 0, 'TokenId must be an integer!')
+-- end
 
-function validation.balancesById(msg)
-  assert(msg.Tags.TokenId, "TokenId is required!")
-  assert(tonumber(msg.Tags.TokenId), 'TokenId must be a number!')
-  assert(tonumber(msg.Tags.TokenId) > 0, 'TokenId must be greater than zero!')
-  assert(tonumber(msg.Tags.TokenId) % 1 == 0, 'TokenId must be an integer!')
-end
+-- function validation.balancesById(msg)
+--   assert(msg.Tags.TokenId, "TokenId is required!")
+--   assert(tonumber(msg.Tags.TokenId), 'TokenId must be a number!')
+--   assert(tonumber(msg.Tags.TokenId) > 0, 'TokenId must be greater than zero!')
+--   assert(tonumber(msg.Tags.TokenId) % 1 == 0, 'TokenId must be an integer!')
+-- end
 
-function validation.batchBalance(msg)
-  assert(msg.Tags.Recipients, "Recipients is required!")
-  local recipients = json.decode(msg.Tags.Recipients)
-  assert(msg.Tags.TokenIds, "TokenIds is required!")
-  local tokenIds = json.decode(msg.Tags.TokenIds)
-  assert(#recipients == #tokenIds, "Recipients and TokenIds must have same lengths")
-  for i = 1, #tokenIds do
-    assert(utils.includes(tokenIds[i], CPMM.tokens.positionIds), 'Invalid tokenId!')
-  end
-end
+-- function validation.batchBalance(msg)
+--   assert(msg.Tags.Recipients, "Recipients is required!")
+--   local recipients = json.decode(msg.Tags.Recipients)
+--   assert(msg.Tags.TokenIds, "TokenIds is required!")
+--   local tokenIds = json.decode(msg.Tags.TokenIds)
+--   assert(#recipients == #tokenIds, "Recipients and TokenIds must have same lengths")
+--   for i = 1, #tokenIds do
+--     assert(utils.includes(tokenIds[i], CPMM.tokens.positionIds), 'Invalid tokenId!')
+--   end
+-- end
 
-function validation.batchBalances(msg)
-  assert(msg.Tags.TokenIds, "TokenIds is required!")
-  local tokenIds = json.decode(msg.Tags.TokenIds)
-  for i = 1, #tokenIds do
-    assert(utils.includes(tokenIds[i], CPMM.tokens.positionIds), 'Invalid tokenId!')
-  end
-end
+-- function validation.batchBalances(msg)
+--   assert(msg.Tags.TokenIds, "TokenIds is required!")
+--   local tokenIds = json.decode(msg.Tags.TokenIds)
+--   for i = 1, #tokenIds do
+--     assert(utils.includes(tokenIds[i], CPMM.tokens.positionIds), 'Invalid tokenId!')
+--   end
+-- end
 
 ---------------------------------------------------------------------------------
 -- CONFIG HANDLERS --------------------------------------------------------------
