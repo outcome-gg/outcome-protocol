@@ -7,7 +7,7 @@ local msg = {}
 local msgAdmin = {}
 local msgDelay = {}
 
-describe("configurator.modules.configuratorValidation", function()
+describe("#configurator #configuratorValidation", function()
   before_each(function()
 		msg = {
       From = "test-this-is-valid-arweave-wallet-address-1",

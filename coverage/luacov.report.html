@@ -324,7 +324,7 @@
                   <span class="bg" style="width: 100.0%"></span>
                   <span><strong>100.0%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>418</strong> Hits</span>
+               <span class="hits"><strong>549</strong> Hits</span>
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h1>
@@ -749,6 +749,258 @@ end
 </pre>
       </div>
 
+      <div class="hidden file success-high" id="src-modules-semifungibletokensinternal">
+         <h2 class="title">
+            src/modules/semiFungibleTokensInternal.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>123</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+<span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
+
+<span class="fc" data-hits="1">local SemiFungibleTokens = {}</span>
+<span class="fc" data-hits="1">local SemiFungibleTokensMethods = require(&#39;modules.semiFungibleTokensNotices&#39;)</span>
+
+-- Constructor for SemiFungibleTokens 
+<span class="fc" data-hits="1">function SemiFungibleTokens:new()</span>
+  -- This will store user semi-fungible tokens balances and metadata
+<span class="fc" data-hits="14">  local obj = {</span>
+<span class="fc" data-hits="14">    name = &#39;&#39;,</span>
+<span class="fc" data-hits="14">    ticker = &#39;&#39;,</span>
+<span class="fc" data-hits="14">    logo = &#39;&#39;,</span>
+<span class="fc" data-hits="14">    balancesById = {},  -- { id -&gt; userId -&gt; balance of semi-fungible tokens }</span>
+<span class="fc" data-hits="14">    totalSupplyById = {}, -- { id -&gt; totalSupply of semi-fungible tokens }</span>
+<span class="fc" data-hits="14">    denomination = 12</span>
+  }
+<span class="fc" data-hits="14">  setmetatable(obj, { __index = SemiFungibleTokensMethods })</span>
+<span class="fc" data-hits="14">  return obj</span>
+end
+
+-- @dev Mint a quantity of a token with the given ID
+-- @param to The address that will own the minted token
+-- @param id ID of the token to be minted
+-- @param quantity Quantity of the token to be minted
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:mint(to, id, quantity, msg)</span>
+<span class="fc" data-hits="6">  assert(quantity, &#39;Quantity is required!&#39;)</span>
+<span class="fc" data-hits="6">  assert(bint.__lt(0, quantity), &#39;Quantity must be greater than zero!&#39;)</span>
+
+<span class="fc" data-hits="6">  if not self.balancesById[id] then self.balancesById[id] = {} end</span>
+<span class="fc" data-hits="6">  if not self.balancesById[id][to] then self.balancesById[id][to] = &quot;0&quot; end</span>
+<span class="fc" data-hits="6">  if not self.totalSupplyById[id] then self.totalSupplyById[id] = &quot;0&quot; end</span>
+
+<span class="fc" data-hits="6">  self.balancesById[id][to] = tostring(bint.__add(self.balancesById[id][to], quantity))</span>
+<span class="fc" data-hits="6">  self.totalSupplyById[id] = tostring(bint.__add(self.totalSupplyById[id], quantity))</span>
+  -- Send notice
+<span class="fc" data-hits="6">  return self.mintSingleNotice(to, id, quantity, msg)</span>
+end
+
+-- @dev Batch mint quantities of tokens with the given IDs
+-- @param to The address that will own the minted token
+-- @param ids IDs of the tokens to be minted
+-- @param quantities Quantities of the tokens to be minted
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchMint(to, ids, quantities, msg)</span>
+<span class="fc" data-hits="5">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
+
+<span class="fc" data-hits="20">  for i = 1, #ids do</span>
+    -- @dev spacing to resolve text to code eval issue
+<span class="fc" data-hits="15">    if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end</span>
+<span class="fc" data-hits="15">    if not self.balancesById[ ids[i] ][to] then self.balancesById[ ids[i] ][to] = &quot;0&quot; end</span>
+<span class="fc" data-hits="15">    if not self.totalSupplyById[ ids[i] ] then self.totalSupplyById[ ids[i] ] = &quot;0&quot; end</span>
+
+<span class="fc" data-hits="15">    self.balancesById[ ids[i] ][to] = tostring(bint.__add(self.balancesById[ ids[i] ][to], quantities[i]))</span>
+<span class="fc" data-hits="15">    self.totalSupplyById[ ids[i] ] = tostring(bint.__add(self.totalSupplyById[ ids[i] ], quantities[i]))</span>
+  end
+
+  -- Send notice
+<span class="fc" data-hits="5">  return self.mintBatchNotice(to, ids, quantities, msg)</span>
+end
+
+-- @dev Burn a quantity of a token with the given ID
+-- @param from The address that will burn the token
+-- @param id ID of the token to be burned
+-- @param quantity Quantity of the token to be burned
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:burn(from, id, quantity, msg)</span>
+<span class="fc" data-hits="1">  assert(bint.__lt(0, quantity), &#39;Quantity must be greater than zero!&#39;)</span>
+<span class="fc" data-hits="1">  assert(self.balancesById[id], &#39;Id must exist! &#39; .. id)</span>
+<span class="fc" data-hits="1">  assert(self.balancesById[id][from], &#39;User must hold token! :: &#39; .. id)</span>
+<span class="fc" data-hits="1">  assert(bint.__le(quantity, self.balancesById[id][from]), &#39;User must have sufficient tokens! &#39; .. id)</span>
+
+  -- Burn tokens
+<span class="fc" data-hits="1">  self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], quantity))</span>
+<span class="fc" data-hits="1">  self.totalSupplyById[id] = tostring(bint.__sub(self.totalSupplyById[id], quantity))</span>
+  -- Send notice
+<span class="fc" data-hits="1">  return self.burnSingleNotice(from, id, quantity, msg)</span>
+end
+
+-- @dev Batch burn quantities of tokens with the given IDs
+-- @param from The address that will burn the tokens
+-- @param ids IDs of the tokens to be burned
+-- @param quantities Quantities of the tokens to be burned
+-- @param msg For sending X-Tags
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)</span>
+<span class="fc" data-hits="1">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
+
+<span class="fc" data-hits="4">  for i = 1, #ids do</span>
+<span class="fc" data-hits="3">    assert(bint.__lt(0, quantities[i]), &#39;Quantity must be greater than zero!&#39;)</span>
+<span class="fc" data-hits="3">    assert(self.balancesById[ ids[i] ], &#39;Id must exist! &#39; .. ids[i])</span>
+<span class="fc" data-hits="3">    assert(self.balancesById[ ids[i] ][from], &#39;User must hold token! &#39; .. ids[i])</span>
+<span class="fc" data-hits="3">    assert(bint.__le(quantities[i], self.balancesById[ ids[i] ][from]), &#39;User must have sufficient tokens!&#39;)</span>
+  end
+
+<span class="fc" data-hits="1">  local remainingBalances = {}</span>
+
+  -- Burn tokens
+<span class="fc" data-hits="4">  for i = 1, #ids do</span>
+<span class="fc" data-hits="3">    self.balancesById[ ids[i] ][from] = tostring(bint.__sub(self.balancesById[ ids[i] ][from], quantities[i]))</span>
+<span class="fc" data-hits="3">    self.totalSupplyById[ ids[i] ] = tostring(bint.__sub(self.totalSupplyById[ ids[i] ], quantities[i]))</span>
+<span class="fc" data-hits="3">    remainingBalances[i] = self.balancesById[ ids[i] ][from]</span>
+  end
+  -- Draft notice
+<span class="fc" data-hits="1">  local notice = {</span>
+<span class="fc" data-hits="1">    Recipient = from,</span>
+<span class="fc" data-hits="1">    TokenIds = json.encode(ids),</span>
+<span class="fc" data-hits="1">    Quantities = json.encode(quantities),</span>
+<span class="fc" data-hits="1">    RemainingBalances = json.encode(remainingBalances),</span>
+<span class="fc" data-hits="1">    Action = &#39;Burn-Batch-Notice&#39;,</span>
+<span class="fc" data-hits="1">    Data = &quot;Successfully burned batch&quot;</span>
+  }
+  -- Forward X-Tags
+<span class="fc" data-hits="5">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="fc" data-hits="4">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="fc" data-hits="1">      notice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="fc" data-hits="1">  return self.burnBatchNotice(notice, msg)</span>
+end
+
+-- @dev Transfer a quantity of tokens with the given ID
+-- @param from The address to be debited
+-- @param recipient The address to be credited
+-- @param id ID of the tokens to be transferred
+-- @param quantity Quantity of the tokens to be transferred
+-- @param cast The boolean to silence transfer notifications
+-- @param msg For sending X-Tags
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, msg)</span>
+<span class="fc" data-hits="2">  if not self.balancesById[id] then self.balancesById[id] = {} end</span>
+<span class="fc" data-hits="2">  if not self.balancesById[id][from] then self.balancesById[id][from] = &quot;0&quot; end</span>
+<span class="fc" data-hits="2">  if not self.balancesById[id][recipient] then self.balancesById[id][recipient] = &quot;0&quot; end</span>
+
+<span class="fc" data-hits="2">  local qty = bint(quantity)</span>
+<span class="fc" data-hits="2">  local balance = bint(self.balancesById[id][from])</span>
+<span class="fc" data-hits="2">  if bint.__le(qty, balance) then</span>
+<span class="fc" data-hits="1">    self.balancesById[id][from] = tostring(bint.__sub(balance, qty))</span>
+<span class="fc" data-hits="1">    self.balancesById[id][recipient] = tostring(bint.__add(self.balancesById[id][recipient], qty))</span>
+
+    -- Only send the notifications if the cast tag is not set
+<span class="fc" data-hits="1">    if not cast then</span>
+<span class="fc" data-hits="1">      return self.transferSingleNotices(from, recipient, id, quantity, msg)</span>
+    end
+  else
+<span class="fc" data-hits="1">    return self.transferErrorNotice(id, msg)</span>
+  end
+end
+
+-- @dev Batch transfer quantities of tokens with the given IDs
+-- @param from The address to be debited
+-- @param recipient The address to be credited
+-- @param ids IDs of the tokens to be transferred
+-- @param quantities Quantities of the tokens to be transferred
+-- @param cast The boolean to silence transfer notifications
+-- @param msg For sending X-Tags
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg)</span>
+<span class="fc" data-hits="2">  local ids_ = {}</span>
+<span class="fc" data-hits="2">  local quantities_ = {}</span>
+
+<span class="fc" data-hits="5">  for i = 1, #ids do</span>
+<span class="fc" data-hits="4">    if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end</span>
+<span class="fc" data-hits="4">    if not self.balancesById[ ids[i] ][from] then self.balancesById[ ids[i] ][from] = &quot;0&quot; end</span>
+<span class="fc" data-hits="4">    if not self.balancesById[ ids[i] ][recipient] then self.balancesById[ ids[i] ][recipient] = &quot;0&quot; end</span>
+
+<span class="fc" data-hits="4">    local qty = bint(quantities[i])</span>
+<span class="fc" data-hits="4">    local balance = bint(self.balancesById[ ids[i] ][from])</span>
+
+<span class="fc" data-hits="4">    if bint.__le(qty, balance) then</span>
+<span class="fc" data-hits="3">      self.balancesById[ ids[i] ][from] = tostring(bint.__sub(balance, qty))</span>
+<span class="fc" data-hits="3">      self.balancesById[ ids[i] ][recipient] = tostring(bint.__add(self.balancesById[ ids[i] ][recipient], qty))</span>
+<span class="fc" data-hits="3">      table.insert(ids_, ids[i])</span>
+<span class="fc" data-hits="3">      table.insert(quantities_, quantities[i])</span>
+    else
+<span class="fc" data-hits="1">      return self.transferErrorNotice(ids[i], msg)</span>
+    end
+  end
+
+  -- Only send the notifications if the cast tag is not set
+<span class="fc" data-hits="1">  if not cast and #ids_ &gt; 0 then</span>
+<span class="fc" data-hits="1">    return self.transferBatchNotices(from, recipient, ids_, quantities_, msg)</span>
+  end
+end
+
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBalance(from, recipient, tokenId)</span>
+<span class="fc" data-hits="2">  local bal = &#39;0&#39;</span>
+  -- If Id is found then cointinue
+<span class="fc" data-hits="2">  if self.balancesById[tokenId] then</span>
+    -- If not Recipient is provided, then return the Senders balance
+<span class="fc" data-hits="2">    if (recipient and self.balancesById[tokenId][recipient]) then</span>
+<span class="fc" data-hits="1">      bal = self.balancesById[tokenId][recipient]</span>
+<span class="fc" data-hits="1">    elseif self.balancesById[tokenId][from] then</span>
+<span class="fc" data-hits="1">      bal = self.balancesById[tokenId][from]</span>
+    end
+  end
+  -- return balance
+<span class="fc" data-hits="2">  return bal</span>
+end
+
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBatchBalance(recipients, tokenIds)</span>
+<span class="fc" data-hits="1">  assert(#recipients == #tokenIds, &#39;Recipients and TokenIds must have same lengths&#39;)</span>
+<span class="fc" data-hits="1">  local bals = {}</span>
+
+<span class="fc" data-hits="4">  for i = 1, #recipients do</span>
+<span class="fc" data-hits="3">    table.insert(bals, &#39;0&#39;)</span>
+<span class="fc" data-hits="3">    if self.balancesById[ tokenIds[i] ] then</span>
+<span class="fc" data-hits="3">      if self.balancesById[ tokenIds[i] ][ recipients[i] ] then</span>
+<span class="fc" data-hits="3">        bals[i] = self.balancesById[ tokenIds[i] ][ recipients[i] ]</span>
+      end
+    end
+  end
+
+<span class="fc" data-hits="1">  return bals</span>
+end
+
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBalances(tokenId)</span>
+<span class="fc" data-hits="1">  local bals = {}</span>
+<span class="fc" data-hits="1">  if self.balancesById[tokenId] then</span>
+<span class="fc" data-hits="1">    bals = self.balancesById[tokenId]</span>
+  end
+  -- return balances
+<span class="fc" data-hits="1">  return bals</span>
+end
+
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBatchBalances(tokenIds)</span>
+<span class="fc" data-hits="1">  local bals = {}</span>
+
+<span class="fc" data-hits="4">  for i = 1, #tokenIds do</span>
+<span class="fc" data-hits="3">    bals[ tokenIds[i] ] = {}</span>
+<span class="fc" data-hits="3">    if self.balancesById[ tokenIds[i] ] then</span>
+<span class="fc" data-hits="3">      bals[ tokenIds[i] ] = self.balancesById[ tokenIds[i] ]</span>
+    end
+  end
+  -- return balances
+<span class="fc" data-hits="1">  return bals</span>
+end
+
+<span class="fc" data-hits="1">return SemiFungibleTokens</span>
+</pre>
+      </div>
+
       <div class="hidden file success-high" id="src-modules-semifungibletokensnotices">
          <h2 class="title">
             src/modules/semiFungibleTokensNotices.lua
@@ -757,26 +1009,26 @@ end
                   <span class="bg" style="width: 100.00%"></span>
                   <span><strong>100.00%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>70</strong> Hits</span>
+               <span class="hits"><strong>78</strong> Hits</span>
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
-<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="2">local ao = require(&#39;.ao&#39;)</span>
+<span class="fc" data-hits="2">local json = require(&#39;json&#39;)</span>
 
-<span class="fc" data-hits="1">local SemiFungibleTokensNotices = {}</span>
+<span class="fc" data-hits="2">local SemiFungibleTokensNotices = {}</span>
 
 -- @dev Mint single token notice
 -- @param to The address that will own the minted token
 -- @param id ID of the token to be minted
 -- @param quantity Quantity of the token to be minted
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, msg)</span>
-<span class="fc" data-hits="2">  return msg.reply({</span>
-<span class="fc" data-hits="1">    Recipient = to,</span>
-<span class="fc" data-hits="1">    TokenId = tostring(id),</span>
-<span class="fc" data-hits="1">    Quantity = tostring(quantity),</span>
-<span class="fc" data-hits="1">    Action = &#39;Mint-Single-Notice&#39;,</span>
-<span class="fc" data-hits="1">    Data = Colors.gray .. &quot;Successfully minted &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, msg)</span>
+<span class="fc" data-hits="14">  return msg.reply({</span>
+<span class="fc" data-hits="7">    Recipient = to,</span>
+<span class="fc" data-hits="7">    TokenId = tostring(id),</span>
+<span class="fc" data-hits="7">    Quantity = tostring(quantity),</span>
+<span class="fc" data-hits="7">    Action = &#39;Mint-Single-Notice&#39;,</span>
+<span class="fc" data-hits="7">    Data = Colors.gray .. &quot;Successfully minted &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
   })
 end
 
@@ -784,13 +1036,13 @@ end
 -- @param to The address that will own the minted token
 -- @param ids IDs of the tokens to be minted
 -- @param quantities Quantities of the tokens to be minted
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)</span>
-<span class="fc" data-hits="2">  return msg.reply({</span>
-<span class="fc" data-hits="1">    Recipient = to,</span>
-<span class="fc" data-hits="1">    TokenIds = json.encode(ids),</span>
-<span class="fc" data-hits="1">    Quantities = json.encode(quantities),</span>
-<span class="fc" data-hits="1">    Action = &#39;Mint-Batch-Notice&#39;,</span>
-<span class="fc" data-hits="1">    Data = &quot;Successfully minted batch&quot;</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)</span>
+<span class="fc" data-hits="12">  return msg.reply({</span>
+<span class="fc" data-hits="6">    Recipient = to,</span>
+<span class="fc" data-hits="6">    TokenIds = json.encode(ids),</span>
+<span class="fc" data-hits="6">    Quantities = json.encode(quantities),</span>
+<span class="fc" data-hits="6">    Action = &#39;Mint-Batch-Notice&#39;,</span>
+<span class="fc" data-hits="6">    Data = &quot;Successfully minted batch&quot;</span>
   })
 end
 
@@ -798,19 +1050,38 @@ end
 -- @param from The address that will burn the token
 -- @param id ID of the token to be burned
 -- @param quantity Quantity of the token to be burned
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnSingleNotice(id, quantity, msg)</span>
-<span class="fc" data-hits="2">  return msg.reply({</span>
-<span class="fc" data-hits="1">    TokenId = tostring(id),</span>
-<span class="fc" data-hits="1">    Quantity = tostring(quantity),</span>
-<span class="fc" data-hits="1">    Action = &#39;Burn-Single-Notice&#39;,</span>
-<span class="fc" data-hits="1">    Data = Colors.gray .. &quot;Successfully burned &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
-  })
+<span class="fc" data-hits="2">function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)</span>
+  -- Prepare notice
+<span class="fc" data-hits="2">  local notice = {</span>
+<span class="fc" data-hits="2">    Recipient = from,</span>
+<span class="fc" data-hits="2">    TokenId = tostring(id),</span>
+<span class="fc" data-hits="2">    Quantity = tostring(quantity),</span>
+<span class="fc" data-hits="2">    Action = &#39;Burn-Single-Notice&#39;,</span>
+<span class="fc" data-hits="2">    Data = Colors.gray .. &quot;Successfully burned &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="fc" data-hits="10">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="fc" data-hits="8">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="fc" data-hits="2">      notice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="fc" data-hits="2">  return msg.reply(notice)</span>
 end
 
 -- @dev Burn batch tokens notice
 -- @param notice The prepared notice to be sent
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnBatchNotice(notice, msg)</span>
-<span class="fc" data-hits="1">  return msg.reply(notice)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensNotices.burnBatchNotice(notice, msg)</span>
+  -- Forward X-Tags
+<span class="fc" data-hits="10">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="fc" data-hits="8">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="fc" data-hits="2">      notice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="fc" data-hits="2">  return msg.reply(notice)</span>
 end
 
 -- @dev Transfer single token notices
@@ -819,34 +1090,34 @@ end
 -- @param id ID of the tokens to be transferred
 -- @param quantity Quantity of the tokens to be transferred
 -- @param msg For sending X-Tags
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg)</span>
   -- Prepare debit notice
-<span class="fc" data-hits="1">  local debitNotice = {</span>
-<span class="fc" data-hits="1">    Action = &#39;Debit-Single-Notice&#39;,</span>
-<span class="fc" data-hits="1">    Recipient = to,</span>
-<span class="fc" data-hits="1">    TokenId = tostring(id),</span>
-<span class="fc" data-hits="1">    Quantity = tostring(quantity),</span>
-<span class="fc" data-hits="1">    Data = Colors.gray .. &quot;You transferred &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; to &quot; .. Colors.green .. to .. Colors.reset</span>
+<span class="fc" data-hits="2">  local debitNotice = {</span>
+<span class="fc" data-hits="2">    Action = &#39;Debit-Single-Notice&#39;,</span>
+<span class="fc" data-hits="2">    Recipient = to,</span>
+<span class="fc" data-hits="2">    TokenId = tostring(id),</span>
+<span class="fc" data-hits="2">    Quantity = tostring(quantity),</span>
+<span class="fc" data-hits="2">    Data = Colors.gray .. &quot;You transferred &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; to &quot; .. Colors.green .. to .. Colors.reset</span>
   }
   -- Prepare credit notice
-<span class="fc" data-hits="1">  local creditNotice = {</span>
-<span class="fc" data-hits="1">    Target = to,</span>
-<span class="fc" data-hits="1">    Action = &#39;Credit-Single-Notice&#39;,</span>
-<span class="fc" data-hits="1">    Sender = from,</span>
-<span class="fc" data-hits="1">    TokenId = tostring(id),</span>
-<span class="fc" data-hits="1">    Quantity = tostring(quantity),</span>
-<span class="fc" data-hits="1">    Data = Colors.gray .. &quot;You received &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; from &quot; .. Colors.green .. from .. Colors.reset</span>
+<span class="fc" data-hits="2">  local creditNotice = {</span>
+<span class="fc" data-hits="2">    Target = to,</span>
+<span class="fc" data-hits="2">    Action = &#39;Credit-Single-Notice&#39;,</span>
+<span class="fc" data-hits="2">    Sender = from,</span>
+<span class="fc" data-hits="2">    TokenId = tostring(id),</span>
+<span class="fc" data-hits="2">    Quantity = tostring(quantity),</span>
+<span class="fc" data-hits="2">    Data = Colors.gray .. &quot;You received &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; from &quot; .. Colors.green .. from .. Colors.reset</span>
   }
   -- Forward X-Tags
-<span class="fc" data-hits="6">  for tagName, tagValue in pairs(msg) do</span>
+<span class="fc" data-hits="12">  for tagName, tagValue in pairs(msg) do</span>
     -- Tags beginning with &quot;X-&quot; are forwarded
-<span class="fc" data-hits="5">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
-<span class="fc" data-hits="1">      debitNotice[tagName] = tagValue</span>
-<span class="fc" data-hits="1">      creditNotice[tagName] = tagValue</span>
+<span class="fc" data-hits="10">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="fc" data-hits="2">      debitNotice[tagName] = tagValue</span>
+<span class="fc" data-hits="2">      creditNotice[tagName] = tagValue</span>
     end
   end
   -- Send notices
-<span class="fc" data-hits="1">  return { msg.reply(debitNotice), ao.send(creditNotice) }</span>
+<span class="fc" data-hits="2">  return { msg.reply(debitNotice), ao.send(creditNotice) }</span>
 end
 
 -- @dev Transfer batch tokens notices
@@ -855,50 +1126,50 @@ end
 -- @param ids IDs of the tokens to be transferred
 -- @param quantities Quantities of the tokens to be transferred
 -- @param msg For sending X-Tags
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg)</span>
   -- Prepare debit notice
-<span class="fc" data-hits="1">  local debitNotice = {</span>
-<span class="fc" data-hits="1">    Action = &#39;Debit-Batch-Notice&#39;,</span>
-<span class="fc" data-hits="1">    Recipient = to,</span>
-<span class="fc" data-hits="1">    TokenIds = json.encode(ids),</span>
-<span class="fc" data-hits="1">    Quantities = json.encode(quantities),</span>
-<span class="fc" data-hits="1">    Data = Colors.gray .. &quot;You transferred batch to &quot; .. Colors.green .. to .. Colors.reset</span>
+<span class="fc" data-hits="2">  local debitNotice = {</span>
+<span class="fc" data-hits="2">    Action = &#39;Debit-Batch-Notice&#39;,</span>
+<span class="fc" data-hits="2">    Recipient = to,</span>
+<span class="fc" data-hits="2">    TokenIds = json.encode(ids),</span>
+<span class="fc" data-hits="2">    Quantities = json.encode(quantities),</span>
+<span class="fc" data-hits="2">    Data = Colors.gray .. &quot;You transferred batch to &quot; .. Colors.green .. to .. Colors.reset</span>
   }
   -- Prepare credit notice
-<span class="fc" data-hits="1">  local creditNotice = {</span>
-<span class="fc" data-hits="1">    Target = to,</span>
-<span class="fc" data-hits="1">    Action = &#39;Credit-Batch-Notice&#39;,</span>
-<span class="fc" data-hits="1">    Sender = from,</span>
-<span class="fc" data-hits="1">    TokenIds = json.encode(ids),</span>
-<span class="fc" data-hits="1">    Quantities = json.encode(quantities),</span>
-<span class="fc" data-hits="1">    Data = Colors.gray .. &quot;You received batch from &quot; .. Colors.green .. from .. Colors.reset</span>
+<span class="fc" data-hits="2">  local creditNotice = {</span>
+<span class="fc" data-hits="2">    Target = to,</span>
+<span class="fc" data-hits="2">    Action = &#39;Credit-Batch-Notice&#39;,</span>
+<span class="fc" data-hits="2">    Sender = from,</span>
+<span class="fc" data-hits="2">    TokenIds = json.encode(ids),</span>
+<span class="fc" data-hits="2">    Quantities = json.encode(quantities),</span>
+<span class="fc" data-hits="2">    Data = Colors.gray .. &quot;You received batch from &quot; .. Colors.green .. from .. Colors.reset</span>
   }
   -- Forward X-Tags
-<span class="fc" data-hits="6">  for tagName, tagValue in pairs(msg) do</span>
+<span class="fc" data-hits="12">  for tagName, tagValue in pairs(msg) do</span>
     -- Tags beginning with &quot;X-&quot; are forwarded
-<span class="fc" data-hits="5">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
-<span class="fc" data-hits="1">      debitNotice[tagName] = tagValue</span>
-<span class="fc" data-hits="1">      creditNotice[tagName] = tagValue</span>
+<span class="fc" data-hits="10">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="fc" data-hits="2">      debitNotice[tagName] = tagValue</span>
+<span class="fc" data-hits="2">      creditNotice[tagName] = tagValue</span>
     end
   end
   -- Send notice
-<span class="fc" data-hits="1">  return {msg.reply(debitNotice), ao.send(creditNotice)}</span>
+<span class="fc" data-hits="2">  return {msg.reply(debitNotice), ao.send(creditNotice)}</span>
 end
 
 -- @dev Transfer error notice
 -- @param from The address to be debited
 -- @param id ID of the tokens to be transferred
 -- @param msg The message
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferErrorNotice(id, msg)</span>
-<span class="fc" data-hits="2">  return msg.reply({</span>
-<span class="fc" data-hits="1">    Action = &#39;Transfer-Error&#39;,</span>
-<span class="fc" data-hits="1">    [&#39;Message-Id&#39;] = msg.Id,</span>
-<span class="fc" data-hits="1">    [&#39;Token-Id&#39;] = id,</span>
-<span class="fc" data-hits="1">    Error = &#39;Insufficient Balance!&#39;</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensNotices.transferErrorNotice(id, msg)</span>
+<span class="fc" data-hits="6">  return msg.reply({</span>
+<span class="fc" data-hits="3">    Action = &#39;Transfer-Error&#39;,</span>
+<span class="fc" data-hits="3">    [&#39;Message-Id&#39;] = msg.Id,</span>
+<span class="fc" data-hits="3">    [&#39;Token-Id&#39;] = id,</span>
+<span class="fc" data-hits="3">    Error = &#39;Insufficient Balance!&#39;</span>
   })
 end
 
-<span class="fc" data-hits="1">return SemiFungibleTokensNotices</span>
+<span class="fc" data-hits="2">return SemiFungibleTokensNotices</span>
 </pre>
       </div>
 
@@ -1270,7 +1541,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-13 07:33:25
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-13 12:39:29
    </footer>
 
    <script type="text/javascript">

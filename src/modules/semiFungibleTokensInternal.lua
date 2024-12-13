@@ -30,8 +30,10 @@ function SemiFungibleTokensMethods:mint(to, id, quantity, msg)
 
   if not self.balancesById[id] then self.balancesById[id] = {} end
   if not self.balancesById[id][to] then self.balancesById[id][to] = "0" end
+  if not self.totalSupplyById[id] then self.totalSupplyById[id] = "0" end
 
   self.balancesById[id][to] = tostring(bint.__add(self.balancesById[id][to], quantity))
+  self.totalSupplyById[id] = tostring(bint.__add(self.totalSupplyById[id], quantity))
   -- Send notice
   return self.mintSingleNotice(to, id, quantity, msg)
 end
@@ -47,8 +49,10 @@ function SemiFungibleTokensMethods:batchMint(to, ids, quantities, msg)
     -- @dev spacing to resolve text to code eval issue
     if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end
     if not self.balancesById[ ids[i] ][to] then self.balancesById[ ids[i] ][to] = "0" end
+    if not self.totalSupplyById[ ids[i] ] then self.totalSupplyById[ ids[i] ] = "0" end
 
     self.balancesById[ ids[i] ][to] = tostring(bint.__add(self.balancesById[ ids[i] ][to], quantities[i]))
+    self.totalSupplyById[ ids[i] ] = tostring(bint.__add(self.totalSupplyById[ ids[i] ], quantities[i]))
   end
 
   -- Send notice
@@ -59,7 +63,7 @@ end
 -- @param from The address that will burn the token
 -- @param id ID of the token to be burned
 -- @param quantity Quantity of the token to be burned
-function SemiFungibleTokensMethods:burn(from, id, quantity)
+function SemiFungibleTokensMethods:burn(from, id, quantity, msg)
   assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
   assert(self.balancesById[id], 'Id must exist! ' .. id)
   assert(self.balancesById[id][from], 'User must hold token! :: ' .. id)
@@ -67,8 +71,9 @@ function SemiFungibleTokensMethods:burn(from, id, quantity)
 
   -- Burn tokens
   self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], quantity))
+  self.totalSupplyById[id] = tostring(bint.__sub(self.totalSupplyById[id], quantity))
   -- Send notice
-  return self.burnSingleNotice(from, id, quantity)
+  return self.burnSingleNotice(from, id, quantity, msg)
 end
 
 -- @dev Batch burn quantities of tokens with the given IDs
@@ -91,10 +96,12 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)
   -- Burn tokens
   for i = 1, #ids do
     self.balancesById[ ids[i] ][from] = tostring(bint.__sub(self.balancesById[ ids[i] ][from], quantities[i]))
+    self.totalSupplyById[ ids[i] ] = tostring(bint.__sub(self.totalSupplyById[ ids[i] ], quantities[i]))
     remainingBalances[i] = self.balancesById[ ids[i] ][from]
   end
   -- Draft notice
   local notice = {
+    Recipient = from,
     TokenIds = json.encode(ids),
     Quantities = json.encode(quantities),
     RemainingBalances = json.encode(remainingBalances),

@@ -19,7 +19,7 @@ local msgBalances = {}
 local msgBatchBalance = {}
 local msgBatchBalances = {}
 
-describe("market.modules.tokenValidation", function()
+describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
   before_each(function()
     -- set variables
     sender = "test-this-is-valid-arweave-wallet-address-1"

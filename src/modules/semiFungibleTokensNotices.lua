@@ -35,18 +35,37 @@ end
 -- @param from The address that will burn the token
 -- @param id ID of the token to be burned
 -- @param quantity Quantity of the token to be burned
-function SemiFungibleTokensNotices.burnSingleNotice(id, quantity, msg)
-  return msg.reply({
+function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)
+  -- Prepare notice
+  local notice = {
+    Recipient = from,
     TokenId = tostring(id),
     Quantity = tostring(quantity),
     Action = 'Burn-Single-Notice',
     Data = Colors.gray .. "Successfully burned " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.reset
-  })
+  }
+  -- Forward X-Tags
+  for tagName, tagValue in pairs(msg) do
+    -- Tags beginning with "X-" are forwarded
+    if string.sub(tagName, 1, 2) == "X-" then
+      notice[tagName] = tagValue
+    end
+  end
+  -- Send notice
+  return msg.reply(notice)
 end
 
 -- @dev Burn batch tokens notice
 -- @param notice The prepared notice to be sent
 function SemiFungibleTokensNotices.burnBatchNotice(notice, msg)
+  -- Forward X-Tags
+  for tagName, tagValue in pairs(msg) do
+    -- Tags beginning with "X-" are forwarded
+    if string.sub(tagName, 1, 2) == "X-" then
+      notice[tagName] = tagValue
+    end
+  end
+  -- Send notice
   return msg.reply(notice)
 end
 

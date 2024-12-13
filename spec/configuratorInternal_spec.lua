@@ -12,7 +12,7 @@ local hashDelay = ""
 local timestamp = nil
 local Configurator = {}
 
-describe("configurator.modules.configurator", function()
+describe("#configurator #configuratorInternal", function()
   before_each(function()
     -- set admin
     admin = "test-this-is-valid-arweave-wallet-address-1"

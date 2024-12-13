@@ -28,8 +28,10 @@ local function getTagValue(tags, targetName)
   return nil -- Return nil if the name is not found
 end
 
-describe("market.modules.token", function()
+describe("#market #token #tokenInternal", function()
   before_each(function()
+    -- instantiate token
+		Token = token:new()
     -- set sender
     sender = "test-this-is-valid-arweave-wallet-address-1"
     -- set recipient
@@ -50,8 +52,6 @@ describe("market.modules.token", function()
     totalSupply = "0"
     -- set denomination
     denomination = 12
-    -- instantiate token
-		Token = token:new()
     -- create a message object
     msgMint = {
       From = sender,

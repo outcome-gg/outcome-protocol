@@ -17,11 +17,11 @@ local msgBurnSingle = {}
 local msgBurnBatch = {}
 local msgTransferSingle = {}
 local msgTransferBatch = {}
+local noticeBurnBatch = {}
 local noticeDebitSingle = {}
 local noticeCreditSingle = {}
 local noticeDebitBatch = {}
 local noticeCreditBatch = {}
-local burnBatchNotice = {}
 
 local function getTagValue(tags, targetName)
   for _, tag in ipairs(tags) do
@@ -32,7 +32,7 @@ local function getTagValue(tags, targetName)
   return nil -- Return nil if the name is not found
 end
 
-describe("market.modules.semiFungibleTokensNotices", function()
+describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
   before_each(function()
     -- set variables
     sender = "test-this-is-valid-arweave-wallet-address-1"
@@ -76,6 +76,7 @@ describe("market.modules.semiFungibleTokensNotices", function()
         TokenId = tokenId,
         Quantity = quantity,
       },
+      ["X-Action"] = "FOO",
       reply = function(message) return message end
     }
     -- create a message object
@@ -86,6 +87,7 @@ describe("market.modules.semiFungibleTokensNotices", function()
         TokenIds = tokenIds,
         Quantities = quantities,
       },
+      ["X-Action"] = "FOO",
       reply = function(message) return message end
     }
     -- create a message object
@@ -115,6 +117,16 @@ describe("market.modules.semiFungibleTokensNotices", function()
       reply = function(message) return message end
     }
     -- create a notice object
+    noticeBurnBatch = {
+      Recipient = sender,
+      TokenIds = json.encode(tokenIds),
+      Quantities = json.encode(quantities),
+      RemainingBalances = json.encode(remainingBalances),
+      Action = 'Burn-Batch-Notice',
+      ["X-Action"] = "FOO",
+      Data = "Successfully burned batch"
+    }
+    -- create a notice object
     noticeDebitSingle = {
       Action = "Debit-Single-Notice",
       Recipient = recipient,
@@ -132,13 +144,6 @@ describe("market.modules.semiFungibleTokensNotices", function()
       Quantity = quantity,
       ["X-Action"] = "FOO",
       Data = "You received 100 of id 1 from " .. sender
-    }
-    burnBatchNotice = {
-      TokenIds = json.encode(tokenIds),
-      Quantities = json.encode(quantities),
-      RemainingBalances = json.encode(remainingBalances),
-      Action = 'Burn-Batch-Notice',
-      Data = "Successfully burned batch"
     }
     -- create a notice object
     noticeDebitBatch = {
@@ -195,24 +200,27 @@ describe("market.modules.semiFungibleTokensNotices", function()
 
   it("should send burnSingleNotice", function()
     local notice = semiFungibleTokensNotices.burnSingleNotice(
+      msgBurnSingle.From,
       msgBurnSingle.Tags.TokenId,
       msgBurnSingle.Tags.Quantity,
       msgBurnSingle
     )
     assert.are.same({
+      Recipient = msgBurnSingle.From,
       TokenId = msgBurnSingle.Tags.TokenId,
       Quantity = msgBurnSingle.Tags.Quantity,
       Action = 'Burn-Single-Notice',
+      ["X-Action"] = "FOO",
       Data = Colors.gray .. "Successfully burned " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(tokenId) .. Colors.reset
     }, notice)
 	end)
 
   it("should send burnBatchNotice", function()
     local notice = semiFungibleTokensNotices.burnBatchNotice(
-      burnBatchNotice,
+      noticeBurnBatch,
       msgBurnBatch
     )
-    assert.are.same(burnBatchNotice, notice)
+    assert.are.same(noticeBurnBatch, notice)
 	end)
 
   it("should send transferSingleNotices", function()

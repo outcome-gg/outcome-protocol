@@ -3,7 +3,7 @@ local tokenValidation = require("modules.tokenValidation")
 
 local msg = {}
 
-describe("market.modules.tokenValidation", function()
+describe("#market #token #tokenValidation", function()
   before_each(function()
 		msg = {
       From = "test-this-is-valid-arweave-wallet-address-1",

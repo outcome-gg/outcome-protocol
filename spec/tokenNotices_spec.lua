@@ -20,7 +20,7 @@ local function getTagValue(tags, targetName)
   return nil -- Return nil if the name is not found
 end
 
-describe("market.modules.tokenNotices", function()
+describe("#market #token #tokenNotices", function()
   before_each(function()
     -- set sender
     sender = "test-this-is-valid-arweave-wallet-address-1"

@@ -18,7 +18,7 @@ local hashUpdateDelay = ""
 local timestamp = nil
 local staged = {}
 
-describe("configurator", function()
+describe("#configurator", function()
   before_each(function()
     -- set admin
     admin = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0"
