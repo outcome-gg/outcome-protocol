@@ -324,7 +324,7 @@
                   <span class="bg" style="width: 100.0%"></span>
                   <span><strong>100.0%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>549</strong> Hits</span>
+               <span class="hits"><strong>576</strong> Hits</span>
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h1>
@@ -438,6 +438,50 @@ end)
 <span class="fc" data-hits="1">  configuratorValidation.updateDelay(msg)</span>
 <span class="fc" data-hits="1">  return Configurator:actionUpdateDelay(msg.Tags.UpdateDelay, msg)</span>
 end)
+</pre>
+      </div>
+
+      <div class="hidden file success-high" id="src-modules-conditionaltokensvalidation">
+         <h2 class="title">
+            src/modules/conditionalTokensValidation.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>17</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local sharedUtils = require(&#39;modules.sharedUtils&#39;)</span>
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+<span class="fc" data-hits="1">local conditionalTokensValidation = {}</span>
+
+local function validateQuantity(quantity)
+<span class="fc" data-hits="6">  assert(type(quantity) == &#39;string&#39;, &#39;Quantity is required!&#39;)</span>
+<span class="fc" data-hits="5">  assert(tonumber(quantity), &#39;Quantity must be a number!&#39;)</span>
+<span class="fc" data-hits="4">  assert(tonumber(quantity) &gt; 0, &#39;Quantity must be greater than zero!&#39;)</span>
+<span class="fc" data-hits="2">  assert(tonumber(quantity) % 1 == 0, &#39;Quantity must be an integer!&#39;)</span>
+end
+
+local function validatePayouts(payouts)
+<span class="fc" data-hits="4">  assert(payouts, &quot;Payouts is required!&quot;)</span>
+<span class="fc" data-hits="3">  assert(sharedUtils.isJSONArray(payouts), &quot;Payouts must be valid JSON Array!&quot;)</span>
+<span class="fc" data-hits="3">  for _, payout in ipairs(json.decode(payouts)) do</span>
+<span class="fc" data-hits="2">    assert(tonumber(payout), &quot;Payouts item must be a number!&quot;)</span>
+  end
+end
+
+<span class="fc" data-hits="1">function conditionalTokensValidation.mergePositions(msg)</span>
+<span class="fc" data-hits="6">  validateQuantity(msg.Tags.Quantity)</span>
+end
+
+<span class="fc" data-hits="1">function conditionalTokensValidation.reportPayouts(msg)</span>
+<span class="fc" data-hits="5">  assert(msg.Tags.QuestionId, &quot;QuestionId is required!&quot;)</span>
+<span class="fc" data-hits="4">  validatePayouts(msg.Tags.Payouts)</span>
+end
+
+<span class="fc" data-hits="1">return conditionalTokensValidation</span>
 </pre>
       </div>
 
@@ -749,9 +793,9 @@ end
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-modules-semifungibletokensinternal">
+      <div class="hidden file success-high" id="src-modules-semifungibletokens">
          <h2 class="title">
-            src/modules/semiFungibleTokensInternal.lua
+            src/modules/semiFungibleTokens.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
@@ -1271,36 +1315,36 @@ end
                   <span class="bg" style="width: 100.00%"></span>
                   <span><strong>100.00%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>25</strong> Hits</span>
+               <span class="hits"><strong>35</strong> Hits</span>
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="4">local sharedUtils = {}</span>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="5">local sharedUtils = {}</span>
 
 -- Function to validate if the extracted value is a valid JSON simple value
 local function isSimpleValue(value)
   -- Trim whitespace
-<span class="fc" data-hits="27">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
+<span class="fc" data-hits="32">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
 
   -- Check for a quoted string: &quot;someValue&quot;
-<span class="fc" data-hits="27">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
+<span class="fc" data-hits="32">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
 <span class="fc" data-hits="21">    return true</span>
   end
 
   -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
-<span class="fc" data-hits="6">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
-<span class="fc" data-hits="3">    return true</span>
+<span class="fc" data-hits="11">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
+<span class="fc" data-hits="7">    return true</span>
   end
 
   -- Check for boolean
-<span class="fc" data-hits="3">  if value == &quot;true&quot; or value == &quot;false&quot; then</span>
+<span class="fc" data-hits="4">  if value == &quot;true&quot; or value == &quot;false&quot; then</span>
 <span class="fc" data-hits="1">    return true</span>
   end
 
-<span class="fc" data-hits="2">  return false</span>
+<span class="fc" data-hits="3">  return false</span>
 end
 
-<span class="fc" data-hits="4">function sharedUtils.isValidKeyValueJSON(str)</span>
+<span class="fc" data-hits="5">function sharedUtils.isValidKeyValueJSON(str)</span>
 <span class="fc" data-hits="32">  if type(str) ~= &quot;string&quot; then return false end</span>
 
   -- Trim whitespace
@@ -1329,17 +1373,38 @@ end
 <span class="fc" data-hits="25">  return true</span>
 end
 
-<span class="fc" data-hits="4">function sharedUtils.isValidArweaveAddress(address)</span>
+<span class="fc" data-hits="5">function sharedUtils.isJSONArray(str)</span>
+<span class="fc" data-hits="3">  if type(str) ~= &quot;string&quot; then return false end</span>
+
+  -- Trim whitespace
+<span class="fc" data-hits="3">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
+
+  -- Ensure it starts with `[` and ends with `]`
+<span class="fc" data-hits="3">  local isArray = str:match(&quot;^%[%s*(.-)%s*%]$&quot;)</span>
+<span class="fc" data-hits="3">  if not isArray then return false end</span>
+
+  -- Split the array elements and validate each one
+<span class="fc" data-hits="6">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
+<span class="fc" data-hits="5">    value = value:match(&quot;^%s*(.-)%s*$&quot;) -- Trim whitespace around each value</span>
+<span class="fc" data-hits="5">    if not isSimpleValue(value) then</span>
+<span class="fc" data-hits="1">      return false</span>
+    end
+  end
+
+<span class="fc" data-hits="1">  return true</span>
+end
+
+<span class="fc" data-hits="5">function sharedUtils.isValidArweaveAddress(address)</span>
 <span class="fc" data-hits="62">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[%w-_]+$&quot;) ~= nil</span>
 end
 
-<span class="fc" data-hits="4">return sharedUtils</span>
+<span class="fc" data-hits="5">return sharedUtils</span>
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-modules-tokeninternal">
+      <div class="hidden file success-high" id="src-modules-token">
          <h2 class="title">
-            src/modules/tokenInternal.lua
+            src/modules/token.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
@@ -1541,7 +1606,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-13 12:39:29
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-13 16:42:14
    </footer>
 
    <script type="text/javascript">

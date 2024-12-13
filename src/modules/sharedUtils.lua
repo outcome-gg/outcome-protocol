@@ -52,6 +52,27 @@ function sharedUtils.isValidKeyValueJSON(str)
   return true
 end
 
+function sharedUtils.isJSONArray(str)
+  if type(str) ~= "string" then return false end
+
+  -- Trim whitespace
+  str = str:match("^%s*(.-)%s*$")
+
+  -- Ensure it starts with `[` and ends with `]`
+  local isArray = str:match("^%[%s*(.-)%s*%]$")
+  if not isArray then return false end
+
+  -- Split the array elements and validate each one
+  for value in isArray:gmatch("[^,]+") do
+    value = value:match("^%s*(.-)%s*$") -- Trim whitespace around each value
+    if not isSimpleValue(value) then
+      return false
+    end
+  end
+
+  return true
+end
+
 function sharedUtils.isValidArweaveAddress(address)
 	return type(address) == "string" and #address == 43 and string.match(address, "^[%w-_]+$") ~= nil
 end

@@ -2,7 +2,7 @@
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
-local semiFungibleTokens = require('modules.semiFungibleTokensInternal')
+local semiFungibleTokens = require('modules.semiFungibleTokens')
 local conditionalTokensHelpers = require('modules.conditionalTokensHelpers')
 
 local SemiFungibleTokens = {}

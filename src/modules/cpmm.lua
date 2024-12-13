@@ -2,7 +2,7 @@ local json = require('json')
 local bint = require('.bint')(256)
 local ao = require('.ao')
 local utils = require(".utils")
-local token = require('modules.tokenInternal')
+local token = require('modules.token')
 local conditionalTokens = require('modules.conditionalTokens')
 local CPMMHelpers = require('modules.cpmmHelpers')
 

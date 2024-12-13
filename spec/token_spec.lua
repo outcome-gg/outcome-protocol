@@ -1,5 +1,5 @@
 require("luacov")
-local token = require("modules.tokenInternal")
+local token = require("modules.token")
 local json = require("json")
 -- Define variables
 local sender = ""

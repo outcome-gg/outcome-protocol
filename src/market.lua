@@ -244,7 +244,7 @@ end)
 
 -- Merge Positions
 Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-Positions"), function(msg)
-  validation.merge(msg)
+  validation.mergePositions(msg)
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.From
   -- Check user balances
   local error = false

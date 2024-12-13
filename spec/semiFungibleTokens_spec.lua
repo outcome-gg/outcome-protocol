@@ -1,5 +1,5 @@
 require("luacov")
-local semiFungibleTokens = require("modules.semiFungibleTokensInternal")require("luacov")
+local semiFungibleTokens = require("modules.semiFungibleTokens")require("luacov")
 local json = require("json")
 
 -- Mock the CPMM object
