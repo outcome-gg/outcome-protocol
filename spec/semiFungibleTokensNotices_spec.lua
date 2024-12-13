@@ -10,6 +10,7 @@ local quantity = ""
 local tokenIds = {}
 local quantities = {}
 local recipients = {}
+local remainingBalances = {}
 local msgMintSingle = {}
 local msgMintBatch = {}
 local msgBurnSingle = {}
@@ -18,6 +19,9 @@ local msgTransferSingle = {}
 local msgTransferBatch = {}
 local noticeDebitSingle = {}
 local noticeCreditSingle = {}
+local noticeDebitBatch = {}
+local noticeCreditBatch = {}
+local burnBatchNotice = {}
 
 local function getTagValue(tags, targetName)
   for _, tag in ipairs(tags) do
@@ -42,11 +46,12 @@ describe("market.modules.semiFungibleTokensNotices", function()
       "test-this-is-valid-arweave-wallet-address-3",
       "test-this-is-valid-arweave-wallet-address-4"
     }
+    remainingBalances = { "0", "0", "0" }
     -- create a message object
     msgMintSingle = {
       From = sender,
       Tags = {
-        Action = "Mint",
+        Action = "Mint-Single",
         Recipient = recipient,
         TokenId = tokenId,
         Quantity = quantity,
@@ -56,10 +61,10 @@ describe("market.modules.semiFungibleTokensNotices", function()
     msgMintBatch = {
       From = sender,
       Tags = {
-        Action = "Mint",
-        Recipients = recipient,
-        TokenIds = json.encode(tokenIds),
-        Quantities = json.encode(quantities),
+        Action = "Mint-Batch",
+        Recipient = recipient,
+        TokenIds = tokenIds,
+        Quantities = quantities,
       },
       reply = function(message) return message end
     }
@@ -67,8 +72,19 @@ describe("market.modules.semiFungibleTokensNotices", function()
     msgBurnSingle = {
       From = sender,
       Tags = {
-        Action = "Burn",
+        Action = "Burn-Single",
+        TokenId = tokenId,
         Quantity = quantity,
+      },
+      reply = function(message) return message end
+    }
+    -- create a message object
+    msgBurnBatch = {
+      From = sender,
+      Tags = {
+        Action = "Burn-Single",
+        TokenIds = tokenIds,
+        Quantities = quantities,
       },
       reply = function(message) return message end
     }
@@ -82,6 +98,7 @@ describe("market.modules.semiFungibleTokensNotices", function()
         Quantity = quantity,
       },
       Id = "test-message-id",
+      ["X-Action"] = "FOO",
       reply = function(message) return message end
     }
     -- create a message object
@@ -89,34 +106,62 @@ describe("market.modules.semiFungibleTokensNotices", function()
       From = sender,
       Tags = {
         Action = "Transfer",
-        Recipients = json.encode(recipients),
-        TokenIds = json.encode(tokenId),
-        Quantitys = json.encode(quantity),
+        Recipient = recipient,
+        TokenIds = tokenIds,
+        Quantities = quantities,
       },
       Id = "test-message-id",
+      ["X-Action"] = "FOO",
       reply = function(message) return message end
     }
     -- create a notice object
     noticeDebitSingle = {
-      Target = sender,
-      Action = "Debit-Notice",
+      Action = "Debit-Single-Notice",
       Recipient = recipient,
-      Quantity = "100",
+      TokenId = tokenId,
+      Quantity = quantity,
       ["X-Action"] = "FOO",
-      Data = "You transferred 100 to test-this-is-valid-arweave-wallet-address-2"
+      Data = "You transferred 100 of id 1 to " .. recipient
     }
     -- create a notice object
     noticeCreditSingle = {
       Target = recipient,
-      Action = "Credit-Notice",
+      Action = "Credit-Single-Notice",
       Sender = sender,
-      Quantity = "100",
+      TokenId = tokenId,
+      Quantity = quantity,
       ["X-Action"] = "FOO",
-      Data = "You received 100 from test-this-is-valid-arweave-wallet-address-1"
+      Data = "You received 100 of id 1 from " .. sender
+    }
+    burnBatchNotice = {
+      TokenIds = json.encode(tokenIds),
+      Quantities = json.encode(quantities),
+      RemainingBalances = json.encode(remainingBalances),
+      Action = 'Burn-Batch-Notice',
+      Data = "Successfully burned batch"
+    }
+    -- create a notice object
+    noticeDebitBatch = {
+      Action = "Debit-Batch-Notice",
+      Recipient = recipient,
+      TokenIds = json.encode(tokenIds),
+      Quantities = json.encode(quantities),
+      ["X-Action"] = "FOO",
+      Data = "You transferred batch to " .. recipient
+    }
+    -- create a notice object
+    noticeCreditBatch = {
+      Target = recipient,
+      Action = "Credit-Batch-Notice",
+      Sender = sender,
+      TokenIds = json.encode(tokenIds),
+      Quantities = json.encode(quantities),
+      ["X-Action"] = "FOO",
+      Data = "You received batch from " .. sender
     }
 	end)
 
-  it("should send mintNotice", function()
+  it("should send mintSingleNotice", function()
     local notice = semiFungibleTokensNotices.mintSingleNotice(
       msgMintSingle.Tags.Recipient,
       msgMintSingle.Tags.TokenId,
@@ -124,6 +169,7 @@ describe("market.modules.semiFungibleTokensNotices", function()
       msgMintSingle
     )
     assert.are.same({
+      Recipient = msgMintSingle.Tags.Recipient,
       TokenId = msgMintSingle.Tags.TokenId,
       Quantity = msgMintSingle.Tags.Quantity,
       Action = 'Mint-Single-Notice',
@@ -131,40 +177,87 @@ describe("market.modules.semiFungibleTokensNotices", function()
     }, notice)
 	end)
 
-  -- it("should send burnNotice", function()
-  --   local notice = semiFungibleTokensNotices.burnNotice(
-  --     msgBurn.Tags.Quantity,
-  --     msgBurn
-  --   )
-  --   assert.are.same({
-  --     Action = 'Burn-Notice',
-  --     Quantity = msgBurn.Tags.Quantity,
-  --     Data = "Successfully burned " .. msgBurn.Tags.Quantity
-  --   }, notice)
-	-- end)
+  it("should send mintBatchNotice", function()
+    local notice = semiFungibleTokensNotices.mintBatchNotice(
+      msgMintBatch.Tags.Recipient,
+      msgMintBatch.Tags.TokenIds,
+      msgMintBatch.Tags.Quantities,
+      msgMintBatch
+    )
+    assert.are.same({
+      Recipient = recipient,
+      TokenIds = json.encode(tokenIds),
+      Quantities = json.encode(quantities),
+      Action = 'Mint-Batch-Notice',
+      Data = "Successfully minted batch"
+    }, notice)
+	end)
 
-  -- it("should send transferNotices", function()
-  --   local notices = semiFungibleTokensNotices.transferNotices(
-  --     noticeDebit,
-  --     noticeCredit,
-  --     msgTransfer
-  --   )
-  --   assert.are.same(noticeDebit, notices[1])
-  --   assert.are.same(noticeCredit.Target, notices[2].Target)
-  --   assert.are.same(noticeCredit.Action, getTagValue(notices[2].Tags, "Action"))
-  --   assert.are.same(noticeCredit.Sender, getTagValue(notices[2].Tags, "Sender"))
-  --   assert.are.same(noticeCredit.Quantity, getTagValue(notices[2].Tags, "Quantity"))
-  --   assert.are.same(noticeCredit["X-Action"], getTagValue(notices[2].Tags, "X-Action"))
-	-- end)
+  it("should send burnSingleNotice", function()
+    local notice = semiFungibleTokensNotices.burnSingleNotice(
+      msgBurnSingle.Tags.TokenId,
+      msgBurnSingle.Tags.Quantity,
+      msgBurnSingle
+    )
+    assert.are.same({
+      TokenId = msgBurnSingle.Tags.TokenId,
+      Quantity = msgBurnSingle.Tags.Quantity,
+      Action = 'Burn-Single-Notice',
+      Data = Colors.gray .. "Successfully burned " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(tokenId) .. Colors.reset
+    }, notice)
+	end)
 
-  -- it("should send transferErrorNotice", function()
-  --   local notice = semiFungibleTokensNotices.transferErrorNotice(
-  --     msgTransfer
-  --   )
-  --   assert.are.same({
-  --     Action = 'Transfer-Error',
-  --     ['Message-Id'] = msgTransfer.Id,
-  --     Error = 'Insufficient Balance!'
-  --   }, notice)
-	-- end)
+  it("should send burnBatchNotice", function()
+    local notice = semiFungibleTokensNotices.burnBatchNotice(
+      burnBatchNotice,
+      msgBurnBatch
+    )
+    assert.are.same(burnBatchNotice, notice)
+	end)
+
+  it("should send transferSingleNotices", function()
+    local notices = semiFungibleTokensNotices.transferSingleNotices(
+      msgTransferSingle.From,
+      msgTransferSingle.Tags.Recipient,
+      msgTransferSingle.Tags.TokenId,
+      msgTransferSingle.Tags.Quantity,
+      msgTransferSingle
+    )
+    assert.are.same(noticeDebitSingle, notices[1])
+    assert.are.same(noticeCreditSingle.Target, notices[2].Target)
+    assert.are.same(noticeCreditSingle.Action, getTagValue(notices[2].Tags, "Action"))
+    assert.are.same(noticeCreditSingle.Sender, getTagValue(notices[2].Tags, "Sender"))
+    assert.are.same(noticeCreditSingle.Quantity, getTagValue(notices[2].Tags, "Quantity"))
+    assert.are.same(noticeCreditSingle["X-Action"], getTagValue(notices[2].Tags, "X-Action"))
+	end)
+
+  it("should send transferBatchNotices", function()
+    local notices = semiFungibleTokensNotices.transferBatchNotices(
+      msgTransferBatch.From,
+      msgTransferBatch.Tags.Recipient,
+      msgTransferBatch.Tags.TokenIds,
+      msgTransferBatch.Tags.Quantities,
+      msgTransferBatch
+    )
+    assert.are.same(noticeDebitBatch, notices[1])
+    assert.are.same(noticeCreditBatch.Target, notices[2].Target)
+    assert.are.same(noticeCreditBatch.Action, getTagValue(notices[2].Tags, "Action"))
+    assert.are.same(noticeCreditBatch.Sender, getTagValue(notices[2].Tags, "Sender"))
+    assert.are.same(noticeCreditBatch.TokenIds, getTagValue(notices[2].Tags, "TokenIds"))
+    assert.are.same(noticeCreditBatch.Quantities, getTagValue(notices[2].Tags, "Quantities"))
+    assert.are.same(noticeCreditBatch["X-Action"], getTagValue(notices[2].Tags, "X-Action"))
+	end)
+
+  it("should send transferErrorNotice", function()
+    local notice = semiFungibleTokensNotices.transferErrorNotice(
+      msgTransferSingle.Tags.TokenId,
+      msgTransferSingle
+    )
+    assert.are.same({
+      Action = 'Transfer-Error',
+      ['Message-Id'] = msgTransferSingle.Id,
+      ['Token-Id'] = msgTransferSingle.Tags.TokenId,
+      Error = 'Insufficient Balance!'
+    }, notice)
+	end)
 end)

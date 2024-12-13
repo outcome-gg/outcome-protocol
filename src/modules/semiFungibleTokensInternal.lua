@@ -33,14 +33,14 @@ function SemiFungibleTokensMethods:mint(to, id, quantity, msg)
 
   self.balancesById[id][to] = tostring(bint.__add(self.balancesById[id][to], quantity))
   -- Send notice
-  self:mintSingleNotice(id, quantity, msg)
+  return self.mintSingleNotice(to, id, quantity, msg)
 end
 
 -- @dev Batch mint quantities of tokens with the given IDs
 -- @param to The address that will own the minted token
 -- @param ids IDs of the tokens to be minted
 -- @param quantities Quantities of the tokens to be minted
-function SemiFungibleTokensMethods:batchMint(to, ids, quantities)
+function SemiFungibleTokensMethods:batchMint(to, ids, quantities, msg)
   assert(#ids == #quantities, 'Ids and quantities must have the same lengths')
 
   for i = 1, #ids do
@@ -52,7 +52,7 @@ function SemiFungibleTokensMethods:batchMint(to, ids, quantities)
   end
 
   -- Send notice
-  self:mintBatchNotice(to, ids, quantities)
+  return self.mintBatchNotice(to, ids, quantities, msg)
 end
 
 -- @dev Burn a quantity of a token with the given ID
@@ -68,7 +68,7 @@ function SemiFungibleTokensMethods:burn(from, id, quantity)
   -- Burn tokens
   self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], quantity))
   -- Send notice
-  self:burnSingleNotice(from, id, quantity)
+  return self.burnSingleNotice(from, id, quantity)
 end
 
 -- @dev Batch burn quantities of tokens with the given IDs
@@ -95,7 +95,6 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)
   end
   -- Draft notice
   local notice = {
-    Target = from,
     TokenIds = json.encode(ids),
     Quantities = json.encode(quantities),
     RemainingBalances = json.encode(remainingBalances),
@@ -110,7 +109,7 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)
     end
   end
   -- Send notice
-  self:burnBatchNotice(notice)
+  return self.burnBatchNotice(notice, msg)
 end
 
 -- @dev Transfer a quantity of tokens with the given ID
@@ -133,10 +132,10 @@ function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity,
 
     -- Only send the notifications if the cast tag is not set
     if not cast then
-      self:transferSingleNotices(from, recipient, id, quantity, msg)
+      return self.transferSingleNotices(from, recipient, id, quantity, msg)
     end
   else
-    self:transferErrorNotice(id, msg)
+    return self.transferErrorNotice(id, msg)
   end
 end
 
@@ -165,13 +164,13 @@ function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantitie
       table.insert(ids_, ids[i])
       table.insert(quantities_, quantities[i])
     else
-      self:transferErrorNotice(ids[i], msg)
+      return self.transferErrorNotice(ids[i], msg)
     end
   end
 
   -- Only send the notifications if the cast tag is not set
   if not cast and #ids_ > 0 then
-    self:transferBatchNotices(from, recipient, ids_, quantities_, msg)
+    return self.transferBatchNotices(from, recipient, ids_, quantities_, msg)
   end
 end
 
