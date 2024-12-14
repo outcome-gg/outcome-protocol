@@ -8,9 +8,9 @@ local ConditionalTokensNotices = {}
 -- @param conditionId The condition's ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(questionId, resolutionAgent, outcomeSlotCount))``.
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
 -- @param msg For sending msg.reply
-function ConditionalTokensNotices:conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
+function ConditionalTokensNotices.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
   -- TODO: Decide if to be sent to user and/or Data Index
-  msg.reply({
+  return msg.reply({
     Action = "Condition-Preparation-Notice",
     ConditionId = conditionId,
     OutcomeSlotCount = tostring(outcomeSlotCount)
@@ -23,16 +23,15 @@ end
 -- @param questionId An identifier for the question to be answered by the resolutionAgent.
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
 -- @param payoutNumerators The payout numerators for each outcome slot.
-function ConditionalTokensNotices:conditionResolutionNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, payoutNumerators)
+function ConditionalTokensNotices.conditionResolutionNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, payoutNumerators, msg)
   -- TODO: Decide if to be sent to user and/or Data Index
-  ao.send({
-      Target = 'DataIndex',
-      Action = "Condition-Resolution-Notice",
-      ConditionId = conditionId,
-      ResolutionAgent = resolutionAgent,
-      QuestionId = questionId,
-      OutcomeSlotCount = tostring(outcomeSlotCount),
-      PayoutNumerators = payoutNumerators
+  return msg.reply({
+    Action = "Condition-Resolution-Notice",
+    ConditionId = conditionId,
+    ResolutionAgent = resolutionAgent,
+    QuestionId = questionId,
+    OutcomeSlotCount = tostring(outcomeSlotCount),
+    PayoutNumerators = json.encode(payoutNumerators)
   })
 end
 
@@ -42,7 +41,7 @@ end
 -- @param conditionId The condition ID.
 -- @param quantity The quantity.
 -- @param msg For sending X-Tags
-function ConditionalTokensNotices:positionSplitNotice(from, collateralToken, conditionId, quantity, msg)
+function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, conditionId, quantity, msg)
   local notice = {
     Action = "Split-Position-Notice",
     Process = ao.id,
@@ -59,7 +58,7 @@ function ConditionalTokensNotices:positionSplitNotice(from, collateralToken, con
     end
   end
   -- Send notice | @dev ao.send vs msg.reply to ensure message is sent to user (not collateralToken)
-  msg.forward(from, notice)
+  return msg.forward(from, notice)
 end
 
 
@@ -67,10 +66,10 @@ end
 -- @param from The address of the account that merged the positions.
 -- @param conditionId The condition ID.
 -- @param quantity The quantity.
-function ConditionalTokensNotices:positionsMergeNotice(conditionId, quantity, msg)
-  msg.reply({
+function ConditionalTokensNotices.positionsMergeNotice(conditionId, quantity, msg)
+  return msg.reply({
     Action = "Merge-Positions-Notice",
-    ConditionId = conditionId,
+    ConditionId = conditionId, -- TODO: Check if this is needed
     Quantity = quantity
   })
 end
@@ -80,9 +79,9 @@ end
 -- @param collateralToken The address of the collateral token.
 -- @param conditionId The condition ID.
 -- @param payout The payout amount.
-function ConditionalTokensNotices:payoutRedemptionNotice(collateralToken, conditionId, payout, msg)
+function ConditionalTokensNotices.payoutRedemptionNotice(collateralToken, conditionId, payout, msg)
   -- TODO: Decide if to be sent to user and/or Data Index
-  msg.reply({
+  return msg.reply({
     Action = "Payout-Redemption-Notice",
     Process = ao.id,
     CollateralToken = collateralToken,

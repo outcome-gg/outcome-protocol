@@ -63,7 +63,7 @@ function ConditionalTokensMethods:prepareCondition(conditionId, outcomeSlotCount
   -- Initialize the denominator to zero to indicate that the condition has not been resolved.
   self.payoutDenominator[conditionId] = 0
   -- Send the condition preparation notice.
-  self:conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
+  self.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
 end
 
 -- @dev Called by the resolutionAgent for reporting results of conditions. Will set the payout vector for the condition with the ID `keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount))`, 
@@ -89,7 +89,7 @@ function ConditionalTokensMethods:reportPayouts(questionId, payouts, msg)
   assert(den > 0, "payout is all zeroes")
   self.payoutDenominator[conditionId] = den
   -- Send the condition resolution notice.
-  self:conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, json.encode(self.payoutNumerators[conditionId]))
+  self.conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, self.payoutNumerators[conditionId], msg)
 end
 
 -- @dev This function splits a position from collateral. This contract will attempt to transfer `amount` collateral from the message sender to itself. 
@@ -108,7 +108,7 @@ function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity,
   -- Mint the stake in the split target positions.
   SemiFungibleTokens:batchMint(from, self.positionIds, quantities, msg)
   -- Send notice.
-  self:positionSplitNotice(from, collateralToken, self.conditionId, quantity, msg)
+  self.positionSplitNotice(from, collateralToken, self.conditionId, quantity, msg)
 end
 
 -- @dev This function merges positions. If merging to the collateral, this contract will attempt to transfer `quantity` collateral to the message sender.
@@ -139,7 +139,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     })
   end
   -- Send notice.
-  self:positionsMergeNotice(self.conditionId, quantity, msg)
+  self.positionsMergeNotice(self.conditionId, quantity, msg)
 end
 
 -- @dev This function redeems positions. If redeeming to the collateral, this contract will attempt to transfer the payout to the message sender.
@@ -175,7 +175,7 @@ function ConditionalTokensMethods:redeemPositions(msg)
     self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)
   end
   -- Send notice.
-  self:payoutRedemptionNotice(self.collateralToken, self.conditionId, totalPayout, msg)
+  self.payoutRedemptionNotice(self.collateralToken, self.conditionId, totalPayout, msg)
 end
 
 -- @dev Gets the outcome slot count of a condition.
