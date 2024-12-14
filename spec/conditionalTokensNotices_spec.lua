@@ -2,9 +2,6 @@ require("luacov")
 local conditionalTokensNotices = require("modules.conditionalTokensNotices")
 local json = require("json")
 
--- Mock the CPMM object
-_G.CPMM = { tokens = { positionIds = { "1", "2", "3" } } }
-
 local sender = ""
 local collateralToken = ""
 local questionId = ""
