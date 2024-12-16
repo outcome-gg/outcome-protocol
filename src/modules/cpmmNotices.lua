@@ -4,7 +4,7 @@ local json = require('json')
 local CPMMNotices = {}
 
 function CPMMNotices.newMarketNotice(configurator, incentives, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
-  msg.reply({
+  return msg.reply({
     Action = "New-Market-Notice",
     MarketId = marketId,
     ConditionId = conditionId,
@@ -26,7 +26,7 @@ function CPMMNotices.newMarketNotice(configurator, incentives, collateralToken, 
 end
 
 function CPMMNotices.fundingAddedNotice(from, sendBackAmounts, mintAmount)
-  ao.send({
+  return ao.send({
     Target = from,
     Action = "Funding-Added-Notice",
     SendBackAmounts = json.encode(sendBackAmounts),
@@ -36,7 +36,7 @@ function CPMMNotices.fundingAddedNotice(from, sendBackAmounts, mintAmount)
 end
 
 function CPMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
-  ao.send({
+  return ao.send({
     Target = from,
     Action = "Funding-Removed-Notice",
     SendAmounts = json.encode(sendAmounts),
@@ -47,7 +47,7 @@ function CPMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFr
 end
 
 function CPMMNotices.buyNotice(from, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
-  ao.send({
+  return ao.send({
     Target = from,
     Action = "Buy-Notice",
     InvestmentAmount = tostring(investmentAmount),
@@ -59,7 +59,7 @@ function CPMMNotices.buyNotice(from, investmentAmount, feeAmount, positionId, ou
 end
 
 function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)
-  ao.send({
+  return ao.send({
     Target = from,
     Action = "Sell-Notice",
     ReturnAmount = tostring(returnAmount),
@@ -71,21 +71,21 @@ function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, outco
 end
 
 function CPMMNotices.updateConfiguratorNotice(configurator, msg)
-  msg.reply({
+  return msg.reply({
     Action = "Configurator-Updated",
     Data = configurator
   })
 end
 
 function CPMMNotices.updateIncentivesNotice(incentives, msg)
-  msg.reply({
+  return msg.reply({
     Action = "Incentives-Updated",
     Data = incentives
   })
 end
 
 function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)
-  msg.reply({
+  return msg.reply({
     Action = "Take-Fee-Updated",
     CreatorFee = creatorFee,
     ProtocolFee = protocolFee,
@@ -94,14 +94,14 @@ function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)
 end
 
 function CPMMNotices.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)
-  msg.reply({
+  return msg.reply({
     Action = "Protocol-Fee-Target-Updated",
     Data = protocolFeeTarget
   })
 end
 
 function CPMMNotices.updateLogoNotice(logo, msg)
-  msg.reply({
+  return msg.reply({
     Action = "Logo-Updated",
     Data = logo
   })

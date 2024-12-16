@@ -2,8 +2,8 @@
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
+local crypto = require('.crypto')
 local semiFungibleTokens = require('modules.semiFungibleTokens')
-local conditionalTokensHelpers = require('modules.conditionalTokensHelpers')
 
 local SemiFungibleTokens = {}
 local ConditionalTokens = {}
@@ -36,9 +36,6 @@ function ConditionalTokens:new()
       -- First, look up the key in ConditionalTokensMethods
       if ConditionalTokensMethods[k] then
         return ConditionalTokensMethods[k]
-      -- Then, check in ConditionalTokensHelpers
-      elseif conditionalTokensHelpers[k] then
-        return conditionalTokensHelpers[k]
       -- Lastly, look up the key in the semiFungibleInstance methods
       elseif SemiFungibleTokens[k] then
         return SemiFungibleTokens[k]
@@ -63,7 +60,57 @@ function ConditionalTokensMethods:prepareCondition(conditionId, outcomeSlotCount
   -- Initialize the denominator to zero to indicate that the condition has not been resolved.
   self.payoutDenominator[conditionId] = 0
   -- Send the condition preparation notice.
-  self.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
+  return self.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
+end
+
+-- @dev This function splits a position from collateral. This contract will attempt to transfer `amount` collateral from the message sender to itself. 
+-- If successful, `quantity` stake will be minted in the split target positions. If any of the transfers, mints, or burns fail, the transaction will revert.
+-- @param from The initiator of the original Split-Position / Create-Position action message.
+-- @param collateralToken The address of the positions' backing collateral token.
+-- @param quantity The quantity of collateral or stake to split.
+-- @param msg Msg passed to retrieve x-tags
+function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)
+  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] > 0, "Condition not prepared!")
+  -- Create equal split positions.
+  local quantities = {}
+  for _ = 1, #self.positionIds do
+    table.insert(quantities, quantity)
+  end
+  -- Mint the stake in the split target positions.
+  SemiFungibleTokens:batchMint(from, self.positionIds, quantities, msg)
+  -- Send notice.
+  return self.positionSplitNotice(from, collateralToken, self.conditionId, quantity, msg)
+end
+
+-- @dev This function merges positions. If merging to the collateral, this contract will attempt to transfer `quantity` collateral to the message sender.
+-- Otherwise, this contract will burn `quantity` stake held by the message sender in the positions being merged worth of semi-fungible tokens.
+-- If successful, `quantity` stake will be minted in the merged position. If any of the transfers, mints, or burns fail, the transaction will revert.
+-- @param from The initiator of the original Merge-Positions action message.
+-- @param onBehalfOf The address that will receive the collateral.
+-- @param quantity The quantity of collateral or stake to merge.
+-- @param msg Msg passed to retrieve x-tags
+function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)
+  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] > 0, "Condition not prepared!")
+  -- Create equal merge positions.
+  local quantities = {}
+  for _ = 1, #self.positionIds do
+    table.insert(quantities, quantity)
+  end
+  -- Burn equal quantiies from user positions.
+  self.tokens:batchBurn(from, self.positionIds, quantities, msg)
+  -- @dev below already handled within the sell method. 
+  -- sell method w/ a different quantity and recipient.
+  if not isSell then
+    -- Return the collateral to the user.
+    ao.send({
+      Target = self.collateralToken,
+      Action = "Transfer",
+      Quantity = quantity,
+      Recipient = onBehalfOf
+    })
+  end
+  -- Send notice.
+  return self.positionsMergeNotice(self.conditionId, quantity, msg)
 end
 
 -- @dev Called by the resolutionAgent for reporting results of conditions. Will set the payout vector for the condition with the ID `keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount))`, 
@@ -89,57 +136,7 @@ function ConditionalTokensMethods:reportPayouts(questionId, payouts, msg)
   assert(den > 0, "payout is all zeroes")
   self.payoutDenominator[conditionId] = den
   -- Send the condition resolution notice.
-  self.conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, self.payoutNumerators[conditionId], msg)
-end
-
--- @dev This function splits a position from collateral. This contract will attempt to transfer `amount` collateral from the message sender to itself. 
--- If successful, `quantity` stake will be minted in the split target positions. If any of the transfers, mints, or burns fail, the transaction will revert.
--- @param from The initiator of the original Split-Position / Create-Position action message.
--- @param collateralToken The address of the positions' backing collateral token.
--- @param quantity The quantity of collateral or stake to split.
--- @param msg Msg passed to retrieve x-tags
-function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)
-  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] > 0, "condition not prepared yet")
-  -- Create equal split positions.
-  local quantities = {}
-  for _ = 1, #self.positionIds do
-    table.insert(quantities, quantity)
-  end
-  -- Mint the stake in the split target positions.
-  SemiFungibleTokens:batchMint(from, self.positionIds, quantities, msg)
-  -- Send notice.
-  self.positionSplitNotice(from, collateralToken, self.conditionId, quantity, msg)
-end
-
--- @dev This function merges positions. If merging to the collateral, this contract will attempt to transfer `quantity` collateral to the message sender.
--- Otherwise, this contract will burn `quantity` stake held by the message sender in the positions being merged worth of semi-fungible tokens.
--- If successful, `quantity` stake will be minted in the merged position. If any of the transfers, mints, or burns fail, the transaction will revert.
--- @param from The initiator of the original Merge-Positions action message.
--- @param onBehalfOf The address that will receive the collateral.
--- @param quantity The quantity of collateral or stake to merge.
--- @param msg Msg passed to retrieve x-tags
-function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)
-  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] > 0, "condition not prepared yet")
-  -- Create equal merge positions.
-  local quantities = {}
-  for _ = 1, #self.positionIds do
-    table.insert(quantities, quantity)
-  end
-  -- Burn equal quantiies from user positions.
-  self.tokens:batchBurn(from, self.positionIds, quantities, msg)
-  -- @dev below already handled within the sell method. 
-  -- sell method w/ a different quantity and recipient.
-  if not isSell then
-    -- Return the collateral to the user.
-    ao.send({
-      Target = self.collateralToken,
-      Action = "Transfer",
-      Quantity = quantity,
-      Recipient = onBehalfOf
-    })
-  end
-  -- Send notice.
-  self.positionsMergeNotice(self.conditionId, quantity, msg)
+  return self.conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, self.payoutNumerators[conditionId], msg)
 end
 
 -- @dev This function redeems positions. If redeeming to the collateral, this contract will attempt to transfer the payout to the message sender.
@@ -163,11 +160,10 @@ function ConditionalTokensMethods:redeemPositions(msg)
     if not self.tokens.balancesById[positionId] then self.tokens.balancesById[positionId] = {} end
     if not self.tokens.balancesById[positionId][msg.From] then self.tokens.balancesById[positionId][msg.From] = "0" end
     local payoutStake = self.tokens.balancesById[positionId][msg.From]
+    assert(bint.__lt(0, bint(payoutStake)), "no stake to redeem")
     -- Calculate the payout and burn position.
-    if bint.__lt(0, bint(payoutStake)) then
-      totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
-      self:burn(positionId, payoutStake, msg)
-    end
+    totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
+    self:burn(msg.From, positionId, payoutStake, msg)
   end
   -- Return totla payout minus take fee.
   if totalPayout > 0 then
@@ -175,14 +171,51 @@ function ConditionalTokensMethods:redeemPositions(msg)
     self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)
   end
   -- Send notice.
-  self.payoutRedemptionNotice(self.collateralToken, self.conditionId, totalPayout, msg)
+  return self.payoutRedemptionNotice(self.collateralToken, self.conditionId, totalPayout, msg)
 end
 
 -- @dev Gets the outcome slot count of a condition.
 -- @param ConditionId ID of the condition.
 -- @return Number of outcome slots associated with a condition, or zero if condition has not been prepared yet.
 function ConditionalTokensMethods:getOutcomeSlotCount(msg)
-  return #self.payoutNumerators[msg.Tags.ConditionId]
+  assert(msg.Tags.ConditionId, "ConditionId is required!")
+  return self.payoutNumerators[msg.Tags.ConditionId] and #self.payoutNumerators[msg.Tags.ConditionId] or 0
+end
+
+-- @dev Constructs a condition ID from a resolutionAgent, a question ID, and the outcome slot count for the question.
+-- @param ResolutionAgent The process assigned to report the result for the prepared condition.
+-- @param QuestionId An identifier for the question to be answered by the resolutionAgent.
+-- @param OutcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
+function ConditionalTokensMethods.getConditionId(resolutionAgent, questionId, outcomeSlotCount)
+  return crypto.digest.keccak256(resolutionAgent .. questionId .. outcomeSlotCount).asHex()
+end
+
+function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)
+  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))
+  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))
+  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))
+  local totalPayoutMinusFee = tostring(bint.__sub(totalPayout, bint(takeFee)))
+  -- prepare txns
+  local protocolFeeTxn = {
+    Target = collateralToken,
+    Action = "Transfer",
+    Recipient = self.protocolFeeTarget,
+    Quantity = protocolFee,
+  }
+  local creatorFeeTxn = {
+    Target = collateralToken,
+    Action = "Transfer",
+    Recipient = self.creatorFeeTarget,
+    Quantity = creatorFee,
+  }
+  local totalPayoutMinutTakeFeeTxn = {
+    Target = collateralToken,
+    Action = "Transfer",
+    Recipient = from,
+    Quantity = totalPayoutMinusFee
+  }
+  -- send txns
+  return { ao.send(protocolFeeTxn), ao.send(creatorFeeTxn), ao.send(totalPayoutMinutTakeFeeTxn) }
 end
 
 return ConditionalTokens

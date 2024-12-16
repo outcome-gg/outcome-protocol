@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 100.0%"></span>
-                  <span><strong>100.0%</strong> Coverage</span>
+                  <span class="bg" style="width: 93.42%"></span>
+                  <span><strong>93.42%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>645</strong> Hits</span>
-               <span class="miss"><strong>0</strong> Missed</span>
+               <span class="hits"><strong>852</strong> Hits</span>
+               <span class="miss"><strong>60</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -441,61 +441,239 @@ end)
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-modules-conditionaltokenshelpers">
+      <div class="hidden file warning" id="src-modules-conditionaltokens">
          <h2 class="title">
-            src/modules/conditionalTokensHelpers.lua
+            src/modules/conditionalTokens.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 100.00%"></span>
-                  <span><strong>100.00%</strong> Coverage</span>
+                  <span class="bg" style="width: 57.69%"></span>
+                  <span><strong>57.69%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>28</strong> Hits</span>
-               <span class="miss"><strong>0</strong> Missed</span>
+               <span class="hits"><strong>60</strong> Hits</span>
+               <span class="miss"><strong>44</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local crypto = require(&#39;.crypto&#39;)</span>
-<span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
+         <pre class="prettyprint lang-lua linenums">-- reference: https:&#47;&#47;github.com&#47;gnosis&#47;conditional-tokens-contracts&#47;blob&#47;master&#47;contracts&#47;ConditionalTokens.sol
+<span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
 <span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+<span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
+<span class="fc" data-hits="1">local crypto = require(&#39;.crypto&#39;)</span>
+<span class="fc" data-hits="1">local semiFungibleTokens = require(&#39;modules.semiFungibleTokens&#39;)</span>
 
-<span class="fc" data-hits="1">local ConditionalTokensHelpers = {}</span>
+<span class="fc" data-hits="1">local SemiFungibleTokens = {}</span>
+<span class="fc" data-hits="1">local ConditionalTokens = {}</span>
+<span class="fc" data-hits="1">local ConditionalTokensMethods = require(&#39;modules.conditionalTokensNotices&#39;)</span>
+
+-- Constructor for ConditionalTokens 
+<span class="fc" data-hits="1">function ConditionalTokens:new()</span>
+  -- Initialize SemiFungibleTokens and store the object
+<span class="fc" data-hits="10">  SemiFungibleTokens = semiFungibleTokens:new()</span>
+
+  -- Create a new ConditionalTokens object
+<span class="fc" data-hits="10">  local obj = {</span>
+    -- SemiFungible Tokens
+<span class="fc" data-hits="10">    tokens = SemiFungibleTokens,</span>
+<span class="fc" data-hits="10">    conditionId = &#39;&#39;,</span>
+<span class="fc" data-hits="10">    outcomeSlotCount = nil,</span>
+<span class="fc" data-hits="10">    positionIds = {},</span>
+<span class="fc" data-hits="10">    payoutNumerators = {},</span>
+<span class="fc" data-hits="10">    payoutDenominator = {},</span>
+    -- Take Fee vars
+<span class="fc" data-hits="10">    creatorFee = 0,</span>
+<span class="fc" data-hits="10">    creatorFeeTarget = &#39;&#39;,</span>
+<span class="fc" data-hits="10">    protocolFee = 0,</span>
+<span class="fc" data-hits="10">    protocolFeeTarget = &#39;&#39;</span>
+  }
+
+  -- Set metatable for method lookups from ConditionalTokensMethods, SemiFungibleTokensMethods, and ConditionalTokensHelpers
+<span class="fc" data-hits="20">  setmetatable(obj, {</span>
+    __index = function(t, k)
+      -- First, look up the key in ConditionalTokensMethods
+<span class="fc" data-hits="29">      if ConditionalTokensMethods[k] then</span>
+<span class="fc" data-hits="28">        return ConditionalTokensMethods[k]</span>
+      -- Lastly, look up the key in the semiFungibleInstance methods
+<span class="fc" data-hits="1">      elseif SemiFungibleTokens[k] then</span>
+<span class="nc">        return SemiFungibleTokens[k]</span>
+      else
+<span class="fc" data-hits="1">        return nil</span>
+      end
+    end
+  })
+<span class="fc" data-hits="10">  return obj</span>
+end
+
+-- @dev This function prepares a condition by initializing a payout vector associated with the condition.
+-- @param conditionId The condition&#39;s ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(questionId, resolutionAgent, outcomeSlotCount))``.
+-- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
+<span class="fc" data-hits="1">function ConditionalTokensMethods:prepareCondition(conditionId, outcomeSlotCount, msg)</span>
+<span class="fc" data-hits="6">  assert(self.payoutNumerators[conditionId] == nil, &quot;condition already prepared&quot;)</span>
+  -- Initialize the payout vector associated with the condition.
+<span class="fc" data-hits="6">  self.payoutNumerators[conditionId] = {}</span>
+<span class="fc" data-hits="24">  for _ = 1, outcomeSlotCount do</span>
+<span class="fc" data-hits="18">    table.insert(self.payoutNumerators[conditionId], 0)</span>
+  end
+  -- Initialize the denominator to zero to indicate that the condition has not been resolved.
+<span class="fc" data-hits="6">  self.payoutDenominator[conditionId] = 0</span>
+  -- Send the condition preparation notice.
+<span class="fc" data-hits="6">  return self.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)</span>
+end
+
+-- @dev This function splits a position from collateral. This contract will attempt to transfer `amount` collateral from the message sender to itself. 
+-- If successful, `quantity` stake will be minted in the split target positions. If any of the transfers, mints, or burns fail, the transaction will revert.
+-- @param from The initiator of the original Split-Position &#47; Create-Position action message.
+-- @param collateralToken The address of the positions&#39; backing collateral token.
+-- @param quantity The quantity of collateral or stake to split.
+-- @param msg Msg passed to retrieve x-tags
+<span class="fc" data-hits="1">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)</span>
+<span class="fc" data-hits="5">  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] &gt; 0, &quot;Condition not prepared!&quot;)</span>
+  -- Create equal split positions.
+<span class="fc" data-hits="4">  local quantities = {}</span>
+<span class="fc" data-hits="16">  for _ = 1, #self.positionIds do</span>
+<span class="fc" data-hits="12">    table.insert(quantities, quantity)</span>
+  end
+  -- Mint the stake in the split target positions.
+<span class="fc" data-hits="4">  SemiFungibleTokens:batchMint(from, self.positionIds, quantities, msg)</span>
+  -- Send notice.
+<span class="fc" data-hits="4">  return self.positionSplitNotice(from, collateralToken, self.conditionId, quantity, msg)</span>
+end
+
+-- @dev This function merges positions. If merging to the collateral, this contract will attempt to transfer `quantity` collateral to the message sender.
+-- Otherwise, this contract will burn `quantity` stake held by the message sender in the positions being merged worth of semi-fungible tokens.
+-- If successful, `quantity` stake will be minted in the merged position. If any of the transfers, mints, or burns fail, the transaction will revert.
+-- @param from The initiator of the original Merge-Positions action message.
+-- @param onBehalfOf The address that will receive the collateral.
+-- @param quantity The quantity of collateral or stake to merge.
+-- @param msg Msg passed to retrieve x-tags
+<span class="fc" data-hits="1">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)</span>
+<span class="fc" data-hits="5">  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] &gt; 0, &quot;Condition not prepared!&quot;)</span>
+  -- Create equal merge positions.
+<span class="fc" data-hits="4">  local quantities = {}</span>
+<span class="fc" data-hits="16">  for _ = 1, #self.positionIds do</span>
+<span class="fc" data-hits="12">    table.insert(quantities, quantity)</span>
+  end
+  -- Burn equal quantiies from user positions.
+<span class="fc" data-hits="4">  self.tokens:batchBurn(from, self.positionIds, quantities, msg)</span>
+  -- @dev below already handled within the sell method. 
+  -- sell method w&#47; a different quantity and recipient.
+<span class="fc" data-hits="2">  if not isSell then</span>
+    -- Return the collateral to the user.
+<span class="fc" data-hits="2">    ao.send({</span>
+<span class="fc" data-hits="1">      Target = self.collateralToken,</span>
+<span class="fc" data-hits="1">      Action = &quot;Transfer&quot;,</span>
+<span class="fc" data-hits="1">      Quantity = quantity,</span>
+<span class="fc" data-hits="1">      Recipient = onBehalfOf</span>
+    })
+  end
+  -- Send notice.
+<span class="fc" data-hits="2">  return self.positionsMergeNotice(self.conditionId, quantity, msg)</span>
+end
+
+-- @dev Called by the resolutionAgent for reporting results of conditions. Will set the payout vector for the condition with the ID `keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount))`, 
+-- where ResolutionAgent is the message sender, QuestionId is one of the parameters of this function, and OutcomeSlotCount is the length of the payouts parameter, which contains the payoutNumerators for each outcome slot of the condition.
+-- @param QuestionId The question ID the oracle is answering for
+-- @param Payouts The oracle&#39;s answer
+<span class="fc" data-hits="1">function ConditionalTokensMethods:reportPayouts(questionId, payouts, msg)</span>
+  -- IMPORTANT, the payouts length accuracy is enforced because outcomeSlotCount is part of the hash.
+<span class="nc">  local outcomeSlotCount = #payouts</span>
+<span class="nc">  assert(outcomeSlotCount &gt; 1, &quot;there should be more than one outcome slot&quot;)</span>
+  -- IMPORTANT, the resolutionAgent is enforced to be the sender because it&#39;s part of the hash.
+<span class="nc">  local conditionId = self.getConditionId(msg.From, questionId, tostring(outcomeSlotCount))</span>
+<span class="nc">  assert(self.payoutNumerators[conditionId] and #self.payoutNumerators[conditionId] == outcomeSlotCount, &quot;condition not prepared or found&quot;)</span>
+<span class="nc">  assert(self.payoutDenominator[conditionId] == 0, &quot;payout denominator already set&quot;)</span>
+  -- Set the payout vector for the condition.
+<span class="nc">  local den = 0</span>
+<span class="nc">  for i = 1, outcomeSlotCount do</span>
+<span class="nc">    local num = payouts[i]</span>
+<span class="nc">    den = den + num</span>
+<span class="nc">    assert(self.payoutNumerators[conditionId][i] == 0, &quot;payout numerator already set&quot;)</span>
+<span class="nc">    self.payoutNumerators[conditionId][i] = num</span>
+  end
+<span class="nc">  assert(den &gt; 0, &quot;payout is all zeroes&quot;)</span>
+<span class="nc">  self.payoutDenominator[conditionId] = den</span>
+  -- Send the condition resolution notice.
+<span class="nc">  return self.conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, self.payoutNumerators[conditionId], msg)</span>
+end
+
+-- @dev This function redeems positions. If redeeming to the collateral, this contract will attempt to transfer the payout to the message sender.
+-- Otherwise, this contract will burn the stake held by the message sender in the positions being redeemed worth of semi-fungible tokens.
+-- If successful, the payout will be minted in the parent position. If any of the transfers, mints, or burns fail, the transaction will revert.
+-- @param from The initiator of the original Redeem-Positions action message.
+-- @param collateralToken The address of the positions&#39; backing collateral token.
+-- @param parentCollectionId The ID of the outcome collections common to the positions being redeemed and the parent position. May be null, in which only the collateral is shared.
+-- @param conditionId The ID of the condition to redeem on.
+-- @param indexSets An array of index sets representing the outcome slots of the given condition. E.g. A|B and C but not A|B and B|C (is not disjoint). Each element&#39;s a number which, together with the condition, represents the outcome collection. E.g. 0b110 is A|B, 0b010 is B, etc.
+<span class="fc" data-hits="1">function ConditionalTokensMethods:redeemPositions(msg)</span>
+<span class="nc">  local den = self.payoutDenominator[self.conditionId]</span>
+<span class="nc">  assert(den &gt; 0, &quot;result for condition not received yet&quot;)</span>
+<span class="nc">  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] &gt; 0, &quot;condition not prepared yet&quot;)</span>
+<span class="nc">  local totalPayout = 0</span>
+<span class="nc">  for i = 1, #self.positionIds do</span>
+<span class="nc">    local positionId = self.positionIds[i]</span>
+<span class="nc">    local payoutNumerator = self.payoutNumerators[self.conditionId][tonumber(positionId)]</span>
+
+    -- Get the stake to redeem.
+<span class="nc">    if not self.tokens.balancesById[positionId] then self.tokens.balancesById[positionId] = {} end</span>
+<span class="nc">    if not self.tokens.balancesById[positionId][msg.From] then self.tokens.balancesById[positionId][msg.From] = &quot;0&quot; end</span>
+<span class="nc">    local payoutStake = self.tokens.balancesById[positionId][msg.From]</span>
+<span class="nc">    assert(bint.__lt(0, bint(payoutStake)), &quot;no stake to redeem&quot;)</span>
+    -- Calculate the payout and burn position.
+<span class="nc">    totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) &#47; den)</span>
+<span class="nc">    self:burn(msg.From, positionId, payoutStake, msg)</span>
+  end
+  -- Return totla payout minus take fee.
+<span class="nc">  if totalPayout &gt; 0 then</span>
+<span class="nc">    totalPayout = math.floor(totalPayout)</span>
+<span class="nc">    self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)</span>
+  end
+  -- Send notice.
+<span class="nc">  return self.payoutRedemptionNotice(self.collateralToken, self.conditionId, totalPayout, msg)</span>
+end
+
+-- @dev Gets the outcome slot count of a condition.
+-- @param ConditionId ID of the condition.
+-- @return Number of outcome slots associated with a condition, or zero if condition has not been prepared yet.
+<span class="fc" data-hits="1">function ConditionalTokensMethods:getOutcomeSlotCount(msg)</span>
+<span class="nc">  assert(msg.Tags.ConditionId, &quot;ConditionId is required!&quot;)</span>
+<span class="nc">  return self.payoutNumerators[msg.Tags.ConditionId] and #self.payoutNumerators[msg.Tags.ConditionId] or 0</span>
+end
 
 -- @dev Constructs a condition ID from a resolutionAgent, a question ID, and the outcome slot count for the question.
 -- @param ResolutionAgent The process assigned to report the result for the prepared condition.
 -- @param QuestionId An identifier for the question to be answered by the resolutionAgent.
 -- @param OutcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
-<span class="fc" data-hits="1">function ConditionalTokensHelpers.getConditionId(resolutionAgent, questionId, outcomeSlotCount)</span>
-<span class="fc" data-hits="1">  return crypto.digest.keccak256(resolutionAgent .. questionId .. outcomeSlotCount).asHex()</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods.getConditionId(resolutionAgent, questionId, outcomeSlotCount)</span>
+<span class="nc">  return crypto.digest.keccak256(resolutionAgent .. questionId .. outcomeSlotCount).asHex()</span>
 end
 
-<span class="fc" data-hits="1">function ConditionalTokensHelpers:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)</span>
-<span class="fc" data-hits="1">  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))</span>
-<span class="fc" data-hits="1">  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))</span>
-<span class="fc" data-hits="1">  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))</span>
-<span class="fc" data-hits="1">  local totalPayoutMinusFee = tostring(bint.__sub(totalPayout, bint(takeFee)))</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)</span>
+<span class="nc">  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))</span>
+<span class="nc">  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))</span>
+<span class="nc">  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))</span>
+<span class="nc">  local totalPayoutMinusFee = tostring(bint.__sub(totalPayout, bint(takeFee)))</span>
   -- prepare txns
-<span class="fc" data-hits="1">  local protocolFeeTxn = {</span>
-<span class="fc" data-hits="1">    Target = collateralToken,</span>
-<span class="fc" data-hits="1">    Action = &quot;Transfer&quot;,</span>
-<span class="fc" data-hits="1">    Recipient = self.protocolFeeTarget,</span>
-<span class="fc" data-hits="1">    Quantity = protocolFee,</span>
+<span class="nc">  local protocolFeeTxn = {</span>
+    Target = collateralToken,
+    Action = &quot;Transfer&quot;,
+    Recipient = self.protocolFeeTarget,
+    Quantity = protocolFee,
   }
-<span class="fc" data-hits="1">  local creatorFeeTxn = {</span>
-<span class="fc" data-hits="1">    Target = collateralToken,</span>
-<span class="fc" data-hits="1">    Action = &quot;Transfer&quot;,</span>
-<span class="fc" data-hits="1">    Recipient = self.creatorFeeTarget,</span>
-<span class="fc" data-hits="1">    Quantity = creatorFee,</span>
+<span class="nc">  local creatorFeeTxn = {</span>
+    Target = collateralToken,
+    Action = &quot;Transfer&quot;,
+    Recipient = self.creatorFeeTarget,
+    Quantity = creatorFee,
   }
-<span class="fc" data-hits="1">  local totalPayoutMinutTakeFeeTxn = {</span>
-<span class="fc" data-hits="1">    Target = collateralToken,</span>
-<span class="fc" data-hits="1">    Action = &quot;Transfer&quot;,</span>
-<span class="fc" data-hits="1">    Recipient = from,</span>
-<span class="fc" data-hits="1">    Quantity = totalPayoutMinusFee</span>
+<span class="nc">  local totalPayoutMinutTakeFeeTxn = {</span>
+    Target = collateralToken,
+    Action = &quot;Transfer&quot;,
+    Recipient = from,
+<span class="nc">    Quantity = totalPayoutMinusFee</span>
   }
   -- send txns
-<span class="fc" data-hits="1">  return { ao.send(protocolFeeTxn), ao.send(creatorFeeTxn), ao.send(totalPayoutMinutTakeFeeTxn) }</span>
+<span class="nc">  return { ao.send(protocolFeeTxn), ao.send(creatorFeeTxn), ao.send(totalPayoutMinutTakeFeeTxn) }</span>
 end
 
-<span class="fc" data-hits="1">return ConditionalTokensHelpers</span>
+<span class="fc" data-hits="1">return ConditionalTokens</span>
 </pre>
       </div>
 
@@ -511,22 +689,22 @@ end
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
-<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="2">local ao = require(&#39;.ao&#39;)</span>
+<span class="fc" data-hits="2">local json = require(&#39;json&#39;)</span>
 
-<span class="fc" data-hits="1">local ConditionalTokensNotices = {}</span>
+<span class="fc" data-hits="2">local ConditionalTokensNotices = {}</span>
 
 -- @dev Emitted upon the successful preparation of a condition.
 -- @param sender The address of the account that prepared the condition.
 -- @param conditionId The condition&#39;s ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(questionId, resolutionAgent, outcomeSlotCount))``.
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
 -- @param msg For sending msg.reply
-<span class="fc" data-hits="1">function ConditionalTokensNotices.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)</span>
+<span class="fc" data-hits="2">function ConditionalTokensNotices.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)</span>
   -- TODO: Decide if to be sent to user and&#47;or Data Index
-<span class="fc" data-hits="2">  return msg.reply({</span>
-<span class="fc" data-hits="1">    Action = &quot;Condition-Preparation-Notice&quot;,</span>
-<span class="fc" data-hits="1">    ConditionId = conditionId,</span>
-<span class="fc" data-hits="1">    OutcomeSlotCount = tostring(outcomeSlotCount)</span>
+<span class="fc" data-hits="14">  return msg.reply({</span>
+<span class="fc" data-hits="7">    Action = &quot;Condition-Preparation-Notice&quot;,</span>
+<span class="fc" data-hits="7">    ConditionId = conditionId,</span>
+<span class="fc" data-hits="7">    OutcomeSlotCount = tostring(outcomeSlotCount)</span>
   })
 end
 
@@ -536,7 +714,7 @@ end
 -- @param questionId An identifier for the question to be answered by the resolutionAgent.
 -- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
 -- @param payoutNumerators The payout numerators for each outcome slot.
-<span class="fc" data-hits="1">function ConditionalTokensNotices.conditionResolutionNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, payoutNumerators, msg)</span>
+<span class="fc" data-hits="2">function ConditionalTokensNotices.conditionResolutionNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, payoutNumerators, msg)</span>
   -- TODO: Decide if to be sent to user and&#47;or Data Index
 <span class="fc" data-hits="2">  return msg.reply({</span>
 <span class="fc" data-hits="1">    Action = &quot;Condition-Resolution-Notice&quot;,</span>
@@ -554,24 +732,24 @@ end
 -- @param conditionId The condition ID.
 -- @param quantity The quantity.
 -- @param msg For sending X-Tags
-<span class="fc" data-hits="1">function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, conditionId, quantity, msg)</span>
-<span class="fc" data-hits="1">  local notice = {</span>
-<span class="fc" data-hits="1">    Action = &quot;Split-Position-Notice&quot;,</span>
-<span class="fc" data-hits="1">    Process = ao.id,</span>
-<span class="fc" data-hits="1">    Stakeholder = from,</span>
-<span class="fc" data-hits="1">    CollateralToken = collateralToken,</span>
-<span class="fc" data-hits="1">    ConditionId = conditionId,</span>
-<span class="fc" data-hits="1">    Quantity = quantity</span>
+<span class="fc" data-hits="2">function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, conditionId, quantity, msg)</span>
+<span class="fc" data-hits="5">  local notice = {</span>
+<span class="fc" data-hits="5">    Action = &quot;Split-Position-Notice&quot;,</span>
+<span class="fc" data-hits="5">    Process = ao.id,</span>
+<span class="fc" data-hits="5">    Stakeholder = from,</span>
+<span class="fc" data-hits="5">    CollateralToken = collateralToken,</span>
+<span class="fc" data-hits="5">    ConditionId = conditionId,</span>
+<span class="fc" data-hits="5">    Quantity = quantity</span>
   }
   -- Forward tags
-<span class="fc" data-hits="5">  for tagName, tagValue in pairs(msg) do</span>
+<span class="fc" data-hits="29">  for tagName, tagValue in pairs(msg) do</span>
     -- Tags beginning with &quot;X-&quot; are forwarded
-<span class="fc" data-hits="4">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
-<span class="fc" data-hits="1">      notice[tagName] = tagValue</span>
+<span class="fc" data-hits="24">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="fc" data-hits="5">      notice[tagName] = tagValue</span>
     end
   end
   -- Send notice | @dev ao.send vs msg.reply to ensure message is sent to user (not collateralToken)
-<span class="fc" data-hits="1">  return msg.forward(from, notice)</span>
+<span class="fc" data-hits="5">  return msg.forward(from, notice)</span>
 end
 
 
@@ -579,11 +757,11 @@ end
 -- @param from The address of the account that merged the positions.
 -- @param conditionId The condition ID.
 -- @param quantity The quantity.
-<span class="fc" data-hits="1">function ConditionalTokensNotices.positionsMergeNotice(conditionId, quantity, msg)</span>
-<span class="fc" data-hits="2">  return msg.reply({</span>
-<span class="fc" data-hits="1">    Action = &quot;Merge-Positions-Notice&quot;,</span>
-<span class="fc" data-hits="1">    ConditionId = conditionId, -- TODO: Check if this is needed</span>
-<span class="fc" data-hits="1">    Quantity = quantity</span>
+<span class="fc" data-hits="2">function ConditionalTokensNotices.positionsMergeNotice(conditionId, quantity, msg)</span>
+<span class="fc" data-hits="6">  return msg.reply({</span>
+<span class="fc" data-hits="3">    Action = &quot;Merge-Positions-Notice&quot;,</span>
+<span class="fc" data-hits="3">    ConditionId = conditionId, -- TODO: Check if this is needed</span>
+<span class="fc" data-hits="3">    Quantity = quantity</span>
   })
 end
 
@@ -592,7 +770,7 @@ end
 -- @param collateralToken The address of the collateral token.
 -- @param conditionId The condition ID.
 -- @param payout The payout amount.
-<span class="fc" data-hits="1">function ConditionalTokensNotices.payoutRedemptionNotice(collateralToken, conditionId, payout, msg)</span>
+<span class="fc" data-hits="2">function ConditionalTokensNotices.payoutRedemptionNotice(collateralToken, conditionId, payout, msg)</span>
   -- TODO: Decide if to be sent to user and&#47;or Data Index
 <span class="fc" data-hits="2">  return msg.reply({</span>
 <span class="fc" data-hits="1">    Action = &quot;Payout-Redemption-Notice&quot;,</span>
@@ -603,7 +781,7 @@ end
   })
 end
 
-<span class="fc" data-hits="1">return ConditionalTokensNotices</span>
+<span class="fc" data-hits="2">return ConditionalTokensNotices</span>
 </pre>
       </div>
 
@@ -959,6 +1137,347 @@ end
 </pre>
       </div>
 
+      <div class="hidden file success-high" id="src-modules-cpmmhelpers">
+         <h2 class="title">
+            src/modules/cpmmHelpers.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>60</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
+<span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+
+<span class="fc" data-hits="1">local CPMMHelpers = {}</span>
+
+-- Utility function: CeilDiv
+<span class="fc" data-hits="1">function CPMMHelpers.ceildiv(x, y)</span>
+<span class="fc" data-hits="3">  if x &gt; 0 then</span>
+<span class="fc" data-hits="2">    return math.floor((x - 1) &#47; y) + 1</span>
+  end
+<span class="fc" data-hits="1">  return math.floor(x &#47; y)</span>
+end
+
+
+--@dev generates basic partition based on outcomesSlotCount
+<span class="fc" data-hits="1">function CPMMHelpers.generateBasicPartition(outcomeSlotCount)</span>
+<span class="fc" data-hits="1">  local partition = {}</span>
+<span class="fc" data-hits="4">  for i = 0, outcomeSlotCount - 1 do</span>
+<span class="fc" data-hits="3">    table.insert(partition, 1 &lt;&lt; i)</span>
+  end
+<span class="fc" data-hits="1">  return partition</span>
+end
+
+-- @dev validates addFunding
+<span class="fc" data-hits="1">function CPMMHelpers:validateAddFunding(from, quantity, distribution)</span>
+<span class="fc" data-hits="5">  local error = false</span>
+<span class="fc" data-hits="5">  local errorMessage = &#39;&#39;</span>
+  -- Ensure distribution
+<span class="fc" data-hits="5">  if not distribution then</span>
+<span class="fc" data-hits="1">    error = true</span>
+<span class="fc" data-hits="1">    errorMessage = &#39;X-Distribution is required!&#39;</span>
+<span class="fc" data-hits="4">  elseif not error then</span>
+<span class="fc" data-hits="4">    if bint.iszero(bint(self.token.totalSupply)) then</span>
+      -- Ensure distribution is set across all position ids
+<span class="fc" data-hits="2">      if #distribution ~= #self.tokens.positionIds then</span>
+<span class="fc" data-hits="1">        error = true</span>
+<span class="fc" data-hits="1">        errorMessage = &quot;Distribution length mismatch&quot;</span>
+      end
+    else
+      -- Ensure distribution set only for initial funding
+<span class="fc" data-hits="2">      if bint.__lt(0, #distribution) then</span>
+<span class="fc" data-hits="1">        error = true</span>
+<span class="fc" data-hits="1">        errorMessage = &quot;Cannot specify distribution after initial funding&quot;</span>
+      end
+    end
+  end
+<span class="fc" data-hits="5">  if error then</span>
+    -- Return funds and assert error
+<span class="fc" data-hits="6">    ao.send({</span>
+<span class="fc" data-hits="3">      Target = self.tokens.collateralToken,</span>
+<span class="fc" data-hits="3">      Action = &#39;Transfer&#39;,</span>
+<span class="fc" data-hits="3">      Recipient = from,</span>
+<span class="fc" data-hits="3">      Quantity = quantity,</span>
+<span class="fc" data-hits="3">      Error = &#39;Add-Funding Error: &#39; .. errorMessage</span>
+    })
+  end
+<span class="fc" data-hits="5">  return not error</span>
+end
+
+-- @dev validates removeFunding
+<span class="fc" data-hits="1">function CPMMHelpers:validateRemoveFunding(from, quantity)</span>
+<span class="fc" data-hits="3">  local error = false</span>
+<span class="fc" data-hits="3">  local errorMessage = &#39;&#39;</span>
+  -- Get balance
+<span class="fc" data-hits="3">  local balance = self.token.balances[from] or &#39;0&#39;</span>
+  -- Check for errors
+<span class="fc" data-hits="3">  if from == self.creatorFeeTarget and self.payoutDenominator[self.conditionId] and self.payoutDenominator[self.conditionId] == 0 then</span>
+<span class="fc" data-hits="1">    error = true</span>
+<span class="fc" data-hits="1">    errorMessage = &#39;Creator liquidity locked until market resolution!&#39;</span>
+<span class="fc" data-hits="2">  elseif not bint.__le(bint(quantity), bint(balance)) then</span>
+<span class="fc" data-hits="1">    error = true</span>
+<span class="fc" data-hits="1">    errorMessage = &#39;Quantity must be less than balance!&#39;</span>
+  end
+  -- Return funds on error.
+<span class="fc" data-hits="3">  if error then</span>
+<span class="fc" data-hits="4">    ao.send({</span>
+<span class="fc" data-hits="2">      Target = ao.id,</span>
+<span class="fc" data-hits="2">      Action = &#39;Transfer&#39;,</span>
+<span class="fc" data-hits="2">      Recipient = from,</span>
+<span class="fc" data-hits="2">      Quantity = quantity,</span>
+<span class="fc" data-hits="2">      Error = errorMessage</span>
+    })
+  end
+<span class="fc" data-hits="3">  return not error</span>
+end
+
+-- @dev get pool balances
+<span class="fc" data-hits="1">function CPMMHelpers:getPoolBalances()</span>
+  -- Get poolBalances
+<span class="fc" data-hits="1">  local selves = {}</span>
+<span class="fc" data-hits="4">  for _ = 1, #self.tokens.positionIds do</span>
+<span class="fc" data-hits="3">    table.insert(selves, ao.id)</span>
+  end
+<span class="fc" data-hits="1">  local poolBalances = self.tokens:getBatchBalance(selves, self.tokens.positionIds)</span>
+<span class="fc" data-hits="1">  return poolBalances</span>
+end
+
+<span class="fc" data-hits="1">return CPMMHelpers</span>
+</pre>
+      </div>
+
+      <div class="hidden file success-high" id="src-modules-cpmmnotices">
+         <h2 class="title">
+            src/modules/cpmmNotices.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>78</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+
+<span class="fc" data-hits="1">local CPMMNotices = {}</span>
+
+<span class="fc" data-hits="1">function CPMMNotices.newMarketNotice(configurator, incentives, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &quot;New-Market-Notice&quot;,</span>
+<span class="fc" data-hits="1">    MarketId = marketId,</span>
+<span class="fc" data-hits="1">    ConditionId = conditionId,</span>
+<span class="fc" data-hits="1">    Configurator = configurator,</span>
+<span class="fc" data-hits="1">    Incentives = incentives,</span>
+<span class="fc" data-hits="1">    CollateralToken = collateralToken,</span>
+<span class="fc" data-hits="1">    PositionIds = json.encode(positionIds),</span>
+<span class="fc" data-hits="1">    OutcomeSlotCount = tostring(outcomeSlotCount),</span>
+<span class="fc" data-hits="1">    LpFee = lpFee,</span>
+<span class="fc" data-hits="1">    CreatorFee = creatorFee,</span>
+<span class="fc" data-hits="1">    CreatorFeeTarget = creatorFeeTarget,</span>
+<span class="fc" data-hits="1">    ProtocolFee = protocolFee,</span>
+<span class="fc" data-hits="1">    ProtocolFeeTarget = protocolFeeTarget,</span>
+<span class="fc" data-hits="1">    Name = name,</span>
+<span class="fc" data-hits="1">    Ticker = ticker,</span>
+<span class="fc" data-hits="1">    Logo = logo,</span>
+<span class="fc" data-hits="1">    Data = &quot;Successfully created market&quot;</span>
+  })
+end
+
+<span class="fc" data-hits="1">function CPMMNotices.fundingAddedNotice(from, sendBackAmounts, mintAmount)</span>
+<span class="fc" data-hits="2">  return ao.send({</span>
+<span class="fc" data-hits="1">    Target = from,</span>
+<span class="fc" data-hits="1">    Action = &quot;Funding-Added-Notice&quot;,</span>
+<span class="fc" data-hits="1">    SendBackAmounts = json.encode(sendBackAmounts),</span>
+<span class="fc" data-hits="1">    MintAmount = tostring(mintAmount),</span>
+<span class="fc" data-hits="1">    Data = &quot;Successfully added funding&quot;</span>
+  })
+end
+
+<span class="fc" data-hits="1">function CPMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)</span>
+<span class="fc" data-hits="2">  return ao.send({</span>
+<span class="fc" data-hits="1">    Target = from,</span>
+<span class="fc" data-hits="1">    Action = &quot;Funding-Removed-Notice&quot;,</span>
+<span class="fc" data-hits="1">    SendAmounts = json.encode(sendAmounts),</span>
+<span class="fc" data-hits="1">    CollateralRemovedFromFeePool = tostring(collateralRemovedFromFeePool),</span>
+<span class="fc" data-hits="1">    SharesToBurn = tostring(sharesToBurn),</span>
+<span class="fc" data-hits="1">    Data = &quot;Successfully removed funding&quot;</span>
+  })
+end
+
+<span class="fc" data-hits="1">function CPMMNotices.buyNotice(from, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)</span>
+<span class="fc" data-hits="2">  return ao.send({</span>
+<span class="fc" data-hits="1">    Target = from,</span>
+<span class="fc" data-hits="1">    Action = &quot;Buy-Notice&quot;,</span>
+<span class="fc" data-hits="1">    InvestmentAmount = tostring(investmentAmount),</span>
+<span class="fc" data-hits="1">    FeeAmount = tostring(feeAmount),</span>
+<span class="fc" data-hits="1">    PositionId = positionId,</span>
+<span class="fc" data-hits="1">    OutcomeTokensToBuy = tostring(outcomeTokensToBuy),</span>
+<span class="fc" data-hits="1">    Data = &quot;Successful buy order&quot;</span>
+  })
+end
+
+<span class="fc" data-hits="1">function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)</span>
+<span class="fc" data-hits="2">  return ao.send({</span>
+<span class="fc" data-hits="1">    Target = from,</span>
+<span class="fc" data-hits="1">    Action = &quot;Sell-Notice&quot;,</span>
+<span class="fc" data-hits="1">    ReturnAmount = tostring(returnAmount),</span>
+<span class="fc" data-hits="1">    FeeAmount = tostring(feeAmount),</span>
+<span class="fc" data-hits="1">    PositionId = positionId,</span>
+<span class="fc" data-hits="1">    OutcomeTokensToSell = tostring(outcomeTokensToSell),</span>
+<span class="fc" data-hits="1">    Data = &quot;Successful sell order&quot;</span>
+  })
+end
+
+<span class="fc" data-hits="1">function CPMMNotices.updateConfiguratorNotice(configurator, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &quot;Configurator-Updated&quot;,</span>
+<span class="fc" data-hits="1">    Data = configurator</span>
+  })
+end
+
+<span class="fc" data-hits="1">function CPMMNotices.updateIncentivesNotice(incentives, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &quot;Incentives-Updated&quot;,</span>
+<span class="fc" data-hits="1">    Data = incentives</span>
+  })
+end
+
+<span class="fc" data-hits="1">function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &quot;Take-Fee-Updated&quot;,</span>
+<span class="fc" data-hits="1">    CreatorFee = creatorFee,</span>
+<span class="fc" data-hits="1">    ProtocolFee = protocolFee,</span>
+<span class="fc" data-hits="1">    Data = takeFee</span>
+  })
+end
+
+<span class="fc" data-hits="1">function CPMMNotices.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &quot;Protocol-Fee-Target-Updated&quot;,</span>
+<span class="fc" data-hits="1">    Data = protocolFeeTarget</span>
+  })
+end
+
+<span class="fc" data-hits="1">function CPMMNotices.updateLogoNotice(logo, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &quot;Logo-Updated&quot;,</span>
+<span class="fc" data-hits="1">    Data = logo</span>
+  })
+end
+
+<span class="fc" data-hits="1">return CPMMNotices</span>
+</pre>
+      </div>
+
+      <div class="hidden file success-low" id="src-modules-cpmmvalidation">
+         <h2 class="title">
+            src/modules/cpmmValidation.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 69.81%"></span>
+                  <span><strong>69.81%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>37</strong> Hits</span>
+               <span class="miss"><strong>16</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
+<span class="fc" data-hits="1">local utils = require(&#39;utils&#39;)</span>
+<span class="fc" data-hits="1">local sharedUtils = require(&#39;modules.sharedUtils&#39;)</span>
+
+<span class="fc" data-hits="1">local cpmmValidation = {}</span>
+
+local function validateAddress(recipient, tagName)
+<span class="fc" data-hits="26">  assert(type(recipient) == &#39;string&#39;, tagName .. &#39; is required!&#39;)</span>
+<span class="fc" data-hits="25">  assert(sharedUtils.isValidArweaveAddress(recipient), tagName .. &#39; must be a valid Arweave address!&#39;)</span>
+end
+
+local function validatePositionId(positionId)
+<span class="nc">  assert(type(positionId) == &#39;string&#39;, &#39;PositionId is required!&#39;)</span>
+<span class="nc">  assert(utils.includes(positionId, CPMM.tokens.positionIds), &#39;Invalid positionId!&#39;)</span>
+end
+
+local function validatePositiveInteger(quantity, tagName)
+<span class="fc" data-hits="36">  assert(type(quantity) == &#39;string&#39;, tagName .. &#39; is required!&#39;)</span>
+<span class="fc" data-hits="33">  assert(tonumber(quantity), tagName .. &#39; must be a number!&#39;)</span>
+<span class="fc" data-hits="30">  assert(tonumber(quantity) &gt; 0, tagName .. &#39; must be greater than zero!&#39;)</span>
+<span class="fc" data-hits="24">  assert(tonumber(quantity) % 1 == 0, tagName .. &#39; must be an integer!&#39;)</span>
+end
+
+<span class="fc" data-hits="1">function cpmmValidation.init(msg)</span>
+  -- ownable.onlyOwner(msg) -- access control TODO: test after spawning is enabled
+<span class="fc" data-hits="25">  assert(CPMM.initialized == false, &quot;Market already initialized!&quot;)</span>
+<span class="fc" data-hits="24">  assert(msg.Tags.MarketId, &quot;MarketId is required!&quot;)</span>
+<span class="fc" data-hits="23">  assert(msg.Tags.ConditionId, &quot;ConditionId is required!&quot;)</span>
+<span class="fc" data-hits="22">  validateAddress(msg.Tags.CollateralToken, &quot;CollateralToken&quot;)</span>
+<span class="fc" data-hits="20">  validatePositiveInteger(msg.Tags.OutcomeSlotCount, &quot;OutcomeSlotCount&quot;)</span>
+<span class="fc" data-hits="15">  local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)</span>
+  -- Limit of 256 because we use a partition array that is a number of 256 bits.
+<span class="fc" data-hits="15">  assert(outcomeSlotCount &lt;= 256, &quot;Too many outcome slots!&quot;)</span>
+<span class="fc" data-hits="14">  assert(outcomeSlotCount &gt; 1, &quot;There should be more than one outcome slot!&quot;)</span>
+  -- LP Token Parameters
+<span class="fc" data-hits="13">  assert(msg.Tags.Name, &quot;Name is required!&quot;)</span>
+<span class="fc" data-hits="12">  assert(msg.Tags.Ticker, &quot;Ticker is required!&quot;)</span>
+<span class="fc" data-hits="11">  assert(msg.Tags.Logo, &quot;Logo is required!&quot;)</span>
+  -- Fee Parameters
+<span class="fc" data-hits="10">  validatePositiveInteger(msg.Tags.LpFee, &quot;LpFee&quot;)</span>
+<span class="fc" data-hits="5">  validatePositiveInteger(msg.Tags.CreatorFee, &quot;CreatorFee&quot;)</span>
+<span class="fc" data-hits="1">  validatePositiveInteger(msg.Tags.ProtocolFee, &quot;ProtocolFee&quot;)</span>
+<span class="fc" data-hits="1">  validateAddress(msg.Tags.CreatorFeeTarget, &quot;CreatorFeeTarget&quot;)</span>
+<span class="fc" data-hits="1">  validateAddress(msg.Tags.ProtocolFeeTarget, &quot;ProtocolFeeTarget&quot;)</span>
+  -- Take Fee Capped at 1000 bps, ie. 10%
+<span class="fc" data-hits="1">  assert(bint.__le(bint.__add(bint(msg.Tags.CreatorFee), bint(msg.Tags.ProtocolFee)), 1000), &#39;Take Fee capped at 10%!&#39;)</span>
+  -- Admin Parameter
+<span class="fc" data-hits="1">  validateAddress(msg.Tags.Configurator, &quot;Configurator&quot;)</span>
+  -- Incentives
+<span class="fc" data-hits="1">  validateAddress(msg.Tags.Incentives, &quot;Incentives&quot;)</span>
+  -- @dev TODO: include &quot;resolve-by&quot; field to enable fallback resolution
+end
+
+<span class="fc" data-hits="1">function cpmmValidation.addFunding(msg)</span>
+<span class="nc">  validatePositiveInteger(msg.Tags.Quantity, &quot;Quantity&quot;)</span>
+<span class="nc">  assert(msg.Tags[&#39;X-Distribution&#39;], &#39;X-Distribution is required!&#39;)</span>
+<span class="nc">  assert(sharedUtils.isJSONArray(msg.Tags[&#39;X-Distribution&#39;]), &#39;X-Distribution must be valid JSON Array!&#39;)</span>
+  -- @dev TODO: remove requirement for X-Distribution
+end
+
+<span class="fc" data-hits="1">function cpmmValidation.removeFunding(msg)</span>
+<span class="nc">  validatePositiveInteger(msg.Tags.Quantity, &quot;Quantity&quot;)</span>
+end
+
+<span class="fc" data-hits="1">function cpmmValidation.buy(msg)</span>
+<span class="nc">  validatePositionId(msg.Tags.PositionId)</span>
+<span class="nc">  validatePositiveInteger(msg.Tags.Quantity, &quot;Quantity&quot;)</span>
+end
+
+<span class="fc" data-hits="1">function cpmmValidation.sell(msg)</span>
+<span class="nc">  validatePositionId(msg.Tags.PositionId)</span>
+<span class="nc">  validatePositiveInteger(msg.Tags.Quantity, &quot;Quantity&quot;)</span>
+<span class="nc">  validatePositiveInteger(msg.Tags.ReturnAmount, &quot;ReturnAmount&quot;)</span>
+<span class="nc">  validatePositiveInteger(msg.Tags.MaxOutcomeTokensToSell, &quot;MaxOutcomeTokensToSell&quot;)</span>
+end
+
+<span class="fc" data-hits="1">function cpmmValidation.calcBuyAmount(msg)</span>
+<span class="nc">  validatePositiveInteger(msg.Tags.InvestmentAmount, &quot;InvestmentAmount&quot;)</span>
+<span class="nc">  validatePositionId(msg.Tags.PositionId)</span>
+end
+
+<span class="fc" data-hits="1">function cpmmValidation.calcSellAmount(msg)</span>
+<span class="nc">  validatePositiveInteger(msg.Tags.ReturnAmount, &quot;ReturnAmount&quot;)</span>
+<span class="nc">  validatePositionId(msg.Tags.PositionId)</span>
+end
+
+<span class="fc" data-hits="1">return cpmmValidation</span>
+</pre>
+      </div>
+
       <div class="hidden file success-high" id="src-modules-semifungibletokens">
          <h2 class="title">
             src/modules/semiFungibleTokens.lua
@@ -971,33 +1490,33 @@ end
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
-<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
-<span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="2">local ao = require(&#39;.ao&#39;)</span>
+<span class="fc" data-hits="2">local json = require(&#39;json&#39;)</span>
+<span class="fc" data-hits="2">local bint = require(&#39;.bint&#39;)(256)</span>
 
-<span class="fc" data-hits="1">local SemiFungibleTokens = {}</span>
-<span class="fc" data-hits="1">local SemiFungibleTokensMethods = require(&#39;modules.semiFungibleTokensNotices&#39;)</span>
+<span class="fc" data-hits="2">local SemiFungibleTokens = {}</span>
+<span class="fc" data-hits="2">local SemiFungibleTokensMethods = require(&#39;modules.semiFungibleTokensNotices&#39;)</span>
 
 -- Constructor for SemiFungibleTokens 
-<span class="fc" data-hits="1">function SemiFungibleTokens:new()</span>
+<span class="fc" data-hits="2">function SemiFungibleTokens:new()</span>
   -- This will store user semi-fungible tokens balances and metadata
-<span class="fc" data-hits="14">  local obj = {</span>
-<span class="fc" data-hits="14">    name = &#39;&#39;,</span>
-<span class="fc" data-hits="14">    ticker = &#39;&#39;,</span>
-<span class="fc" data-hits="14">    logo = &#39;&#39;,</span>
-<span class="fc" data-hits="14">    balancesById = {},  -- { id -&gt; userId -&gt; balance of semi-fungible tokens }</span>
-<span class="fc" data-hits="14">    totalSupplyById = {}, -- { id -&gt; totalSupply of semi-fungible tokens }</span>
-<span class="fc" data-hits="14">    denomination = 12</span>
+<span class="fc" data-hits="24">  local obj = {</span>
+<span class="fc" data-hits="24">    name = &#39;&#39;,</span>
+<span class="fc" data-hits="24">    ticker = &#39;&#39;,</span>
+<span class="fc" data-hits="24">    logo = &#39;&#39;,</span>
+<span class="fc" data-hits="24">    balancesById = {},  -- { id -&gt; userId -&gt; balance of semi-fungible tokens }</span>
+<span class="fc" data-hits="24">    totalSupplyById = {}, -- { id -&gt; totalSupply of semi-fungible tokens }</span>
+<span class="fc" data-hits="24">    denomination = 12</span>
   }
-<span class="fc" data-hits="14">  setmetatable(obj, { __index = SemiFungibleTokensMethods })</span>
-<span class="fc" data-hits="14">  return obj</span>
+<span class="fc" data-hits="24">  setmetatable(obj, { __index = SemiFungibleTokensMethods })</span>
+<span class="fc" data-hits="24">  return obj</span>
 end
 
 -- @dev Mint a quantity of a token with the given ID
 -- @param to The address that will own the minted token
 -- @param id ID of the token to be minted
 -- @param quantity Quantity of the token to be minted
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:mint(to, id, quantity, msg)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensMethods:mint(to, id, quantity, msg)</span>
 <span class="fc" data-hits="6">  assert(quantity, &#39;Quantity is required!&#39;)</span>
 <span class="fc" data-hits="6">  assert(bint.__lt(0, quantity), &#39;Quantity must be greater than zero!&#39;)</span>
 
@@ -1015,28 +1534,28 @@ end
 -- @param to The address that will own the minted token
 -- @param ids IDs of the tokens to be minted
 -- @param quantities Quantities of the tokens to be minted
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchMint(to, ids, quantities, msg)</span>
-<span class="fc" data-hits="5">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensMethods:batchMint(to, ids, quantities, msg)</span>
+<span class="fc" data-hits="9">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
 
-<span class="fc" data-hits="20">  for i = 1, #ids do</span>
+<span class="fc" data-hits="36">  for i = 1, #ids do</span>
     -- @dev spacing to resolve text to code eval issue
-<span class="fc" data-hits="15">    if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end</span>
-<span class="fc" data-hits="15">    if not self.balancesById[ ids[i] ][to] then self.balancesById[ ids[i] ][to] = &quot;0&quot; end</span>
-<span class="fc" data-hits="15">    if not self.totalSupplyById[ ids[i] ] then self.totalSupplyById[ ids[i] ] = &quot;0&quot; end</span>
+<span class="fc" data-hits="27">    if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end</span>
+<span class="fc" data-hits="27">    if not self.balancesById[ ids[i] ][to] then self.balancesById[ ids[i] ][to] = &quot;0&quot; end</span>
+<span class="fc" data-hits="27">    if not self.totalSupplyById[ ids[i] ] then self.totalSupplyById[ ids[i] ] = &quot;0&quot; end</span>
 
-<span class="fc" data-hits="15">    self.balancesById[ ids[i] ][to] = tostring(bint.__add(self.balancesById[ ids[i] ][to], quantities[i]))</span>
-<span class="fc" data-hits="15">    self.totalSupplyById[ ids[i] ] = tostring(bint.__add(self.totalSupplyById[ ids[i] ], quantities[i]))</span>
+<span class="fc" data-hits="27">    self.balancesById[ ids[i] ][to] = tostring(bint.__add(self.balancesById[ ids[i] ][to], quantities[i]))</span>
+<span class="fc" data-hits="27">    self.totalSupplyById[ ids[i] ] = tostring(bint.__add(self.totalSupplyById[ ids[i] ], quantities[i]))</span>
   end
 
   -- Send notice
-<span class="fc" data-hits="5">  return self.mintBatchNotice(to, ids, quantities, msg)</span>
+<span class="fc" data-hits="9">  return self.mintBatchNotice(to, ids, quantities, msg)</span>
 end
 
 -- @dev Burn a quantity of a token with the given ID
 -- @param from The address that will burn the token
 -- @param id ID of the token to be burned
 -- @param quantity Quantity of the token to be burned
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:burn(from, id, quantity, msg)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensMethods:burn(from, id, quantity, msg)</span>
 <span class="fc" data-hits="1">  assert(bint.__lt(0, quantity), &#39;Quantity must be greater than zero!&#39;)</span>
 <span class="fc" data-hits="1">  assert(self.balancesById[id], &#39;Id must exist! &#39; .. id)</span>
 <span class="fc" data-hits="1">  assert(self.balancesById[id][from], &#39;User must hold token! :: &#39; .. id)</span>
@@ -1054,42 +1573,42 @@ end
 -- @param ids IDs of the tokens to be burned
 -- @param quantities Quantities of the tokens to be burned
 -- @param msg For sending X-Tags
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)</span>
-<span class="fc" data-hits="1">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)</span>
+<span class="fc" data-hits="5">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
 
-<span class="fc" data-hits="4">  for i = 1, #ids do</span>
-<span class="fc" data-hits="3">    assert(bint.__lt(0, quantities[i]), &#39;Quantity must be greater than zero!&#39;)</span>
-<span class="fc" data-hits="3">    assert(self.balancesById[ ids[i] ], &#39;Id must exist! &#39; .. ids[i])</span>
-<span class="fc" data-hits="3">    assert(self.balancesById[ ids[i] ][from], &#39;User must hold token! &#39; .. ids[i])</span>
-<span class="fc" data-hits="3">    assert(bint.__le(quantities[i], self.balancesById[ ids[i] ][from]), &#39;User must have sufficient tokens!&#39;)</span>
+<span class="fc" data-hits="14">  for i = 1, #ids do</span>
+<span class="fc" data-hits="11">    assert(bint.__lt(0, quantities[i]), &#39;Quantity must be greater than zero!&#39;)</span>
+<span class="fc" data-hits="11">    assert(self.balancesById[ ids[i] ], &#39;Id must exist! &#39; .. ids[i])</span>
+<span class="fc" data-hits="10">    assert(self.balancesById[ ids[i] ][from], &#39;User must hold token! &#39; .. ids[i])</span>
+<span class="fc" data-hits="9">    assert(bint.__le(quantities[i], self.balancesById[ ids[i] ][from]), &#39;User must have sufficient tokens!&#39;)</span>
   end
 
-<span class="fc" data-hits="1">  local remainingBalances = {}</span>
+<span class="fc" data-hits="3">  local remainingBalances = {}</span>
 
   -- Burn tokens
-<span class="fc" data-hits="4">  for i = 1, #ids do</span>
-<span class="fc" data-hits="3">    self.balancesById[ ids[i] ][from] = tostring(bint.__sub(self.balancesById[ ids[i] ][from], quantities[i]))</span>
-<span class="fc" data-hits="3">    self.totalSupplyById[ ids[i] ] = tostring(bint.__sub(self.totalSupplyById[ ids[i] ], quantities[i]))</span>
-<span class="fc" data-hits="3">    remainingBalances[i] = self.balancesById[ ids[i] ][from]</span>
+<span class="fc" data-hits="12">  for i = 1, #ids do</span>
+<span class="fc" data-hits="9">    self.balancesById[ ids[i] ][from] = tostring(bint.__sub(self.balancesById[ ids[i] ][from], quantities[i]))</span>
+<span class="fc" data-hits="9">    self.totalSupplyById[ ids[i] ] = tostring(bint.__sub(self.totalSupplyById[ ids[i] ], quantities[i]))</span>
+<span class="fc" data-hits="9">    remainingBalances[i] = self.balancesById[ ids[i] ][from]</span>
   end
   -- Draft notice
-<span class="fc" data-hits="1">  local notice = {</span>
-<span class="fc" data-hits="1">    Recipient = from,</span>
-<span class="fc" data-hits="1">    TokenIds = json.encode(ids),</span>
-<span class="fc" data-hits="1">    Quantities = json.encode(quantities),</span>
-<span class="fc" data-hits="1">    RemainingBalances = json.encode(remainingBalances),</span>
-<span class="fc" data-hits="1">    Action = &#39;Burn-Batch-Notice&#39;,</span>
-<span class="fc" data-hits="1">    Data = &quot;Successfully burned batch&quot;</span>
+<span class="fc" data-hits="3">  local notice = {</span>
+<span class="fc" data-hits="3">    Recipient = from,</span>
+<span class="fc" data-hits="3">    TokenIds = json.encode(ids),</span>
+<span class="fc" data-hits="3">    Quantities = json.encode(quantities),</span>
+<span class="fc" data-hits="3">    RemainingBalances = json.encode(remainingBalances),</span>
+<span class="fc" data-hits="3">    Action = &#39;Burn-Batch-Notice&#39;,</span>
+<span class="fc" data-hits="3">    Data = &quot;Successfully burned batch&quot;</span>
   }
   -- Forward X-Tags
-<span class="fc" data-hits="5">  for tagName, tagValue in pairs(msg) do</span>
+<span class="fc" data-hits="13">  for tagName, tagValue in pairs(msg) do</span>
     -- Tags beginning with &quot;X-&quot; are forwarded
-<span class="fc" data-hits="4">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="fc" data-hits="10">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
 <span class="fc" data-hits="1">      notice[tagName] = tagValue</span>
     end
   end
   -- Send notice
-<span class="fc" data-hits="1">  return self.burnBatchNotice(notice, msg)</span>
+<span class="fc" data-hits="3">  return self.burnBatchNotice(notice, msg)</span>
 end
 
 -- @dev Transfer a quantity of tokens with the given ID
@@ -1099,7 +1618,7 @@ end
 -- @param quantity Quantity of the tokens to be transferred
 -- @param cast The boolean to silence transfer notifications
 -- @param msg For sending X-Tags
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, msg)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, msg)</span>
 <span class="fc" data-hits="2">  if not self.balancesById[id] then self.balancesById[id] = {} end</span>
 <span class="fc" data-hits="2">  if not self.balancesById[id][from] then self.balancesById[id][from] = &quot;0&quot; end</span>
 <span class="fc" data-hits="2">  if not self.balancesById[id][recipient] then self.balancesById[id][recipient] = &quot;0&quot; end</span>
@@ -1126,7 +1645,7 @@ end
 -- @param quantities Quantities of the tokens to be transferred
 -- @param cast The boolean to silence transfer notifications
 -- @param msg For sending X-Tags
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg)</span>
 <span class="fc" data-hits="2">  local ids_ = {}</span>
 <span class="fc" data-hits="2">  local quantities_ = {}</span>
 
@@ -1154,7 +1673,7 @@ end
   end
 end
 
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBalance(from, recipient, tokenId)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensMethods:getBalance(from, recipient, tokenId)</span>
 <span class="fc" data-hits="2">  local bal = &#39;0&#39;</span>
   -- If Id is found then cointinue
 <span class="fc" data-hits="2">  if self.balancesById[tokenId] then</span>
@@ -1169,7 +1688,7 @@ end
 <span class="fc" data-hits="2">  return bal</span>
 end
 
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBatchBalance(recipients, tokenIds)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensMethods:getBatchBalance(recipients, tokenIds)</span>
 <span class="fc" data-hits="1">  assert(#recipients == #tokenIds, &#39;Recipients and TokenIds must have same lengths&#39;)</span>
 <span class="fc" data-hits="1">  local bals = {}</span>
 
@@ -1185,7 +1704,7 @@ end
 <span class="fc" data-hits="1">  return bals</span>
 end
 
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBalances(tokenId)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensMethods:getBalances(tokenId)</span>
 <span class="fc" data-hits="1">  local bals = {}</span>
 <span class="fc" data-hits="1">  if self.balancesById[tokenId] then</span>
 <span class="fc" data-hits="1">    bals = self.balancesById[tokenId]</span>
@@ -1194,7 +1713,7 @@ end
 <span class="fc" data-hits="1">  return bals</span>
 end
 
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBatchBalances(tokenIds)</span>
+<span class="fc" data-hits="2">function SemiFungibleTokensMethods:getBatchBalances(tokenIds)</span>
 <span class="fc" data-hits="1">  local bals = {}</span>
 
 <span class="fc" data-hits="4">  for i = 1, #tokenIds do</span>
@@ -1207,7 +1726,7 @@ end
 <span class="fc" data-hits="1">  return bals</span>
 end
 
-<span class="fc" data-hits="1">return SemiFungibleTokens</span>
+<span class="fc" data-hits="2">return SemiFungibleTokens</span>
 </pre>
       </div>
 
@@ -1223,16 +1742,16 @@ end
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="2">local ao = require(&#39;.ao&#39;)</span>
-<span class="fc" data-hits="2">local json = require(&#39;json&#39;)</span>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="3">local ao = require(&#39;.ao&#39;)</span>
+<span class="fc" data-hits="3">local json = require(&#39;json&#39;)</span>
 
-<span class="fc" data-hits="2">local SemiFungibleTokensNotices = {}</span>
+<span class="fc" data-hits="3">local SemiFungibleTokensNotices = {}</span>
 
 -- @dev Mint single token notice
 -- @param to The address that will own the minted token
 -- @param id ID of the token to be minted
 -- @param quantity Quantity of the token to be minted
-<span class="fc" data-hits="2">function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, msg)</span>
+<span class="fc" data-hits="3">function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, msg)</span>
 <span class="fc" data-hits="14">  return msg.reply({</span>
 <span class="fc" data-hits="7">    Recipient = to,</span>
 <span class="fc" data-hits="7">    TokenId = tostring(id),</span>
@@ -1246,13 +1765,13 @@ end
 -- @param to The address that will own the minted token
 -- @param ids IDs of the tokens to be minted
 -- @param quantities Quantities of the tokens to be minted
-<span class="fc" data-hits="2">function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)</span>
-<span class="fc" data-hits="12">  return msg.reply({</span>
-<span class="fc" data-hits="6">    Recipient = to,</span>
-<span class="fc" data-hits="6">    TokenIds = json.encode(ids),</span>
-<span class="fc" data-hits="6">    Quantities = json.encode(quantities),</span>
-<span class="fc" data-hits="6">    Action = &#39;Mint-Batch-Notice&#39;,</span>
-<span class="fc" data-hits="6">    Data = &quot;Successfully minted batch&quot;</span>
+<span class="fc" data-hits="3">function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)</span>
+<span class="fc" data-hits="20">  return msg.reply({</span>
+<span class="fc" data-hits="10">    Recipient = to,</span>
+<span class="fc" data-hits="10">    TokenIds = json.encode(ids),</span>
+<span class="fc" data-hits="10">    Quantities = json.encode(quantities),</span>
+<span class="fc" data-hits="10">    Action = &#39;Mint-Batch-Notice&#39;,</span>
+<span class="fc" data-hits="10">    Data = &quot;Successfully minted batch&quot;</span>
   })
 end
 
@@ -1260,7 +1779,7 @@ end
 -- @param from The address that will burn the token
 -- @param id ID of the token to be burned
 -- @param quantity Quantity of the token to be burned
-<span class="fc" data-hits="2">function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)</span>
+<span class="fc" data-hits="3">function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)</span>
   -- Prepare notice
 <span class="fc" data-hits="2">  local notice = {</span>
 <span class="fc" data-hits="2">    Recipient = from,</span>
@@ -1282,16 +1801,16 @@ end
 
 -- @dev Burn batch tokens notice
 -- @param notice The prepared notice to be sent
-<span class="fc" data-hits="2">function SemiFungibleTokensNotices.burnBatchNotice(notice, msg)</span>
+<span class="fc" data-hits="3">function SemiFungibleTokensNotices.burnBatchNotice(notice, msg)</span>
   -- Forward X-Tags
-<span class="fc" data-hits="10">  for tagName, tagValue in pairs(msg) do</span>
+<span class="fc" data-hits="18">  for tagName, tagValue in pairs(msg) do</span>
     -- Tags beginning with &quot;X-&quot; are forwarded
-<span class="fc" data-hits="8">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="fc" data-hits="14">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
 <span class="fc" data-hits="2">      notice[tagName] = tagValue</span>
     end
   end
   -- Send notice
-<span class="fc" data-hits="2">  return msg.reply(notice)</span>
+<span class="fc" data-hits="4">  return msg.reply(notice)</span>
 end
 
 -- @dev Transfer single token notices
@@ -1300,7 +1819,7 @@ end
 -- @param id ID of the tokens to be transferred
 -- @param quantity Quantity of the tokens to be transferred
 -- @param msg For sending X-Tags
-<span class="fc" data-hits="2">function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg)</span>
+<span class="fc" data-hits="3">function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg)</span>
   -- Prepare debit notice
 <span class="fc" data-hits="2">  local debitNotice = {</span>
 <span class="fc" data-hits="2">    Action = &#39;Debit-Single-Notice&#39;,</span>
@@ -1336,7 +1855,7 @@ end
 -- @param ids IDs of the tokens to be transferred
 -- @param quantities Quantities of the tokens to be transferred
 -- @param msg For sending X-Tags
-<span class="fc" data-hits="2">function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg)</span>
+<span class="fc" data-hits="3">function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg)</span>
   -- Prepare debit notice
 <span class="fc" data-hits="2">  local debitNotice = {</span>
 <span class="fc" data-hits="2">    Action = &#39;Debit-Batch-Notice&#39;,</span>
@@ -1370,7 +1889,7 @@ end
 -- @param from The address to be debited
 -- @param id ID of the tokens to be transferred
 -- @param msg The message
-<span class="fc" data-hits="2">function SemiFungibleTokensNotices.transferErrorNotice(id, msg)</span>
+<span class="fc" data-hits="3">function SemiFungibleTokensNotices.transferErrorNotice(id, msg)</span>
 <span class="fc" data-hits="6">  return msg.reply({</span>
 <span class="fc" data-hits="3">    Action = &#39;Transfer-Error&#39;,</span>
 <span class="fc" data-hits="3">    [&#39;Message-Id&#39;] = msg.Id,</span>
@@ -1379,7 +1898,7 @@ end
   })
 end
 
-<span class="fc" data-hits="2">return SemiFungibleTokensNotices</span>
+<span class="fc" data-hits="3">return SemiFungibleTokensNotices</span>
 </pre>
       </div>
 
@@ -1485,7 +2004,7 @@ end
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="5">local sharedUtils = {}</span>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="6">local sharedUtils = {}</span>
 
 -- Function to validate if the extracted value is a valid JSON simple value
 local function isSimpleValue(value)
@@ -1510,7 +2029,7 @@ local function isSimpleValue(value)
 <span class="fc" data-hits="3">  return false</span>
 end
 
-<span class="fc" data-hits="5">function sharedUtils.isValidKeyValueJSON(str)</span>
+<span class="fc" data-hits="6">function sharedUtils.isValidKeyValueJSON(str)</span>
 <span class="fc" data-hits="32">  if type(str) ~= &quot;string&quot; then return false end</span>
 
   -- Trim whitespace
@@ -1539,7 +2058,7 @@ end
 <span class="fc" data-hits="25">  return true</span>
 end
 
-<span class="fc" data-hits="5">function sharedUtils.isJSONArray(str)</span>
+<span class="fc" data-hits="6">function sharedUtils.isJSONArray(str)</span>
 <span class="fc" data-hits="3">  if type(str) ~= &quot;string&quot; then return false end</span>
 
   -- Trim whitespace
@@ -1560,11 +2079,11 @@ end
 <span class="fc" data-hits="1">  return true</span>
 end
 
-<span class="fc" data-hits="5">function sharedUtils.isValidArweaveAddress(address)</span>
-<span class="fc" data-hits="62">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[%w-_]+$&quot;) ~= nil</span>
+<span class="fc" data-hits="6">function sharedUtils.isValidArweaveAddress(address)</span>
+<span class="fc" data-hits="87">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[%w-_]+$&quot;) ~= nil</span>
 end
 
-<span class="fc" data-hits="5">return sharedUtils</span>
+<span class="fc" data-hits="6">return sharedUtils</span>
 </pre>
       </div>
 
@@ -1772,7 +2291,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-14 07:45:35
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-16 19:30:15
    </footer>
 
    <script type="text/javascript">

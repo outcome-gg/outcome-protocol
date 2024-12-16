@@ -4,6 +4,7 @@ local json = require('json')
 local bint = require('.bint')(256)
 local cpmm = require('modules.cpmm')
 local validation = require('modules.validation')
+local cpmmValidation = require('modules.cpmmValidation')
 local tokenValidation = require('modules.tokenValidation')
 local semiFungibleTokensValidation = require('modules.semiFungibleTokensValidation')
 
@@ -79,7 +80,7 @@ end)
 -- Init
 -- @dev to only enable shallow markets on launch, i.e. where parentCollectionId = ""
 Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(msg)
-  validation.init(msg)
+  cpmmValidation.init(msg)
   local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
   CPMM:init(msg.Tags.Configurator, msg.Tags.Incentives, msg.Tags.CollateralToken, msg.Tags.MarketId, msg.Tags.ConditionId, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo, msg.Tags.LpFee, msg.Tags.CreatorFee, msg.Tags.CreatorFeeTarget, msg.Tags.ProtocolFee, msg.Tags.ProtocolFeeTarget, msg)
 end)
@@ -87,7 +88,7 @@ end)
 -- Add Funding
 -- @dev called on credit-notice from collateralToken with X-Action == 'Add-Funding'
 Handlers.add('Add-Funding', isAddFunding, function(msg)
-  validation.addFunding(msg)
+  cpmmValidation.addFunding(msg)
   local distribution = json.decode(msg.Tags['X-Distribution'])
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
 
@@ -100,7 +101,7 @@ end)
 -- Remove Funding
 -- @dev called on credit-notice from ao.id with X-Action == 'Remove-Funding'
 Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
-  validation.removeFunding(msg)
+  cpmmValidation.removeFunding(msg)
   if CPMM:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
     CPMM:removeFunding(msg.Tags.Sender, msg.Tags.Quantity, msg)
   end
@@ -109,7 +110,7 @@ end)
 -- Buy
 -- @dev called on credit-notice from collateralToken with X-Action == 'Buy'
 Handlers.add("Buy", isBuy, function(msg)
-  validation.buy(msg)
+  cpmmValidation.buy(msg)
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
 
   local error = false
@@ -149,7 +150,7 @@ end)
 -- Sell
 -- @dev refactoring as now within same process
 Handlers.add("Sell", Handlers.utils.hasMatchingTag("Action", "Sell"), function(msg)
-  validation.sell(msg)
+  cpmmValidation.sell(msg)
   local outcomeTokensToSell = CPMM:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   assert(bint.__le(bint(outcomeTokensToSell), bint(msg.Tags.MaxOutcomeTokensToSell)), 'Maximum sell amount not sufficient!')
   CPMM:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
@@ -167,14 +168,14 @@ end)
 
 -- Calc Buy Amount
 Handlers.add("Calc-Buy-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Buy-Amount"), function(msg)
-  validation.calcBuyAmount(msg)
+  cpmmValidation.calcBuyAmount(msg)
   local buyAmount = CPMM:calcBuyAmount(msg.Tags.InvestmentAmount, msg.Tags.PositionId)
   msg.reply({ Data = buyAmount })
 end)
 
 -- Calc Sell Amount
 Handlers.add("Calc-Sell-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Sell-Amount"), function(msg)
-  validation.calcSellAmount(msg)
+  cpmmValidation.calcSellAmount(msg)
   local sellAmount = CPMM:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   msg.reply({ Data = sellAmount })
 end)
@@ -265,9 +266,9 @@ Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-P
   end
   -- Revert with error or process merge.
   if error then
-    msg.reply({ Action = 'Error', Data = errorMessage })
+    return msg.reply({ Action = 'Error', Data = errorMessage })
   else
-    CPMM.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg)
+    return CPMM.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg)
   end
 end)
 

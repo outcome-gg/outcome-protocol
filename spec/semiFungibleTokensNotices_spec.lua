@@ -9,7 +9,6 @@ local tokenId = ""
 local quantity = ""
 local tokenIds = {}
 local quantities = {}
-local recipients = {}
 local remainingBalances = {}
 local msgMintSingle = {}
 local msgMintBatch = {}
@@ -41,11 +40,6 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
     quantity = "100"
     tokenIds = { "1", "2", "3" }
     quantities = { "100", "200", "300" }
-    recipients = {
-      "test-this-is-valid-arweave-wallet-address-2",
-      "test-this-is-valid-arweave-wallet-address-3",
-      "test-this-is-valid-arweave-wallet-address-4"
-    }
     remainingBalances = { "0", "0", "0" }
     -- create a message object
     msgMintSingle = {
