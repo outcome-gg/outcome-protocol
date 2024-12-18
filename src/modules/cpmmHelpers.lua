@@ -14,12 +14,12 @@ end
 
 
 --@dev generates basic partition based on outcomesSlotCount
-function CPMMHelpers.generateBasicPartition(outcomeSlotCount)
-  local partition = {}
-  for i = 0, outcomeSlotCount - 1 do
-    table.insert(partition, 1 << i)
+function CPMMHelpers.getPositionIds(outcomeSlotCount)
+  local positionIds = {}
+  for i = 1, outcomeSlotCount do
+    table.insert(positionIds, tostring(i))
   end
-  return partition
+  return positionIds
 end
 
 -- @dev validates addFunding

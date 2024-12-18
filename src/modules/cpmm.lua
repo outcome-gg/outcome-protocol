@@ -65,7 +65,7 @@ end
 -- Init
 function CPMMMethods:init(configurator, incentives, collateralToken, marketId, conditionId, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
   -- Generate Position Ids
-  local positionIds = self.tokens.generatePositionIds(outcomeSlotCount)
+  local positionIds = self.getPositionIds(tonumber(outcomeSlotCount))
   -- Set Conditional Tokens vars
   self.tokens.conditionId = conditionId
   self.tokens.positionIds = positionIds
@@ -88,7 +88,7 @@ function CPMMMethods:init(configurator, incentives, collateralToken, marketId, c
   -- Prepare Condition
   self.tokens:prepareCondition(conditionId, outcomeSlotCount, msg)
   -- Init CPMM with market details
-  self.newMarketNotice(configurator, incentives, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
+  return self.newMarketNotice(configurator, incentives, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
 end
 
 -- Add Funding 
@@ -115,7 +115,7 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
     end
     -- Calculate sendBackAmounts
     for i = 1, #poolBalances do
-      local remaining = (addedFunds * poolBalances[i]) / poolWeight
+      local remaining = math.floor((addedFunds * poolBalances[i]) / poolWeight)
       sendBackAmounts[i] = addedFunds - remaining
     end
     -- Calculate mintAmount
@@ -133,7 +133,7 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
       end
       -- Calculate sendBackAmounts
       for i = 1, #distributionHint do
-        local remaining = (addedFunds * distributionHint[i]) / maxHint
+        local remaining = math.floor((addedFunds * distributionHint[i]) / maxHint)
         assert(remaining > 0, "must hint a valid distribution")
         sendBackAmounts[i] = addedFunds - remaining
       end
@@ -151,7 +151,7 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
   for i = 1, #sendBackAmounts do
     if sendBackAmounts[i] > 0 then
       table.insert(nonZeroAmounts, tostring(math.floor(sendBackAmounts[i])))
-      table.insert(nonZeroPositionIds, self.positionIds[i])
+      table.insert(nonZeroPositionIds, self.tokens.positionIds[i])
     end
   end
   -- Send back conditional tokens should there be an uneven distribution
@@ -163,7 +163,7 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
     sendBackAmounts[i] = addedFunds - sendBackAmounts[i]
   end
   -- Send notice with amounts added
-  self.fundingAddedNotice(from, sendBackAmounts, mintAmount)
+  return self.fundingAddedNotice(from, sendBackAmounts, mintAmount)
 end
 
 -- Remove Funding 
@@ -177,24 +177,24 @@ function CPMMMethods:removeFunding(from, sharesToBurn, msg)
     sendAmounts[i] = tostring(math.floor((poolBalances[i] * sharesToBurn) / self.token.totalSupply))
   end
   -- Calculate collateralRemovedFromFeePool
-  local poolFeeBalance = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
-  self:burn(from, sharesToBurn, msg)
   local collateralRemovedFromFeePool = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
+  self:burn(from, sharesToBurn, msg)
+  local poolFeeBalance = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
   collateralRemovedFromFeePool = tostring(math.floor(poolFeeBalance - collateralRemovedFromFeePool))
   -- Send collateralRemovedFromFeePool
   if bint(collateralRemovedFromFeePool) > 0 then
     ao.send({ Target = self.tokens.collateralToken, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
   end
   -- Send conditionalTokens amounts
-  self.tokens:transferBatch(ao.id, from, self.positionIds, sendAmounts, false, msg)
+  self.tokens:transferBatch(ao.id, from, self.tokens.positionIds, sendAmounts, false, msg)
   -- Send notice
-  self.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
+  return self.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
 end
 
 -- Calc Buy Amount 
 function CPMMMethods:calcBuyAmount(investmentAmount, positionId)
   assert(bint.__lt(0, investmentAmount), 'InvestmentAmount must be greater than zero!')
-  assert(utils.includes(positionId, self.positionIds), 'PositionId must be valid!')
+  assert(utils.includes(positionId, self.tokens.positionIds), 'PositionId must be valid!')
 
   local poolBalances = self:getPoolBalances()
   local investmentAmountMinusFees = investmentAmount - ((investmentAmount * self.lpFee) / 1e4) -- converts fee from basis points to decimal
@@ -215,7 +215,7 @@ end
 -- Calc Sell Amount
 function CPMMMethods:calcSellAmount(returnAmount, positionId)
   assert(bint.__lt(0, returnAmount), 'ReturnAmount must be greater than zero!')
-  assert(utils.includes(positionId, self.positionIds), 'PositionId must be valid!')
+  assert(utils.includes(positionId, self.tokens.positionIds), 'PositionId must be valid!')
 
   local poolBalances = self:getPoolBalances()
   local returnAmountPlusFees = CPMMHelpers.ceildiv(tonumber(returnAmount * 1e4), tonumber(1e4 - self.lpFee))
@@ -225,6 +225,7 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
   for i = 1, #poolBalances do
     if not bint.__eq(bint(i), bint(positionId)) then
       local poolBalance = poolBalances[i]
+      assert(poolBalance - returnAmountPlusFees > 0, "PoolBalance must be greater than return amount plus fees!")
       endingOutcomeBalance = CPMMHelpers.ceildiv(tonumber(endingOutcomeBalance * poolBalance), tonumber(poolBalance - returnAmountPlusFees))
     end
   end
@@ -246,7 +247,7 @@ function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minOutc
   -- Transfer buy position to sender
   self.tokens:transferSingle(ao.id, from, positionId, outcomeTokensToBuy, false, msg)
   -- Send notice.
-  self.buyNotice(from, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
+  return self.buyNotice(from, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
 end
 
 -- Sell 
@@ -263,7 +264,7 @@ function CPMMMethods:sell(from, returnAmount, positionId, quantity, maxOutcomeTo
   assert(bint.__le(bint(returnAmountPlusFees), bint(collataralBalance)), "Insufficient liquidity!")
   -- Check user balance and transfer outcomeTokensToSell to process before merge.
   local balance = self.tokens:getBalance(from, nil, positionId)
-  assert(bint.__le(bint(quantity), bint(balance)), 'Insufficient balance')
+  assert(bint.__le(bint(quantity), bint(balance)), 'Insufficient balance!')
   self.tokens:transferSingle(from, ao.id, positionId, outcomeTokensToSell, true, msg)
   -- Merge positions through all conditions (burns returnAmountPlusFees).
   self.tokens:mergePositions(ao.id, '', returnAmountPlusFees, true, msg)
@@ -275,16 +276,16 @@ function CPMMMethods:sell(from, returnAmount, positionId, quantity, maxOutcomeTo
     Recipient = from
   }).receive()
   -- Returns unburned conditional tokens to user 
-  local unburned = bint.__sub(bint(quantity), bint(returnAmountPlusFees))
+  local unburned = tostring(bint.__sub(bint(quantity), bint(returnAmountPlusFees)))
   self.tokens:transferSingle(ao.id, from, positionId, unburned, true, msg)
   -- Send notice (Process continued via "SellOrderCompletionCollateralToken" and "SellOrderCompletionConditionalTokens" handlers)
-  self.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)
+  return self.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)
 end
 
 -- Fees
 -- @dev Returns the total fees collected within the CPMM
 function CPMMMethods:collectedFees()
-  return self.feePoolWeight - self.totalWithdrawnFees
+  return tostring(self.feePoolWeight - self.totalWithdrawnFees)
 end
 
 -- @dev Returns the fees withdrawable by the sender
@@ -296,8 +297,7 @@ function CPMMMethods:feesWithdrawableBy(sender)
   end
 
   -- @dev max(rawAmount - withdrawnFees, 0)
-  local res = tostring(bint.max(bint(bint.__sub(bint(rawAmount), bint(self.withdrawnFees[sender] or '0'))), 0))
-  return res
+  return tostring(bint.max(bint(bint.__sub(bint(rawAmount), bint(self.withdrawnFees[sender] or '0'))), 0))
 end
 
 -- @dev Withdraws fees to the sender
@@ -328,47 +328,52 @@ end
 -- LP Tokens
 -- @dev See tokensMethods:mint & _beforeTokenTransfer
 function CPMMMethods:mint(to, quantity, msg)
-  self:_beforeTokenTransfer(nil, to, quantity)
-  self.token:mint(to, quantity, msg)
+  self:_beforeTokenTransfer(nil, to, quantity, msg)
+  return self.token:mint(to, quantity, msg)
 end
 
 -- @dev See tokenMethods:burn & _beforeTokenTransfer
 function CPMMMethods:burn(from, quantity, msg)
-  self:_beforeTokenTransfer(from, nil, quantity)
-  self.token:burn(from, quantity, msg)
+  self:_beforeTokenTransfer(from, nil, quantity, msg)
+  return self.token:burn(from, quantity, msg)
 end
 
 -- @dev See tokenMethods:transfer & _beforeTokenTransfer
 function CPMMMethods:transfer(from, recipient, quantity, cast, msg)
   self:_beforeTokenTransfer(from, recipient, quantity, msg)
-  self.token:transfer(from, recipient, quantity, cast, msg)
+  return self.token:transfer(from, recipient, quantity, cast, msg)
 end
 
 -- @dev updates configurator
-function CPMMMethods:updateConfigurator(configurator)
+function CPMMMethods:updateConfigurator(configurator, msg)
   self.configurator = configurator
+  return self.updateConfiguratorNotice(configurator, msg)
 end
 
 -- @dev updates incentives
-function CPMMMethods:updateIncentives(incentives)
+function CPMMMethods:updateIncentives(incentives, msg)
   self.incentives = incentives
+  return self.updateIncentivesNotice(incentives, msg)
 end
 
 -- @dev Updates the take fee
-function CPMMMethods:updateTakeFee(creatorFee, protocolFee)
+function CPMMMethods:updateTakeFee(creatorFee, protocolFee, msg)
   self.tokens.creatorFee = creatorFee
   self.tokens.protocolFee = protocolFee
+  return self.updateTakeFeeNotice(creatorFee, protocolFee, creatorFee + protocolFee, msg)
 end
 
 -- @dev Updtes the protocol fee target
-function CPMMMethods:updateProtocolFeeTarget(target)
+function CPMMMethods:updateProtocolFeeTarget(target, msg)
   self.tokens.protocolFeeTarget = target
+  return self.updateProtocolFeeTargetNotice(target, msg)
 end
 
 -- @dev Updtes the logo
-function CPMMMethods:updateLogo(logo)
+function CPMMMethods:updateLogo(logo, msg)
   self.token.logo = logo
   self.tokens.logo = logo
+  return self.updateLogoNotice(logo, msg)
 end
 
 return CPMM

@@ -34,9 +34,9 @@ describe("#market #conditionalTokens #cpmmHelpers", function()
     cpmmHelpers.tokens = { positionIds = { "1", "2", "3" }, getBatchBalance = function() return { "100", "200", "300" } end  }
   end)
 
-  it("should generate basic partition", function()
-    local result = cpmmHelpers.generateBasicPartition(outcomeSlotCount)
-    assert.are.same({1, 2, 4}, result)
+  it("should get position ids", function()
+    local result = cpmmHelpers.getPositionIds(outcomeSlotCount)
+    assert.are.same({"1", "2", "3"}, result)
   end)
 
   it("should calculate ceildiv when x > 0", function()

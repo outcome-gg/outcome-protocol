@@ -8,9 +8,14 @@ package.path =
 
 _G.ao = {
 	send = function(val)
-		return val
+		local obj = {}
+		-- Explicitly bind a proper 'receive' function
+		function obj.receive()
+				return { Data = val }
+		end
+		return obj
 	end,
-	id = "test",
+	id = "test"
 }
 
 _G.Handlers = {
@@ -41,10 +46,13 @@ _G.Handlers = {
       end
     end,
     reply = function(msg)
-      print("Replying:", msg)
       return msg
     end
-  }
+  },
+	receive = function(val)
+		print("RECEIVE CALLED!")
+		return { Data = val }
+	end
 }
 
 _G.Colors = {

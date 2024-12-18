@@ -221,15 +221,15 @@ describe("#market #conditionalTokens #cpmmNotices", function()
 	end)
 
   it("should send fundingAddedNotice", function()
-    local sendBackAmounts = {10, 50}
+    local fundingAdded = {10, 50}
     local notice = cpmmNotices.fundingAddedNotice(
       msgAddFunding.From,
-      sendBackAmounts,
+      fundingAdded,
       msgAddFunding.Tags.Quantity
     )
 
     assert.are.same("Funding-Added-Notice", getTagValue(notice.Tags, "Action"))
-    assert.are.same(json.encode(sendBackAmounts), getTagValue(notice.Tags, "SendBackAmounts"))
+    assert.are.same(json.encode(fundingAdded), getTagValue(notice.Tags, "FundingAdded"))
     assert.are.same(msgAddFunding.Tags.Quantity, getTagValue(notice.Tags, "MintAmount"))
     assert.are.same("Successfully added funding", notice.Data)
     assert.are.same(msgAddFunding.From, notice.Target)
@@ -263,7 +263,6 @@ describe("#market #conditionalTokens #cpmmNotices", function()
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity
     )
-
     assert.are.same("Buy-Notice", getTagValue(notice.Tags, "Action"))
     assert.are.same(msgBuy.From, notice.Target)
     assert.are.same(msgBuy.Tags.InvestmentAmount, getTagValue(notice.Tags, "InvestmentAmount"))

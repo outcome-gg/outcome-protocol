@@ -25,11 +25,11 @@ function CPMMNotices.newMarketNotice(configurator, incentives, collateralToken, 
   })
 end
 
-function CPMMNotices.fundingAddedNotice(from, sendBackAmounts, mintAmount)
+function CPMMNotices.fundingAddedNotice(from, fundingAdded, mintAmount)
   return ao.send({
     Target = from,
     Action = "Funding-Added-Notice",
-    SendBackAmounts = json.encode(sendBackAmounts),
+    FundingAdded = json.encode(fundingAdded),
     MintAmount = tostring(mintAmount),
     Data = "Successfully added funding"
   })
@@ -87,9 +87,9 @@ end
 function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)
   return msg.reply({
     Action = "Take-Fee-Updated",
-    CreatorFee = creatorFee,
-    ProtocolFee = protocolFee,
-    Data = takeFee
+    CreatorFee = tostring(creatorFee),
+    ProtocolFee = tostring(protocolFee),
+    Data = tostring(takeFee)
   })
 end
 

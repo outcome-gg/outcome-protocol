@@ -75,13 +75,13 @@ function cpmmValidation.sell(msg)
 end
 
 function cpmmValidation.calcBuyAmount(msg)
-  validatePositiveInteger(msg.Tags.InvestmentAmount, "InvestmentAmount")
   validatePositionId(msg.Tags.PositionId)
+  validatePositiveInteger(msg.Tags.InvestmentAmount, "InvestmentAmount")
 end
 
 function cpmmValidation.calcSellAmount(msg)
-  validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
   validatePositionId(msg.Tags.PositionId)
+  validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
 end
 
 return cpmmValidation

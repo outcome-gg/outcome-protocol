@@ -379,37 +379,31 @@ end)
 -- Update Configurator
 Handlers.add('Update-Configurator', Handlers.utils.hasMatchingTag('Action', 'Update-Configurator'), function(msg)
   validation.updateConfigurator(msg)
-  CPMM:updateConfigurator(msg.Tags.Configurator)
-  CPMM.updateConfiguratorNotice(msg.Tags.Configurator, msg)
+  CPMM:updateConfigurator(msg.Tags.Configurator, msg)
 end)
 
 -- Update Incentives
 Handlers.add('Update-Incentives', Handlers.utils.hasMatchingTag('Action', 'Update-Incentives'), function(msg)
   validation.updateIncentives(msg)
-  CPMM:updateIncentives(msg.Tags.Incentives)
-  CPMM.updateIncentivesNotice(msg.Tags.Incentives, msg)
+  CPMM:updateIncentives(msg.Tags.Incentives, msg)
 end)
 
 -- Update Take Fee Percentage
 Handlers.add('Update-Take-Fee', Handlers.utils.hasMatchingTag('Action', 'Update-Take-Fee'), function(msg)
   validation.updateTakeFee(msg)
-  CPMM:updateTakeFee(tonumber(msg.Tags.CreatorFee), tonumber(msg.Tags.ProtocolFee))
-  local takeFee = tonumber(msg.Tags.CreatorFee) + tonumber(msg.Tags.ProtocolFee)
-  CPMM.updateTakeFeeNotice(msg.Tags.CreatorFee, msg.Tags.ProtocolFee, takeFee, msg)
+  CPMM:updateTakeFee(tonumber(msg.Tags.CreatorFee), tonumber(msg.Tags.ProtocolFee), msg)
 end)
 
 -- Update Protocol Fee Target
 Handlers.add('Update-Protocol-Fee-Target', Handlers.utils.hasMatchingTag('Action', 'Update-Protocol-Fee-Target'), function(msg)
   validation.updateProtocolFeeTarget(msg)
-  CPMM:updateProtocolFeeTarget(msg.Tags.ProtocolFeeTarget)
-  CPMM.updateProtocolFeeTargetNotice(msg.Tags.ProtocolFeeTarget, msg)
+  CPMM:updateProtocolFeeTarget(msg.Tags.ProtocolFeeTarget, msg)
 end)
 
 -- Update Logo
 Handlers.add('Update-Logo', Handlers.utils.hasMatchingTag('Action', 'Update-Logo'), function(msg)
   validation.updateLogo(msg)
-  CPMM:updateLogo(msg.Tags.Logo)
-  CPMM.updateLogoNotice(msg.Tags.Logo, msg)
+  CPMM:updateLogo(msg.Tags.Logo, msg)
 end)
 
 ---------------------------------------------------------------------------------
