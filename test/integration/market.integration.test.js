@@ -11,7 +11,7 @@ import exp from "constants";
 
 dotenv.config();
 
-const cpmm = process.env.TEST_MARKET4;
+const cpmm = process.env.TEST_MARKET5;
 const conditionalTokens = cpmm;
 const collateralToken = process.env.TEST_COLLATERAL_TOKEN3;
 

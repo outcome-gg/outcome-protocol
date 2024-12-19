@@ -1,30 +1,27 @@
--- reference: https://github.com/gnosis/conditional-tokens-contracts/blob/master/contracts/ConditionalTokens.sol
 local ao = require('.ao')
-local json = require('json')
-local bint = require('.bint')(256)
-local cpmm = require('modules.cpmm')
-local validation = require('modules.validation')
-local cpmmValidation = require('modules.cpmmValidation')
-local tokenValidation = require('modules.tokenValidation')
-local semiFungibleTokensValidation = require('modules.semiFungibleTokensValidation')
-
+local market = require('modules.market')
 ---------------------------------------------------------------------------------
 -- MARKET -----------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 Env = 'DEV'
 Version = '1.0.1'
 -- @dev Reset state while in DEV mode
-if not CPMM or Env == 'DEV' then CPMM = cpmm:new() end
--- @dev Add expected namespace variables
-Name = CPMM.token.name
-Ticker = CPMM.token.ticker
-
+if not Market or Env == 'DEV' then Market = market:new() end
+-- @dev Expected LP Token namespace variables, set during `init`
+Name = ''
+Ticker = ''
+Logo = ''
+Denominator = nil
 ---------------------------------------------------------------------------------
 -- MATCHING ---------------------------------------------------------------------
 ---------------------------------------------------------------------------------
 -- CPMM
 local function isAddFunding(msg)
-  if msg.From == CPMM.tokens.collateralToken  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Add-Funding" then
+  if (
+    msg.From == Market.cpmm.tokens.collateralToken and
+    msg.Action == "Credit-Notice" and
+    msg["X-Action"] == "Add-Funding"
+  ) then
     return true
   else
     return false
@@ -32,7 +29,11 @@ local function isAddFunding(msg)
 end
 
 local function isRemoveFunding(msg)
-  if msg.From == ao.id  and msg.Action == "Credit-Notice" and msg["X-Action"] == "Remove-Funding" then
+  if (
+    msg.From == ao.id and
+    msg.Action == "Credit-Notice" and
+    msg["X-Action"] == "Remove-Funding"
+  ) then
     return true
   else
     return false
@@ -40,7 +41,11 @@ local function isRemoveFunding(msg)
 end
 
 local function isBuy(msg)
-  if msg.From == CPMM.tokens.collateralToken and msg.Action == "Credit-Notice" and msg["X-Action"] == "Buy" then
+  if (
+    msg.From == Market.cpmm.tokens.collateralToken and
+    msg.Action == "Credit-Notice" and
+    msg["X-Action"] == "Buy"
+  ) then
     return true
   else
     return false
@@ -52,25 +57,8 @@ end
 ---------------------------------------------------------------------------------
 
 -- Info
-Handlers.add("Info", Handlers.utils.hasMatchingTag("Action", "Info"), function(msg)
-  msg.reply({
-    Name = CPMM.token.name,
-    Ticker = CPMM.token.ticker,
-    Logo = CPMM.token.logo,
-    Denomination = tostring(CPMM.token.denomination),
-    ConditionId = CPMM.tokens.conditionId,
-    PositionIds = json.encode(CPMM.tokens.positionIds),
-    CollateralToken = CPMM.tokens.collateralToken,
-    Configurator = CPMM.configurator,
-    Incentives = CPMM.incentives,
-    LpFee = tostring(CPMM.lpFee),
-    LpFeePoolWeight = CPMM.feePoolWeight,
-    LpFeeTotalWithdrawn = CPMM.totalWithdrawnFees,
-    CreatorFee = tostring(CPMM.tokens.creatorFee),
-    CreatorFeeTarget = CPMM.tokens.creatorFeeTarget,
-    ProtocolFee = tostring(CPMM.tokens.protocolFee),
-    ProtocolFeeTarget = CPMM.tokens.protocolFeeTarget
-  })
+Handlers.add("Info", {Action = "Info"}, function(msg)
+  Market:info(msg)
 end)
 
 ---------------------------------------------------------------------------------
@@ -78,88 +66,42 @@ end)
 ---------------------------------------------------------------------------------
 
 -- Init
--- @dev to only enable shallow markets on launch, i.e. where parentCollectionId = ""
-Handlers.add("Init", Handlers.utils.hasMatchingTag("Action", "Init"), function(msg)
-  cpmmValidation.init(msg)
-  local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
-  CPMM:init(msg.Tags.Configurator, msg.Tags.Incentives, msg.Tags.CollateralToken, msg.Tags.MarketId, msg.Tags.ConditionId, outcomeSlotCount, msg.Tags.Name, msg.Tags.Ticker, msg.Tags.Logo, msg.Tags.LpFee, msg.Tags.CreatorFee, msg.Tags.CreatorFeeTarget, msg.Tags.ProtocolFee, msg.Tags.ProtocolFeeTarget, msg)
+Handlers.add("Init", {Action = "Init"}, function(msg)
+  Market:init(msg)
+  -- Set LP Token namespace variables
+  Name = Market.cpmm.token.name
+  Ticker = Market.cpmm.token.ticker
+  Logo = Market.cpmm.token.logo
+  Denomination = Market.cpmm.token.denomination
 end)
 
 -- Add Funding
--- @dev called on credit-notice from collateralToken with X-Action == 'Add-Funding'
 Handlers.add('Add-Funding', isAddFunding, function(msg)
-  cpmmValidation.addFunding(msg)
-  local distribution = json.decode(msg.Tags['X-Distribution'])
-  local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
-
-  -- @dev returns funding if invalid
-  if CPMM:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
-    CPMM:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, distribution, msg)
-  end
+  Market:addFunding(msg)
 end)
 
 -- Remove Funding
 -- @dev called on credit-notice from ao.id with X-Action == 'Remove-Funding'
 Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
-  cpmmValidation.removeFunding(msg)
-  if CPMM:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
-    CPMM:removeFunding(msg.Tags.Sender, msg.Tags.Quantity, msg)
-  end
+  Market:removeFunding(msg)
 end)
 
 -- Buy
 -- @dev called on credit-notice from collateralToken with X-Action == 'Buy'
 Handlers.add("Buy", isBuy, function(msg)
-  cpmmValidation.buy(msg)
-  local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
-
-  local error = false
-  local errorMessage = ''
-
-  local outcomeTokensToBuy = '0'
-
-  if not msg.Tags['X-PositionId'] then
-    error = true
-    errorMessage = 'X-PositionId is required!'
-  elseif not msg.Tags['X-MinOutcomeTokensToBuy'] then
-    error = true
-    errorMessage = 'X-MinOutcomeTokensToBuy is required!'
-  else
-    outcomeTokensToBuy = CPMM:calcBuyAmount(msg.Tags.Quantity, msg.Tags['X-PositionId'])
-    if not bint.__le(bint(msg.Tags['X-MinOutcomeTokensToBuy']), bint(outcomeTokensToBuy)) then
-      error = true
-      errorMessage = 'minimum buy amount not reached'
-    end
-  end
-
-  if error then
-    -- Return funds and assert error
-    ao.send({
-      Target = ao.id,
-      Action = 'Transfer',
-      Recipient = msg.Tags.Sender,
-      Quantity = msg.Tags.Quantity,
-      Error = 'Buy Error: ' .. errorMessage
-    })
-    assert(false, errorMessage)
-  else
-    CPMM:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
-  end
+  Market:buy(msg)
 end)
 
 -- Sell
 -- @dev refactoring as now within same process
-Handlers.add("Sell", Handlers.utils.hasMatchingTag("Action", "Sell"), function(msg)
-  cpmmValidation.sell(msg)
-  local outcomeTokensToSell = CPMM:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
-  assert(bint.__le(bint(outcomeTokensToSell), bint(msg.Tags.MaxOutcomeTokensToSell)), 'Maximum sell amount not sufficient!')
-  CPMM:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
+Handlers.add("Sell", {Action = "Sell"}, function(msg)
+  Market:sell(msg)
 end)
 
 -- Withdraw Fees
 -- @dev Withdraws withdrawable fees to the message sender
-Handlers.add("Withdraw-Fees", Handlers.utils.hasMatchingTag("Action", "Withdraw-Fees"), function(msg)
-  msg.reply({ Data = CPMM:withdrawFees(msg.From) })
+Handlers.add("Withdraw-Fees", {Action = "Withdraw-Fees"}, function(msg)
+  Market:withdrawFees(msg)
 end)
 
 ---------------------------------------------------------------------------------
@@ -167,29 +109,25 @@ end)
 ---------------------------------------------------------------------------------
 
 -- Calc Buy Amount
-Handlers.add("Calc-Buy-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Buy-Amount"), function(msg)
-  cpmmValidation.calcBuyAmount(msg)
-  local buyAmount = CPMM:calcBuyAmount(msg.Tags.InvestmentAmount, msg.Tags.PositionId)
-  msg.reply({ Data = buyAmount })
+Handlers.add("Calc-Buy-Amount", {Action = "Calc-Buy-Amount"}, function(msg)
+  Market:calcBuyAmount(msg)
 end)
 
 -- Calc Sell Amount
-Handlers.add("Calc-Sell-Amount", Handlers.utils.hasMatchingTag("Action", "Calc-Sell-Amount"), function(msg)
-  cpmmValidation.calcSellAmount(msg)
-  local sellAmount = CPMM:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
-  msg.reply({ Data = sellAmount })
+Handlers.add("Calc-Sell-Amount", {Action = "Calc-Sell-Amount"}, function(msg)
+  Market:calcSellAmount(msg)
 end)
 
 -- Collected Fees
 -- @dev Returns fees collected by the protocol that haven't been withdrawn
-Handlers.add("Collected-Fees", Handlers.utils.hasMatchingTag("Action", "Collected-Fees"), function(msg)
-  msg.reply({ Data = CPMM:collectedFees() })
+Handlers.add("Collected-Fees", {Action = "Collected-Fees"}, function(msg)
+  Market:collectedFees(msg)
 end)
 
 -- Fees Withdrawable
 -- @dev Returns fees withdrawable by the message sender
-Handlers.add("Fees-Withdrawable", Handlers.utils.hasMatchingTag("Action", "Fees-Withdrawable"), function(msg)
-  msg.reply({ Data = CPMM:feesWithdrawableBy(msg.From) })
+Handlers.add("Fees-Withdrawable", {Action = "Fees-Withdrawable"}, function(msg)
+  Market:feesWithdrawable(msg)
 end)
 
 ---------------------------------------------------------------------------------
@@ -197,9 +135,8 @@ end)
 ---------------------------------------------------------------------------------
 
 -- Transfer
-Handlers.add('Transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), function(msg)
-  tokenValidation.transfer(msg)
-  CPMM:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg)
+Handlers.add('Transfer', {Action = "Transfer"}, function(msg)
+  Market:transfer(msg)
 end)
 
 ---------------------------------------------------------------------------------
@@ -207,36 +144,18 @@ end)
 ---------------------------------------------------------------------------------
 
 -- Balance
-Handlers.add('Balance', Handlers.utils.hasMatchingTag('Action', 'Balance'), function(msg)
-  local bal = '0'
-
-  -- If not Recipient is provided, then return the Senders balance
-  if (msg.Tags.Recipient) then
-    if (CPMM.token.balances[msg.Tags.Recipient]) then
-      bal = CPMM.token.balances[msg.Tags.Recipient]
-    end
-  elseif msg.Tags.Target and CPMM.token.balances[msg.Tags.Target] then
-    bal = CPMM.token.balances[msg.Tags.Target]
-  elseif CPMM.token.balances[msg.From] then
-    bal = CPMM.token.balances[msg.From]
-  end
-
-  msg.reply({
-    Balance = bal,
-    Ticker = CPMM.token.ticker,
-    Account = msg.Tags.Recipient or msg.From,
-    Data = bal
-  })
+Handlers.add('Balance', {Action = "Balance"}, function(msg)
+  Market:balance(msg)
 end)
 
 -- Balances
-Handlers.add('Balances', Handlers.utils.hasMatchingTag('Action', 'Balances'), function(msg) 
-  msg.reply({ Data = json.encode(CPMM.token.balances) })
+Handlers.add('Balances', {Action = "Balances"}, function(msg)
+  Market:balances(msg)
 end)
 
 -- Total Supply
-Handlers.add('Total-Supply', Handlers.utils.hasMatchingTag('Action', 'Total-Supply'), function(msg)
-  msg.reply({ Data = json.encode(CPMM.token.totalSupply) })
+Handlers.add('Total-Supply', {Action = "Total-Supply"}, function(msg)
+  Market:totalSupply(msg)
 end)
 
 ---------------------------------------------------------------------------------
@@ -244,44 +163,18 @@ end)
 ---------------------------------------------------------------------------------
 
 -- Merge Positions
-Handlers.add("Merge-Positions", Handlers.utils.hasMatchingTag("Action", "Merge-Positions"), function(msg)
-  validation.mergePositions(msg)
-  local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.From
-  -- Check user balances
-  local error = false
-  local errorMessage = ''
-  for i = 1, #CPMM.tokens.positionIds do
-    if not CPMM.tokens.balancesById[CPMM.positionIds[i]] then
-      error = true
-      errorMessage = "Invalid position! PositionId: " .. CPMM.positionIds[i]
-    end
-    if not CPMM.tokens.balancesById[CPMM.positionIds[i]][msg.From] then
-      error = true
-      errorMessage = "Invalid user position! PositionId: " .. CPMM.positionIds[i]
-    end
-    if bint.__lt(bint(CPMM.tokens.balancesById[CPMM.positionIds[i]][msg.From]), bint(msg.Tags.Quantity)) then
-      error = true
-      errorMessage = "Insufficient tokens! PositionId: " .. CPMM.positionIds[i]
-    end
-  end
-  -- Revert with error or process merge.
-  if error then
-    return msg.reply({ Action = 'Error', Data = errorMessage })
-  else
-    return CPMM.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg)
-  end
+Handlers.add("Merge-Positions", {Action = "Merge-Positions"}, function(msg)
+  Market:mergePositions(msg)
 end)
 
 -- Report Payouts
-Handlers.add("Report-Payouts", Handlers.utils.hasMatchingTag("Action", "Report-Payouts"), function(msg)
-  validation.reportPayouts(msg)
-  local payouts = json.decode(msg.Tags.Payouts)
-  CPMM.tokens:reportPayouts(msg.Tags.QuestionId, payouts, msg)
+Handlers.add("Report-Payouts", {Action = "Report-Payouts"}, function(msg)
+  Market:reportPayouts(msg)
 end)
 
 -- Redeem Positions
-Handlers.add("Redeem-Positions", Handlers.utils.hasMatchingTag("Action", "Redeem-Positions"), function(msg)
-  CPMM.tokens:redeemPositions(msg)
+Handlers.add("Redeem-Positions", {Action = "Redeem-Positions"}, function(msg)
+  Market:redeemPositions(msg)
 end)
 
 ---------------------------------------------------------------------------------
@@ -289,22 +182,13 @@ end)
 ---------------------------------------------------------------------------------
 
 -- Get Payout Numerators
-Handlers.add("Get-Payout-Numerators", Handlers.utils.hasMatchingTag("Action", "Get-Payout-Numerators"), function(msg)
-  local data = CPMM.tokens.payoutNumerators[CPMM.conditionId] == nil and nil or CPMM.tokens.payoutNumerators[CPMM.conditionId]
-  msg.reply({
-    Action = "Payout-Numerators",
-    ConditionId = CPMM.conditionId,
-    Data = json.encode(data)
-  })
+Handlers.add("Get-Payout-Numerators", {Action = "Get-Payout-Numerators"}, function(msg)
+  Market:getPayoutNumerators(msg)
 end)
 
 -- Get Payout Denominator
-Handlers.add("Get-Payout-Denominator", Handlers.utils.hasMatchingTag("Action", "Get-Payout-Denominator"), function(msg)
-  msg.reply({
-    Action = "Payout-Denominator",
-    ConditionId = CPMM.conditionId,
-    Data = CPMM.tokens.payoutDenominator[CPMM.conditionId]
-  })
+Handlers.add("Get-Payout-Denominator", {Action = "Get-Payout-Denominator"}, function(msg)
+  Market:getPayoutDenominator(msg)
 end)
 
 ---------------------------------------------------------------------------------
@@ -312,17 +196,13 @@ end)
 ---------------------------------------------------------------------------------
 
 -- Transfer Single
-Handlers.add('Transfer-Single', Handlers.utils.hasMatchingTag('Action', 'Transfer-Single'), function(msg)
-  semiFungibleTokensValidation.transferSingle(msg)
-  CPMM.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.TokenId, msg.Tags.Quantity, msg.Tags.Cast, msg)
+Handlers.add('Transfer-Single', {Action = "Transfer-Single"}, function(msg)
+  Market:transferSingle(msg)
 end)
 
 -- Transfer Batch
-Handlers.add('Transfer-Batch', Handlers.utils.hasMatchingTag('Action', 'Transfer-Batch'), function(msg)
-  semiFungibleTokensValidation.transferBatch(msg)
-  local tokenIds = json.decode(msg.Tags.TokenIds)
-  local quantities = json.decode(msg.Tags.Quantities)
-  CPMM.tokens:transferBatch(msg.From, msg.Tags.Recipient, tokenIds, quantities, msg.Tags.Cast, msg)
+Handlers.add('Transfer-Batch', {Action = "Transfer-Batch"}, function(msg)
+  Market:transferBatch(msg)
 end)
 
 ---------------------------------------------------------------------------------
@@ -330,46 +210,28 @@ end)
 ---------------------------------------------------------------------------------
 
 -- Balance By Id
-Handlers.add("Balance-By-Id", Handlers.utils.hasMatchingTag("Action", "Balance-By-Id"), function(msg)
-  semiFungibleTokensValidation.balanceById(msg)
-  local account = msg.Tags.Recipient or msg.From
-  local bal = CPMM:getBalance(msg.From, account, msg.Tags.TokenId)
-  msg.reply({
-    Balance = bal,
-    TokenId = msg.Tags.TokenId,
-    Ticker = Ticker,
-    Account = account,
-    Data = bal
-  })
+Handlers.add("Balance-By-Id", {Action = "Balance-By-Id"}, function(msg)
+  Market:balanceById(msg)
 end)
 
 -- Balances By Id
-Handlers.add('Balances-By-Id', Handlers.utils.hasMatchingTag('Action', 'Balances-By-Id'), function(msg)
-  semiFungibleTokensValidation.balancesById(msg)
-  local bals = CPMM.tokens:getBalances(msg.Tags.TokenId)
-  msg.reply({ Data = bals })
+Handlers.add('Balances-By-Id', {Action = "Balances-By-Id"}, function(msg)
+  Market:balancesById(msg)
 end)
 
 -- Batch Balance (Filtered by users and ids)
-Handlers.add("Batch-Balance", Handlers.utils.hasMatchingTag("Action", "Batch-Balance"), function(msg)
-  semiFungibleTokensValidation.batchBalance(msg)
-  local recipients = json.decode(msg.Tags.Recipients)
-  local tokenIds = json.decode(msg.Tags.TokenIds)
-  local bals = CPMM.tokens:getBatchBalance(recipients, tokenIds)
-  msg.reply({ Data = bals })
+Handlers.add("Batch-Balance", {Action = "Batch-Balance"}, function(msg)
+  Market:batchBalance(msg)
 end)
 
 -- Batch Balances (Filtered by Ids, only)
-Handlers.add('Batch-Balances', Handlers.utils.hasMatchingTag('Action', 'Batch-Balances'), function(msg)
-  semiFungibleTokensValidation.batchBalances(msg)
-  local tokenIds = json.decode(msg.Tags.TokenIds)
-  local bals = CPMM.tokens:getBatchBalances(tokenIds)
-  msg.reply({ Data = bals })
+Handlers.add('Batch-Balances', {Action = "Batch-Balances"}, function(msg)
+  Market:batchBalances(msg)
 end)
 
 -- Balances All
-Handlers.add('Balances-All', Handlers.utils.hasMatchingTag('Action', 'Balances-All'), function(msg)
-  msg.reply({ Data = CPMM.tokens.balancesById })
+Handlers.add('Balances-All', {Action = "Balances-All"}, function(msg)
+  Market:balancesAll(msg)
 end)
 
 ---------------------------------------------------------------------------------
@@ -377,33 +239,28 @@ end)
 ---------------------------------------------------------------------------------
 
 -- Update Configurator
-Handlers.add('Update-Configurator', Handlers.utils.hasMatchingTag('Action', 'Update-Configurator'), function(msg)
-  validation.updateConfigurator(msg)
-  CPMM:updateConfigurator(msg.Tags.Configurator, msg)
+Handlers.add('Update-Configurator', {Action = "Update-Configurator"}, function(msg)
+  Market:updateConfigurator(msg)
 end)
 
 -- Update Incentives
-Handlers.add('Update-Incentives', Handlers.utils.hasMatchingTag('Action', 'Update-Incentives'), function(msg)
-  validation.updateIncentives(msg)
-  CPMM:updateIncentives(msg.Tags.Incentives, msg)
+Handlers.add('Update-Incentives', {Action = "Update-Incentives"}, function(msg)
+  Market:updateIncentives(msg)
 end)
 
 -- Update Take Fee Percentage
-Handlers.add('Update-Take-Fee', Handlers.utils.hasMatchingTag('Action', 'Update-Take-Fee'), function(msg)
-  validation.updateTakeFee(msg)
-  CPMM:updateTakeFee(tonumber(msg.Tags.CreatorFee), tonumber(msg.Tags.ProtocolFee), msg)
+Handlers.add('Update-Take-Fee', {Action = "Update-Take-Fee"}, function(msg)
+  Market:updateTakeFee(msg)
 end)
 
 -- Update Protocol Fee Target
-Handlers.add('Update-Protocol-Fee-Target', Handlers.utils.hasMatchingTag('Action', 'Update-Protocol-Fee-Target'), function(msg)
-  validation.updateProtocolFeeTarget(msg)
-  CPMM:updateProtocolFeeTarget(msg.Tags.ProtocolFeeTarget, msg)
+Handlers.add('Update-Protocol-Fee-Target', {Action = "Update-Protocol-Fee-Target"}, function(msg)
+  Market:updateProtocolFeeTarget(msg)
 end)
 
 -- Update Logo
-Handlers.add('Update-Logo', Handlers.utils.hasMatchingTag('Action', 'Update-Logo'), function(msg)
-  validation.updateLogo(msg)
-  CPMM:updateLogo(msg.Tags.Logo, msg)
+Handlers.add('Update-Logo', {Action = "Update-Logo"}, function(msg)
+  Market:updateLogo(msg)
 end)
 
 ---------------------------------------------------------------------------------
@@ -411,11 +268,8 @@ end)
 ---------------------------------------------------------------------------------
 
 -- Eval
-Handlers.once("Complete-Eval", Handlers.utils.hasMatchingTag("Action", "Complete-Eval"), function(msg)
-  msg.forward('NRKvM8X3TqjGGyrqyB677aVbxgONo5fBHkbxbUSa_Ug', {
-    Action = 'Eval-Completed',
-    Data = 'Eval-Completed'
-  })
+Handlers.once("Complete-Eval", {Action = "Complete-Eval"}, function(msg)
+  Market:completeEval(msg)
 end)
 
 -- @dev TODO: remove?

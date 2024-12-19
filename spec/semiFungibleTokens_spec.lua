@@ -2,8 +2,8 @@ require("luacov")
 local semiFungibleTokens = require("modules.semiFungibleTokens")require("luacov")
 local json = require("json")
 
--- Mock the CPMM object
-_G.CPMM = { tokens = { positionIds = { "1", "2", "3" } } }
+-- Mock the Market.cpmm object
+_G.Market = { cpmm = {tokens = { positionIds = { "1", "2", "3" } } } }
 
 local name = ''
 local ticker = ''

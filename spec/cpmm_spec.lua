@@ -585,6 +585,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding
     )
     -- override receive to return collateralToken balance
+    ---@diagnostic disable-next-line: duplicate-set-field
     _G.Handlers.receive = function() return
       { Data = tonumber(msgAddFunding.Tags.Quantity) }
     end
@@ -655,6 +656,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       )
     end)
     -- override receive to return collateralToken balance
+    ---@diagnostic disable-next-line: duplicate-set-field
     _G.Handlers.receive = function() return
       { Data = tonumber(msgAddFunding.Tags.Quantity) }
     end
@@ -1028,108 +1030,108 @@ describe("#market #conditionalTokens #cpmmValidation", function()
   it("should sell", function()
     -- init
     CPMM:init(
-    msgInit.Tags.Configurator,
-    msgInit.Tags.Incentives,
-    msgInit.Tags.CollateralToken,
-    msgInit.Tags.MarketId,
-    msgInit.Tags.ConditionId,
-    msgInit.Tags.OutcomeSlotCount,
-    msgInit.Tags.Name,
-    msgInit.Tags.Ticker,
-    msgInit.Tags.Logo,
-    msgInit.Tags.LpFee,
-    msgInit.Tags.CreatorFee,
-    msgInit.Tags.CreatorFeeTarget,
-    msgInit.Tags.ProtocolFee,
-    msgInit.Tags.ProtocolFeeTarget,
-    msgInit
-  )
-  -- add funding
-  CPMM:addFunding(
-    msgAddFunding.Tags.Sender,
-    msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
-    msgAddFunding.Tags.Quantity,
-    json.decode(msgAddFunding.Tags["X-Distribution"]),
-    msgAddFunding
-  )
-  -- calc buy amount
-  local buyAmount = CPMM:calcBuyAmount(
-    tonumber(msgCalcBuyAmount.Tags.InvestmentAmount),
-    msgCalcBuyAmount.Tags.PositionId
-  )
-  -- buy
-  assert.has.no.errors(function()
-    CPMM:buy(
-    msgBuy.From,
-    msgBuy.From, -- onBehalfOf is the same as sender
-    msgBuy.Tags.InvestmentAmount,
-    msgBuy.Tags.PositionId,
-    msgBuy.Tags.Quantity,
-    msgBuy
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
     )
-  end)
-  -- assert state before
-  local fundingAmount = tonumber(msgAddFunding.Tags.Quantity)
-  local feeAmount = math.ceil(tonumber(msgBuy.Tags.InvestmentAmount) * CPMM.lpFee / 10000)
-  local quantityMinusFees = tonumber(msgBuy.Tags.Quantity) - tonumber(feeAmount)
-  local balancesBefore = {
-    ["1"] = {
-      [_G.ao.id] = tostring(fundingAmount + quantityMinusFees - tonumber(buyAmount)),
-      [msgBuy.From] = buyAmount,
-    },
-    ["2"] = {
-      [_G.ao.id] = tostring(fundingAmount + quantityMinusFees),
-    },
-  }
-  assert.are.same(balancesBefore, CPMM.tokens.balancesById)
-  -- calc sell amount
-  local sellAmount = CPMM:calcSellAmount(
-    tonumber(msgSell.Tags.ReturnAmount),
-    msgSell.Tags.PositionId
-  )
-  -- sell
-  local notice = {}
-  assert.has.no.errors(function()
-    notice = CPMM:sell(
-    msgSell.From,
-    msgSell.Tags.ReturnAmount,
-    msgSell.Tags.PositionId,
-    msgSell.Tags.Quantity,
-    msgSell.Tags.MaxOutcomeTokensToSell,
-    msgSell
+    -- add funding
+    CPMM:addFunding(
+      msgAddFunding.Tags.Sender,
+      msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
+      msgAddFunding.Tags.Quantity,
+      json.decode(msgAddFunding.Tags["X-Distribution"]),
+      msgAddFunding
     )
-  end)
-  -- assert state
-  -- LP Token balances
-  assert.are.same(msgBuy.Tags.InvestmentAmount, CPMM.token.balances[msgBuy.From])
-  -- Conditional Token Balances
-  local returnAmount_ = tonumber(msgSell.Tags.ReturnAmount)
-  local feeAmount_ = math.ceil(returnAmount * CPMM.lpFee / 10000)
-  local returnAmountPlusFees = returnAmount_ + feeAmount_
-  local unburned = tonumber(msgSell.Tags.Quantity) - returnAmountPlusFees
-  assert.are.same({
-    ["1"] = {
-      [_G.ao.id] = tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees - unburned),
-      [msgSell.From] =  tostring(tonumber(balancesBefore["1"][msgSell.From]) - tonumber(sellAmount) + unburned),
-    },
-    ["2"] = {
-      [_G.ao.id] = tostring(balancesBefore["2"][_G.ao.id] - returnAmountPlusFees),
-    },
-  }, CPMM.tokens.balancesById)
-  -- Pool Balances
-  local poolBalances = {
-    tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees - unburned),
-    tostring(balancesBefore["2"][_G.ao.id] - returnAmountPlusFees)
-  }
-  assert.are.same(poolBalances, CPMM:getPoolBalances())
-  -- assert notice
-  assert.are.same("Sell-Notice", getTagValue(notice.Tags, "Action"))
-  assert.are.same(msgSell.From, notice.Target)
-  assert.are.same(msgSell.Tags.ReturnAmount, getTagValue(notice.Tags, "ReturnAmount"))
-  assert.are.same(tostring(feeAmount), getTagValue(notice.Tags, "FeeAmount"))
-  assert.are.same(msgBuy.Tags.PositionId, getTagValue(notice.Tags, "PositionId"))
-  assert.are.same(sellAmount, getTagValue(notice.Tags, "OutcomeTokensToSell"))
-  assert.are.same("Successful sell order", notice.Data)
+    -- calc buy amount
+    local buyAmount = CPMM:calcBuyAmount(
+      tonumber(msgCalcBuyAmount.Tags.InvestmentAmount),
+      msgCalcBuyAmount.Tags.PositionId
+    )
+    -- buy
+    assert.has.no.errors(function()
+      CPMM:buy(
+      msgBuy.From,
+      msgBuy.From, -- onBehalfOf is the same as sender
+      msgBuy.Tags.InvestmentAmount,
+      msgBuy.Tags.PositionId,
+      msgBuy.Tags.Quantity,
+      msgBuy
+      )
+    end)
+    -- assert state before
+    local fundingAmount = tonumber(msgAddFunding.Tags.Quantity)
+    local feeAmount = math.ceil(tonumber(msgBuy.Tags.InvestmentAmount) * CPMM.lpFee / 10000)
+    local quantityMinusFees = tonumber(msgBuy.Tags.Quantity) - tonumber(feeAmount)
+    local balancesBefore = {
+      ["1"] = {
+        [_G.ao.id] = tostring(fundingAmount + quantityMinusFees - tonumber(buyAmount)),
+        [msgBuy.From] = buyAmount,
+      },
+      ["2"] = {
+        [_G.ao.id] = tostring(fundingAmount + quantityMinusFees),
+      },
+    }
+    assert.are.same(balancesBefore, CPMM.tokens.balancesById)
+    -- calc sell amount
+    local sellAmount = CPMM:calcSellAmount(
+      tonumber(msgSell.Tags.ReturnAmount),
+      msgSell.Tags.PositionId
+    )
+    -- sell
+    local notice = {}
+    assert.has.no.errors(function()
+      notice = CPMM:sell(
+      msgSell.From,
+      msgSell.Tags.ReturnAmount,
+      msgSell.Tags.PositionId,
+      msgSell.Tags.Quantity,
+      msgSell.Tags.MaxOutcomeTokensToSell,
+      msgSell
+      )
+    end)
+    -- assert state
+    -- LP Token balances
+    assert.are.same(msgBuy.Tags.InvestmentAmount, CPMM.token.balances[msgBuy.From])
+    -- Conditional Token Balances
+    local returnAmount_ = tonumber(msgSell.Tags.ReturnAmount)
+    local feeAmount_ = math.ceil(returnAmount * CPMM.lpFee / 10000)
+    local returnAmountPlusFees = returnAmount_ + feeAmount_
+    local unburned = tonumber(msgSell.Tags.Quantity) - returnAmountPlusFees
+    assert.are.same({
+      ["1"] = {
+        [_G.ao.id] = tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees - unburned),
+        [msgSell.From] =  tostring(tonumber(balancesBefore["1"][msgSell.From]) - tonumber(sellAmount) + unburned),
+      },
+      ["2"] = {
+        [_G.ao.id] = tostring(balancesBefore["2"][_G.ao.id] - returnAmountPlusFees),
+      },
+    }, CPMM.tokens.balancesById)
+    -- Pool Balances
+    local poolBalances = {
+      tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees - unburned),
+      tostring(balancesBefore["2"][_G.ao.id] - returnAmountPlusFees)
+    }
+    assert.are.same(poolBalances, CPMM:getPoolBalances())
+    -- assert notice
+    assert.are.same("Sell-Notice", getTagValue(notice.Tags, "Action"))
+    assert.are.same(msgSell.From, notice.Target)
+    assert.are.same(msgSell.Tags.ReturnAmount, getTagValue(notice.Tags, "ReturnAmount"))
+    assert.are.same(tostring(feeAmount), getTagValue(notice.Tags, "FeeAmount"))
+    assert.are.same(msgBuy.Tags.PositionId, getTagValue(notice.Tags, "PositionId"))
+    assert.are.same(sellAmount, getTagValue(notice.Tags, "OutcomeTokensToSell"))
+    assert.are.same("Successful sell order", notice.Data)
   end)
 
   it("should fail to sell when max sell amount is exceeded", function()

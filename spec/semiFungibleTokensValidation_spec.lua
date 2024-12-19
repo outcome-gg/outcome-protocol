@@ -2,8 +2,8 @@ require("luacov")
 local semiFungibleTokensValidation = require("modules.semiFungibleTokensValidation")
 local json = require("json")
 
--- Mock the CPMM object
-_G.CPMM = { tokens = { positionIds = { "1", "2", "3" } } }
+-- Mock the Market.cpmm object
+_G.Market = { cpmm = {tokens = { positionIds = { "1", "2", "3" } } } }
 
 local sender = ""
 local recipient = ""
@@ -112,7 +112,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msg.Tags.TokenId = nil
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferSingle(msg)
+      semiFungibleTokensValidation.transferSingle(msg, _G.Market.cpmm.tokens.positionIds)
     end, "TokenId is required!")
 	end)
 
@@ -121,7 +121,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msg.Tags.TokenId = "123"
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferSingle(msg)
+      semiFungibleTokensValidation.transferSingle(msg, _G.Market.cpmm.tokens.positionIds)
     end, "Invalid tokenId!")
 	end)
 
@@ -130,7 +130,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msg.Tags.Quantity = nil
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferSingle(msg)
+      semiFungibleTokensValidation.transferSingle(msg, _G.Market.cpmm.tokens.positionIds)
     end, "Quantity is required!")
 	end)
 
@@ -139,7 +139,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msg.Tags.Quantity = "not-a-number"
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferSingle(msg)
+      semiFungibleTokensValidation.transferSingle(msg, _G.Market.cpmm.tokens.positionIds)
     end, "Quantity must be a number!")
 	end)
 
@@ -148,7 +148,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msg.Tags.Quantity = "0"
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferSingle(msg)
+      semiFungibleTokensValidation.transferSingle(msg, _G.Market.cpmm.tokens.positionIds)
     end, "Quantity must be greater than zero!")
 	end)
 
@@ -157,7 +157,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msg.Tags.Quantity = "-123"
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferSingle(msg)
+      semiFungibleTokensValidation.transferSingle(msg, _G.Market.cpmm.tokens.positionIds)
     end, "Quantity must be greater than zero!")
 	end)
 
@@ -166,14 +166,14 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msg.Tags.Quantity = "123.456"
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferSingle(msg)
+      semiFungibleTokensValidation.transferSingle(msg, _G.Market.cpmm.tokens.positionIds)
     end, "Quantity must be an integer!")
 	end)
 
   it("should pass transfer-batch validation", function()
     -- should not throw an error
 		assert.has_no.errors(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end)
 	end)
 
@@ -182,7 +182,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatch.Tags.Recipient = nil
     -- should throw an error
 		assert.has.error(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end, "Recipient is required!")
 	end)
 
@@ -191,7 +191,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatch.Tags.Recipient = "invalid-arweave-wallet-address"
     -- should throw an error
 		assert.has.error(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end, "Recipient must be a valid Arweave address!")
 	end)
 
@@ -200,7 +200,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatch.Tags.TokenIds = nil
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end, "TokenIds is required!")
 	end)
 
@@ -209,7 +209,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatch.Tags.Quantities = nil
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end, "Quantities is required!")
 	end)
 
@@ -218,7 +218,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatch.Tags.Quantities = json.encode({ "100", "200" })
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end, "Input array lengths must match!")
 	end)
 
@@ -227,7 +227,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatch.Tags.TokenIds = json.encode({ "1", "2", "123" })
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end, "Invalid tokenId!")
 	end)
 
@@ -236,7 +236,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatch.Tags.Quantities = json.encode({ "1", "2", 3 })
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end, "Quantity is required!")
 	end)
 
@@ -245,7 +245,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatch.Tags.Quantities = json.encode({ "1", "2", "not-a-number" })
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end, "Quantity must be a number!")
 	end)
 
@@ -254,7 +254,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatch.Tags.Quantities = json.encode({ "1", "2", "0" })
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end, "Quantity must be greater than zero!")
 	end)
 
@@ -263,7 +263,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatch.Tags.Quantities = json.encode({ "1", "2", "-123" })
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end, "Quantity must be greater than zero!")
 	end)
 
@@ -272,7 +272,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatch.Tags.Quantities = json.encode({ "1", "2", "123.456" })
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end, "Quantity must be an integer!")
 	end)
 
@@ -282,7 +282,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatch.Tags.Quantities = json.encode({})
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.transferBatch(msgBatch)
+      semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
     end, "Input array length must be greater than zero!")
 	end)
 
@@ -298,14 +298,14 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBalance.Tags.TokenId = "123"
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.balanceById(msgBalance)
+      semiFungibleTokensValidation.balanceById(msgBalance, _G.Market.cpmm.tokens.positionIds)
     end, "Invalid tokenId!")
 	end)
 
   it("should pass balances-by-id validation", function()
     -- should not throw an error
 		assert.has_no.errors(function()
-      semiFungibleTokensValidation.balancesById(msgBalances)
+      semiFungibleTokensValidation.balancesById(msgBalances, _G.Market.cpmm.tokens.positionIds)
     end)
 	end)
 
@@ -314,14 +314,14 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBalances.Tags.TokenId = "123"
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.balancesById(msgBalances)
+      semiFungibleTokensValidation.balancesById(msgBalances, _G.Market.cpmm.tokens.positionIds)
     end, "Invalid tokenId!")
 	end)
 
   it("should pass batch-balance validation", function()
     -- should not throw an error
 		assert.has_no.errors(function()
-      semiFungibleTokensValidation.batchBalance(msgBatchBalance)
+      semiFungibleTokensValidation.batchBalance(msgBatchBalance, _G.Market.cpmm.tokens.positionIds)
     end)
 	end)
 
@@ -330,7 +330,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatchBalance.Tags.Recipients = nil
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.batchBalance(msgBatchBalance)
+      semiFungibleTokensValidation.batchBalance(msgBatchBalance, _G.Market.cpmm.tokens.positionIds)
     end, "Recipients is required!")
 	end)
 
@@ -343,7 +343,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     })
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.batchBalance(msgBatchBalance)
+      semiFungibleTokensValidation.batchBalance(msgBatchBalance, _G.Market.cpmm.tokens.positionIds)
     end, "Recipient must be a valid Arweave address!")
 	end)
 
@@ -353,14 +353,14 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatchBalance.Tags.TokenIds = json.encode({})
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.batchBalance(msgBatchBalance)
+      semiFungibleTokensValidation.batchBalance(msgBatchBalance, _G.Market.cpmm.tokens.positionIds)
     end, "Input array length must be greater than zero!")
 	end)
 
   it("should pass batch-balances validation", function()
     -- should not throw an error
 		assert.has_no.errors(function()
-      semiFungibleTokensValidation.batchBalances(msgBatchBalances)
+      semiFungibleTokensValidation.batchBalances(msgBatchBalances, _G.Market.cpmm.tokens.positionIds)
     end)
 	end)
 
@@ -369,7 +369,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatchBalances.Tags.TokenIds = nil
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.batchBalances(msgBatchBalances)
+      semiFungibleTokensValidation.batchBalances(msgBatchBalances, _G.Market.cpmm.tokens.positionIds)
     end, "TokenIds is required!")
 	end)
 
@@ -382,7 +382,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     })
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.batchBalances(msgBatchBalances)
+      semiFungibleTokensValidation.batchBalances(msgBatchBalances, _G.Market.cpmm.tokens.positionIds)
     end, "Invalid tokenId!")
 	end)
 
@@ -391,7 +391,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msgBatchBalances.Tags.TokenIds = json.encode({})
     -- should throw an error
     assert.has.error(function()
-      semiFungibleTokensValidation.batchBalances(msgBatchBalances)
+      semiFungibleTokensValidation.batchBalances(msgBatchBalances, _G.Market.cpmm.tokens.positionIds)
     end, "Input array length must be greater than zero!")
 	end)
 end)

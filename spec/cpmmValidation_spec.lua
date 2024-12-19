@@ -61,7 +61,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- Mock the CPMM object
     _G.CPMM = {
       initialized = initialized,
-      tokens = { 
+      tokens = {
         positionIds = { "1", "2", "3" }
       }
     }
@@ -139,7 +139,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
   it("should pass init validation", function()
     -- should not throw an error
 		assert.has_no.errors(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end)
 	end)
 
@@ -147,7 +147,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     _G.CPMM.initialized = true
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "Market already initialized!")
 	end)
 
@@ -155,7 +155,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.MarketId = nil
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "MarketId is required!")
 	end)
 
@@ -163,7 +163,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.ConditionId = nil
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "ConditionId is required!")
 	end)
 
@@ -171,7 +171,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.CollateralToken = nil
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "CollateralToken is required!")
 	end)
 
@@ -179,7 +179,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.CollateralToken = "invalid-arweave-wallet-address"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "CollateralToken must be a valid Arweave address!")
 	end)
 
@@ -187,7 +187,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.OutcomeSlotCount = nil
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "OutcomeSlotCount is required!")
 	end)
 
@@ -195,7 +195,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.OutcomeSlotCount = "not-a-number"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "OutcomeSlotCount must be a number!")
 	end)
 
@@ -203,7 +203,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.OutcomeSlotCount = "0"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "OutcomeSlotCount must be greater than zero!")
 	end)
 
@@ -211,7 +211,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.OutcomeSlotCount = "-1"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "OutcomeSlotCount must be greater than zero!")
 	end)
 
@@ -219,7 +219,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.OutcomeSlotCount = "1.23"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "OutcomeSlotCount must be an integer!")
 	end)
 
@@ -227,7 +227,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.OutcomeSlotCount = "257"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "Too many outcome slots!")
 	end)
 
@@ -235,7 +235,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.OutcomeSlotCount = "1"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "There should be more than one outcome slot!")
 	end)
 
@@ -243,7 +243,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.Name = nil
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "Name is required!")
 	end)
 
@@ -251,7 +251,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.Ticker = nil
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "Ticker is required!")
 	end)
 
@@ -259,7 +259,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.Logo = nil
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "Logo is required!")
 	end)
 
@@ -267,7 +267,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.LpFee = nil
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "LpFee is required!")
 	end)
 
@@ -275,7 +275,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.LpFee = "not-a-number"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "LpFee must be a number!")
 	end)
 
@@ -283,7 +283,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.LpFee = "0"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "LpFee must be greater than zero!")
 	end)
 
@@ -291,7 +291,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.LpFee = "-1"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "LpFee must be greater than zero!")
 	end)
 
@@ -299,7 +299,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.LpFee = "1.23"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "LpFee must be an integer!")
 	end)
 
@@ -307,7 +307,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.CreatorFee = nil
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "CreatorFee is required!")
 	end)
 
@@ -315,7 +315,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.CreatorFee = "not-a-number"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "CreatorFee must be a number!")
 	end)
 
@@ -323,7 +323,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.CreatorFee = "0"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "CreatorFee must be greater than zero!")
 	end)
 
@@ -331,7 +331,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.CreatorFee = "-1"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "CreatorFee must be greater than zero!")
 	end)
 
@@ -339,7 +339,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.CreatorFee = "1.23"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "CreatorFee must be an integer!")
 	end)
 
@@ -347,7 +347,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.ProtocolFee = nil
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "ProtocolFee is required!")
 	end)
 
@@ -355,7 +355,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.ProtocolFee = "not-a-number"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "ProtocolFee must be a number!")
 	end)
 
@@ -363,7 +363,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.ProtocolFee = "0"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "ProtocolFee must be greater than zero!")
 	end)
 
@@ -371,7 +371,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.ProtocolFee = "-1"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "ProtocolFee must be greater than zero!")
 	end)
 
@@ -379,7 +379,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.ProtocolFee = "1.23"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "ProtocolFee must be an integer!")
 	end)
 
@@ -388,7 +388,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.ProtocolFee = "501"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "Take Fee capped at 10%!")
 	end)
 
@@ -396,7 +396,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.Configurator = nil
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "Configurator is required!")
 	end)
 
@@ -404,7 +404,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.Configurator = "invalid-arweave-wallet-address"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "Configurator must be a valid Arweave address!")
 	end)
 
@@ -412,7 +412,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.Incentives = nil
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "Incentives is required!")
 	end)
 
@@ -420,7 +420,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgInit.Tags.Incentives = "invalid-arweave-wallet-address"
     -- should throw an error
 		assert.has.error(function()
-      cpmmValidation.init(msgInit)
+      cpmmValidation.init(msgInit, _G.CPMM.initialized)
     end, "Incentives must be a valid Arweave address!")
 	end)
 
@@ -505,7 +505,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgBuy.Tags.PositionId = "0"
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.buy(msgBuy)
+      cpmmValidation.buy(msgBuy, _G.CPMM.tokens.positionIds)
     end, "Invalid positionId!")
 	end)
 
@@ -513,7 +513,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgBuy.Tags.Quantity = nil
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.buy(msgBuy)
+      cpmmValidation.buy(msgBuy, _G.CPMM.tokens.positionIds)
     end, "Quantity is required!")
 	end)
 
@@ -521,14 +521,14 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgBuy.Tags.Quantity = "not-a-number"
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.buy(msgBuy)
+      cpmmValidation.buy(msgBuy, _G.CPMM.tokens.positionIds)
     end, "Quantity must be a number!")
 	end)
 
   it("should pass sell validation", function()
     -- should not throw an error
 		assert.has_no.errors(function()
-      cpmmValidation.sell(msgSell)
+      cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
     end)
 	end)
 
@@ -536,7 +536,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgSell.Tags.PositionId = nil
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.sell(msgSell)
+      cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
     end, "PositionId is required!")
 	end)
 
@@ -544,7 +544,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgSell.Tags.PositionId = "0"
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.sell(msgSell)
+      cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
     end, "Invalid positionId!")
 	end)
 
@@ -552,7 +552,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgSell.Tags.Quantity = nil
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.sell(msgSell)
+      cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
     end, "Quantity is required!")
 	end)
 
@@ -560,7 +560,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgSell.Tags.Quantity = "not-a-number"
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.sell(msgSell)
+      cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
     end, "Quantity must be a number!")
 	end)
 
@@ -568,7 +568,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgSell.Tags.ReturnAmount = nil
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.sell(msgSell)
+      cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
     end, "ReturnAmount is required!")
 	end)
 
@@ -576,7 +576,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgSell.Tags.ReturnAmount = "not-a-number"
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.sell(msgSell)
+      cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
     end, "ReturnAmount must be a number!")
 	end)
 
@@ -584,7 +584,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgSell.Tags.MaxOutcomeTokensToSell = nil
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.sell(msgSell)
+      cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
     end, "MaxOutcomeTokensToSell is required!")
 	end)
 
@@ -592,14 +592,14 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgSell.Tags.MaxOutcomeTokensToSell = "not-a-number"
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.sell(msgSell)
+      cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
     end, "MaxOutcomeTokensToSell must be a number!")
 	end)
 
   it("should pass calcBuyAmount validation", function()
     -- should not throw an error
 		assert.has_no.errors(function()
-      cpmmValidation.calcBuyAmount(msgCalcBuyAmount)
+      cpmmValidation.calcBuyAmount(msgCalcBuyAmount, _G.CPMM.tokens.positionIds)
     end)
 	end)
 
@@ -607,7 +607,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgCalcBuyAmount.Tags.PositionId = nil
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.calcBuyAmount(msgCalcBuyAmount)
+      cpmmValidation.calcBuyAmount(msgCalcBuyAmount, _G.CPMM.tokens.positionIds)
     end, "PositionId is required!")
 	end)
 
@@ -615,7 +615,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgCalcBuyAmount.Tags.PositionId = "0"
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.calcBuyAmount(msgCalcBuyAmount)
+      cpmmValidation.calcBuyAmount(msgCalcBuyAmount, _G.CPMM.tokens.positionIds)
     end, "Invalid positionId!")
 	end)
 
@@ -623,7 +623,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgCalcBuyAmount.Tags.InvestmentAmount = nil
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.calcBuyAmount(msgCalcBuyAmount)
+      cpmmValidation.calcBuyAmount(msgCalcBuyAmount, _G.CPMM.tokens.positionIds)
     end, "InvestmentAmount is required!")
 	end)
 
@@ -631,14 +631,14 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgCalcBuyAmount.Tags.InvestmentAmount = "not-a-number"
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.calcBuyAmount(msgCalcBuyAmount)
+      cpmmValidation.calcBuyAmount(msgCalcBuyAmount, _G.CPMM.tokens.positionIds)
     end, "InvestmentAmount must be a number!")
 	end)
 
   it("should pass calcSellAmount validation", function()
     -- should not throw an error
 		assert.has_no.errors(function()
-      cpmmValidation.calcSellAmount(msgCalcSellAmount)
+      cpmmValidation.calcSellAmount(msgCalcSellAmount, _G.CPMM.tokens.positionIds)
     end)
 	end)
 
@@ -646,7 +646,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgCalcSellAmount.Tags.PositionId = nil
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.calcSellAmount(msgCalcSellAmount)
+      cpmmValidation.calcSellAmount(msgCalcSellAmount, _G.CPMM.tokens.positionIds)
     end, "PositionId is required!")
 	end)
 
@@ -654,7 +654,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgCalcSellAmount.Tags.PositionId = "0"
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.calcSellAmount(msgCalcSellAmount)
+      cpmmValidation.calcSellAmount(msgCalcSellAmount, _G.CPMM.tokens.positionIds)
     end, "Invalid positionId!")
 	end)
 
@@ -662,7 +662,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgCalcSellAmount.Tags.ReturnAmount = nil
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.calcSellAmount(msgCalcSellAmount)
+      cpmmValidation.calcSellAmount(msgCalcSellAmount, _G.CPMM.tokens.positionIds)
     end, "ReturnAmount is required!")
 	end)
 
@@ -670,7 +670,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgCalcSellAmount.Tags.ReturnAmount = "not-a-number"
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.calcSellAmount(msgCalcSellAmount)
+      cpmmValidation.calcSellAmount(msgCalcSellAmount, _G.CPMM.tokens.positionIds)
     end, "ReturnAmount must be a number!")
 	end)
 end)
