@@ -1,3 +1,7 @@
+---------------------------------------------------------------------------------
+-- All Rights Reserved © Outcome
+---------------------------------------------------------------------------------
+
 local json = require('json')
 local configurator = require('modules.configurator')
 local configuratorValidation = require('modules.configuratorValidation')

@@ -1,4 +1,3 @@
--- reference: https://github.com/gnosis/conditional-tokens-contracts/blob/master/contracts/ConditionalTokens.sol
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
@@ -241,15 +240,15 @@ function MarketMethods:mergePositions(msg)
   local error = false
   local errorMessage = ''
   for i = 1, #self.cpmm.tokens.positionIds do
-    if not self.cpmm.tokens.balancesById[self.cpmm.positionIds[i]] then
+    if not self.cpmm.tokens.balancesById[ self.cpmm.positionIds[i] ] then
       error = true
       errorMessage = "Invalid position! PositionId: " .. self.cpmm.positionIds[i]
     end
-    if not self.cpmm.tokens.balancesById[self.cpmm.positionIds[i]][msg.From] then
+    if not self.cpmm.tokens.balancesById[ self.cpmm.positionIds[i] ][msg.From] then
       error = true
       errorMessage = "Invalid user position! PositionId: " .. self.cpmm.positionIds[i]
     end
-    if bint.__lt(bint(self.cpmm.tokens.balancesById[self.cpmm.positionIds[i]][msg.From]), bint(msg.Tags.Quantity)) then
+    if bint.__lt(bint(self.cpmm.tokens.balancesById[ self.cpmm.positionIds[i] ][msg.From]), bint(msg.Tags.Quantity)) then
       error = true
       errorMessage = "Insufficient tokens! PositionId: " .. self.cpmm.positionIds[i]
     end

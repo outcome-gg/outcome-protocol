@@ -40,7 +40,6 @@ local resolutionAgent = ""
 local questionId = ""
 local tokenIds = {}
 local quantities = {}
-local recipients = {}
 local remainingBalances = {}
 local payouts = {}
 local positionIds = {}
@@ -53,11 +52,8 @@ local msgSell = {}
 local msgCalcBuyAmount = {}
 local msgCalcSellAmount = {}
 local msgMint = {}
-local msgBurn = {}
 local msgMintSingle = {}
 local msgMintBatch = {}
-local msgBurnSingle = {}
-local msgBurnBatch = {}
 local msgBalance = {}
 local msgBalances = {}
 local msgTransfer = {}
@@ -69,7 +65,6 @@ local msgUpdateIncentives = {}
 local msgUpdateTakeFee = {}
 local msgUpdateProtocolFeeTarget = {}
 local msgUpdateLogo = {}
-local msgPrepareCondition = {}
 local msgSplitPosition = {}
 local msgMergePositions = {}
 local msgReportPayouts = {}
@@ -132,10 +127,6 @@ describe("#market", function()
     payouts = { 1, 0 }
     tokenIds = { "1", "2" }
     quantities = { "100", "200" }
-    recipients = {
-      "test-this-is-valid-arweave-wallet-address-2",
-      "test-this-is-valid-arweave-wallet-address-3",
-    }
     remainingBalances = { "0", "0" }
     -- create a message object
 		msgInit = {
@@ -228,14 +219,6 @@ describe("#market", function()
       reply = function(message) return message end
     }
     -- create a message object
-    msgBurn = {
-      From = sender,
-      Tags = {
-        Quantity = burnQuantity
-      },
-      reply = function(message) return message end
-    }
-    -- create a message object
 		msgMintSingle = {
       From = minter,
       Tags = {
@@ -255,28 +238,6 @@ describe("#market", function()
         TokenIds = json.encode(tokenIds),
         Quantities = json.encode(quantities),
       },
-      reply = function(message) return message end
-    }
-    -- create a message object
-		msgBurnSingle = {
-      From = sender,
-      Tags = {
-        Action = "Burn-Single",
-        TokenId = tokenId,
-        Quantity = quantity,
-      },
-      ["X-Action"] = "FOO",
-      reply = function(message) return message end
-    }
-    -- create a message object
-		msgBurnBatch = {
-      From = sender,
-      Tags = {
-        Action = "Burn-Batch",
-        TokenIds = json.encode(tokenIds),
-        Quantities = json.encode(quantities),
-      },
-      ["X-Action"] = "FOO",
       reply = function(message) return message end
     }
     -- create a message object
@@ -340,15 +301,6 @@ describe("#market", function()
       },
       Id = "test-message-id",
       ["X-Action"] = "FOO",
-      reply = function(message) return message end
-    }
-    -- create a message object
-		msgPrepareCondition = {
-      From = sender,
-      Tags = {
-        ConditionId = conditionId,
-        OutcomeSlotCount = outcomeSlotCount,
-      },
       reply = function(message) return message end
     }
     -- create a message object
