@@ -1,9 +1,10 @@
-local json = require('json')
+local ConfiguratorValidation = {}
 local sharedUtils = require('modules.sharedUtils')
+local json = require('json')
 
-local configuratorValidation = {}
-
-function configuratorValidation.updateProcess(msg)
+--- Validates the updateProcess message
+--- @param msg Message The message to be validated
+function ConfiguratorValidation.updateProcess(msg)
   assert(msg.From == Configurator.admin, 'Sender must be admin!')
   assert(type(msg.Tags.UpdateProcess) == 'string', 'UpdateProcess is required!')
   assert(sharedUtils.isValidArweaveAddress(msg.Tags.UpdateProcess), 'UpdateProcess must be a valid Arweave address!')
@@ -12,13 +13,17 @@ function configuratorValidation.updateProcess(msg)
   assert(sharedUtils.isValidKeyValueJSON(msg.Tags.UpdateData) or msg.Tags.UpdateData == nil, 'UpdateData must be valid JSON!')
 end
 
-function configuratorValidation.updateAdmin(msg)
+--- Validates the updateAdmin message
+--- @param msg Message The message to be validated
+function ConfiguratorValidation.updateAdmin(msg)
   assert(msg.From == Configurator.admin, 'Sender must be admin!')
   assert(type(msg.Tags.UpdateAdmin) == 'string', 'UpdateAdmin is required!')
   assert(sharedUtils.isValidArweaveAddress(msg.Tags.UpdateAdmin), 'UpdateAdmin must be a valid Arweave address!')
 end
 
-function configuratorValidation.updateDelay(msg)
+--- Validates the updateDelay message
+--- @param msg Message The message to be validated
+function ConfiguratorValidation.updateDelay(msg)
   assert(msg.From == Configurator.admin, 'Sender must be admin!')
   assert(msg.Tags.UpdateDelay, 'UpdateDelay is required!')
   assert(tonumber(msg.Tags.UpdateDelay), 'UpdateDelay must be a number!')
@@ -26,4 +31,4 @@ function configuratorValidation.updateDelay(msg)
   assert(tonumber(msg.Tags.UpdateDelay) % 1 == 0, 'UpdateDelay must be an integer!')
 end
 
-return configuratorValidation
+return ConfiguratorValidation

@@ -1,15 +1,14 @@
-local ao = require('.ao')
 local json = require('json')
+local ao = ao or require('.ao')
 
 local ConditionalTokensNotices = {}
 
--- @dev Emitted upon the successful preparation of a condition.
--- @param sender The address of the account that prepared the condition.
--- @param conditionId The condition's ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(questionId, resolutionAgent, outcomeSlotCount))``.
--- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
--- @param msg For sending msg.reply
+--- Prepare condition notice
+--- @param conditionId string The condition ID
+--- @param outcomeSlotCount number The number of outcome slots
+--- @param msg Message The message received
+--- @return Message The condition preparation notice
 function ConditionalTokensNotices.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
-  -- TODO: Decide if to be sent to user and/or Data Index
   return msg.reply({
     Action = "Condition-Preparation-Notice",
     ConditionId = conditionId,
@@ -17,12 +16,14 @@ function ConditionalTokensNotices.conditionPreparationNotice(conditionId, outcom
   })
 end
 
--- @dev Emitted upon the successful condition resolution.
--- @param conditionId The condition's ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(questionId, resolutionAgent, outcomeSlotCount))``.
--- @param resolutionAgent The process assigned to report the result for the prepared condition.
--- @param questionId An identifier for the question to be answered by the resolutionAgent.
--- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
--- @param payoutNumerators The payout numerators for each outcome slot.
+--- Condition resolution notice
+--- @param conditionId string The condition ID
+--- @param resolutionAgent string The process assigned to report the result for the prepared condition
+--- @param questionId string An identifier for the question to be answered by the resolutionAgent
+--- @param outcomeSlotCount number The number of outcome slots
+--- @param payoutNumerators table<number> The payout numerators for each outcome slot
+--- @param msg Message The message received
+--- @return Message The condition resolution notice
 function ConditionalTokensNotices.conditionResolutionNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, payoutNumerators, msg)
   -- TODO: Decide if to be sent to user and/or Data Index
   return msg.reply({
@@ -35,12 +36,13 @@ function ConditionalTokensNotices.conditionResolutionNotice(conditionId, resolut
   })
 end
 
--- @dev Emitted when a position is successfully split.
--- @param from The address of the account that split the position.
--- @param collateralToken The address of the collateral token.
--- @param conditionId The condition ID.
--- @param quantity The quantity.
--- @param msg For sending X-Tags
+--- Position split notice
+--- @param from string The address of the account that split the position
+--- @param collateralToken string The address of the collateral token
+--- @param conditionId string The condition ID
+--- @param quantity string The quantity
+--- @param msg Message The message received
+--- @return Message The position split notice
 function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, conditionId, quantity, msg)
   local notice = {
     Action = "Split-Position-Notice",
@@ -61,11 +63,11 @@ function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, con
   return msg.forward(from, notice)
 end
 
-
--- @dev Emitted when positions are successfully merged.
--- @param from The address of the account that merged the positions.
--- @param conditionId The condition ID.
--- @param quantity The quantity.
+--- Positions merge notice
+--- @param conditionId string The condition ID
+--- @param quantity string The quantity
+--- @param msg Message The message received
+--- @return Message The positions merge notice
 function ConditionalTokensNotices.positionsMergeNotice(conditionId, quantity, msg)
   return msg.reply({
     Action = "Merge-Positions-Notice",
@@ -74,13 +76,13 @@ function ConditionalTokensNotices.positionsMergeNotice(conditionId, quantity, ms
   })
 end
 
--- @dev Emitted when a position is successfully redeemed.
--- @param redeemer The address of the account that redeemed the position.
--- @param collateralToken The address of the collateral token.
--- @param conditionId The condition ID.
--- @param payout The payout amount.
+--- Payout redemption notice
+--- @param collateralToken string The address of the collateral token
+--- @param conditionId string The condition ID
+--- @param payout string The payout amount
+--- @param msg Message The message received
+--- @return Message The payout redemption notice
 function ConditionalTokensNotices.payoutRedemptionNotice(collateralToken, conditionId, payout, msg)
-  -- TODO: Decide if to be sent to user and/or Data Index
   return msg.reply({
     Action = "Payout-Redemption-Notice",
     Process = ao.id,

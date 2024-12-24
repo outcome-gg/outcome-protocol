@@ -1,7 +1,7 @@
 require("luacov")
 local conditionalTokens = require("modules.conditionalTokens")
-local json = require("json")
 local crypto = require(".crypto")
+local json = require("json")
 
 local name = ''
 local ticker = ''
@@ -45,8 +45,6 @@ end
 
 describe("#market #conditionalTokens", function()
   before_each(function()
-    -- instantiate conditionalTokens
-		ConditionalTokens = conditionalTokens:new()
     -- set variables
     sender = "test-this-is-valid-arweave-wallet-address-1"
     recipient = "test-this-is-valid-arweave-wallet-address-2"
@@ -58,20 +56,13 @@ describe("#market #conditionalTokens", function()
     totalPayout = 100 -- collateral tokens
     quantity = "100"
     -- set semi-fungible variables
-    -- set name
     name = ''
-    -- set ticker
     ticker = ''
-    -- set logo
     logo = ''
-    -- set balances
     balancesById = {}
-    -- set totalSupply
     totalSupplyById = {}
-    -- set denomination
     denomination = 12
     -- set conditional tokens variables
-    -- @dev mock init state for testing
     conditionId = tostring(crypto.digest.keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount)).asHex())
     outcomeSlotCount = 3
     positionIds = { "1", "2", "3" }
@@ -81,13 +72,25 @@ describe("#market #conditionalTokens", function()
     creatorFeeTarget = "test-this-is-valid-arweave-wallet-address-4"
     protocolFee = 250 -- basis points
     protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-5"
-    ConditionalTokens.conditionId = conditionId
-    ConditionalTokens.outcomeSlotCount = outcomeSlotCount
-    ConditionalTokens.positionIds = positionIds
-    ConditionalTokens.creatorFee = creatorFee
-    ConditionalTokens.creatorFeeTarget = creatorFeeTarget
-    ConditionalTokens.protocolFee = protocolFee
-    ConditionalTokens.protocolFeeTarget = protocolFeeTarget
+    -- instantiate conditionalTokens
+		ConditionalTokens = conditionalTokens:new(
+      name,
+      ticker,
+      logo,
+      balancesById,
+      totalSupplyById,
+      denomination,
+      conditionId,
+      collateralToken,
+      outcomeSlotCount,
+      positionIds,
+      payoutNumerators,
+      payoutDenominator,
+      creatorFee,
+      creatorFeeTarget,
+      protocolFee,
+      protocolFeeTarget
+    )
 
     -- create a message object
 		msgPrepareCondition = {
@@ -147,12 +150,12 @@ describe("#market #conditionalTokens", function()
 
   it("should init conditional tokens", function()
     -- assert initial state
-    assert.are.same(name, ConditionalTokens.tokens.name)
-    assert.are.same(ticker, ConditionalTokens.tokens.ticker)
-    assert.are.same(logo, ConditionalTokens.tokens.logo)
-    assert.are.same(balancesById, ConditionalTokens.tokens.balancesById)
-    assert.are.same(totalSupplyById, ConditionalTokens.tokens.totalSupplyById)
-    assert.are.same(denomination, ConditionalTokens.tokens.denomination)
+    assert.are.same(name, ConditionalTokens.name)
+    assert.are.same(ticker, ConditionalTokens.ticker)
+    assert.are.same(logo, ConditionalTokens.logo)
+    assert.are.same(balancesById, ConditionalTokens.balancesById)
+    assert.are.same(totalSupplyById, ConditionalTokens.totalSupplyById)
+    assert.are.same(denomination, ConditionalTokens.denomination)
     assert.are.same(conditionId, ConditionalTokens.conditionId)
     assert.are.same(outcomeSlotCount, ConditionalTokens.outcomeSlotCount)
     assert.are.same(positionIds, ConditionalTokens.positionIds)
@@ -203,7 +206,7 @@ describe("#market #conditionalTokens", function()
       [positionIds[3]] = {
         [ msgSplitPosition.From] = quantity
       },
-    }, ConditionalTokens.tokens.balancesById)
+    }, ConditionalTokens.balancesById)
     -- assert notice
     assert.are.equals("Split-Position-Notice", notice[2].Action)
     assert.are.equals(msgSplitPosition.Tags.Quantity, notice[2].Quantity)
@@ -258,7 +261,7 @@ describe("#market #conditionalTokens", function()
       [positionIds[3]] = {
         [ msgSplitPosition.From] = '0'
       },
-    }, ConditionalTokens.tokens.balancesById)
+    }, ConditionalTokens.balancesById)
     -- assert notice
     assert.are.equals("Merge-Positions-Notice", notice.Action)
     assert.are.equals(msgSplitPosition.Tags.Quantity, notice.Quantity)
@@ -298,7 +301,7 @@ describe("#market #conditionalTokens", function()
       [positionIds[3]] = {
         [ msgSplitPosition.From] = '0'
       },
-    }, ConditionalTokens.tokens.balancesById)
+    }, ConditionalTokens.balancesById)
     -- assert notice
     assert.are.equals("Merge-Positions-Notice", notice.Action)
     assert.are.equals(msgSplitPosition.Tags.Quantity, notice.Quantity)
@@ -337,7 +340,7 @@ describe("#market #conditionalTokens", function()
     end, "Id must exist! 1")
 	end)
 
-  it("should fail to merge positions (no user balance)", function()
+  it("should fail to merge positions (no account balance)", function()
     -- prepare condition
     ConditionalTokens:prepareCondition(
       msgPrepareCondition.Tags.ConditionId,
@@ -360,7 +363,7 @@ describe("#market #conditionalTokens", function()
         true, -- isSell
         msgMergePositions
       )
-    end, "User must hold token! 1")
+    end, "Account must hold token! 1")
 	end)
 
   it("should report payouts", function()
@@ -588,7 +591,7 @@ describe("#market #conditionalTokens", function()
       [positionIds[3]] = {
         [ msgSplitPosition.From] = '0'
       },
-    }, ConditionalTokens.tokens.balancesById)
+    }, ConditionalTokens.balancesById)
     -- assert notice
     assert.are.equals("Payout-Redemption-Notice", notice.Action)
     assert.are.equals(conditionId, notice.ConditionId)
@@ -639,7 +642,7 @@ describe("#market #conditionalTokens", function()
       msgReportPayouts.Tags.Payouts,
       msgReportPayouts
     )
-    -- redeem positions from different user
+    -- redeem positions from different account
     msgRedeemPositions.From = recipient
     -- should throw an error
     assert.has.error(function()

@@ -3,10 +3,12 @@ local json = require('json')
 
 local SemiFungibleTokensNotices = {}
 
--- @dev Mint single token notice
--- @param to The address that will own the minted token
--- @param id ID of the token to be minted
--- @param quantity Quantity of the token to be minted
+--- Mint single notice
+--- @param to string The address that will own the minted token
+--- @param id string The ID of the token to be minted
+--- @param quantity string The quantity of the token to be minted
+--- @param msg Message The message received
+--- @return Message The mint notice
 function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, msg)
   return msg.reply({
     Recipient = to,
@@ -17,10 +19,12 @@ function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, msg)
   })
 end
 
--- @dev Mint batch notice
--- @param to The address that will own the minted token
--- @param ids IDs of the tokens to be minted
--- @param quantities Quantities of the tokens to be minted
+--- Mint batch notice
+--- @param to string The address that will own the minted tokens
+--- @param ids table<string> The IDs of the tokens to be minted
+--- @param quantities table<string> The quantities of the tokens to be minted
+--- @param msg Message The message received
+--- @return Message The batch mint notice
 function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)
   return msg.reply({
     Recipient = to,
@@ -31,10 +35,12 @@ function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)
   })
 end
 
--- @dev Burn single token notice
--- @param from The address that will burn the token
--- @param id ID of the token to be burned
--- @param quantity Quantity of the token to be burned
+--- Burn single notice
+--- @param from string The address that will burn the token
+--- @param id string The ID of the token to be burned
+--- @param quantity string The quantity of the token to be burned
+--- @param msg Message The message received
+--- @return Message The burn notice
 function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)
   -- Prepare notice
   local notice = {
@@ -55,8 +61,10 @@ function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)
   return msg.reply(notice)
 end
 
--- @dev Burn batch tokens notice
--- @param notice The prepared notice to be sent
+--- Burn batch notice
+--- @param notice Message The prepared notice to be sent
+--- @param msg Message The message received
+--- @return Message The burn notice
 function SemiFungibleTokensNotices.burnBatchNotice(notice, msg)
   -- Forward X-Tags
   for tagName, tagValue in pairs(msg) do
@@ -69,12 +77,13 @@ function SemiFungibleTokensNotices.burnBatchNotice(notice, msg)
   return msg.reply(notice)
 end
 
--- @dev Transfer single token notices
--- @param from The address to be debited
--- @param to The address to be credited
--- @param id ID of the tokens to be transferred
--- @param quantity Quantity of the tokens to be transferred
--- @param msg For sending X-Tags
+--- Transfer single token notices
+--- @param from string The address to be debited
+--- @param to string The address to be credited
+--- @param id string The ID of the token to be transferred
+--- @param quantity string The quantity of the token to be transferred
+--- @param msg Message The message received
+--- @return table<Message> The debit and credit transfer notices
 function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg)
   -- Prepare debit notice
   local debitNotice = {
@@ -105,12 +114,13 @@ function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity,
   return { msg.reply(debitNotice), ao.send(creditNotice) }
 end
 
--- @dev Transfer batch tokens notices
--- @param from The address to be debited
--- @param to The address to be credited
--- @param ids IDs of the tokens to be transferred
--- @param quantities Quantities of the tokens to be transferred
--- @param msg For sending X-Tags
+--- Transfer batch tokens notices
+--- @param from string The address to be debited
+--- @param to string The address to be credited
+--- @param ids table<string> The IDs of the tokens to be transferred
+--- @param quantities table<string> The quantities of the tokens to be transferred
+--- @param msg Message The message received
+--- @return table<Message> The debit and credit batch transfer notices
 function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg)
   -- Prepare debit notice
   local debitNotice = {
@@ -141,10 +151,10 @@ function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantitie
   return {msg.reply(debitNotice), ao.send(creditNotice)}
 end
 
--- @dev Transfer error notice
--- @param from The address to be debited
--- @param id ID of the tokens to be transferred
--- @param msg The message
+--- Transfer error notice
+--- @param id string The ID of the token to be transferred
+--- @param msg Message The message received
+--- @return Message The transfer error notice
 function SemiFungibleTokensNotices.transferErrorNotice(id, msg)
   return msg.reply({
     Action = 'Transfer-Error',

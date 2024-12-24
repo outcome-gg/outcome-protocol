@@ -1,5 +1,14 @@
 local ConfiguratorNotices = {}
 
+--- Sends a stage update notice
+--- @param process string The process ID
+--- @param action string The action name
+--- @param tags string The JSON string of tags
+--- @param data string The JSON string of data
+--- @param hash string The hash of the update
+--- @param timestamp number The timestamp of the update
+--- @param msg Message The message received
+--- @return Message The stage update notice
 function ConfiguratorNotices.stageUpdateNotice(process, action, tags, data, hash, timestamp, msg)
   return msg.reply({
     Action = 'Update-Staged',
@@ -12,6 +21,10 @@ function ConfiguratorNotices.stageUpdateNotice(process, action, tags, data, hash
   })
 end
 
+--- Sends an unstage update notice
+--- @param hash string The hash of the update
+--- @param msg Message The message received
+--- @return Message The unstage update notice
 function ConfiguratorNotices.unstageUpdateNotice(hash, msg)
   return msg.reply({
     Action = 'Update-Unstaged',
@@ -19,6 +32,10 @@ function ConfiguratorNotices.unstageUpdateNotice(hash, msg)
   })
 end
 
+--- Sends an action update notice
+--- @param hash string The hash of the update
+--- @param msg Message The message received
+--- @return Message The action update notice
 function ConfiguratorNotices.actionUpdateNotice(hash, msg)
   return msg.reply({
     Action = 'Update-Actioned',
@@ -26,6 +43,12 @@ function ConfiguratorNotices.actionUpdateNotice(hash, msg)
   })
 end
 
+--- Sends a stage update admin notice
+--- @param admin string The admin address
+--- @param hash string The hash of the update
+--- @param timestamp number The timestamp of the update
+--- @param msg Message The message received
+--- @return Message The stage update admin notice
 function ConfiguratorNotices.stageUpdateAdminNotice(admin, hash, timestamp, msg)
   return msg.reply({
     Action = 'Update-Admin-Staged',
@@ -35,6 +58,10 @@ function ConfiguratorNotices.stageUpdateAdminNotice(admin, hash, timestamp, msg)
   })
 end
 
+--- Sends an unstage update admin notice
+--- @param hash string The hash of the update
+--- @param msg Message The message received
+--- @return Message The unstage update admin notice
 function ConfiguratorNotices.unstageUpdateAdminNotice(hash, msg)
   return msg.reply({
     Action = 'Update-Admin-Unstaged',
@@ -42,6 +69,10 @@ function ConfiguratorNotices.unstageUpdateAdminNotice(hash, msg)
   })
 end
 
+--- Sends an action update admin notice
+--- @param hash string The hash of the update
+--- @param msg Message The message received
+--- @return Message The action update admin notice
 function ConfiguratorNotices.actionUpdateAdminNotice(hash, msg)
   return msg.reply({
     Action = 'Update-Admin-Actioned',
@@ -49,6 +80,12 @@ function ConfiguratorNotices.actionUpdateAdminNotice(hash, msg)
   })
 end
 
+--- Sends a stage update delay notice
+--- @param delay number The delay time in seconds
+--- @param hash string The hash of the update
+--- @param timestamp number The timestamp of the update
+--- @param msg Message The message received
+--- @return Message The stage update delay notice
 function ConfiguratorNotices.stageUpdateDelayNotice(delay, hash, timestamp, msg)
   return msg.reply({
     Action = 'Update-Delay-Staged',
@@ -58,6 +95,10 @@ function ConfiguratorNotices.stageUpdateDelayNotice(delay, hash, timestamp, msg)
   })
 end
 
+--- Sends an unstage update delay notice
+--- @param hash string The hash of the update
+--- @param msg Message The message received
+--- @return Message The unstage update delay notice
 function ConfiguratorNotices.unstageUpdateDelayNotice(hash, msg)
   return msg.reply({
     Action = 'Update-Delay-Unstaged',
@@ -65,6 +106,10 @@ function ConfiguratorNotices.unstageUpdateDelayNotice(hash, msg)
   })
 end
 
+--- Sends an action update delay notice
+--- @param hash string The hash of the update
+--- @param msg Message The message received
+--- @return Message The action update delay notice
 function ConfiguratorNotices.actionUpdateDelayNotice(hash, msg)
   return msg.reply({
     Action = 'Update-Delay-Actioned',

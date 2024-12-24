@@ -240,15 +240,15 @@ function MarketMethods:mergePositions(msg)
   local error = false
   local errorMessage = ''
   for i = 1, #self.cpmm.tokens.positionIds do
-    if not self.cpmm.tokens.balancesById[ self.cpmm.positionIds[i] ] then
+    if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ] then
       error = true
       errorMessage = "Invalid position! PositionId: " .. self.cpmm.positionIds[i]
     end
-    if not self.cpmm.tokens.balancesById[ self.cpmm.positionIds[i] ][msg.From] then
+    if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From] then
       error = true
       errorMessage = "Invalid user position! PositionId: " .. self.cpmm.positionIds[i]
     end
-    if bint.__lt(bint(self.cpmm.tokens.balancesById[ self.cpmm.positionIds[i] ][msg.From]), bint(msg.Tags.Quantity)) then
+    if bint.__lt(bint(self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From]), bint(msg.Tags.Quantity)) then
       error = true
       errorMessage = "Insufficient tokens! PositionId: " .. self.cpmm.positionIds[i]
     end
@@ -279,12 +279,12 @@ end
 
 -- Get Payout Numerators
 function MarketMethods:getPayoutNumerators(msg)
-  local data = (self.cpmm.tokens.payoutNumerators[self.cpmm.conditionId] == nil) and
+  local data = (self.cpmm.tokens.payoutNumerators[self.cpmm.tokens.conditionId] == nil) and
     nil or
-    self.cpmm.tokens.payoutNumerators[self.cpmm.conditionId]
+    self.cpmm.tokens.payoutNumerators[self.cpmm.tokens.conditionId]
   return msg.reply({
     Action = "Payout-Numerators",
-    ConditionId = self.cpmm.conditionId,
+    ConditionId = self.cpmm.tokens.conditionId,
     Data = json.encode(data)
   })
 end
@@ -293,8 +293,8 @@ end
 function MarketMethods:getPayoutDenominator(msg)
   return msg.reply({
     Action = "Payout-Denominator",
-    ConditionId = self.cpmm.conditionId,
-    Data = self.cpmm.tokens.payoutDenominator[self.cpmm.conditionId]
+    ConditionId = self.cpmm.tokens.conditionId,
+    Data = self.cpmm.tokens.payoutDenominator[self.cpmm.tokens.conditionId]
   })
 end
 
@@ -324,7 +324,7 @@ end
 function MarketMethods:balanceById(msg)
   semiFungibleTokensValidation.balanceById(msg, self.cpmm.tokens.positionIds)
   local account = msg.Tags.Recipient or msg.From
-  local bal = self.cpmm:getBalance(msg.From, account, msg.Tags.TokenId)
+  local bal = self.cpmm.tokens:getBalance(msg.From, account, msg.Tags.TokenId)
   return msg.reply({
     Balance = bal,
     TokenId = msg.Tags.TokenId,

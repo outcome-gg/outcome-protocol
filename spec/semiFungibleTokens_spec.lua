@@ -47,8 +47,6 @@ end
 
 describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
   before_each(function()
-    -- instantiate semiFungibleTokens
-		SemiFungibleTokens = semiFungibleTokens:new()
     -- set variables
     -- set name
     name = ''
@@ -62,6 +60,15 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
     totalSupplyById = {}
     -- set denomination
     denomination = 12
+    -- instantiate semiFungibleTokens
+		SemiFungibleTokens = semiFungibleTokens:new(
+      name,
+      ticker,
+      logo,
+      balancesById,
+      totalSupplyById,
+      denomination
+    )
     minter = "test-this-is-valid-arweave-wallet-address-0"
     sender = "test-this-is-valid-arweave-wallet-address-1"
     recipient = "test-this-is-valid-arweave-wallet-address-2"

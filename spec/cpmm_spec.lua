@@ -15,6 +15,12 @@ local name = ""
 local ticker = ""
 local logo = ""
 local newLogo = ""
+local totalSupply = ""
+local denomination = 0
+local balancesById = {}
+local totalSupplyById = {}
+local payoutNumerators = {}
+local payoutDenominator = {}
 local lpFee = ""
 local creatorFee = ""
 local newCreatorFee = ""
@@ -64,10 +70,6 @@ end
 
 describe("#market #conditionalTokens #cpmmValidation", function()
   before_each(function()
-    -- Instantiate objects
-    CPMM = cpmm:new()
-    CPMM.token = token:new()
-    CPMM.tokens = tokens:new()
     -- set variables
     marketFactory = "test-this-is-valid-arweave-wallet-address-0"
     sender = "test-this-is-valid-arweave-wallet-address-1"
@@ -79,6 +81,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     name = "Test Market"
     ticker = "TST"
     logo = "https://test.com/logo.png"
+    totalSupply = "0"
+    denomination = 12
     lpFee = "100" -- basis points
     creatorFee = "100" -- basis points
     newCreatorFee = "200" -- basis points
@@ -98,6 +102,33 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     maxOutcomeTokensToSell = "140"
     positionIds = {"1", "2"}
     distribution = {50, 50}
+    -- Instantiate objects
+    CPMM = cpmm:new()
+    -- CPMM.token = token:new(
+    --   name,
+    --   ticker,
+    --   logo,
+    --   {},
+    --   totalSupply,
+    --   denomination
+    -- )
+    -- CPMM.tokens = tokens:new(
+    --   name,
+    --   ticker,
+    --   logo,
+    --   balancesById,
+    --   totalSupplyById,
+    --   denomination,
+    --   conditionId,
+    --   outcomeSlotCount,
+    --   positionIds,
+    --   payoutNumerators,
+    --   payoutDenominator,
+    --   creatorFee,
+    --   creatorFeeTarget,
+    --   protocolFee,
+    --   protocolFeeTarget
+    -- )
     -- create a message object
 		msgInit = {
       From = marketFactory,
@@ -281,6 +312,32 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 	end)
 
   it("should have initial state", function()
+    -- local token_ = token:new(
+    --   name,
+    --   ticker,
+    --   logo,
+    --   {},
+    --   totalSupply,
+    --   denomination
+    -- )
+    -- local tokens_ = tokens:new(
+    --   name,
+    --   ticker,
+    --   logo,
+    --   balancesById,
+    --   totalSupplyById,
+    --   denomination,
+    --   conditionId,
+    --   outcomeSlotCount,
+    --   positionIds,
+    --   payoutNumerators,
+    --   payoutDenominator,
+    --   creatorFee,
+    --   creatorFeeTarget,
+    --   protocolFee,
+    --   protocolFeeTarget
+    -- )
+
     -- assert initial state
 		assert.is.same("", CPMM.marketId)
     assert.is.same("", CPMM.incentives)
@@ -290,8 +347,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.is.same({}, CPMM.withdrawnFees)
     assert.is.same('0', CPMM.feePoolWeight)
     assert.is.same('0', CPMM.totalWithdrawnFees)
-    assert.is.same(tokens:new(), CPMM.tokens)
-    assert.is.same(token:new(), CPMM.token)
+    assert.is.same({}, CPMM.tokens)
+    assert.is.same({}, CPMM.token)
     assert.is.same(0, CPMM.lpFee)
 	end)
 
@@ -1362,6 +1419,25 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 	end)
 
   it("should return feesWithdrawableBy sender", function()
+    -- init
+    CPMM:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
+    -- fees withdrawable
     local feesWithdrawable = nil
     -- should not throw an error
 		assert.has.no.error(function()
@@ -1523,6 +1599,24 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 
   it("should mint tokens", function()
     local notice = {}
+    -- init
+    CPMM:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- should not throw an error
     assert.has_no.errors(function()
       notice = CPMM:mint(
@@ -1546,6 +1640,24 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 
   it("should burn tokens", function()
     local notice = {}
+    -- init
+    CPMM:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- mint tokens
     CPMM.token:mint(
         msgMint.From,
@@ -1576,6 +1688,24 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 
   it("should transfer tokens", function()
     local notices = {}
+    -- init
+      CPMM:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- mint tokens
     CPMM.token:mint(
       msgMint.From,
@@ -1607,6 +1737,24 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 
   it("should fail to transfer tokens with insufficient balance", function()
     local notice = {}
+    -- init
+    CPMM:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- should not throw an error
     assert.has_no.error(function()
       notice = CPMM.token:transfer(
@@ -1631,6 +1779,24 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 
   it("should update configurator", function()
     local notice = {}
+    -- init
+    CPMM:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- should not throw an error
 		assert.has.no.error(function()
       notice = CPMM:updateConfigurator(
@@ -1647,6 +1813,24 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 
   it("should update incentives", function()
     local notice = {}
+    -- init
+    CPMM:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- should not throw an error
 		assert.has.no.error(function()
       notice = CPMM:updateIncentives(
@@ -1662,6 +1846,24 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 	end)
 
   it("should update take fee" , function()
+    -- init
+    CPMM:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     local notice = {}
     -- should not throw an error
     assert.has.no.error(function()
@@ -1684,6 +1886,24 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 
   it("should update protocol fee target" , function()
     local notice = {}
+    -- init
+    CPMM:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- should not throw an error
     assert.has.no.error(function()
       notice = CPMM:updateProtocolFeeTarget(
@@ -1700,6 +1920,24 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 
   it("should update logo" , function()
     local notice = {}
+    -- init
+    CPMM:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- should not throw an error
     assert.has.no.error(function()
       notice = CPMM:updateLogo(

@@ -2,6 +2,8 @@ local sharedUtils = require('modules.sharedUtils')
 
 local tokenValidation = {}
 
+--- Validates the transfer message
+--- @param msg Message The message received
 function tokenValidation.transfer(msg)
   assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
   assert(sharedUtils.isValidArweaveAddress(msg.Tags.Recipient), 'Recipient must be a valid Arweave address!')

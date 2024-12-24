@@ -457,8 +457,8 @@ describe("#market", function()
     assert.is.same({}, Market.cpmm.withdrawnFees)
     assert.is.same('0', Market.cpmm.feePoolWeight)
     assert.is.same('0', Market.cpmm.totalWithdrawnFees)
-    assert.is.same(tokens:new(), Market.cpmm.tokens)
-    assert.is.same(token:new(), Market.cpmm.token)
+    assert.is.same({}, Market.cpmm.tokens)
+    assert.is.same({}, Market.cpmm.token)
     assert.is.same(0, Market.cpmm.lpFee)
 	end)
 
@@ -963,6 +963,24 @@ describe("#market", function()
 	end)
 
   it("should return feesWithdrawableBy sender", function()
+     -- init
+     Market.cpmm:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     local feesWithdrawable = nil
     -- should not throw an error
 		assert.has.no.error(function()
@@ -1075,6 +1093,24 @@ describe("#market", function()
 
   it("should transfer tokens", function()
     local notices = {}
+    -- init
+    Market.cpmm:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- mint tokens
     Market.cpmm.token:mint(
       msgMint.From,
@@ -1106,6 +1142,24 @@ describe("#market", function()
 
   it("should fail to transfer tokens with insufficient balance", function()
     local notice = {}
+    -- init
+    Market.cpmm:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- should not throw an error
     assert.has_no.error(function()
       notice = Market.cpmm.token:transfer(
@@ -1129,6 +1183,24 @@ describe("#market", function()
 	end)
 
   it("should get LP Token balance (sender)", function()
+    -- init
+    Market.cpmm:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- mint tokens
     Market.cpmm.token:mint(
       msgMint.From,
@@ -1147,6 +1219,24 @@ describe("#market", function()
   end)
 
   it("should get LP Token balance (recipient)", function()
+    -- init
+    Market.cpmm:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- mint tokens
     Market.cpmm.token:mint(
       msgMint.From,
@@ -1164,6 +1254,24 @@ describe("#market", function()
   end)
 
   it("should get LP Token balances", function()
+    -- init
+    Market.cpmm:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- mint tokens
     Market.cpmm.token:mint(
       msgMint.From,
@@ -1182,6 +1290,24 @@ describe("#market", function()
   end)
 
   it("should get LP Token total supply", function()
+    -- init
+    Market.cpmm:init(
+      msgInit.Tags.Configurator,
+      msgInit.Tags.Incentives,
+      msgInit.Tags.CollateralToken,
+      msgInit.Tags.MarketId,
+      msgInit.Tags.ConditionId,
+      msgInit.Tags.OutcomeSlotCount,
+      msgInit.Tags.Name,
+      msgInit.Tags.Ticker,
+      msgInit.Tags.Logo,
+      msgInit.Tags.LpFee,
+      msgInit.Tags.CreatorFee,
+      msgInit.Tags.CreatorFeeTarget,
+      msgInit.Tags.ProtocolFee,
+      msgInit.Tags.ProtocolFeeTarget,
+      msgInit
+    )
     -- mint tokens
     Market.cpmm.token:mint(
       msgMint.From,
@@ -1235,7 +1361,7 @@ describe("#market", function()
       [positionIds[2]] = {
         [ msgSplitPosition.From] = '0'
       },
-    }, Market.cpmm.tokens.tokens.balancesById)
+    }, Market.cpmm.tokens.balancesById)
     -- assert notice
     assert.are.equals("Merge-Positions-Notice", notice.Action)
     assert.are.equals(msgSplitPosition.Tags.Quantity, notice.Quantity)
@@ -1280,7 +1406,7 @@ describe("#market", function()
       [positionIds[2]] = {
         [ msgSplitPosition.From] = '0'
       },
-    }, Market.cpmm.tokens.tokens.balancesById)
+    }, Market.cpmm.tokens.balancesById)
     -- assert notice
     assert.are.equals("Merge-Positions-Notice", notice.Action)
     assert.are.equals(msgSplitPosition.Tags.Quantity, notice.Quantity)
@@ -1371,7 +1497,7 @@ describe("#market", function()
       [positionIds[2]] = {
         [ msgSplitPosition.From] = '0'
       },
-    }, Market.cpmm.tokens.tokens.balancesById)
+    }, Market.cpmm.tokens.balancesById)
     -- assert notice
     assert.are.equals("Payout-Redemption-Notice", notice.Action)
     assert.are.equals(conditionId, notice.ConditionId)

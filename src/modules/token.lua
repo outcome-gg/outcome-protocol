@@ -1,59 +1,87 @@
-local bint = require('.bint')(256)
-local json = require('json')
-local ao = require('.ao')
-
 local Token = {}
 local TokenMethods = require('modules.tokenNotices')
+local TokenNotices = require('modules.tokenNotices')
+local bint = require('.bint')(256)
 
--- Constructor for Token 
-function Token:new()
-  -- This will store user balances of tokens and metadata
-  local obj = {
-    name = '',
-    ticker = '',
-    logo = '',
-    balances = {},
-    totalSupply = '0',
-    denomination = 12
+--- Represents a Token
+--- @class Token
+--- @field name string The token name
+--- @field ticker string The token ticker
+--- @field logo string The token logo Arweave TxID
+--- @field balances table<string, string> The user token balances
+--- @field totalSupply string The total supply of the token
+--- @field denomination number The number of decimals
+
+--- Creates a new Token instance
+--- @param name string The token name
+--- @param ticker string The token ticker
+--- @param logo string The token logo Arweave TxID
+--- @param balances table<string, string> The user token balances
+--- @param totalSupply string The total supply of the token
+--- @param denomination number The number of decimals
+--- @return Token The new Token instance
+function Token:new(name, ticker, logo, balances, totalSupply, denomination)
+  local token = {
+    name = name,
+    ticker = ticker,
+    logo = logo,
+    balances = balances,
+    totalSupply = totalSupply,
+    denomination = denomination
   }
-  setmetatable(obj, { __index = TokenMethods })
-  return obj
+  setmetatable(token, {
+    __index = function(_, k)
+      if TokenMethods[k] then
+        return TokenMethods[k]
+      elseif TokenNotices[k] then
+        return TokenNotices[k]
+      else
+        return nil
+      end
+    end
+  })
+  return token
 end
 
--- @dev Internal function to mint a quantity of tokens
--- @param to The address that will own the minted token
--- @param quantity Quantity of the token to be minted
+--- Mint a quantity of tokens
+--- @param to string The address that will own the minted tokens
+--- @param quantity string The quantity of tokens to mint
+--- @param msg Message The message received
+--- @return Message The mint notice
 function TokenMethods:mint(to, quantity, msg)
   assert(quantity, 'Quantity is required!')
-  assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
+  assert(bint.__lt(0, bint(quantity)), 'Quantity must be greater than zero!')
   -- Mint tokens
   if not self.balances[to] then self.balances[to] = '0' end
-  self.balances[to] = tostring(bint.__add(bint(self.balances[to]), quantity))
-  self.totalSupply = tostring(bint.__add(bint(self.totalSupply), quantity))
+  self.balances[to] = tostring(bint.__add(bint(self.balances[to]), bint(quantity)))
+  self.totalSupply = tostring(bint.__add(bint(self.totalSupply), bint(quantity)))
   -- Send notice
   return self.mintNotice(to, quantity, msg)
 end
 
--- @dev Internal function to burn a quantity of tokens
--- @param from The address that will burn the token
--- @param quantity Quantity of the token to be burned
+--- Burn a quantity of tokens
+--- @param from string The process ID that will no longer own the burned tokens
+--- @param quantity string The quantity of tokens to burn
+--- @param msg Message The message received
+--- @return Message The burn notice
 function TokenMethods:burn(from, quantity, msg)
-  assert(bint.__lt(0, quantity), 'Quantity must be greater than zero!')
+  assert(bint.__lt(0, bint(quantity)), 'Quantity must be greater than zero!')
   assert(self.balances[from], 'Must have token balance!')
-  assert(bint.__le(quantity, self.balances[from]), 'Must have sufficient tokens!')
+  assert(bint.__le(bint(quantity), self.balances[from]), 'Must have sufficient tokens!')
   -- Burn tokens
-  self.balances[from] = tostring(bint.__sub(self.balances[from], quantity))
-  self.totalSupply = tostring(bint.__sub(bint(self.totalSupply), quantity))
+  self.balances[from] = tostring(bint.__sub(self.balances[from], bint(quantity)))
+  self.totalSupply = tostring(bint.__sub(bint(self.totalSupply), bint(quantity)))
   -- Send notice
   return self.burnNotice(quantity, msg)
 end
 
--- @dev Internal function to transfer a quantity of tokens
--- @param recipient The address that will send the token
--- @param from The address that will receive the token
--- @param quantity Quantity of the token to be burned
--- @param cast Cast to silence the transfer notice
--- @param msg The message (used for x-tag forwarding and reporting)
+--- Transfer a quantity of tokens
+--- @param from string The process ID that will send the token
+--- @param recipient string The process ID that will receive the token 
+--- @param quantity string The quantity of tokens to transfer
+--- @param cast boolean The cast is set to true to silence the transfer notice
+--- @param msg Message The message received
+--- @return table<Message>|Message|nil The transfer notices, error notice or nothing
 function TokenMethods:transfer(from, recipient, quantity, cast, msg)
   if not self.balances[from] then self.balances[from] = "0" end
   if not self.balances[recipient] then self.balances[recipient] = "0" end

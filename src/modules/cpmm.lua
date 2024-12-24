@@ -3,19 +3,15 @@ local bint = require('.bint')(256)
 local ao = require('.ao')
 local utils = require(".utils")
 local token = require('modules.token')
+local constants = require("modules.constants")
 local conditionalTokens = require('modules.conditionalTokens')
 local CPMMHelpers = require('modules.cpmmHelpers')
 
 local CPMM = {}
 local CPMMMethods = require('modules.cpmmNotices')
-local LPToken = {}
-local ConditionalTokens = {}
 
--- Constructor for CPMM 
+-- Constructor for CPMM (Constant Product Market Maker)
 function CPMM:new()
-  -- Initialize Tokens and store the object
-  LPToken = token:new()
-  ConditionalTokens = conditionalTokens:new()
   -- Create a new CPMM object
   local obj = {
     -- Market vars
@@ -29,27 +25,21 @@ function CPMM:new()
     feePoolWeight = '0',
     totalWithdrawnFees = '0',
     -- ConditionalTokens vars
-    tokens = ConditionalTokens,
+    tokens = {},
     -- LP vars
-    token = LPToken,
+    token = {},
     lpFee = 0
   }
 
   -- Set metatable for method lookups
   setmetatable(obj, {
-    __index = function(t, k)
+    __index = function(_, k)
       -- First, look up the key in CPMMMethods
       if CPMMMethods[k] then
         return CPMMMethods[k]
       -- Then, check in CPMMHelpers
       elseif CPMMHelpers[k] then
         return CPMMHelpers[k]
-      -- Then, look up the key in the ConditionalTokens methods
-      elseif ConditionalTokens[k] then
-        return ConditionalTokens[k]
-      -- Lastly, look up the key in the Config methods
-      elseif Config[k] then
-        return Config[k]
       else
         return nil
       end
@@ -66,22 +56,37 @@ end
 function CPMMMethods:init(configurator, incentives, collateralToken, marketId, conditionId, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
   -- Generate Position Ids
   local positionIds = self.getPositionIds(tonumber(outcomeSlotCount))
-  -- Set Conditional Tokens vars
-  self.tokens.conditionId = conditionId
-  self.tokens.positionIds = positionIds
-  self.tokens.outcomeSlotCount = outcomeSlotCount
-  self.tokens.collateralToken = collateralToken
-  self.tokens.creatorFee = tonumber(creatorFee)
-  self.tokens.creatorFeeTarget = creatorFeeTarget
-  self.tokens.protocolFee = tonumber(protocolFee)
-  self.tokens.protocolFeeTarget = protocolFeeTarget
   -- Set LP Token vars
-  self.token.name = name
-  self.token.ticker = ticker
-  self.token.logo = logo
+  self.token = token:new(
+    name,
+    ticker,
+    logo,
+    {}, -- balances
+    '0', -- totalSupply
+    constants.denomination
+  )
+  -- Set Conditional Tokens vars
+  self.tokens = conditionalTokens:new(
+    name,
+    ticker,
+    logo,
+    {}, -- balancesById
+    {}, -- totalSupplyById
+    constants.denomination,
+    conditionId,
+    collateralToken,
+    outcomeSlotCount,
+    positionIds,
+    {}, -- payoutNumerators
+    {}, -- payoutDenominator
+    creatorFee,
+    creatorFeeTarget,
+    protocolFee,
+    protocolFeeTarget
+  )
   -- Initialized
-  self.marketId = marketId
   self.initialized = true
+  self.marketId = marketId
   self.configurator = configurator
   self.incentives = incentives
   self.lpFee = tonumber(lpFee)

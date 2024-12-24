@@ -1,33 +1,56 @@
+local Configurator = {}
+local ConfiguratorMethods = {}
+local ConfiguratorNotices = require('modules.configuratorNotices')
+local sharedUtils = require('modules.sharedUtils')
 local json = require('json')
 local crypto = require('.crypto')
-local configuratorNotices = require('modules.configuratorNotices')
 
-local Configurator = {}
+-- Default Configurator delay
+ConfiguratorDelay = {
+  DEV = 1,                -- 1 second
+  PROD = 3 * 24 * 60 * 60 -- 3 days in seconds
+}
 
--- Add configurator notices
-local configuratorMethods = configuratorNotices
+--- Represents a Configurator
+--- @class Configurator
+--- @field admin string The admin process ID
+--- @field delay number The update delay in seconds
+--- @field staged table<number> The staged update timestamps
 
--- Constructor for ProcessProvider 
-function Configurator:new(env)
-  -- Create a new configurator object
-  local obj = {
-    admin = 'm6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0',  -- Initial Admin Address
-    delay = env == "DEV" and 1 or 3*24*60*60,               -- Initial Update Delay in Seconds (i.e. 1 second or 3 days)
-    staged = {},                                            -- Staged Update Timestamps
+--- Creates a new Constructor instance 
+--- @param admin string The admin process ID
+--- @param env string The environment
+--- @return Configurator The new Configurator instance 
+function Configurator:new(admin, env)
+  assert(type(admin) == "string", 'Admin process ID is required!')
+  assert(sharedUtils.isValidArweaveAddress(admin), 'Admin must be a valid Arweave address!')
+  assert(env == "DEV" or env == "PROD", 'Invalid environment! Must be "DEV" or "PROD".')
+
+  local configurator = {
+    admin = admin,
+    delay = ConfiguratorDelay[env],
+    staged = {},
   }
-  -- Set metatable for method lookups
-  setmetatable(obj, { __index = configuratorMethods })
-  return obj
+  setmetatable(configurator, {
+    __index = function(t, k)
+      if ConfiguratorMethods[k] then
+        return ConfiguratorMethods[k]
+      elseif ConfiguratorNotices[k] then
+        return ConfiguratorNotices[k]
+      end
+    end
+  })
+  return configurator
 end
 
---[[
-    PROTOCOL ----------------------------------------------------------------
-]]
-
---[[
-    Stage Update
-]]
-function configuratorMethods:stageUpdate(process, action, tags, data, msg)
+--- Stages an update
+--- @param process string The process ID
+--- @param action string The action name
+--- @param tags string The JSON string of tags
+--- @param data string The JSON string of data
+--- @param msg Message The message received
+--- @return Message The stage update notice
+function ConfiguratorMethods:stageUpdate(process, action, tags, data, msg)
   local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()
   -- stage
   self.staged[hash] = os.time()
@@ -35,10 +58,14 @@ function configuratorMethods:stageUpdate(process, action, tags, data, msg)
   return self.stageUpdateNotice(process, action, tags, data, hash, self.staged[hash], msg)
 end
 
---[[
-    Unstage Update
-]]
-function configuratorMethods:unstageUpdate(process, action, tags, data, msg)
+--- Unstages an update
+--- @param process string The process ID
+--- @param action string The action name
+--- @param tags string The JSON string of tags
+--- @param data string The JSON string of data
+--- @param msg Message The message received
+--- @return Message The unstage update notice
+function ConfiguratorMethods:unstageUpdate(process, action, tags, data, msg)
   local hash = crypto.digest.keccak256(process .. action .. tags.. data).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   -- unstage
@@ -47,10 +74,14 @@ function configuratorMethods:unstageUpdate(process, action, tags, data, msg)
   return self.unstageUpdateNotice(hash, msg)
 end
 
---[[
-    Action Update
-]]
-function configuratorMethods:actionUpdate(process, action, tags, data, msg)
+--- Actions an update
+--- @param process string The process ID
+--- @param action string The action name
+--- @param tags string The JSON string of tags
+--- @param data string The JSON string of data
+--- @param msg Message The message received
+--- @return Message The action update notice
+function ConfiguratorMethods:actionUpdate(process, action, tags, data, msg)
   local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   local remaining = self.staged[hash] + self.delay - os.time()
@@ -71,14 +102,11 @@ function configuratorMethods:actionUpdate(process, action, tags, data, msg)
   return self.actionUpdateNotice(hash, msg)
 end
 
---[[
-    ADMIN ----------------------------------------------------------------
-]]
-
---[[
-    Stage Update: Admin
-]]
-function configuratorMethods:stageUpdateAdmin(updateAdmin, msg)
+--- Stages an update for the admin
+--- @param updateAdmin string The new admin process ID
+--- @param msg Message The message received
+--- @return Message The stage update admin notice
+function ConfiguratorMethods:stageUpdateAdmin(updateAdmin, msg)
   local hash = crypto.digest.keccak256(updateAdmin).asHex()
   -- stage
   self.staged[hash] = os.time()
@@ -86,10 +114,11 @@ function configuratorMethods:stageUpdateAdmin(updateAdmin, msg)
   return self.stageUpdateAdminNotice(updateAdmin, hash, self.staged[hash], msg)
 end
 
---[[
-    Unstage Update: Admin
-]]
-function configuratorMethods:unstageUpdateAdmin(updateAdmin, msg)
+--- Unstages an update for the admin
+--- @param updateAdmin string The new admin process ID
+--- @param msg string The message received
+--- @return Message The unstage update admin notice
+function ConfiguratorMethods:unstageUpdateAdmin(updateAdmin, msg)
   local hash = crypto.digest.keccak256(updateAdmin).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   -- unstage 
@@ -98,10 +127,11 @@ function configuratorMethods:unstageUpdateAdmin(updateAdmin, msg)
   return self.unstageUpdateAdminNotice(hash, msg)
 end
 
---[[
-    Action Update: Admin
-]]
-function configuratorMethods:actionUpdateAdmin(updateAdmin, msg)
+--- Actions an update for the admin
+--- @param updateAdmin string The new admin process ID
+--- @param msg string The message received
+--- @return Message The action update admin notice
+function ConfiguratorMethods:actionUpdateAdmin(updateAdmin, msg)
   local hash = crypto.digest.keccak256(updateAdmin).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   local remaining = self.staged[hash] + self.delay - os.time()
@@ -114,24 +144,22 @@ function configuratorMethods:actionUpdateAdmin(updateAdmin, msg)
   return self.actionUpdateAdminNotice(hash, msg)
 end
 
---[[
-    DELAY TIME ----------------------------------------------------------------
-]]
-
---[[
-    Stage Update: DelayTime
-]]
-function configuratorMethods:stageUpdateDelay(delayInSeconds, msg)
+--- Stages an update for the delay time
+--- @param delayInSeconds number The new delay time in seconds
+--- @param msg string The message received
+--- @return Message The stage update delay notice
+function ConfiguratorMethods:stageUpdateDelay(delayInSeconds, msg)
   local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()
   self.staged[hash] = os.time()
   -- stage notice
   return self.stageUpdateDelayNotice(delayInSeconds, hash, self.staged[hash], msg)
 end
 
---[[
-    Unstage Update: Delay
-]]
-function configuratorMethods:unstageUpdateDelay(delayInSeconds, msg)
+--- Unstages an update for the delay time
+--- @param delayInSeconds number The new delay time in seconds
+--- @param msg string The message received
+--- @return Message The unstage update delay notice
+function ConfiguratorMethods:unstageUpdateDelay(delayInSeconds, msg)
   local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   -- unstage
@@ -140,10 +168,11 @@ function configuratorMethods:unstageUpdateDelay(delayInSeconds, msg)
   return self.unstageUpdateDelayNotice(hash, msg)
 end
 
---[[
-    Action Update: Delay
-]]
-function configuratorMethods:actionUpdateDelay(delayInSeconds, msg)
+--- Actions an update for the delay time
+--- @param delayInSeconds number The new delay time in seconds
+--- @param msg string The message received
+--- @return Message The action update delay notice
+function ConfiguratorMethods:actionUpdateDelay(delayInSeconds, msg)
   local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   local remaining = self.staged[hash] + self.delay - os.time()

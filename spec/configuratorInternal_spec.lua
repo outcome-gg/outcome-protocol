@@ -17,7 +17,7 @@ describe("#configurator #configuratorInternal", function()
     -- set admin
     admin = "test-this-is-valid-arweave-wallet-address-1"
     -- instantiate configurator
-		Configurator = configurator:new("DEV") -- in dev mode with delay == 1 second
+		Configurator = configurator:new(admin, "DEV") -- in dev mode with delay == 1 second
     -- create a message object
     msg = {
       From = admin,

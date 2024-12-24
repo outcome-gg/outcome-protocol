@@ -30,8 +30,6 @@ end
 
 describe("#market #token #tokenInternal", function()
   before_each(function()
-    -- instantiate token
-		Token = token:new()
     -- set sender
     sender = "test-this-is-valid-arweave-wallet-address-1"
     -- set recipient
@@ -52,6 +50,15 @@ describe("#market #token #tokenInternal", function()
     totalSupply = "0"
     -- set denomination
     denomination = 12
+    -- instantiate token
+		Token = token:new(
+      name,
+      ticker,
+      logo,
+      balances,
+      totalSupply,
+      denomination
+    )
     -- create a message object
     msgMint = {
       From = sender,

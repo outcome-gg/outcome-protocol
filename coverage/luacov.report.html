@@ -316,16 +316,16 @@
 </head>
 <body onload="initialize()">
    <main>
-      <div class="file warning total">
+      <div class="file danger total">
          <h1 class="title">
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 44.32%"></span>
-                  <span><strong>44.32%</strong> Coverage</span>
+                  <span class="bg" style="width: 31.37%"></span>
+                  <span><strong>31.37%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>82</strong> Hits</span>
-               <span class="miss"><strong>103</strong> Missed</span>
+               <span class="hits"><strong>112</strong> Hits</span>
+               <span class="miss"><strong>245</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -335,65 +335,111 @@
             src/modules/conditionalTokens.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 4.35%"></span>
-                  <span><strong>4.35%</strong> Coverage</span>
+                  <span class="bg" style="width: 5.94%"></span>
+                  <span><strong>5.94%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>4</strong> Hits</span>
-               <span class="miss"><strong>88</strong> Missed</span>
+               <span class="hits"><strong>6</strong> Hits</span>
+               <span class="miss"><strong>95</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums">-- reference: https:&#47;&#47;github.com&#47;gnosis&#47;conditional-tokens-contracts&#47;blob&#47;master&#47;contracts&#47;ConditionalTokens.sol
-<span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
-<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local ConditionalTokens = {}</span>
+<span class="fc" data-hits="1">local ConditionalTokensMethods = {}</span>
+<span class="fc" data-hits="1">local ConditionalTokensNotices = require(&#39;modules.conditionalTokensNotices&#39;)</span>
+<span class="fc" data-hits="1">local SemiFungibleTokens = require(&#39;modules.semiFungibleTokens&#39;)</span>
 <span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
 <span class="fc" data-hits="1">local crypto = require(&#39;.crypto&#39;)</span>
-<span class="nc">local semiFungibleTokens = require(&#39;modules.semiFungibleTokens&#39;)</span>
+<span class="nc">local ao = require(&#39;.ao&#39;)</span>
+<span class="nc">local json = require(&quot;json&quot;)</span>
 
-<span class="nc">local SemiFungibleTokens = {}</span>
-<span class="nc">local ConditionalTokens = {}</span>
-<span class="nc">local ConditionalTokensMethods = require(&#39;modules.conditionalTokensNotices&#39;)</span>
+--- Represents ConditionalTokens
+--- @class ConditionalTokens
+--- @field name string The token name
+--- @field ticker string The token ticker
+--- @field logo string The token logo Arweave TxID
+--- @field balancesById table&lt;string, table&lt;string, string&gt;&gt; The account token balances by ID
+--- @field totalSupplyById table&lt;string, string&gt; The total supply of the token by ID
+--- @field denomination number The number of decimals
+--- @field conditionId string The condition ID
+--- @field collateralToken string The process ID of the collateral token
+--- @field outcomeSlotCount number The number of outcome slots
+--- @field positionIds table&lt;string&gt; The position IDs representing outcomes
+--- @field payoutNumerators table&lt;number&gt; The relative payouts for each outcome slot
+--- @field payoutDenominator table&lt;number&gt; The sum of payout numerators, zero if unreported
+--- @field creatorFee number The creator fee to be paid, in basis points
+--- @field creatorFeeTarget string The process ID to receive the creator fee
+--- @field protocolFee number The protocol fee to be paid, in basis points
+--- @field protocolFeeTarget string The process ID to receive the protocol fee
 
--- Constructor for ConditionalTokens 
-<span class="nc">function ConditionalTokens:new()</span>
-  -- Initialize SemiFungibleTokens and store the object
-<span class="nc">  SemiFungibleTokens = semiFungibleTokens:new()</span>
+--- Creates a new ConditionalTokens instance
+--- @param name string The token name
+--- @param ticker string The token ticker
+--- @param logo string The token logo Arweave TxID
+--- @param balancesById table&lt;string, table&lt;string, string&gt;&gt; The account token balances by ID
+--- @param totalSupplyById table&lt;string, string&gt; The total supply of the token by ID
+--- @param denomination number The number of decimals
+--- @param conditionId string The condition ID
+--- @param collateralToken string The process ID of the collateral token
+--- @param outcomeSlotCount number The number of outcome slots
+--- @param positionIds table&lt;string&gt; The position IDs representing outcomes
+--- @param payoutNumerators table&lt;number&gt; The relative payouts for each outcome slot
+--- @param payoutDenominator table&lt;number&gt; The sum of payout numerators, zero if unreported
+--- @param creatorFee number The creator fee to be paid, in basis points
+--- @param creatorFeeTarget string The process ID to receive the creator fee
+--- @param protocolFee number The protocol fee to be paid, in basis points
+--- @param protocolFeeTarget string The process ID to receive the protocol fee
+--- @return ConditionalTokens The new ConditionalTokens instance
+<span class="nc">function ConditionalTokens:new(</span>
+  name,
+  ticker,
+  logo,
+  balancesById,
+  totalSupplyById,
+  denomination,
+  conditionId,
+  collateralToken,
+  outcomeSlotCount,
+  positionIds,
+  payoutNumerators,
+  payoutDenominator,
+  creatorFee,
+  creatorFeeTarget,
+  protocolFee,
+  protocolFeeTarget
+)
+  ---@class ConditionalTokens : SemiFungibleTokens
+<span class="nc">  local conditionalTokens = SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)</span>
+<span class="nc">  conditionalTokens.conditionId = conditionId</span>
+<span class="nc">  conditionalTokens.collateralToken = collateralToken</span>
+<span class="nc">  conditionalTokens.outcomeSlotCount = outcomeSlotCount</span>
+<span class="nc">  conditionalTokens.positionIds = positionIds</span>
+<span class="nc">  conditionalTokens.payoutNumerators = payoutNumerators</span>
+<span class="nc">  conditionalTokens.payoutDenominator = payoutDenominator</span>
+<span class="nc">  conditionalTokens.creatorFee = tonumber(creatorFee) or 0</span>
+<span class="nc">  conditionalTokens.creatorFeeTarget = creatorFeeTarget</span>
+<span class="nc">  conditionalTokens.protocolFee = tonumber(protocolFee) or 0</span>
+<span class="nc">  conditionalTokens.protocolFeeTarget = protocolFeeTarget</span>
 
-  -- Create a new ConditionalTokens object
-<span class="nc">  local obj = {</span>
-    -- SemiFungible Tokens
-    tokens = SemiFungibleTokens,
-    conditionId = &#39;&#39;,
-    outcomeSlotCount = nil,
-    positionIds = {},
-    payoutNumerators = {},
-    payoutDenominator = {},
-    -- Take Fee vars
-    creatorFee = 0,
-    creatorFeeTarget = &#39;&#39;,
-    protocolFee = 0,
-<span class="nc">    protocolFeeTarget = &#39;&#39;</span>
-  }
-
-  -- Set metatable for method lookups from ConditionalTokensMethods, SemiFungibleTokensMethods, and ConditionalTokensHelpers
-<span class="nc">  setmetatable(obj, {</span>
-    __index = function(t, k)
-      -- First, look up the key in ConditionalTokensMethods
+<span class="nc">  local semiFungibleTokensMetatable = getmetatable(conditionalTokens)</span>
+<span class="nc">  setmetatable(conditionalTokens, {</span>
+    __index = function(_, k)
 <span class="nc">      if ConditionalTokensMethods[k] then</span>
 <span class="nc">        return ConditionalTokensMethods[k]</span>
-      -- Lastly, look up the key in the semiFungibleInstance methods
-<span class="nc">      elseif SemiFungibleTokens[k] then</span>
-<span class="nc">        return SemiFungibleTokens[k]</span>
+<span class="nc">      elseif ConditionalTokensNotices[k] then</span>
+<span class="nc">        return ConditionalTokensNotices[k]</span>
       else
-<span class="nc">        return nil</span>
+        -- Fallback directly to the parent metatable
+<span class="nc">        return semiFungibleTokensMetatable.__index(_, k)</span>
       end
     end
   })
-<span class="nc">  return obj</span>
+<span class="nc">  return conditionalTokens</span>
 end
 
--- @dev This function prepares a condition by initializing a payout vector associated with the condition.
--- @param conditionId The condition&#39;s ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(questionId, resolutionAgent, outcomeSlotCount))``.
--- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
+--- Prepare Condition
+--- @param conditionId string The condition&#39;s ID, derived from `crypto.digest.keccak256(questionId .. resolutionAgent .. outcomeSlotCount)`
+--- @param outcomeSlotCount number The number of outcome slots used for this condition. Must not exceed 256.
+--- @param msg Message The message received
+--- @return Message The condition preparation notice
 <span class="nc">function ConditionalTokensMethods:prepareCondition(conditionId, outcomeSlotCount, msg)</span>
 <span class="nc">  assert(self.payoutNumerators[conditionId] == nil, &quot;condition already prepared&quot;)</span>
   -- Initialize the payout vector associated with the condition.
@@ -407,12 +453,12 @@ end
 <span class="nc">  return self.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)</span>
 end
 
--- @dev This function splits a position from collateral. This contract will attempt to transfer `amount` collateral from the message sender to itself. 
--- If successful, `quantity` stake will be minted in the split target positions. If any of the transfers, mints, or burns fail, the transaction will revert.
--- @param from The initiator of the original Split-Position &#47; Create-Position action message.
--- @param collateralToken The address of the positions&#39; backing collateral token.
--- @param quantity The quantity of collateral or stake to split.
--- @param msg Msg passed to retrieve x-tags
+--- Split position
+--- @param from string The process ID of the account that split the position
+--- @param collateralToken string The process ID of the collateral token
+--- @param quantity string The quantity of collateral to split
+--- @param msg Message The message received
+--- @return Message The position split notice
 <span class="nc">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)</span>
 <span class="nc">  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal split positions.
@@ -421,18 +467,18 @@ end
 <span class="nc">    table.insert(quantities, quantity)</span>
   end
   -- Mint the stake in the split target positions.
-<span class="nc">  SemiFungibleTokens:batchMint(from, self.positionIds, quantities, msg)</span>
+<span class="nc">  self:batchMint(from, self.positionIds, quantities, msg)</span>
   -- Send notice.
 <span class="nc">  return self.positionSplitNotice(from, collateralToken, self.conditionId, quantity, msg)</span>
 end
 
--- @dev This function merges positions. If merging to the collateral, this contract will attempt to transfer `quantity` collateral to the message sender.
--- Otherwise, this contract will burn `quantity` stake held by the message sender in the positions being merged worth of semi-fungible tokens.
--- If successful, `quantity` stake will be minted in the merged position. If any of the transfers, mints, or burns fail, the transaction will revert.
--- @param from The initiator of the original Merge-Positions action message.
--- @param onBehalfOf The address that will receive the collateral.
--- @param quantity The quantity of collateral or stake to merge.
--- @param msg Msg passed to retrieve x-tags
+--- Merge positions
+--- @param from string The process ID of the account that merged the positions
+--- @param onBehalfOf string The process ID of the account that will receive the collateral
+--- @param quantity string The quantity of collateral to merge
+--- @param isSell boolean True if the merge is a sell, false otherwise
+--- @param msg Message The message received
+--- @return Message The positions merge notice
 <span class="nc">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)</span>
 <span class="nc">  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal merge positions.
@@ -441,7 +487,7 @@ end
 <span class="nc">    table.insert(quantities, quantity)</span>
   end
   -- Burn equal quantiies from user positions.
-<span class="nc">  self.tokens:batchBurn(from, self.positionIds, quantities, msg)</span>
+<span class="nc">  self:batchBurn(from, self.positionIds, quantities, msg)</span>
   -- @dev below already handled within the sell method. 
   -- sell method w&#47; a different quantity and recipient.
 <span class="nc">  if not isSell then</span>
@@ -457,10 +503,11 @@ end
 <span class="nc">  return self.positionsMergeNotice(self.conditionId, quantity, msg)</span>
 end
 
--- @dev Called by the resolutionAgent for reporting results of conditions. Will set the payout vector for the condition with the ID `keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount))`, 
--- where ResolutionAgent is the message sender, QuestionId is one of the parameters of this function, and OutcomeSlotCount is the length of the payouts parameter, which contains the payoutNumerators for each outcome slot of the condition.
--- @param QuestionId The question ID the oracle is answering for
--- @param Payouts The oracle&#39;s answer
+--- Report payouts
+--- @param questionId string The question ID the resolution agent is answering for (TODO: remove)
+--- @param payouts table&lt;number&gt; The resolution agent&#39;s answer
+--- @param msg Message The message received
+--- @return Message The condition resolution notice
 <span class="nc">function ConditionalTokensMethods:reportPayouts(questionId, payouts, msg)</span>
   -- IMPORTANT, the payouts length accuracy is enforced because outcomeSlotCount is part of the hash.
 <span class="nc">  local outcomeSlotCount = #payouts</span>
@@ -483,14 +530,10 @@ end
 <span class="nc">  return self.conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, self.payoutNumerators[conditionId], msg)</span>
 end
 
--- @dev This function redeems positions. If redeeming to the collateral, this contract will attempt to transfer the payout to the message sender.
--- Otherwise, this contract will burn the stake held by the message sender in the positions being redeemed worth of semi-fungible tokens.
--- If successful, the payout will be minted in the parent position. If any of the transfers, mints, or burns fail, the transaction will revert.
--- @param from The initiator of the original Redeem-Positions action message.
--- @param collateralToken The address of the positions&#39; backing collateral token.
--- @param parentCollectionId The ID of the outcome collections common to the positions being redeemed and the parent position. May be null, in which only the collateral is shared.
--- @param conditionId The ID of the condition to redeem on.
--- @param indexSets An array of index sets representing the outcome slots of the given condition. E.g. A|B and C but not A|B and B|C (is not disjoint). Each element&#39;s a number which, together with the condition, represents the outcome collection. E.g. 0b110 is A|B, 0b010 is B, etc.
+--- Redeem positions
+--- Transfers any payout minus fees to the message sender
+--- @param msg Message The message received
+--- @return Message The payout redemption notice
 <span class="nc">function ConditionalTokensMethods:redeemPositions(msg)</span>
 <span class="nc">  local den = self.payoutDenominator[self.conditionId]</span>
 <span class="nc">  assert(den &gt; 0, &quot;result for condition not received yet&quot;)</span>
@@ -499,17 +542,16 @@ end
 <span class="nc">  for i = 1, #self.positionIds do</span>
 <span class="nc">    local positionId = self.positionIds[i]</span>
 <span class="nc">    local payoutNumerator = self.payoutNumerators[self.conditionId][tonumber(positionId)]</span>
-
     -- Get the stake to redeem.
-<span class="nc">    if not self.tokens.balancesById[positionId] then self.tokens.balancesById[positionId] = {} end</span>
-<span class="nc">    if not self.tokens.balancesById[positionId][msg.From] then self.tokens.balancesById[positionId][msg.From] = &quot;0&quot; end</span>
-<span class="nc">    local payoutStake = self.tokens.balancesById[positionId][msg.From]</span>
+<span class="nc">    if not self.balancesById[positionId] then self.balancesById[positionId] = {} end</span>
+<span class="nc">    if not self.balancesById[positionId][msg.From] then self.balancesById[positionId][msg.From] = &quot;0&quot; end</span>
+<span class="nc">    local payoutStake = self.balancesById[positionId][msg.From]</span>
 <span class="nc">    assert(bint.__lt(0, bint(payoutStake)), &quot;no stake to redeem&quot;)</span>
     -- Calculate the payout and burn position.
 <span class="nc">    totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) &#47; den)</span>
 <span class="nc">    self:burn(msg.From, positionId, payoutStake, msg)</span>
   end
-  -- Return totla payout minus take fee.
+  -- Return total payout minus take fee.
 <span class="nc">  if totalPayout &gt; 0 then</span>
 <span class="nc">    totalPayout = math.floor(totalPayout)</span>
 <span class="nc">    self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)</span>
@@ -518,22 +560,31 @@ end
 <span class="nc">  return self.payoutRedemptionNotice(self.collateralToken, self.conditionId, totalPayout, msg)</span>
 end
 
--- @dev Gets the outcome slot count of a condition.
--- @param ConditionId ID of the condition.
--- @return Number of outcome slots associated with a condition, or zero if condition has not been prepared yet.
+--- Get OutcomeSlotCount
+--- Gets the number of outcome slots associated with a condition
+---@param msg Message The message received
+---@return number The number of outcome slots, zero if the condition has not been prepared
 <span class="nc">function ConditionalTokensMethods:getOutcomeSlotCount(msg)</span>
 <span class="nc">  assert(msg.Tags.ConditionId, &quot;ConditionId is required!&quot;)</span>
 <span class="nc">  return self.payoutNumerators[msg.Tags.ConditionId] and #self.payoutNumerators[msg.Tags.ConditionId] or 0</span>
 end
 
--- @dev Constructs a condition ID from a resolutionAgent, a question ID, and the outcome slot count for the question.
--- @param ResolutionAgent The process assigned to report the result for the prepared condition.
--- @param QuestionId An identifier for the question to be answered by the resolutionAgent.
--- @param OutcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
+--- Get ConditionId
+--- Constructs a condition ID from a resolutionAgent, question ID, and the outcome slot count
+--- @param resolutionAgent string The process ID assigned to report the result for the prepared condition
+--- @param questionId string An identifier for the question to be answered by the resolutionAgent
+--- @param outcomeSlotCount string The number of outcome slots used for this condition. Must not exceed 256.
+--- @return string The condition ID
 <span class="nc">function ConditionalTokensMethods.getConditionId(resolutionAgent, questionId, outcomeSlotCount)</span>
 <span class="nc">  return crypto.digest.keccak256(resolutionAgent .. questionId .. outcomeSlotCount).asHex()</span>
 end
 
+--- Return total payout minus take fee
+--- Distributes payout and fees to the redeem account, creator and protocol
+--- @param collateralToken string The collateral token
+--- @param from string The account to receive the payout minus fees
+--- @param totalPayout number The total payout assciated with the acount stake
+--- @return table&lt;Message&gt; The protocol fee, creator fee and payout messages
 <span class="nc">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)</span>
 <span class="nc">  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))</span>
 <span class="nc">  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))</span>
@@ -578,18 +629,17 @@ end
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
-<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="2">local json = require(&#39;json&#39;)</span>
+<span class="fc" data-hits="2">local ao = ao or require(&#39;.ao&#39;)</span>
 
-<span class="fc" data-hits="1">local ConditionalTokensNotices = {}</span>
+<span class="fc" data-hits="2">local ConditionalTokensNotices = {}</span>
 
--- @dev Emitted upon the successful preparation of a condition.
--- @param sender The address of the account that prepared the condition.
--- @param conditionId The condition&#39;s ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(questionId, resolutionAgent, outcomeSlotCount))``.
--- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
--- @param msg For sending msg.reply
-<span class="fc" data-hits="1">function ConditionalTokensNotices.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)</span>
-  -- TODO: Decide if to be sent to user and&#47;or Data Index
+--- Prepare condition notice
+--- @param conditionId string The condition ID
+--- @param outcomeSlotCount number The number of outcome slots
+--- @param msg Message The message received
+--- @return Message The condition preparation notice
+<span class="fc" data-hits="2">function ConditionalTokensNotices.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)</span>
 <span class="fc" data-hits="2">  return msg.reply({</span>
 <span class="fc" data-hits="1">    Action = &quot;Condition-Preparation-Notice&quot;,</span>
 <span class="fc" data-hits="1">    ConditionId = conditionId,</span>
@@ -597,13 +647,15 @@ end
   })
 end
 
--- @dev Emitted upon the successful condition resolution.
--- @param conditionId The condition&#39;s ID. This ID may be derived from the other three parameters via ``keccak256(abi.encodePacked(questionId, resolutionAgent, outcomeSlotCount))``.
--- @param resolutionAgent The process assigned to report the result for the prepared condition.
--- @param questionId An identifier for the question to be answered by the resolutionAgent.
--- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
--- @param payoutNumerators The payout numerators for each outcome slot.
-<span class="fc" data-hits="1">function ConditionalTokensNotices.conditionResolutionNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, payoutNumerators, msg)</span>
+--- Condition resolution notice
+--- @param conditionId string The condition ID
+--- @param resolutionAgent string The process assigned to report the result for the prepared condition
+--- @param questionId string An identifier for the question to be answered by the resolutionAgent
+--- @param outcomeSlotCount number The number of outcome slots
+--- @param payoutNumerators table&lt;number&gt; The payout numerators for each outcome slot
+--- @param msg Message The message received
+--- @return Message The condition resolution notice
+<span class="fc" data-hits="2">function ConditionalTokensNotices.conditionResolutionNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, payoutNumerators, msg)</span>
   -- TODO: Decide if to be sent to user and&#47;or Data Index
 <span class="fc" data-hits="2">  return msg.reply({</span>
 <span class="fc" data-hits="1">    Action = &quot;Condition-Resolution-Notice&quot;,</span>
@@ -615,13 +667,14 @@ end
   })
 end
 
--- @dev Emitted when a position is successfully split.
--- @param from The address of the account that split the position.
--- @param collateralToken The address of the collateral token.
--- @param conditionId The condition ID.
--- @param quantity The quantity.
--- @param msg For sending X-Tags
-<span class="fc" data-hits="1">function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, conditionId, quantity, msg)</span>
+--- Position split notice
+--- @param from string The address of the account that split the position
+--- @param collateralToken string The address of the collateral token
+--- @param conditionId string The condition ID
+--- @param quantity string The quantity
+--- @param msg Message The message received
+--- @return Message The position split notice
+<span class="fc" data-hits="2">function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, conditionId, quantity, msg)</span>
 <span class="fc" data-hits="1">  local notice = {</span>
 <span class="fc" data-hits="1">    Action = &quot;Split-Position-Notice&quot;,</span>
 <span class="fc" data-hits="1">    Process = ao.id,</span>
@@ -641,12 +694,12 @@ end
 <span class="fc" data-hits="1">  return msg.forward(from, notice)</span>
 end
 
-
--- @dev Emitted when positions are successfully merged.
--- @param from The address of the account that merged the positions.
--- @param conditionId The condition ID.
--- @param quantity The quantity.
-<span class="fc" data-hits="1">function ConditionalTokensNotices.positionsMergeNotice(conditionId, quantity, msg)</span>
+--- Positions merge notice
+--- @param conditionId string The condition ID
+--- @param quantity string The quantity
+--- @param msg Message The message received
+--- @return Message The positions merge notice
+<span class="fc" data-hits="2">function ConditionalTokensNotices.positionsMergeNotice(conditionId, quantity, msg)</span>
 <span class="fc" data-hits="2">  return msg.reply({</span>
 <span class="fc" data-hits="1">    Action = &quot;Merge-Positions-Notice&quot;,</span>
 <span class="fc" data-hits="1">    ConditionId = conditionId, -- TODO: Check if this is needed</span>
@@ -654,13 +707,13 @@ end
   })
 end
 
--- @dev Emitted when a position is successfully redeemed.
--- @param redeemer The address of the account that redeemed the position.
--- @param collateralToken The address of the collateral token.
--- @param conditionId The condition ID.
--- @param payout The payout amount.
-<span class="fc" data-hits="1">function ConditionalTokensNotices.payoutRedemptionNotice(collateralToken, conditionId, payout, msg)</span>
-  -- TODO: Decide if to be sent to user and&#47;or Data Index
+--- Payout redemption notice
+--- @param collateralToken string The address of the collateral token
+--- @param conditionId string The condition ID
+--- @param payout string The payout amount
+--- @param msg Message The message received
+--- @return Message The payout redemption notice
+<span class="fc" data-hits="2">function ConditionalTokensNotices.payoutRedemptionNotice(collateralToken, conditionId, payout, msg)</span>
 <span class="fc" data-hits="2">  return msg.reply({</span>
 <span class="fc" data-hits="1">    Action = &quot;Payout-Redemption-Notice&quot;,</span>
 <span class="fc" data-hits="1">    Process = ao.id,</span>
@@ -670,7 +723,7 @@ end
   })
 end
 
-<span class="fc" data-hits="1">return ConditionalTokensNotices</span>
+<span class="fc" data-hits="2">return ConditionalTokensNotices</span>
 </pre>
       </div>
 
@@ -686,10 +739,12 @@ end
                <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
-         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local sharedUtils = require(&#39;modules.sharedUtils&#39;)</span>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local ConditionalTokensValidation = {}</span>
+<span class="fc" data-hits="1">local sharedUtils = require(&#39;modules.sharedUtils&#39;)</span>
 <span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
-<span class="fc" data-hits="1">local conditionalTokensValidation = {}</span>
 
+--- Validates quantity
+--- @param quantity any The quantity to be validated
 local function validateQuantity(quantity)
 <span class="fc" data-hits="6">  assert(type(quantity) == &#39;string&#39;, &#39;Quantity is required!&#39;)</span>
 <span class="fc" data-hits="5">  assert(tonumber(quantity), &#39;Quantity must be a number!&#39;)</span>
@@ -697,6 +752,8 @@ local function validateQuantity(quantity)
 <span class="fc" data-hits="2">  assert(tonumber(quantity) % 1 == 0, &#39;Quantity must be an integer!&#39;)</span>
 end
 
+--- Validates payouts
+--- @param payouts any The payouts to be validated
 local function validatePayouts(payouts)
 <span class="fc" data-hits="4">  assert(payouts, &quot;Payouts is required!&quot;)</span>
 <span class="fc" data-hits="3">  assert(sharedUtils.isJSONArray(payouts), &quot;Payouts must be valid JSON Array!&quot;)</span>
@@ -705,16 +762,508 @@ local function validatePayouts(payouts)
   end
 end
 
-<span class="fc" data-hits="1">function conditionalTokensValidation.mergePositions(msg)</span>
+--- Validates the mergePositions message
+--- @param msg Message The message to be validated
+<span class="fc" data-hits="1">function ConditionalTokensValidation.mergePositions(msg)</span>
 <span class="fc" data-hits="6">  validateQuantity(msg.Tags.Quantity)</span>
 end
 
-<span class="fc" data-hits="1">function conditionalTokensValidation.reportPayouts(msg)</span>
+--- Validates the reporrtPayouts message
+--- @param msg Message The message to be validated
+<span class="fc" data-hits="1">function ConditionalTokensValidation.reportPayouts(msg)</span>
 <span class="fc" data-hits="5">  assert(msg.Tags.QuestionId, &quot;QuestionId is required!&quot;)</span>
 <span class="fc" data-hits="4">  validatePayouts(msg.Tags.Payouts)</span>
 end
 
-<span class="fc" data-hits="1">return conditionalTokensValidation</span>
+<span class="fc" data-hits="1">return ConditionalTokensValidation</span>
+</pre>
+      </div>
+
+      <div class="hidden file danger" id="src-modules-semifungibletokens">
+         <h2 class="title">
+            src/modules/semiFungibleTokens.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 14.41%"></span>
+                  <span><strong>14.41%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>17</strong> Hits</span>
+               <span class="miss"><strong>101</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local SemiFungibleTokens = {}</span>
+<span class="fc" data-hits="1">local SemiFungibleTokensMethods = {}</span>
+<span class="fc" data-hits="1">local SemiFungibleTokensNotices = require(&#39;modules.semiFungibleTokensNotices&#39;)</span>
+<span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+
+-- Represents SemiFungibleTokens
+--- @class SemiFungibleTokens
+--- @field name string The token name
+--- @field ticker string The token ticker
+--- @field logo string The token logo Arweave TxID
+--- @field balancesById table&lt;string, table&lt;string, string&gt;&gt; The account token balances by ID
+--- @field totalSupplyById table&lt;string, string&gt; The total supply of the token by ID
+--- @field denomination number The number of decimals
+
+--- Creates a new SemiFungibleTokens instance
+--- @param name string The token name
+--- @param ticker string The token ticker
+--- @param logo string The token logo Arweave TxID
+--- @param balancesById table&lt;string, table&lt;string, string&gt;&gt; The account token balances by ID
+--- @param totalSupplyById table&lt;string, string&gt; The total supply of the token by ID
+--- @param denomination number The number of decimals
+--- @return SemiFungibleTokens The new SemiFungibleTokens instance
+<span class="fc" data-hits="1">function SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)</span>
+<span class="nc">  local semiFungibleTokens = {</span>
+    name = name,
+    ticker = ticker,
+    logo = logo,
+    balancesById = balancesById,
+    totalSupplyById = totalSupplyById,
+<span class="nc">    denomination = denomination</span>
+  }
+<span class="nc">  setmetatable(semiFungibleTokens, {</span>
+    __index = function(_, k)
+<span class="nc">      if SemiFungibleTokensMethods[k] then</span>
+<span class="nc">        return SemiFungibleTokensMethods[k]</span>
+<span class="nc">      elseif SemiFungibleTokensNotices[k] then</span>
+<span class="nc">        return SemiFungibleTokensNotices[k]</span>
+      else
+<span class="nc">        return nil</span>
+      end
+    end
+  })
+<span class="nc">  return semiFungibleTokens</span>
+end
+
+--- Mint a quantity of tokens with the given ID
+--- @param to string The address that will own the minted tokens
+--- @param id string The ID of the tokens to mint
+--- @param quantity string The quantity of tokens to mint
+--- @param msg Message The message received
+--- @return Message The mint notice
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:mint(to, id, quantity, msg)</span>
+<span class="nc">  assert(quantity, &#39;Quantity is required!&#39;)</span>
+<span class="nc">  assert(bint.__lt(0, bint(quantity)), &#39;Quantity must be greater than zero!&#39;)</span>
+  -- mint tokens
+<span class="nc">  if not self.balancesById[id] then self.balancesById[id] = {} end</span>
+<span class="nc">  if not self.balancesById[id][to] then self.balancesById[id][to] = &quot;0&quot; end</span>
+<span class="nc">  if not self.totalSupplyById[id] then self.totalSupplyById[id] = &quot;0&quot; end</span>
+<span class="nc">  self.balancesById[id][to] = tostring(bint.__add(self.balancesById[id][to], bint(quantity)))</span>
+<span class="nc">  self.totalSupplyById[id] = tostring(bint.__add(self.totalSupplyById[id], bint(quantity)))</span>
+  -- send notice
+<span class="nc">  return self.mintSingleNotice(to, id, quantity, msg)</span>
+end
+
+--- Batch mint quantities of tokens with the given IDs
+--- @param to string The address that will own the minted tokens
+--- @param ids table&lt;string&gt; The IDs of the tokens to mint
+--- @param quantities table&lt;string&gt; The quantities of tokens to mint
+--- @param msg Message The message received
+--- @return Message The batch mint notice
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchMint(to, ids, quantities, msg)</span>
+<span class="nc">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
+  -- mint tokens
+<span class="nc">  for i = 1, #ids do</span>
+    -- @dev spacing to resolve text to code eval issue
+<span class="nc">    if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end</span>
+<span class="nc">    if not self.balancesById[ ids[i] ][to] then self.balancesById[ ids[i] ][to] = &quot;0&quot; end</span>
+<span class="nc">    if not self.totalSupplyById[ ids[i] ] then self.totalSupplyById[ ids[i] ] = &quot;0&quot; end</span>
+<span class="nc">    self.balancesById[ ids[i] ][to] = tostring(bint.__add(self.balancesById[ ids[i] ][to], quantities[i]))</span>
+<span class="nc">    self.totalSupplyById[ ids[i] ] = tostring(bint.__add(self.totalSupplyById[ ids[i] ], quantities[i]))</span>
+  end
+  -- send notice
+<span class="nc">  return self.mintBatchNotice(to, ids, quantities, msg)</span>
+end
+
+--- Burn a quantity of tokens with a given ID
+--- @param from string The process ID that will no longer own the burned tokens
+--- @param id string The ID of the tokens to burn
+--- @param quantity string The quantity of tokens to burn
+--- @param msg Message The message received
+--- @return Message The burn notice
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:burn(from, id, quantity, msg)</span>
+<span class="nc">  assert(bint.__lt(0, bint(quantity)), &#39;Quantity must be greater than zero!&#39;)</span>
+<span class="nc">  assert(self.balancesById[id], &#39;Id must exist! &#39; .. id)</span>
+<span class="nc">  assert(self.balancesById[id][from], &#39;Account must hold token! :: &#39; .. id)</span>
+<span class="nc">  assert(bint.__le(bint(quantity), self.balancesById[id][from]), &#39;Account must have sufficient tokens! &#39; .. id)</span>
+  -- burn tokens
+<span class="nc">  self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], bint(quantity)))</span>
+<span class="nc">  self.totalSupplyById[id] = tostring(bint.__sub(self.totalSupplyById[id], bint(quantity)))</span>
+  -- send notice
+<span class="nc">  return self.burnSingleNotice(from, id, quantity, msg)</span>
+end
+
+-- @dev Batch burn quantities of tokens with the given IDs
+-- @param from The address that will burn the tokens
+-- @param ids IDs of the tokens to be burned
+-- @param quantities Quantities of the tokens to be burned
+-- @param msg For sending X-Tags
+
+--- Batch burn a quantity of tokens with the given IDs
+--- @param from string The process ID that will no longer own the burned tokens
+--- @param ids table&lt;string&gt; The IDs of the tokens to burn
+--- @param quantities table&lt;string&gt; The quantities of tokens to burn
+--- @param msg Message The message received
+--- @return Message The batch burn notice
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)</span>
+<span class="nc">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
+<span class="nc">  for i = 1, #ids do</span>
+<span class="nc">    assert(bint.__lt(0, quantities[i]), &#39;Quantity must be greater than zero!&#39;)</span>
+<span class="nc">    assert(self.balancesById[ ids[i] ], &#39;Id must exist! &#39; .. ids[i])</span>
+<span class="nc">    assert(self.balancesById[ ids[i] ][from], &#39;Account must hold token! &#39; .. ids[i])</span>
+<span class="nc">    assert(bint.__le(quantities[i], self.balancesById[ ids[i] ][from]), &#39;Account must have sufficient tokens!&#39;)</span>
+  end
+  -- burn tokens
+<span class="nc">  local remainingBalances = {}</span>
+<span class="nc">  for i = 1, #ids do</span>
+<span class="nc">    self.balancesById[ ids[i] ][from] = tostring(bint.__sub(self.balancesById[ ids[i] ][from], quantities[i]))</span>
+<span class="nc">    self.totalSupplyById[ ids[i] ] = tostring(bint.__sub(self.totalSupplyById[ ids[i] ], quantities[i]))</span>
+<span class="nc">    remainingBalances[i] = self.balancesById[ ids[i] ][from]</span>
+  end
+  -- draft notice
+<span class="nc">  local notice = {</span>
+    Recipient = from,
+    TokenIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+    RemainingBalances = json.encode(remainingBalances),
+    Action = &#39;Burn-Batch-Notice&#39;,
+<span class="nc">    Data = &quot;Successfully burned batch&quot;</span>
+  }
+  -- forward x-tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      notice[tagName] = tagValue</span>
+    end
+  end
+  -- send notice
+<span class="nc">  return self.burnBatchNotice(notice, msg)</span>
+end
+
+--- Transfer a quantity of tokens with the given ID
+--- @param from string The process ID that will send the token
+--- @param recipient string The process ID that will receive the token
+--- @param id string The ID of the tokens to transfer
+--- @param quantity string The quantity of tokens to transfer
+--- @param cast boolean The cast is set to true to silence the transfer notice
+--- @param msg Message The message received
+--- @return table&lt;Message&gt;|Message|nil The transfer notices, error notice or nothing
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, msg)</span>
+<span class="nc">  if not self.balancesById[id] then self.balancesById[id] = {} end</span>
+<span class="nc">  if not self.balancesById[id][from] then self.balancesById[id][from] = &quot;0&quot; end</span>
+<span class="nc">  if not self.balancesById[id][recipient] then self.balancesById[id][recipient] = &quot;0&quot; end</span>
+
+<span class="nc">  local qty = bint(quantity)</span>
+<span class="nc">  local balance = bint(self.balancesById[id][from])</span>
+<span class="nc">  if bint.__le(qty, balance) then</span>
+<span class="nc">    self.balancesById[id][from] = tostring(bint.__sub(balance, qty))</span>
+<span class="nc">    self.balancesById[id][recipient] = tostring(bint.__add(self.balancesById[id][recipient], qty))</span>
+
+    -- Only send the notifications if the cast tag is not set
+<span class="nc">    if not cast then</span>
+<span class="nc">      return self.transferSingleNotices(from, recipient, id, quantity, msg)</span>
+    end
+  else
+<span class="nc">    return self.transferErrorNotice(id, msg)</span>
+  end
+end
+
+-- @dev Batch transfer quantities of tokens with the given IDs
+-- @param from The address to be debited
+-- @param recipient The address to be credited
+-- @param ids IDs of the tokens to be transferred
+-- @param quantities Quantities of the tokens to be transferred
+-- @param cast The boolean to silence transfer notifications
+-- @param msg For sending X-Tags
+
+--- Batch transfer quantities of tokens with the given IDs
+--- @param from string The process ID that will send the token
+--- @param recipient string The process ID that will receive the token
+--- @param ids table&lt;string&gt; The IDs of the tokens to transfer
+--- @param quantities table&lt;string&gt; The quantities of tokens to transfer
+--- @param cast boolean The cast is set to true to silence the transfer notice
+--- @param msg Message The message received
+--- @return table&lt;Message&gt;|Message|nil The transfer notices, error notice or nothing
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg)</span>
+<span class="nc">  local ids_ = {}</span>
+<span class="nc">  local quantities_ = {}</span>
+
+<span class="nc">  for i = 1, #ids do</span>
+<span class="nc">    if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end</span>
+<span class="nc">    if not self.balancesById[ ids[i] ][from] then self.balancesById[ ids[i] ][from] = &quot;0&quot; end</span>
+<span class="nc">    if not self.balancesById[ ids[i] ][recipient] then self.balancesById[ ids[i] ][recipient] = &quot;0&quot; end</span>
+
+<span class="nc">    local qty = bint(quantities[i])</span>
+<span class="nc">    local balance = bint(self.balancesById[ ids[i] ][from])</span>
+
+<span class="nc">    if bint.__le(qty, balance) then</span>
+<span class="nc">      self.balancesById[ ids[i] ][from] = tostring(bint.__sub(balance, qty))</span>
+<span class="nc">      self.balancesById[ ids[i] ][recipient] = tostring(bint.__add(self.balancesById[ ids[i] ][recipient], qty))</span>
+<span class="nc">      table.insert(ids_, ids[i])</span>
+<span class="nc">      table.insert(quantities_, quantities[i])</span>
+    else
+<span class="nc">      return self.transferErrorNotice(ids[i], msg)</span>
+    end
+  end
+
+  -- Only send the notifications if the cast tag is not set
+<span class="nc">  if not cast and #ids_ &gt; 0 then</span>
+<span class="nc">    return self.transferBatchNotices(from, recipient, ids_, quantities_, msg)</span>
+  end
+end
+
+--- Get account balance of tokens with the given ID
+--- @param sender string The process ID of the sender
+--- @param recipient string|nil The process ID of the recipient (optional)
+--- @param id string The ID of the token
+--- @return string The balance of the account for the given ID
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBalance(sender, recipient, id)</span>
+<span class="nc">  local bal = &#39;0&#39;</span>
+  -- If ID is found then continue
+<span class="nc">  if self.balancesById[id] then</span>
+    -- If recipient is not provided, return the senders balance
+<span class="nc">    if (recipient and self.balancesById[id][recipient]) then</span>
+<span class="nc">      bal = self.balancesById[id][recipient]</span>
+<span class="nc">    elseif self.balancesById[id][sender] then</span>
+<span class="nc">      bal = self.balancesById[id][sender]</span>
+    end
+  end
+  -- return balance
+<span class="nc">  return bal</span>
+end
+
+--- Get accounts&#39; balance of tokens with the given IDs
+--- @param recipients table&lt;string&gt; The process IDs of the recipients
+--- @param ids table&lt;string&gt; The IDs of the tokens
+--- @return table&lt;string&gt; The balances of the recipients for each respective ID
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBatchBalance(recipients, ids)</span>
+<span class="nc">  assert(#recipients == #ids, &#39;Recipients and Ids must have same lengths&#39;)</span>
+<span class="nc">  local bals = {}</span>
+
+<span class="nc">  for i = 1, #recipients do</span>
+<span class="nc">    table.insert(bals, &#39;0&#39;)</span>
+<span class="nc">    if self.balancesById[ ids[i] ] then</span>
+<span class="nc">      if self.balancesById[ ids[i] ][ recipients[i] ] then</span>
+<span class="nc">        bals[i] = self.balancesById[ ids[i] ][ recipients[i] ]</span>
+      end
+    end
+  end
+
+<span class="nc">  return bals</span>
+end
+
+--- Get account balances of tokens with the given ID
+--- @param id string The ID of the token
+--- @return table&lt;string, string&gt; The account balances for the given ID
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBalances(id)</span>
+<span class="nc">  local bals = {}</span>
+<span class="nc">  if self.balancesById[id] then</span>
+<span class="nc">    bals = self.balancesById[id]</span>
+  end
+  -- return balances
+<span class="nc">  return bals</span>
+end
+
+--- Get accounts&#39; balances of tokens with the given IDs
+--- @param tokenIds table&lt;string&gt; The IDs of the tokens
+--- @return table&lt;string, table&lt;string, string&gt;&gt; The account balances for each respective ID
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBatchBalances(tokenIds)</span>
+<span class="nc">  local bals = {}</span>
+
+<span class="nc">  for i = 1, #tokenIds do</span>
+<span class="nc">    bals[ tokenIds[i] ] = {}</span>
+<span class="nc">    if self.balancesById[ tokenIds[i] ] then</span>
+<span class="nc">      bals[ tokenIds[i] ] = self.balancesById[ tokenIds[i] ]</span>
+    end
+  end
+  -- return balances
+<span class="nc">  return bals</span>
+end
+
+<span class="fc" data-hits="1">return SemiFungibleTokens</span>
+</pre>
+      </div>
+
+      <div class="hidden file danger" id="src-modules-semifungibletokensnotices">
+         <h2 class="title">
+            src/modules/semiFungibleTokensNotices.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 24.44%"></span>
+                  <span><strong>24.44%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>11</strong> Hits</span>
+               <span class="miss"><strong>34</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+
+<span class="fc" data-hits="1">local SemiFungibleTokensNotices = {}</span>
+
+--- Mint single notice
+--- @param to string The address that will own the minted token
+--- @param id string The ID of the token to be minted
+--- @param quantity string The quantity of the token to be minted
+--- @param msg Message The message received
+--- @return Message The mint notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, msg)</span>
+<span class="nc">  return msg.reply({</span>
+    Recipient = to,
+    TokenId = tostring(id),
+    Quantity = tostring(quantity),
+    Action = &#39;Mint-Single-Notice&#39;,
+<span class="nc">    Data = Colors.gray .. &quot;Successfully minted &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
+  })
+end
+
+--- Mint batch notice
+--- @param to string The address that will own the minted tokens
+--- @param ids table&lt;string&gt; The IDs of the tokens to be minted
+--- @param quantities table&lt;string&gt; The quantities of the tokens to be minted
+--- @param msg Message The message received
+--- @return Message The batch mint notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)</span>
+<span class="nc">  return msg.reply({</span>
+    Recipient = to,
+    TokenIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+    Action = &#39;Mint-Batch-Notice&#39;,
+<span class="nc">    Data = &quot;Successfully minted batch&quot;</span>
+  })
+end
+
+--- Burn single notice
+--- @param from string The address that will burn the token
+--- @param id string The ID of the token to be burned
+--- @param quantity string The quantity of the token to be burned
+--- @param msg Message The message received
+--- @return Message The burn notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)</span>
+  -- Prepare notice
+<span class="nc">  local notice = {</span>
+    Recipient = from,
+    TokenId = tostring(id),
+    Quantity = tostring(quantity),
+    Action = &#39;Burn-Single-Notice&#39;,
+<span class="nc">    Data = Colors.gray .. &quot;Successfully burned &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      notice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  return msg.reply(notice)</span>
+end
+
+--- Burn batch notice
+--- @param notice Message The prepared notice to be sent
+--- @param msg Message The message received
+--- @return Message The burn notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnBatchNotice(notice, msg)</span>
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      notice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  return msg.reply(notice)</span>
+end
+
+--- Transfer single token notices
+--- @param from string The address to be debited
+--- @param to string The address to be credited
+--- @param id string The ID of the token to be transferred
+--- @param quantity string The quantity of the token to be transferred
+--- @param msg Message The message received
+--- @return table&lt;Message&gt; The debit and credit transfer notices
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg)</span>
+  -- Prepare debit notice
+<span class="nc">  local debitNotice = {</span>
+    Action = &#39;Debit-Single-Notice&#39;,
+    Recipient = to,
+    TokenId = tostring(id),
+    Quantity = tostring(quantity),
+<span class="nc">    Data = Colors.gray .. &quot;You transferred &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; to &quot; .. Colors.green .. to .. Colors.reset</span>
+  }
+  -- Prepare credit notice
+<span class="nc">  local creditNotice = {</span>
+    Target = to,
+    Action = &#39;Credit-Single-Notice&#39;,
+    Sender = from,
+    TokenId = tostring(id),
+    Quantity = tostring(quantity),
+<span class="nc">    Data = Colors.gray .. &quot;You received &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; from &quot; .. Colors.green .. from .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      debitNotice[tagName] = tagValue</span>
+<span class="nc">      creditNotice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notices
+<span class="nc">  return { msg.reply(debitNotice), ao.send(creditNotice) }</span>
+end
+
+--- Transfer batch tokens notices
+--- @param from string The address to be debited
+--- @param to string The address to be credited
+--- @param ids table&lt;string&gt; The IDs of the tokens to be transferred
+--- @param quantities table&lt;string&gt; The quantities of the tokens to be transferred
+--- @param msg Message The message received
+--- @return table&lt;Message&gt; The debit and credit batch transfer notices
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg)</span>
+  -- Prepare debit notice
+<span class="nc">  local debitNotice = {</span>
+    Action = &#39;Debit-Batch-Notice&#39;,
+    Recipient = to,
+    TokenIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+<span class="nc">    Data = Colors.gray .. &quot;You transferred batch to &quot; .. Colors.green .. to .. Colors.reset</span>
+  }
+  -- Prepare credit notice
+<span class="nc">  local creditNotice = {</span>
+    Target = to,
+    Action = &#39;Credit-Batch-Notice&#39;,
+    Sender = from,
+    TokenIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+<span class="nc">    Data = Colors.gray .. &quot;You received batch from &quot; .. Colors.green .. from .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      debitNotice[tagName] = tagValue</span>
+<span class="nc">      creditNotice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  return {msg.reply(debitNotice), ao.send(creditNotice)}</span>
+end
+
+--- Transfer error notice
+--- @param id string The ID of the token to be transferred
+--- @param msg Message The message received
+--- @return Message The transfer error notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferErrorNotice(id, msg)</span>
+<span class="nc">  return msg.reply({</span>
+    Action = &#39;Transfer-Error&#39;,
+    [&#39;Message-Id&#39;] = msg.Id,
+    [&#39;Token-Id&#39;] = id,
+<span class="nc">    Error = &#39;Insufficient Balance!&#39;</span>
+  })
+end
+
+<span class="fc" data-hits="1">return SemiFungibleTokensNotices</span>
 </pre>
       </div>
 
@@ -815,7 +1364,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-20 16:15:17
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-24 08:46:09
    </footer>
 
    <script type="text/javascript">
