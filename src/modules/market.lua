@@ -14,10 +14,39 @@ local Market = {}
 local MarketMethods = {}
 
 -- Constructor for Market 
-function Market:new()
+function Market:new(configurator,
+  incentives,
+  collateralToken,
+  marketId,
+  conditionId,
+  positionIds,
+  name,
+  ticker,
+  logo,
+  lpFee,
+  creatorFee,
+  creatorFeeTarget,
+  protocolFee,
+  ProtocolFeeTarget
+)
   -- Create a new Market object
   local obj = {
-    cpmm = cpmm:new()
+    cpmm = cpmm:new(
+      configurator,
+      incentives,
+      collateralToken,
+      marketId,
+      conditionId,
+      positionIds,
+      name,
+      ticker,
+      logo,
+      lpFee,
+      creatorFee,
+      creatorFeeTarget,
+      protocolFee,
+      ProtocolFeeTarget
+    )
   }
   setmetatable(obj, { __index = MarketMethods })
   return obj
@@ -279,13 +308,10 @@ end
 
 -- Get Payout Numerators
 function MarketMethods:getPayoutNumerators(msg)
-  local data = (self.cpmm.tokens.payoutNumerators[self.cpmm.tokens.conditionId] == nil) and
-    nil or
-    self.cpmm.tokens.payoutNumerators[self.cpmm.tokens.conditionId]
   return msg.reply({
     Action = "Payout-Numerators",
     ConditionId = self.cpmm.tokens.conditionId,
-    Data = json.encode(data)
+    Data = json.encode(self.cpmm.tokens.payoutNumerators)
   })
 end
 
@@ -294,7 +320,7 @@ function MarketMethods:getPayoutDenominator(msg)
   return msg.reply({
     Action = "Payout-Denominator",
     ConditionId = self.cpmm.tokens.conditionId,
-    Data = self.cpmm.tokens.payoutDenominator[self.cpmm.tokens.conditionId]
+    Data = self.cpmm.tokens.payoutDenominator
   })
 end
 

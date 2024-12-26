@@ -86,18 +86,18 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
     }
 	end)
 
-  it("should send condition preparation notice", function()
-    local notice = conditionalTokensNotices.conditionPreparationNotice(
-      msgConditionPreparation.Tags.ConditionId,
-      msgConditionPreparation.Tags.OutcomeSlotCount,
-      msgConditionPreparation
-    )
-    assert.are.same({
-      Action = 'Condition-Preparation-Notice',
-      ConditionId = msgConditionPreparation.Tags.ConditionId,
-      OutcomeSlotCount = tostring(msgConditionPreparation.Tags.OutcomeSlotCount),
-    }, notice)
-	end)
+  -- it("should send condition preparation notice", function()
+  --   local notice = conditionalTokensNotices.conditionPreparationNotice(
+  --     msgConditionPreparation.Tags.ConditionId,
+  --     msgConditionPreparation.Tags.OutcomeSlotCount,
+  --     msgConditionPreparation
+  --   )
+  --   assert.are.same({
+  --     Action = 'Condition-Preparation-Notice',
+  --     ConditionId = msgConditionPreparation.Tags.ConditionId,
+  --     OutcomeSlotCount = tostring(msgConditionPreparation.Tags.OutcomeSlotCount),
+  --   }, notice)
+	-- end)
 
   it("should send condition resolution notice", function()
     local notice = conditionalTokensNotices.conditionResolutionNotice(

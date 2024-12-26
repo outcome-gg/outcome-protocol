@@ -3,6 +3,7 @@ local conditionalTokensValidation = require("modules.conditionalTokensValidation
 local json = require("json")
 
 -- Mock the CPMM object
+---@diagnostic disable-next-line: missing-fields
 _G.CPMM = { tokens = { positionIds = { "1", "2", "3" } } }
 
 local sender = ""

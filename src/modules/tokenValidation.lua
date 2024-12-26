@@ -2,7 +2,7 @@ local sharedUtils = require('modules.sharedUtils')
 
 local tokenValidation = {}
 
---- Validates the transfer message
+--- Validates a transfer message
 --- @param msg Message The message received
 function tokenValidation.transfer(msg)
   assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')

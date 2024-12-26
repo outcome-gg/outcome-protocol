@@ -9,11 +9,12 @@ local ConditionalTokensNotices = {}
 --- @param msg Message The message received
 --- @return Message The condition preparation notice
 function ConditionalTokensNotices.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
-  return msg.reply({
-    Action = "Condition-Preparation-Notice",
-    ConditionId = conditionId,
-    OutcomeSlotCount = tostring(outcomeSlotCount)
-  })
+  print("DELETE?")
+  -- return msg.reply({
+  --   Action = "Condition-Preparation-Notice",
+  --   ConditionId = conditionId,
+  --   OutcomeSlotCount = tostring(outcomeSlotCount)
+  -- })
 end
 
 --- Condition resolution notice

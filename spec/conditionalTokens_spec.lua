@@ -26,7 +26,7 @@ local protocolFeeTarget = ""
 local creatorFeeTarget = ""
 local quantity = ""
 local payoutNumerators = {}
-local payoutDenominator = {}
+local payoutDenominator = nil
 local msgPrepareCondition = {}
 local msgSplitPosition = {}
 local msgMergePositions = {}
@@ -66,8 +66,8 @@ describe("#market #conditionalTokens", function()
     conditionId = tostring(crypto.digest.keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount)).asHex())
     outcomeSlotCount = 3
     positionIds = { "1", "2", "3" }
-    payoutNumerators = {}
-    payoutDenominator = {}
+    payoutNumerators = {0, 0, 0}
+    payoutDenominator = 0
     creatorFee = 250 -- basis points
     creatorFeeTarget = "test-this-is-valid-arweave-wallet-address-4"
     protocolFee = 250 -- basis points
@@ -82,10 +82,7 @@ describe("#market #conditionalTokens", function()
       denomination,
       conditionId,
       collateralToken,
-      outcomeSlotCount,
       positionIds,
-      payoutNumerators,
-      payoutDenominator,
       creatorFee,
       creatorFeeTarget,
       protocolFee,
@@ -167,28 +164,22 @@ describe("#market #conditionalTokens", function()
     assert.are.same(protocolFeeTarget, ConditionalTokens.protocolFeeTarget)
 	end)
 
-  it("should prepare condition", function()
-    local notice = ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
-    -- asert state change
-    assert.are.same({[conditionId] = {0,0,0}}, ConditionalTokens.payoutNumerators)
-    assert.are.same({[conditionId] = 0}, ConditionalTokens.payoutDenominator)
-    -- assert notice
-    assert.are.equals("Condition-Preparation-Notice", notice.Action)
-    assert.are.equals(msgPrepareCondition.Tags.ConditionId, notice.ConditionId)
-    assert.are.equals(tostring(msgPrepareCondition.Tags.OutcomeSlotCount), notice.OutcomeSlotCount)
-	end)
+  -- it("should prepare condition", function()
+  --   local notice = ConditionalTokens:prepareCondition(
+  --     msgPrepareCondition.Tags.ConditionId,
+  --     msgPrepareCondition.Tags.OutcomeSlotCount,
+  --     msgPrepareCondition
+  --   )
+  --   -- asert state change
+  --   assert.are.same({[conditionId] = {0,0,0}}, ConditionalTokens.payoutNumerators)
+  --   assert.are.same({[conditionId] = 0}, ConditionalTokens.payoutDenominator)
+  --   -- assert notice
+  --   assert.are.equals("Condition-Preparation-Notice", notice.Action)
+  --   assert.are.equals(msgPrepareCondition.Tags.ConditionId, notice.ConditionId)
+  --   assert.are.equals(tostring(msgPrepareCondition.Tags.OutcomeSlotCount), notice.OutcomeSlotCount)
+	-- end)
 
   it("should split position", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     local notice = ConditionalTokens:splitPosition(
       msgSplitPosition.From,
       msgSplitPosition.Tags.CollateralToken,
@@ -216,25 +207,7 @@ describe("#market #conditionalTokens", function()
     assert.are.equals(msgSplitPosition["X-Action"], notice[2]["X-Action"])
 	end)
 
-  it("should fail to split position", function()
-    -- should throw an error
-    assert.has.error(function()
-      ConditionalTokens:splitPosition(
-        msgSplitPosition.From,
-        msgSplitPosition.Tags.CollateralToken,
-        msgSplitPosition.Tags.Quantity,
-        msgSplitPosition
-      )
-    end, "Condition not prepared!")
-	end)
-
   it("should merge positions (isSell == true)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     -- split position
     ConditionalTokens:splitPosition(
       msgSplitPosition.From,
@@ -269,12 +242,6 @@ describe("#market #conditionalTokens", function()
 	end)
 
   it("should merge positions (isSell == false)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     -- split position
     ConditionalTokens:splitPosition(
       msgSplitPosition.From,
@@ -308,26 +275,7 @@ describe("#market #conditionalTokens", function()
     assert.are.equals(msgSplitPosition.Tags.ConditionId, notice.ConditionId)
 	end)
 
-  it("should fail to merge positions (condition not prepared)", function()
-    -- should throw an error
-    assert.has.error(function()
-      ConditionalTokens:mergePositions(
-        msgMergePositions.From,
-        msgMergePositions.Tags.OnBehalfOf,
-        msgMergePositions.Tags.Quantity,
-        true, -- isSell
-        msgMergePositions
-      )
-    end, "Condition not prepared!")
-	end)
-
   it("should fail to merge positions (position not split)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     -- should throw an error
     assert.has.error(function()
       ConditionalTokens:mergePositions(
@@ -341,12 +289,6 @@ describe("#market #conditionalTokens", function()
 	end)
 
   it("should fail to merge positions (no account balance)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     -- split position
     ConditionalTokens:splitPosition(
       recipient,
@@ -367,12 +309,6 @@ describe("#market #conditionalTokens", function()
 	end)
 
   it("should report payouts", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     ConditionalTokens:splitPosition(
       msgSplitPosition.From,
       msgSplitPosition.Tags.CollateralToken,
@@ -386,8 +322,8 @@ describe("#market #conditionalTokens", function()
       msgReportPayouts
     )
     -- asert state change
-    assert.are.same(payouts, ConditionalTokens.payoutNumerators[conditionId])
-    assert.are.same(1, ConditionalTokens.payoutDenominator[conditionId])
+    assert.are.same(payouts, ConditionalTokens.payoutNumerators)
+    assert.are.same(1, ConditionalTokens.payoutDenominator)
     -- assert notice
     assert.are.equals("Condition-Resolution-Notice", notice.Action)
     assert.are.equals(json.encode(msgReportPayouts.Tags.Payouts), notice.PayoutNumerators)
@@ -398,12 +334,6 @@ describe("#market #conditionalTokens", function()
 	end)
 
   it("should fail to report payouts (not resolution agent)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     -- split position
     ConditionalTokens:splitPosition(
       recipient,
@@ -420,68 +350,10 @@ describe("#market #conditionalTokens", function()
         msgReportPayouts.Tags.Payouts,
         msgReportPayouts
       )
-    end, "condition not prepared or found")
-	end)
-
-  it("should fail to report payouts (wrong payout length)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
-    -- split position
-    ConditionalTokens:splitPosition(
-      recipient,
-      msgSplitPosition.Tags.CollateralToken,
-      msgSplitPosition.Tags.Quantity,
-      msgSplitPosition
-    )
-    -- wrong outcome slot count
-    msgReportPayouts.Tags.Payouts = {1}
-    -- should throw an error
-    assert.has.error(function()
-      ConditionalTokens:reportPayouts(
-        msgReportPayouts.Tags.QuestionId,
-        msgReportPayouts.Tags.Payouts,
-        msgReportPayouts
-      )
-    end, "there should be more than one outcome slot")
-	end)
-
-  it("should fail to report payouts (payouts length == 1)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
-    -- split position
-    ConditionalTokens:splitPosition(
-      recipient,
-      msgSplitPosition.Tags.CollateralToken,
-      msgSplitPosition.Tags.Quantity,
-      msgSplitPosition
-    )
-    -- wrong outcome slot count
-    msgReportPayouts.Tags.Payouts = {1}
-    -- should throw an error
-    assert.has.error(function()
-      ConditionalTokens:reportPayouts(
-        msgReportPayouts.Tags.QuestionId,
-        msgReportPayouts.Tags.Payouts,
-        msgReportPayouts
-      )
-    end, "there should be more than one outcome slot")
+    end, "Sender not resolution agent!")
 	end)
 
   it("should fail to report payouts (payout length != outcomeSlotCount)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     -- split position
     ConditionalTokens:splitPosition(
       recipient,
@@ -490,7 +362,7 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition
     )
     -- wrong outcome slot count
-    msgReportPayouts.Tags.Payouts = {1, 0}
+    msgReportPayouts.Tags.Payouts = {1}
     -- should throw an error
     assert.has.error(function()
       ConditionalTokens:reportPayouts(
@@ -498,16 +370,10 @@ describe("#market #conditionalTokens", function()
         msgReportPayouts.Tags.Payouts,
         msgReportPayouts
       )
-    end, "condition not prepared or found")
+    end, "Payouts must match outcome slot count!")
 	end)
 
   it("should fail to report payouts (already reported)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     ConditionalTokens:splitPosition(
       msgSplitPosition.From,
       msgSplitPosition.Tags.CollateralToken,
@@ -531,12 +397,6 @@ describe("#market #conditionalTokens", function()
 	end)
 
   it("should fail to report payouts (payout all zeros)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     -- split position
     ConditionalTokens:splitPosition(
       recipient,
@@ -557,12 +417,6 @@ describe("#market #conditionalTokens", function()
 	end)
 
   it("should redeem positions", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     -- split position
     ConditionalTokens:splitPosition(
       msgSplitPosition.From,
@@ -600,12 +454,6 @@ describe("#market #conditionalTokens", function()
 	end)
 
   it("should fail to redeem positions (not reported)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     -- split position
     ConditionalTokens:splitPosition(
       msgSplitPosition.From,
@@ -623,12 +471,6 @@ describe("#market #conditionalTokens", function()
 	end)
 
   it("should fail to redeem positions (no balance)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     -- split position
     ConditionalTokens:splitPosition(
       msgSplitPosition.From,
@@ -653,27 +495,12 @@ describe("#market #conditionalTokens", function()
 	end)
 
   it("should get outcomeSlotCount (when prepared)", function()
-    -- prepare condition
-    ConditionalTokens:prepareCondition(
-      msgPrepareCondition.Tags.ConditionId,
-      msgPrepareCondition.Tags.OutcomeSlotCount,
-      msgPrepareCondition
-    )
     -- get outcomeSlotCount
     local result = ConditionalTokens:getOutcomeSlotCount(
       msgOutcomeSlotCount
     )
     -- assert result
     assert.are.equals(outcomeSlotCount, result)
-	end)
-
-  it("should get outcomeSlotCount (when not prepared)", function()
-    -- get outcomeSlotCount
-    local result = ConditionalTokens:getOutcomeSlotCount(
-      msgOutcomeSlotCount
-    )
-    -- assert result
-    assert.are.equals(0, result)
 	end)
 
   it("should fail to get outcomeSlotCount (missing conditionId)", function()

@@ -1,3 +1,7 @@
+local CPMM = {}
+local CPMMMethods = {}
+local CPMMHelpers = require('modules.cpmmHelpers')
+local CPMMNotices = require('modules.cpmmNotices')
 local json = require('json')
 local bint = require('.bint')(256)
 local ao = require('.ao')
@@ -5,68 +9,56 @@ local utils = require(".utils")
 local token = require('modules.token')
 local constants = require("modules.constants")
 local conditionalTokens = require('modules.conditionalTokens')
-local CPMMHelpers = require('modules.cpmmHelpers')
 
-local CPMM = {}
-local CPMMMethods = require('modules.cpmmNotices')
 
--- Constructor for CPMM (Constant Product Market Maker)
-function CPMM:new()
-  -- Create a new CPMM object
-  local obj = {
-    -- Market vars
-    marketId = '',
-    incentives = '',
-    configurator = '',
-    initialized = false,
-    -- CPMM vars
+--- Represents a CPMM (Constant Product Market Maker)
+--- @class CPMM
+--- @field marketId string The market ID
+--- @field incentives string The process ID of the incentives controller
+--- @field configurator string The process ID of the configurator
+--- @field initialized boolean The flag that is set to true once initialized
+--- @field poolBalances table<string, ...> The pool balance for each respective position ID
+--- @field withdrawnFees table<string, string> The amount of fees withdrawn by an account
+--- @field feePoolWeight string The total amount of fees collected
+--- @field totalWithdrawnFees string The total amount of fees withdrawn
+
+--- Creats a new CPMM instance
+--- @param configurator string The process ID of the configurator
+--- @param incentives string The process ID of the incentives controller
+--- @param collateralToken string The address of the collateral token
+--- @param marketId string The market ID
+--- @param conditionId string The condition ID
+--- @param positionIds table<string, ...> The position IDs
+--- @param name string The CPMM token(s) name 
+--- @param ticker string The CPMM token(s) ticker 
+--- @param logo string The CPMM token(s) logo 
+--- @param lpFee number The liquidity provider fee
+--- @param creatorFee number The market creator fee
+--- @param creatorFeeTarget string The market creator fee target
+--- @param protocolFee number The protocol fee
+--- @param protocolFeeTarget string The protocol fee target
+--- @return CPMM The new CPMM instance 
+function CPMM:new(configurator, incentives, collateralToken, marketId, conditionId, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
+  local cpmm = {
+    marketId = marketId,
+    configurator = configurator,
+    incentives = incentives,
     poolBalances = {},
     withdrawnFees = {},
-    feePoolWeight = '0',
-    totalWithdrawnFees = '0',
-    -- ConditionalTokens vars
-    tokens = {},
-    -- LP vars
-    token = {},
-    lpFee = 0
+    feePoolWeight = "0",
+    totalWithdrawnFees = "0",
+    lpFee = tonumber(lpFee),
+    initialized = true
   }
-
-  -- Set metatable for method lookups
-  setmetatable(obj, {
-    __index = function(_, k)
-      -- First, look up the key in CPMMMethods
-      if CPMMMethods[k] then
-        return CPMMMethods[k]
-      -- Then, check in CPMMHelpers
-      elseif CPMMHelpers[k] then
-        return CPMMHelpers[k]
-      else
-        return nil
-      end
-    end
-  })
-  return obj
-end
-
----------------------------------------------------------------------------------
--- FUNCTIONS --------------------------------------------------------------------
----------------------------------------------------------------------------------
-
--- Init
-function CPMMMethods:init(configurator, incentives, collateralToken, marketId, conditionId, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
-  -- Generate Position Ids
-  local positionIds = self.getPositionIds(tonumber(outcomeSlotCount))
-  -- Set LP Token vars
-  self.token = token:new(
+  cpmm.token = token:new(
     name,
     ticker,
     logo,
     {}, -- balances
-    '0', -- totalSupply
+    "0", -- totalSupply
     constants.denomination
   )
-  -- Set Conditional Tokens vars
-  self.tokens = conditionalTokens:new(
+  cpmm.tokens = conditionalTokens:new(
     name,
     ticker,
     logo,
@@ -75,30 +67,40 @@ function CPMMMethods:init(configurator, incentives, collateralToken, marketId, c
     constants.denomination,
     conditionId,
     collateralToken,
-    outcomeSlotCount,
     positionIds,
-    {}, -- payoutNumerators
-    {}, -- payoutDenominator
     creatorFee,
     creatorFeeTarget,
     protocolFee,
     protocolFeeTarget
   )
-  -- Initialized
-  self.initialized = true
-  self.marketId = marketId
-  self.configurator = configurator
-  self.incentives = incentives
-  self.lpFee = tonumber(lpFee)
-  -- Prepare Condition
-  self.tokens:prepareCondition(conditionId, outcomeSlotCount, msg)
-  -- Init CPMM with market details
-  return self.newMarketNotice(configurator, incentives, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
+  setmetatable(cpmm, {
+    __index = function(_, k)
+      if CPMMMethods[k] then
+        return CPMMMethods[k]
+      elseif CPMMHelpers[k] then
+        return CPMMHelpers[k]
+      elseif CPMMNotices[k] then
+        return CPMMNotices[k]
+      else
+        return nil
+      end
+    end
+  })
+  return cpmm
 end
 
 -- Add Funding 
 -- @dev: TODO: test the use of distributionHint to set the initial probability distribuiton
 -- @dev: TODO: test that adding subsquent funding does not alter the probability distribution
+
+
+--- Add funding
+--- @param from string The process ID of the account that added the funding
+--- @param onBehalfOf string The process ID of the account to receive the LP tokens
+--- @param addedFunds string The amount of funds to add
+--- @param distributionHint table<number, ...> The initial probability distribution
+--- @param msg Message The message received
+--- @return Message The funding added notice
 function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, msg)
   assert(bint.__lt(0, bint(addedFunds)), "funding must be non-zero")
   local sendBackAmounts = {}
@@ -171,7 +173,11 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
   return self.fundingAddedNotice(from, sendBackAmounts, mintAmount)
 end
 
--- Remove Funding 
+--- Remove funding
+--- @param from string The process ID of the account that removed the funding
+--- @param sharesToBurn string The amount of shares to burn
+--- @param msg Message The message received
+--- @return Message The funding removed notice
 function CPMMMethods:removeFunding(from, sharesToBurn, msg)
   assert(bint.__lt(0, bint(sharesToBurn)), "funding must be non-zero")
   -- Get poolBalances
@@ -196,7 +202,10 @@ function CPMMMethods:removeFunding(from, sharesToBurn, msg)
   return self.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
 end
 
--- Calc Buy Amount 
+--- Calc buy amount
+--- @param investmentAmount number The amount to stake on an outcome
+--- @param positionId string The position ID of the outcome
+--- @return string The amount of tokens to be purchased
 function CPMMMethods:calcBuyAmount(investmentAmount, positionId)
   assert(bint.__lt(0, investmentAmount), 'InvestmentAmount must be greater than zero!')
   assert(utils.includes(positionId, self.tokens.positionIds), 'PositionId must be valid!')
@@ -217,7 +226,10 @@ function CPMMMethods:calcBuyAmount(investmentAmount, positionId)
   return tostring(bint.ceil(buyTokenPoolBalance + investmentAmountMinusFees - CPMMHelpers.ceildiv(endingOutcomeBalance, 1e4)))
 end
 
--- Calc Sell Amount
+--- Calc sell amount
+--- @param returnAmount number The amount to unstake from an outcome
+---@param positionId string The position ID of the outcome
+---@return string The amount of tokens to be sold
 function CPMMMethods:calcSellAmount(returnAmount, positionId)
   assert(bint.__lt(0, returnAmount), 'ReturnAmount must be greater than zero!')
   assert(utils.includes(positionId, self.tokens.positionIds), 'PositionId must be valid!')
@@ -239,7 +251,14 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
   return tostring(bint.ceil(returnAmountPlusFees + CPMMHelpers.ceildiv(endingOutcomeBalance, 1e4) - sellTokenPoolBalance))
 end
 
--- Buy 
+--- Buy
+--- @param from string The process ID of the account that initiates the buy
+--- @param onBehalfOf string The process ID of the account to receive the tokens
+--- @param investmentAmount number The amount to stake on an outcome
+--- @param positionId string The position ID of the outcome
+--- @param minOutcomeTokensToBuy number The minimum number of outcome tokens to buy
+--- @param msg Message The message received
+--- @return Message The buy notice
 function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minOutcomeTokensToBuy, msg)
   local outcomeTokensToBuy = self:calcBuyAmount(investmentAmount, positionId)
   assert(bint.__le(minOutcomeTokensToBuy, bint(outcomeTokensToBuy)), "Minimum outcome tokens not reached!")
@@ -249,13 +268,20 @@ function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minOutc
   local investmentAmountMinusFees = tostring(bint.__sub(investmentAmount, bint(feeAmount)))
   -- Split position through all conditions
   self.tokens:splitPosition(ao.id, self.tokens.collateralToken, investmentAmountMinusFees, msg)
-  -- Transfer buy position to sender
-  self.tokens:transferSingle(ao.id, from, positionId, outcomeTokensToBuy, false, msg)
+  -- Transfer buy position to onBehalfOf
+  self.tokens:transferSingle(ao.id, onBehalfOf, positionId, outcomeTokensToBuy, false, msg)
   -- Send notice.
   return self.buyNotice(from, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
 end
 
--- Sell 
+--- Sell
+--- Returns collateral and excess outcome tokens to the sender
+--- @param from string The process ID of the account that initiates the sell
+--- @param returnAmount number The amount to unstake from an outcome
+--- @param positionId string The position ID of the outcome
+--- @param quantity number The quantity of tokens sent for this transaction
+--- @param maxOutcomeTokensToSell number The maximum number of outcome tokens to sell
+--- @return Message The sell notice
 function CPMMMethods:sell(from, returnAmount, positionId, quantity, maxOutcomeTokensToSell, msg)
   -- Calculate outcome tokens to sell.
   local outcomeTokensToSell = self:calcSellAmount(returnAmount, positionId)
@@ -287,25 +313,28 @@ function CPMMMethods:sell(from, returnAmount, positionId, quantity, maxOutcomeTo
   return self.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)
 end
 
--- Fees
--- @dev Returns the total fees collected within the CPMM
+--- Colleced fees
+--- @return string The total fees collected by the CPMM
 function CPMMMethods:collectedFees()
   return tostring(self.feePoolWeight - self.totalWithdrawnFees)
 end
 
--- @dev Returns the fees withdrawable by the sender
-function CPMMMethods:feesWithdrawableBy(sender)
-  local balance = self.token.balances[sender] or '0'
+--- Fees withdrawable 
+--- @param account string The process ID of the account
+--- @return string The fees withdrawable by the account
+function CPMMMethods:feesWithdrawableBy(account)
+  local balance = self.token.balances[account] or '0'
   local rawAmount = '0'
   if bint(self.token.totalSupply) > 0 then
     rawAmount = string.format('%.0f', (bint.__div(bint.__mul(bint(self:collectedFees()), bint(balance)), self.token.totalSupply)))
   end
-
-  -- @dev max(rawAmount - withdrawnFees, 0)
   return tostring(bint.max(bint(bint.__sub(bint(rawAmount), bint(self.withdrawnFees[sender] or '0'))), 0))
 end
 
--- @dev Withdraws fees to the sender
+--- Withdraw fees
+--- @param sender string The process ID of the sender
+--- @param msg Message The message received
+--- @return string The amount of fees withdrawn to the sender
 function CPMMMethods:withdrawFees(sender, msg)
   local feeAmount = self:feesWithdrawableBy(sender)
   if bint.__lt(0, bint(feeAmount)) then
@@ -316,7 +345,12 @@ function CPMMMethods:withdrawFees(sender, msg)
   return feeAmount
 end
 
--- @dev Updates fee accounting before token transfers
+--- Before token transfer
+--- Updates fee accounting before token transfers
+--- @param from string|nil The process ID of the account executing the transaction
+--- @param to string|nil The process ID of the account receiving the transaction
+--- @param amount string The amount transferred
+--- @param msg Message The message received
 function CPMMMethods:_beforeTokenTransfer(from, to, amount, msg)
   if from ~= nil then
     self:withdrawFees(from, msg)
@@ -330,51 +364,68 @@ function CPMMMethods:_beforeTokenTransfer(from, to, amount, msg)
   end
 end
 
--- LP Tokens
--- @dev See tokensMethods:mint & _beforeTokenTransfer
+--- @dev See `Mint` in modules.token 
 function CPMMMethods:mint(to, quantity, msg)
   self:_beforeTokenTransfer(nil, to, quantity, msg)
   return self.token:mint(to, quantity, msg)
 end
 
+--- @dev See `Burn` in modules.token 
 -- @dev See tokenMethods:burn & _beforeTokenTransfer
 function CPMMMethods:burn(from, quantity, msg)
   self:_beforeTokenTransfer(from, nil, quantity, msg)
   return self.token:burn(from, quantity, msg)
 end
 
+--- @dev See `Transfer` in modules.token 
 -- @dev See tokenMethods:transfer & _beforeTokenTransfer
 function CPMMMethods:transfer(from, recipient, quantity, cast, msg)
   self:_beforeTokenTransfer(from, recipient, quantity, msg)
   return self.token:transfer(from, recipient, quantity, cast, msg)
 end
 
--- @dev updates configurator
+--- Update configurator
+--- @param configurator string The process ID of the new configurator
+--- @param msg Message The message received
+--- @return Message The update configurator notice
 function CPMMMethods:updateConfigurator(configurator, msg)
   self.configurator = configurator
   return self.updateConfiguratorNotice(configurator, msg)
 end
 
--- @dev updates incentives
+--- Update incentives controller
+--- @param incentives string The process ID of the new incentives controller
+--- @param msg Message The message received
+--- @return Message The update incentives notice
 function CPMMMethods:updateIncentives(incentives, msg)
   self.incentives = incentives
   return self.updateIncentivesNotice(incentives, msg)
 end
 
--- @dev Updates the take fee
+--- Update take fee
+--- @param creatorFee string The new creator fee in basis points
+--- @param protocolFee string The new protocol fee in basis points
+--- @param msg Message The message received
+--- @return Message The update take fee notice
 function CPMMMethods:updateTakeFee(creatorFee, protocolFee, msg)
   self.tokens.creatorFee = creatorFee
   self.tokens.protocolFee = protocolFee
   return self.updateTakeFeeNotice(creatorFee, protocolFee, creatorFee + protocolFee, msg)
 end
 
--- @dev Updtes the protocol fee target
+--- Update protocol fee targer
+--- @param target string The process ID of the new protocol fee target
+--- @param msg Message The message received
+--- @return Message The update protocol fee target notice
 function CPMMMethods:updateProtocolFeeTarget(target, msg)
   self.tokens.protocolFeeTarget = target
   return self.updateProtocolFeeTargetNotice(target, msg)
 end
 
--- @dev Updtes the logo
+--- Update logo
+--- @param logo string The Arweave transaction ID of the new logo
+--- @param msg Message The message received
+--- @return Message The update logo notice
 function CPMMMethods:updateLogo(logo, msg)
   self.token.logo = logo
   self.tokens.logo = logo

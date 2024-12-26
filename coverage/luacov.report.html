@@ -316,16 +316,16 @@
 </head>
 <body onload="initialize()">
    <main>
-      <div class="file danger total">
+      <div class="file warning total">
          <h1 class="title">
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 31.37%"></span>
-                  <span><strong>31.37%</strong> Coverage</span>
+                  <span class="bg" style="width: 40.85%"></span>
+                  <span><strong>40.85%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>112</strong> Hits</span>
-               <span class="miss"><strong>245</strong> Missed</span>
+               <span class="hits"><strong>145</strong> Hits</span>
+               <span class="miss"><strong>210</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -335,11 +335,11 @@
             src/modules/conditionalTokens.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 5.94%"></span>
-                  <span><strong>5.94%</strong> Coverage</span>
+                  <span class="bg" style="width: 35.05%"></span>
+                  <span><strong>35.05%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>6</strong> Hits</span>
-               <span class="miss"><strong>95</strong> Missed</span>
+               <span class="hits"><strong>34</strong> Hits</span>
+               <span class="miss"><strong>63</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local ConditionalTokens = {}</span>
@@ -348,8 +348,8 @@
 <span class="fc" data-hits="1">local SemiFungibleTokens = require(&#39;modules.semiFungibleTokens&#39;)</span>
 <span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
 <span class="fc" data-hits="1">local crypto = require(&#39;.crypto&#39;)</span>
-<span class="nc">local ao = require(&#39;.ao&#39;)</span>
-<span class="nc">local json = require(&quot;json&quot;)</span>
+<span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
+<span class="fc" data-hits="1">local json = require(&quot;json&quot;)</span>
 
 --- Represents ConditionalTokens
 --- @class ConditionalTokens
@@ -364,7 +364,7 @@
 --- @field outcomeSlotCount number The number of outcome slots
 --- @field positionIds table&lt;string&gt; The position IDs representing outcomes
 --- @field payoutNumerators table&lt;number&gt; The relative payouts for each outcome slot
---- @field payoutDenominator table&lt;number&gt; The sum of payout numerators, zero if unreported
+--- @field payoutDenominator number The sum of payout numerators, zero if unreported
 --- @field creatorFee number The creator fee to be paid, in basis points
 --- @field creatorFeeTarget string The process ID to receive the creator fee
 --- @field protocolFee number The protocol fee to be paid, in basis points
@@ -379,16 +379,13 @@
 --- @param denomination number The number of decimals
 --- @param conditionId string The condition ID
 --- @param collateralToken string The process ID of the collateral token
---- @param outcomeSlotCount number The number of outcome slots
 --- @param positionIds table&lt;string&gt; The position IDs representing outcomes
---- @param payoutNumerators table&lt;number&gt; The relative payouts for each outcome slot
---- @param payoutDenominator table&lt;number&gt; The sum of payout numerators, zero if unreported
 --- @param creatorFee number The creator fee to be paid, in basis points
 --- @param creatorFeeTarget string The process ID to receive the creator fee
 --- @param protocolFee number The protocol fee to be paid, in basis points
 --- @param protocolFeeTarget string The process ID to receive the protocol fee
 --- @return ConditionalTokens The new ConditionalTokens instance
-<span class="nc">function ConditionalTokens:new(</span>
+<span class="fc" data-hits="1">function ConditionalTokens:new(</span>
   name,
   ticker,
   logo,
@@ -397,30 +394,33 @@
   denomination,
   conditionId,
   collateralToken,
-  outcomeSlotCount,
   positionIds,
-  payoutNumerators,
-  payoutDenominator,
   creatorFee,
   creatorFeeTarget,
   protocolFee,
   protocolFeeTarget
 )
   ---@class ConditionalTokens : SemiFungibleTokens
-<span class="nc">  local conditionalTokens = SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)</span>
-<span class="nc">  conditionalTokens.conditionId = conditionId</span>
-<span class="nc">  conditionalTokens.collateralToken = collateralToken</span>
-<span class="nc">  conditionalTokens.outcomeSlotCount = outcomeSlotCount</span>
-<span class="nc">  conditionalTokens.positionIds = positionIds</span>
-<span class="nc">  conditionalTokens.payoutNumerators = payoutNumerators</span>
-<span class="nc">  conditionalTokens.payoutDenominator = payoutDenominator</span>
-<span class="nc">  conditionalTokens.creatorFee = tonumber(creatorFee) or 0</span>
-<span class="nc">  conditionalTokens.creatorFeeTarget = creatorFeeTarget</span>
-<span class="nc">  conditionalTokens.protocolFee = tonumber(protocolFee) or 0</span>
-<span class="nc">  conditionalTokens.protocolFeeTarget = protocolFeeTarget</span>
+<span class="fc" data-hits="1">  local conditionalTokens = SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)</span>
+<span class="fc" data-hits="1">  conditionalTokens.conditionId = conditionId</span>
+<span class="fc" data-hits="1">  conditionalTokens.collateralToken = collateralToken</span>
+<span class="fc" data-hits="1">  conditionalTokens.outcomeSlotCount = #positionIds</span>
+<span class="fc" data-hits="1">  conditionalTokens.positionIds = positionIds</span>
+<span class="fc" data-hits="1">  conditionalTokens.creatorFee = tonumber(creatorFee) or 0</span>
+<span class="fc" data-hits="1">  conditionalTokens.creatorFeeTarget = creatorFeeTarget</span>
+<span class="fc" data-hits="1">  conditionalTokens.protocolFee = tonumber(protocolFee) or 0</span>
+<span class="fc" data-hits="1">  conditionalTokens.protocolFeeTarget = protocolFeeTarget</span>
+<span class="fc" data-hits="1">  conditionalTokens.payoutDenominator = 0</span>
+  -- Initialize the payout vector as zeros.
+<span class="fc" data-hits="1">  conditionalTokens.payoutNumerators = {}</span>
+<span class="fc" data-hits="4">  for _ = 1, #positionIds do</span>
+<span class="fc" data-hits="3">    table.insert(conditionalTokens.payoutNumerators, 0)</span>
+  end
+  -- Initialize the denominator to zero to indicate that the condition has not been resolved.
+<span class="fc" data-hits="1">  conditionalTokens.payoutDenominator = 0</span>
 
-<span class="nc">  local semiFungibleTokensMetatable = getmetatable(conditionalTokens)</span>
-<span class="nc">  setmetatable(conditionalTokens, {</span>
+<span class="fc" data-hits="1">  local semiFungibleTokensMetatable = getmetatable(conditionalTokens)</span>
+<span class="fc" data-hits="2">  setmetatable(conditionalTokens, {</span>
     __index = function(_, k)
 <span class="nc">      if ConditionalTokensMethods[k] then</span>
 <span class="nc">        return ConditionalTokensMethods[k]</span>
@@ -432,25 +432,7 @@
       end
     end
   })
-<span class="nc">  return conditionalTokens</span>
-end
-
---- Prepare Condition
---- @param conditionId string The condition&#39;s ID, derived from `crypto.digest.keccak256(questionId .. resolutionAgent .. outcomeSlotCount)`
---- @param outcomeSlotCount number The number of outcome slots used for this condition. Must not exceed 256.
---- @param msg Message The message received
---- @return Message The condition preparation notice
-<span class="nc">function ConditionalTokensMethods:prepareCondition(conditionId, outcomeSlotCount, msg)</span>
-<span class="nc">  assert(self.payoutNumerators[conditionId] == nil, &quot;condition already prepared&quot;)</span>
-  -- Initialize the payout vector associated with the condition.
-<span class="nc">  self.payoutNumerators[conditionId] = {}</span>
-<span class="nc">  for _ = 1, outcomeSlotCount do</span>
-<span class="nc">    table.insert(self.payoutNumerators[conditionId], 0)</span>
-  end
-  -- Initialize the denominator to zero to indicate that the condition has not been resolved.
-<span class="nc">  self.payoutDenominator[conditionId] = 0</span>
-  -- Send the condition preparation notice.
-<span class="nc">  return self.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)</span>
+<span class="fc" data-hits="1">  return conditionalTokens</span>
 end
 
 --- Split position
@@ -459,8 +441,8 @@ end
 --- @param quantity string The quantity of collateral to split
 --- @param msg Message The message received
 --- @return Message The position split notice
-<span class="nc">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)</span>
-<span class="nc">  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] &gt; 0, &quot;Condition not prepared!&quot;)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)</span>
+<span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal split positions.
 <span class="nc">  local quantities = {}</span>
 <span class="nc">  for _ = 1, #self.positionIds do</span>
@@ -479,8 +461,8 @@ end
 --- @param isSell boolean True if the merge is a sell, false otherwise
 --- @param msg Message The message received
 --- @return Message The positions merge notice
-<span class="nc">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)</span>
-<span class="nc">  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] &gt; 0, &quot;Condition not prepared!&quot;)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)</span>
+<span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal merge positions.
 <span class="nc">  local quantities = {}</span>
 <span class="nc">  for _ = 1, #self.positionIds do</span>
@@ -508,40 +490,40 @@ end
 --- @param payouts table&lt;number&gt; The resolution agent&#39;s answer
 --- @param msg Message The message received
 --- @return Message The condition resolution notice
-<span class="nc">function ConditionalTokensMethods:reportPayouts(questionId, payouts, msg)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:reportPayouts(questionId, payouts, msg)</span>
   -- IMPORTANT, the payouts length accuracy is enforced because outcomeSlotCount is part of the hash.
 <span class="nc">  local outcomeSlotCount = #payouts</span>
-<span class="nc">  assert(outcomeSlotCount &gt; 1, &quot;there should be more than one outcome slot&quot;)</span>
+<span class="nc">  assert(#payouts == self.outcomeSlotCount, &quot;Payouts must match outcome slot count!&quot;)</span>
   -- IMPORTANT, the resolutionAgent is enforced to be the sender because it&#39;s part of the hash.
 <span class="nc">  local conditionId = self.getConditionId(msg.From, questionId, tostring(outcomeSlotCount))</span>
-<span class="nc">  assert(self.payoutNumerators[conditionId] and #self.payoutNumerators[conditionId] == outcomeSlotCount, &quot;condition not prepared or found&quot;)</span>
-<span class="nc">  assert(self.payoutDenominator[conditionId] == 0, &quot;payout denominator already set&quot;)</span>
+<span class="nc">  assert(conditionId == self.conditionId, &quot;Sender not resolution agent!&quot;)</span>
+<span class="nc">  assert(self.payoutDenominator == 0, &quot;payout denominator already set&quot;)</span>
   -- Set the payout vector for the condition.
 <span class="nc">  local den = 0</span>
 <span class="nc">  for i = 1, outcomeSlotCount do</span>
 <span class="nc">    local num = payouts[i]</span>
 <span class="nc">    den = den + num</span>
-<span class="nc">    assert(self.payoutNumerators[conditionId][i] == 0, &quot;payout numerator already set&quot;)</span>
-<span class="nc">    self.payoutNumerators[conditionId][i] = num</span>
+<span class="nc">    assert(self.payoutNumerators[i] == 0, &quot;payout numerator already set&quot;)</span>
+<span class="nc">    self.payoutNumerators[i] = num</span>
   end
 <span class="nc">  assert(den &gt; 0, &quot;payout is all zeroes&quot;)</span>
-<span class="nc">  self.payoutDenominator[conditionId] = den</span>
+<span class="nc">  self.payoutDenominator = den</span>
   -- Send the condition resolution notice.
-<span class="nc">  return self.conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, self.payoutNumerators[conditionId], msg)</span>
+<span class="nc">  return self.conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, self.payoutNumerators, msg)</span>
 end
 
 --- Redeem positions
 --- Transfers any payout minus fees to the message sender
 --- @param msg Message The message received
 --- @return Message The payout redemption notice
-<span class="nc">function ConditionalTokensMethods:redeemPositions(msg)</span>
-<span class="nc">  local den = self.payoutDenominator[self.conditionId]</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:redeemPositions(msg)</span>
+<span class="nc">  local den = self.payoutDenominator</span>
 <span class="nc">  assert(den &gt; 0, &quot;result for condition not received yet&quot;)</span>
-<span class="nc">  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] &gt; 0, &quot;condition not prepared yet&quot;)</span>
+<span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;condition not prepared yet&quot;)</span>
 <span class="nc">  local totalPayout = 0</span>
 <span class="nc">  for i = 1, #self.positionIds do</span>
 <span class="nc">    local positionId = self.positionIds[i]</span>
-<span class="nc">    local payoutNumerator = self.payoutNumerators[self.conditionId][tonumber(positionId)]</span>
+<span class="nc">    local payoutNumerator = self.payoutNumerators[tonumber(positionId)]</span>
     -- Get the stake to redeem.
 <span class="nc">    if not self.balancesById[positionId] then self.balancesById[positionId] = {} end</span>
 <span class="nc">    if not self.balancesById[positionId][msg.From] then self.balancesById[positionId][msg.From] = &quot;0&quot; end</span>
@@ -564,9 +546,9 @@ end
 --- Gets the number of outcome slots associated with a condition
 ---@param msg Message The message received
 ---@return number The number of outcome slots, zero if the condition has not been prepared
-<span class="nc">function ConditionalTokensMethods:getOutcomeSlotCount(msg)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:getOutcomeSlotCount(msg)</span>
 <span class="nc">  assert(msg.Tags.ConditionId, &quot;ConditionId is required!&quot;)</span>
-<span class="nc">  return self.payoutNumerators[msg.Tags.ConditionId] and #self.payoutNumerators[msg.Tags.ConditionId] or 0</span>
+<span class="nc">  return self.payoutNumerators and #self.payoutNumerators or 0</span>
 end
 
 --- Get ConditionId
@@ -575,7 +557,7 @@ end
 --- @param questionId string An identifier for the question to be answered by the resolutionAgent
 --- @param outcomeSlotCount string The number of outcome slots used for this condition. Must not exceed 256.
 --- @return string The condition ID
-<span class="nc">function ConditionalTokensMethods.getConditionId(resolutionAgent, questionId, outcomeSlotCount)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods.getConditionId(resolutionAgent, questionId, outcomeSlotCount)</span>
 <span class="nc">  return crypto.digest.keccak256(resolutionAgent .. questionId .. outcomeSlotCount).asHex()</span>
 end
 
@@ -585,7 +567,7 @@ end
 --- @param from string The account to receive the payout minus fees
 --- @param totalPayout number The total payout assciated with the acount stake
 --- @return table&lt;Message&gt; The protocol fee, creator fee and payout messages
-<span class="nc">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)</span>
 <span class="nc">  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))</span>
 <span class="nc">  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))</span>
 <span class="nc">  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))</span>
@@ -613,7 +595,7 @@ end
 <span class="nc">  return { ao.send(protocolFeeTxn), ao.send(creatorFeeTxn), ao.send(totalPayoutMinutTakeFeeTxn) }</span>
 end
 
-<span class="nc">return ConditionalTokens</span>
+<span class="fc" data-hits="1">return ConditionalTokens</span>
 </pre>
       </div>
 
@@ -622,11 +604,11 @@ end
             src/modules/conditionalTokensNotices.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 100.00%"></span>
-                  <span><strong>100.00%</strong> Coverage</span>
+                  <span class="bg" style="width: 97.37%"></span>
+                  <span><strong>97.37%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>41</strong> Hits</span>
-               <span class="miss"><strong>0</strong> Missed</span>
+               <span class="hits"><strong>37</strong> Hits</span>
+               <span class="miss"><strong>1</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="2">local json = require(&#39;json&#39;)</span>
@@ -640,11 +622,12 @@ end
 --- @param msg Message The message received
 --- @return Message The condition preparation notice
 <span class="fc" data-hits="2">function ConditionalTokensNotices.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)</span>
-<span class="fc" data-hits="2">  return msg.reply({</span>
-<span class="fc" data-hits="1">    Action = &quot;Condition-Preparation-Notice&quot;,</span>
-<span class="fc" data-hits="1">    ConditionId = conditionId,</span>
-<span class="fc" data-hits="1">    OutcomeSlotCount = tostring(outcomeSlotCount)</span>
-  })
+<span class="nc">  print(&quot;DELETE?&quot;)</span>
+  -- return msg.reply({
+  --   Action = &quot;Condition-Preparation-Notice&quot;,
+  --   ConditionId = conditionId,
+  --   OutcomeSlotCount = tostring(outcomeSlotCount)
+  -- })
 end
 
 --- Condition resolution notice
@@ -784,11 +767,11 @@ end
             src/modules/semiFungibleTokens.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 14.41%"></span>
-                  <span><strong>14.41%</strong> Coverage</span>
+                  <span class="bg" style="width: 21.14%"></span>
+                  <span><strong>21.14%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>17</strong> Hits</span>
-               <span class="miss"><strong>101</strong> Missed</span>
+               <span class="hits"><strong>26</strong> Hits</span>
+               <span class="miss"><strong>97</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local SemiFungibleTokens = {}</span>
@@ -815,15 +798,15 @@ end
 --- @param denomination number The number of decimals
 --- @return SemiFungibleTokens The new SemiFungibleTokens instance
 <span class="fc" data-hits="1">function SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)</span>
-<span class="nc">  local semiFungibleTokens = {</span>
-    name = name,
-    ticker = ticker,
-    logo = logo,
-    balancesById = balancesById,
-    totalSupplyById = totalSupplyById,
-<span class="nc">    denomination = denomination</span>
+<span class="fc" data-hits="1">  local semiFungibleTokens = {</span>
+<span class="fc" data-hits="1">    name = name,</span>
+<span class="fc" data-hits="1">    ticker = ticker,</span>
+<span class="fc" data-hits="1">    logo = logo,</span>
+<span class="fc" data-hits="1">    balancesById = balancesById,</span>
+<span class="fc" data-hits="1">    totalSupplyById = totalSupplyById,</span>
+<span class="fc" data-hits="1">    denomination = denomination</span>
   }
-<span class="nc">  setmetatable(semiFungibleTokens, {</span>
+<span class="fc" data-hits="2">  setmetatable(semiFungibleTokens, {</span>
     __index = function(_, k)
 <span class="nc">      if SemiFungibleTokensMethods[k] then</span>
 <span class="nc">        return SemiFungibleTokensMethods[k]</span>
@@ -834,7 +817,7 @@ end
       end
     end
   })
-<span class="nc">  return semiFungibleTokens</span>
+<span class="fc" data-hits="1">  return semiFungibleTokens</span>
 end
 
 --- Mint a quantity of tokens with the given ID
@@ -1364,7 +1347,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-24 08:46:09
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-27 00:53:31
    </footer>
 
    <script type="text/javascript">

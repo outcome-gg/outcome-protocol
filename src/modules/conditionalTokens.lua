@@ -20,7 +20,7 @@ local json = require("json")
 --- @field outcomeSlotCount number The number of outcome slots
 --- @field positionIds table<string> The position IDs representing outcomes
 --- @field payoutNumerators table<number> The relative payouts for each outcome slot
---- @field payoutDenominator table<number> The sum of payout numerators, zero if unreported
+--- @field payoutDenominator number The sum of payout numerators, zero if unreported
 --- @field creatorFee number The creator fee to be paid, in basis points
 --- @field creatorFeeTarget string The process ID to receive the creator fee
 --- @field protocolFee number The protocol fee to be paid, in basis points
@@ -35,10 +35,7 @@ local json = require("json")
 --- @param denomination number The number of decimals
 --- @param conditionId string The condition ID
 --- @param collateralToken string The process ID of the collateral token
---- @param outcomeSlotCount number The number of outcome slots
 --- @param positionIds table<string> The position IDs representing outcomes
---- @param payoutNumerators table<number> The relative payouts for each outcome slot
---- @param payoutDenominator table<number> The sum of payout numerators, zero if unreported
 --- @param creatorFee number The creator fee to be paid, in basis points
 --- @param creatorFeeTarget string The process ID to receive the creator fee
 --- @param protocolFee number The protocol fee to be paid, in basis points
@@ -53,10 +50,7 @@ function ConditionalTokens:new(
   denomination,
   conditionId,
   collateralToken,
-  outcomeSlotCount,
   positionIds,
-  payoutNumerators,
-  payoutDenominator,
   creatorFee,
   creatorFeeTarget,
   protocolFee,
@@ -66,14 +60,20 @@ function ConditionalTokens:new(
   local conditionalTokens = SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)
   conditionalTokens.conditionId = conditionId
   conditionalTokens.collateralToken = collateralToken
-  conditionalTokens.outcomeSlotCount = outcomeSlotCount
+  conditionalTokens.outcomeSlotCount = #positionIds
   conditionalTokens.positionIds = positionIds
-  conditionalTokens.payoutNumerators = payoutNumerators
-  conditionalTokens.payoutDenominator = payoutDenominator
   conditionalTokens.creatorFee = tonumber(creatorFee) or 0
   conditionalTokens.creatorFeeTarget = creatorFeeTarget
   conditionalTokens.protocolFee = tonumber(protocolFee) or 0
   conditionalTokens.protocolFeeTarget = protocolFeeTarget
+  conditionalTokens.payoutDenominator = 0
+  -- Initialize the payout vector as zeros.
+  conditionalTokens.payoutNumerators = {}
+  for _ = 1, #positionIds do
+    table.insert(conditionalTokens.payoutNumerators, 0)
+  end
+  -- Initialize the denominator to zero to indicate that the condition has not been resolved.
+  conditionalTokens.payoutDenominator = 0
 
   local semiFungibleTokensMetatable = getmetatable(conditionalTokens)
   setmetatable(conditionalTokens, {
@@ -91,24 +91,6 @@ function ConditionalTokens:new(
   return conditionalTokens
 end
 
---- Prepare Condition
---- @param conditionId string The condition's ID, derived from `crypto.digest.keccak256(questionId .. resolutionAgent .. outcomeSlotCount)`
---- @param outcomeSlotCount number The number of outcome slots used for this condition. Must not exceed 256.
---- @param msg Message The message received
---- @return Message The condition preparation notice
-function ConditionalTokensMethods:prepareCondition(conditionId, outcomeSlotCount, msg)
-  assert(self.payoutNumerators[conditionId] == nil, "condition already prepared")
-  -- Initialize the payout vector associated with the condition.
-  self.payoutNumerators[conditionId] = {}
-  for _ = 1, outcomeSlotCount do
-    table.insert(self.payoutNumerators[conditionId], 0)
-  end
-  -- Initialize the denominator to zero to indicate that the condition has not been resolved.
-  self.payoutDenominator[conditionId] = 0
-  -- Send the condition preparation notice.
-  return self.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
-end
-
 --- Split position
 --- @param from string The process ID of the account that split the position
 --- @param collateralToken string The process ID of the collateral token
@@ -116,7 +98,7 @@ end
 --- @param msg Message The message received
 --- @return Message The position split notice
 function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)
-  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] > 0, "Condition not prepared!")
+  assert(self.payoutNumerators and #self.payoutNumerators > 0, "Condition not prepared!")
   -- Create equal split positions.
   local quantities = {}
   for _ = 1, #self.positionIds do
@@ -136,7 +118,7 @@ end
 --- @param msg Message The message received
 --- @return Message The positions merge notice
 function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)
-  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] > 0, "Condition not prepared!")
+  assert(self.payoutNumerators and #self.payoutNumerators > 0, "Condition not prepared!")
   -- Create equal merge positions.
   local quantities = {}
   for _ = 1, #self.positionIds do
@@ -167,23 +149,23 @@ end
 function ConditionalTokensMethods:reportPayouts(questionId, payouts, msg)
   -- IMPORTANT, the payouts length accuracy is enforced because outcomeSlotCount is part of the hash.
   local outcomeSlotCount = #payouts
-  assert(outcomeSlotCount > 1, "there should be more than one outcome slot")
+  assert(#payouts == self.outcomeSlotCount, "Payouts must match outcome slot count!")
   -- IMPORTANT, the resolutionAgent is enforced to be the sender because it's part of the hash.
   local conditionId = self.getConditionId(msg.From, questionId, tostring(outcomeSlotCount))
-  assert(self.payoutNumerators[conditionId] and #self.payoutNumerators[conditionId] == outcomeSlotCount, "condition not prepared or found")
-  assert(self.payoutDenominator[conditionId] == 0, "payout denominator already set")
+  assert(conditionId == self.conditionId, "Sender not resolution agent!")
+  assert(self.payoutDenominator == 0, "payout denominator already set")
   -- Set the payout vector for the condition.
   local den = 0
   for i = 1, outcomeSlotCount do
     local num = payouts[i]
     den = den + num
-    assert(self.payoutNumerators[conditionId][i] == 0, "payout numerator already set")
-    self.payoutNumerators[conditionId][i] = num
+    assert(self.payoutNumerators[i] == 0, "payout numerator already set")
+    self.payoutNumerators[i] = num
   end
   assert(den > 0, "payout is all zeroes")
-  self.payoutDenominator[conditionId] = den
+  self.payoutDenominator = den
   -- Send the condition resolution notice.
-  return self.conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, self.payoutNumerators[conditionId], msg)
+  return self.conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, self.payoutNumerators, msg)
 end
 
 --- Redeem positions
@@ -191,13 +173,13 @@ end
 --- @param msg Message The message received
 --- @return Message The payout redemption notice
 function ConditionalTokensMethods:redeemPositions(msg)
-  local den = self.payoutDenominator[self.conditionId]
+  local den = self.payoutDenominator
   assert(den > 0, "result for condition not received yet")
-  assert(self.payoutNumerators[self.conditionId] and #self.payoutNumerators[self.conditionId] > 0, "condition not prepared yet")
+  assert(self.payoutNumerators and #self.payoutNumerators > 0, "condition not prepared yet")
   local totalPayout = 0
   for i = 1, #self.positionIds do
     local positionId = self.positionIds[i]
-    local payoutNumerator = self.payoutNumerators[self.conditionId][tonumber(positionId)]
+    local payoutNumerator = self.payoutNumerators[tonumber(positionId)]
     -- Get the stake to redeem.
     if not self.balancesById[positionId] then self.balancesById[positionId] = {} end
     if not self.balancesById[positionId][msg.From] then self.balancesById[positionId][msg.From] = "0" end
@@ -222,7 +204,7 @@ end
 ---@return number The number of outcome slots, zero if the condition has not been prepared
 function ConditionalTokensMethods:getOutcomeSlotCount(msg)
   assert(msg.Tags.ConditionId, "ConditionId is required!")
-  return self.payoutNumerators[msg.Tags.ConditionId] and #self.payoutNumerators[msg.Tags.ConditionId] or 0
+  return self.payoutNumerators and #self.payoutNumerators or 0
 end
 
 --- Get ConditionId
