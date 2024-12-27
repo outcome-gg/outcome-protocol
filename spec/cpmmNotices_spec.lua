@@ -71,12 +71,8 @@ describe("#market #conditionalTokens #cpmmNotices", function()
     maxOutcomeTokensToSell = "100"
     distribution = {50, 50}
     -- Mock the CPMM object
-    _G.CPMM = {
-      initialized = initialized,
-      tokens = { 
-        positionIds = { "1", "2", "3" }
-      }
-    }
+    ---@diagnostic disable-next-line: missing-fields
+    _G.CPMM = {initialized = initialized, tokens = { positionIds = { "1", "2", "3" }}}
     -- create a message object
 		msgInit = {
       From = marketFactory,

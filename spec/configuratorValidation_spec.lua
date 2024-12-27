@@ -1,6 +1,7 @@
 local configuratorValidation = require("modules.configuratorValidation")
 
 -- Mock the Configurator object
+---@diagnostic disable-next-line: missing-fields
 _G.Configurator = { admin = "test-this-is-valid-arweave-wallet-address-1" }
 
 local msg = {}

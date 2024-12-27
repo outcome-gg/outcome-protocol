@@ -3,6 +3,7 @@ local semiFungibleTokensValidation = require("modules.semiFungibleTokensValidati
 local json = require("json")
 
 -- Mock the Market.cpmm object
+---@diagnostic disable-next-line: missing-fields
 _G.Market = { cpmm = {tokens = { positionIds = { "1", "2", "3" } } } }
 
 local sender = ""
@@ -85,7 +86,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
   it("should pass transfer-single validation", function()
     -- should not throw an error
 		assert.has_no.errors(function()
-      semiFungibleTokensValidation.transferSingle(msg)
+      semiFungibleTokensValidation.transferSingle(msg, tokenIds)
     end)
 	end)
 
@@ -94,7 +95,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msg.Tags.Recipient = nil
     -- should throw an error
 		assert.has.error(function()
-      semiFungibleTokensValidation.transferSingle(msg)
+      semiFungibleTokensValidation.transferSingle(msg, tokenIds)
     end, "Recipient is required!")
 	end)
 
@@ -103,7 +104,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     msg.Tags.Recipient = "invalid-arweave-wallet-address"
     -- should throw an error
 		assert.has.error(function()
-      semiFungibleTokensValidation.transferSingle(msg)
+      semiFungibleTokensValidation.transferSingle(msg, tokenIds)
     end, "Recipient must be a valid Arweave address!")
 	end)
 
@@ -289,7 +290,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
   it("should pass balance-by-id validation", function()
     -- should not throw an error
 		assert.has_no.errors(function()
-      semiFungibleTokensValidation.balanceById(msgBalance)
+      semiFungibleTokensValidation.balanceById(msgBalance, tokenIds)
     end)
 	end)
 

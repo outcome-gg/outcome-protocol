@@ -65,10 +65,10 @@ function CPMMHelpers:validateRemoveFunding(from, quantity)
   -- Get balance
   local balance = self.token.balances[from] or '0'
   -- Check for errors
-  if from == self.creatorFeeTarget and self.payoutDenominator[self.conditionId] and self.payoutDenominator[self.conditionId] == 0 then
+  if from == self.creatorFeeTarget and self.payoutDenominator and self.payoutDenominator == 0 then
     error = true
     errorMessage = 'Creator liquidity locked until market resolution!'
-  elseif not bint.__le(bint(quantity), bint(balance)) then
+  elseif not bint.__le(bint(quantity), bint(balance)) then -- @dev TODO: remove as will never be called?
     error = true
     errorMessage = 'Quantity must be less than balance!'
   end

@@ -22,7 +22,7 @@ local conditionalTokens = require('modules.conditionalTokens')
 --- @field feePoolWeight string The total amount of fees collected
 --- @field totalWithdrawnFees string The total amount of fees withdrawn
 
---- Creats a new CPMM instance
+--- Creates a new CPMM instance
 --- @param configurator string The process ID of the configurator
 --- @param incentives string The process ID of the incentives controller
 --- @param collateralToken string The address of the collateral token
@@ -88,11 +88,6 @@ function CPMM:new(configurator, incentives, collateralToken, marketId, condition
   })
   return cpmm
 end
-
--- Add Funding 
--- @dev: TODO: test the use of distributionHint to set the initial probability distribuiton
--- @dev: TODO: test that adding subsquent funding does not alter the probability distribution
-
 
 --- Add funding
 --- @param from string The process ID of the account that added the funding
@@ -314,7 +309,7 @@ function CPMMMethods:sell(from, returnAmount, positionId, quantity, maxOutcomeTo
 end
 
 --- Colleced fees
---- @return string The total fees collected by the CPMM
+--- @return string The total unwithdrawn fees collected by the CPMM
 function CPMMMethods:collectedFees()
   return tostring(self.feePoolWeight - self.totalWithdrawnFees)
 end
