@@ -3,20 +3,6 @@ local ao = ao or require('.ao')
 
 local ConditionalTokensNotices = {}
 
---- Prepare condition notice
---- @param conditionId string The condition ID
---- @param outcomeSlotCount number The number of outcome slots
---- @param msg Message The message received
---- @return Message The condition preparation notice
-function ConditionalTokensNotices.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
-  print("DELETE?")
-  -- return msg.reply({
-  --   Action = "Condition-Preparation-Notice",
-  --   ConditionId = conditionId,
-  --   OutcomeSlotCount = tostring(outcomeSlotCount)
-  -- })
-end
-
 --- Condition resolution notice
 --- @param conditionId string The condition ID
 --- @param resolutionAgent string The process assigned to report the result for the prepared condition
@@ -26,7 +12,6 @@ end
 --- @param msg Message The message received
 --- @return Message The condition resolution notice
 function ConditionalTokensNotices.conditionResolutionNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, payoutNumerators, msg)
-  -- TODO: Decide if to be sent to user and/or Data Index
   return msg.reply({
     Action = "Condition-Resolution-Notice",
     ConditionId = conditionId,

@@ -1,6 +1,5 @@
 local Market = {}
 local MarketMethods = {}
-local MarketNotices = require('modules.marketNotices')
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
@@ -68,8 +67,6 @@ function Market:new(
     __index = function(_, k)
       if MarketMethods[k] then
         return MarketMethods[k]
-      elseif MarketNotices[k] then
-        return MarketNotices[k]
       else
         return nil
       end

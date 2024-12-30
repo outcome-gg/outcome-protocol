@@ -102,12 +102,6 @@ function SemiFungibleTokensMethods:burn(from, id, quantity, msg)
   return self.burnSingleNotice(from, id, quantity, msg)
 end
 
--- @dev Batch burn quantities of tokens with the given IDs
--- @param from The address that will burn the tokens
--- @param ids IDs of the tokens to be burned
--- @param quantities Quantities of the tokens to be burned
--- @param msg For sending X-Tags
-
 --- Batch burn a quantity of tokens with the given IDs
 --- @param from string The process ID that will no longer own the burned tokens
 --- @param ids table<string> The IDs of the tokens to burn
@@ -175,14 +169,6 @@ function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity,
     return self.transferErrorNotice(id, msg)
   end
 end
-
--- @dev Batch transfer quantities of tokens with the given IDs
--- @param from The address to be debited
--- @param recipient The address to be credited
--- @param ids IDs of the tokens to be transferred
--- @param quantities Quantities of the tokens to be transferred
--- @param cast The boolean to silence transfer notifications
--- @param msg For sending X-Tags
 
 --- Batch transfer quantities of tokens with the given IDs
 --- @param from string The process ID that will send the token

@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 34.0%"></span>
-                  <span><strong>34.0%</strong> Coverage</span>
+                  <span class="bg" style="width: 33.91%"></span>
+                  <span><strong>33.91%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>119</strong> Hits</span>
-               <span class="miss"><strong>231</strong> Missed</span>
+               <span class="hits"><strong>118</strong> Hits</span>
+               <span class="miss"><strong>230</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -604,31 +604,17 @@ end
             src/modules/conditionalTokensNotices.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 97.37%"></span>
-                  <span><strong>97.37%</strong> Coverage</span>
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>37</strong> Hits</span>
-               <span class="miss"><strong>1</strong> Missed</span>
+               <span class="hits"><strong>36</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="2">local json = require(&#39;json&#39;)</span>
 <span class="fc" data-hits="2">local ao = ao or require(&#39;.ao&#39;)</span>
 
 <span class="fc" data-hits="2">local ConditionalTokensNotices = {}</span>
-
---- Prepare condition notice
---- @param conditionId string The condition ID
---- @param outcomeSlotCount number The number of outcome slots
---- @param msg Message The message received
---- @return Message The condition preparation notice
-<span class="fc" data-hits="2">function ConditionalTokensNotices.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)</span>
-<span class="nc">  print(&quot;DELETE?&quot;)</span>
-  -- return msg.reply({
-  --   Action = &quot;Condition-Preparation-Notice&quot;,
-  --   ConditionId = conditionId,
-  --   OutcomeSlotCount = tostring(outcomeSlotCount)
-  -- })
-end
 
 --- Condition resolution notice
 --- @param conditionId string The condition ID
@@ -639,7 +625,6 @@ end
 --- @param msg Message The message received
 --- @return Message The condition resolution notice
 <span class="fc" data-hits="2">function ConditionalTokensNotices.conditionResolutionNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, payoutNumerators, msg)</span>
-  -- TODO: Decide if to be sent to user and&#47;or Data Index
 <span class="fc" data-hits="2">  return msg.reply({</span>
 <span class="fc" data-hits="1">    Action = &quot;Condition-Resolution-Notice&quot;,</span>
 <span class="fc" data-hits="1">    ConditionId = conditionId,</span>
@@ -878,12 +863,6 @@ end
 <span class="nc">  return self.burnSingleNotice(from, id, quantity, msg)</span>
 end
 
--- @dev Batch burn quantities of tokens with the given IDs
--- @param from The address that will burn the tokens
--- @param ids IDs of the tokens to be burned
--- @param quantities Quantities of the tokens to be burned
--- @param msg For sending X-Tags
-
 --- Batch burn a quantity of tokens with the given IDs
 --- @param from string The process ID that will no longer own the burned tokens
 --- @param ids table&lt;string&gt; The IDs of the tokens to burn
@@ -951,14 +930,6 @@ end
 <span class="nc">    return self.transferErrorNotice(id, msg)</span>
   end
 end
-
--- @dev Batch transfer quantities of tokens with the given IDs
--- @param from The address to be debited
--- @param recipient The address to be credited
--- @param ids IDs of the tokens to be transferred
--- @param quantities Quantities of the tokens to be transferred
--- @param cast The boolean to silence transfer notifications
--- @param msg For sending X-Tags
 
 --- Batch transfer quantities of tokens with the given IDs
 --- @param from string The process ID that will send the token
@@ -1264,68 +1235,63 @@ end
          </h2>
          <pre class="prettyprint lang-lua linenums"><span class="fc" data-hits="1">local sharedUtils = {}</span>
 
--- Function to validate if the extracted value is a valid JSON simple value
+--- Verify if extracted value is a JSON simple value
+--- @param value any
+--- @return boolean
 local function isSimpleValue(value)
   -- Trim whitespace
 <span class="fc" data-hits="5">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
-
   -- Check for a quoted string: &quot;someValue&quot;
 <span class="fc" data-hits="5">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
 <span class="nc">    return true</span>
   end
-
   -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
 <span class="fc" data-hits="5">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
 <span class="fc" data-hits="4">    return true</span>
   end
-
   -- Check for boolean
 <span class="fc" data-hits="1">  if value == &quot;true&quot; or value == &quot;false&quot; then</span>
 <span class="nc">    return true</span>
   end
-
 <span class="fc" data-hits="1">  return false</span>
 end
 
+--- Verify if a valid JSON object
+--- @param str any
+--- @return boolean
 <span class="fc" data-hits="1">function sharedUtils.isValidKeyValueJSON(str)</span>
 <span class="nc">  if type(str) ~= &quot;string&quot; then return false end</span>
-
   -- Trim whitespace
 <span class="nc">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
-
   -- Ensure it starts with `{` and ends with `}`
 <span class="nc">  local isObject = str:match(&quot;^%{%s*(.-)%s*%}$&quot;)</span>
 <span class="nc">  if not isObject then return false end</span>
-
   -- This pattern only extracts the key and the entire raw value
 <span class="nc">  local keyValuePattern = &#39;^%s*&quot;([^&quot;]+)&quot;%s*:%s*(.-)%s*$&#39;</span>
-
   -- Check all key-value pairs
 <span class="nc">  for keyValue in isObject:gmatch(&quot;[^,]+&quot;) do</span>
 <span class="nc">    local key, rawValue = keyValue:match(keyValuePattern)</span>
 <span class="nc">    if not key or not rawValue then</span>
 <span class="nc">      return false</span>
     end
-
     -- Now validate that rawValue is a valid JSON simple value
 <span class="nc">    if not isSimpleValue(rawValue) then</span>
 <span class="nc">      return false</span>
     end
   end
-
 <span class="nc">  return true</span>
 end
 
+--- Verify if a valid JSON array
+--- @param str any
+--- @return boolean
 <span class="fc" data-hits="1">function sharedUtils.isJSONArray(str)</span>
 <span class="fc" data-hits="3">  if type(str) ~= &quot;string&quot; then return false end</span>
-
   -- Trim whitespace
 <span class="fc" data-hits="3">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
-
   -- Ensure it starts with `[` and ends with `]`
 <span class="fc" data-hits="3">  local isArray = str:match(&quot;^%[%s*(.-)%s*%]$&quot;)</span>
 <span class="fc" data-hits="3">  if not isArray then return false end</span>
-
   -- Split the array elements and validate each one
 <span class="fc" data-hits="6">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
 <span class="fc" data-hits="5">    value = value:match(&quot;^%s*(.-)%s*$&quot;) -- Trim whitespace around each value</span>
@@ -1333,10 +1299,12 @@ end
 <span class="fc" data-hits="1">      return false</span>
     end
   end
-
 <span class="fc" data-hits="1">  return true</span>
 end
 
+--- Verify if a valid Arweave address
+--- @param address any
+--- @return boolean
 <span class="fc" data-hits="1">function sharedUtils.isValidArweaveAddress(address)</span>
 <span class="nc">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[%w-_]+$&quot;) ~= nil</span>
 end
@@ -1347,7 +1315,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-27 09:52:26
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2024-12-30 08:04:43
    </footer>
 
    <script type="text/javascript">

@@ -2,14 +2,12 @@ local CPMM = {}
 local CPMMMethods = {}
 local CPMMHelpers = require('modules.cpmmHelpers')
 local CPMMNotices = require('modules.cpmmNotices')
-local json = require('json')
 local bint = require('.bint')(256)
 local ao = require('.ao')
 local utils = require(".utils")
 local token = require('modules.token')
 local constants = require("modules.constants")
 local conditionalTokens = require('modules.conditionalTokens')
-
 
 --- Represents a CPMM (Constant Product Market Maker)
 --- @class CPMM
@@ -323,7 +321,7 @@ function CPMMMethods:feesWithdrawableBy(account)
   if bint(self.token.totalSupply) > 0 then
     rawAmount = string.format('%.0f', (bint.__div(bint.__mul(bint(self:collectedFees()), bint(balance)), self.token.totalSupply)))
   end
-  return tostring(bint.max(bint(bint.__sub(bint(rawAmount), bint(self.withdrawnFees[sender] or '0'))), 0))
+  return tostring(bint.max(bint(bint.__sub(bint(rawAmount), bint(self.withdrawnFees[account] or '0'))), 0))
 end
 
 --- Withdraw fees
@@ -351,11 +349,11 @@ function CPMMMethods:_beforeTokenTransfer(from, to, amount, msg)
     self:withdrawFees(from, msg)
   end
   local totalSupply = self.token.totalSupply
-  local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self:collectedFees()), amount), totalSupply)))
+  local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self:collectedFees()), bint(amount)), totalSupply)))
 
   if from ~= nil and to ~= nil then
-    self.withdrawnFees[from] = tostring(bint.__sub(bint(self.withdrawnFees[from] or '0'), withdrawnFeesTransfer))
-    self.withdrawnFees[to] = tostring(bint.__add(bint(self.withdrawnFees[to] or '0'), withdrawnFeesTransfer))
+    self.withdrawnFees[from] = tostring(bint.__sub(bint(self.withdrawnFees[from] or '0'), bint(withdrawnFeesTransfer)))
+    self.withdrawnFees[to] = tostring(bint.__add(bint(self.withdrawnFees[to] or '0'), bint(withdrawnFeesTransfer)))
   end
 end
 

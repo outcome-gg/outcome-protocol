@@ -1,6 +1,5 @@
 local ConfiguratorValidation = {}
 local sharedUtils = require('modules.sharedUtils')
-local json = require('json')
 
 --- Validates the updateProcess message
 --- @param msg Message The message to be validated

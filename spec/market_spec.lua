@@ -381,8 +381,8 @@ describe("#market", function()
     msgUpdateTakeFee = {
       From = configurator,
       Tags = {
-        CreatorFee = newCreatorFee,
-        ProtocolFee = newProtocolFee
+        CreatorFee = tostring(newCreatorFee),
+        ProtocolFee = tostring(newProtocolFee)
       },
       reply = function(message) return message end
     }

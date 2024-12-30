@@ -2,7 +2,7 @@
 -- All Rights Reserved © Outcome
 ---------------------------------------------------------------------------------
 
-local marketFactory = require('modules.marketFactory')
+local marketFactory = require('modules.factory')
 
 Name = "Outcome Market Factory"
 Version = '1.0.1'

@@ -4,7 +4,10 @@ local json = require('json')
 
 local CPMMHelpers = {}
 
--- Utility function: CeilDiv
+--- Calculate the ceildiv of x / y
+--- @param x number The numerator
+--- @param y number The denominator
+--- @return number The ceil div of x / y
 function CPMMHelpers.ceildiv(x, y)
   if x > 0 then
     return math.floor((x - 1) / y) + 1
@@ -12,8 +15,9 @@ function CPMMHelpers.ceildiv(x, y)
   return math.floor(x / y)
 end
 
-
---@dev generates basic partition based on outcomesSlotCount
+--- Generate position IDs
+--- @param outcomeSlotCount number The number of outcome slots
+--- @return table<string> A basic partition based on outcomeSlotCount
 function CPMMHelpers.getPositionIds(outcomeSlotCount)
   local positionIds = {}
   for i = 1, outcomeSlotCount do
@@ -22,7 +26,12 @@ function CPMMHelpers.getPositionIds(outcomeSlotCount)
   return positionIds
 end
 
--- @dev validates addFunding
+--- Validate add funding
+--- Returns funding to sender on error
+--- @param from string The address of the sender
+--- @param quantity number The amount of funding to add
+--- @param distribution table<number> The distribution of funding
+--- @return boolean True if error
 function CPMMHelpers:validateAddFunding(from, quantity, distribution)
   local error = false
   local errorMessage = ''
@@ -58,7 +67,11 @@ function CPMMHelpers:validateAddFunding(from, quantity, distribution)
   return not error
 end
 
--- @dev validates removeFunding
+--- Validate remove funding
+--- Returns LP tokens to sender on error
+--- @param from string The address of the sender
+--- @param quantity number The amount of funding to remove
+--- @return boolean True if error
 function CPMMHelpers:validateRemoveFunding(from, quantity)
   local error = false
   local errorMessage = ''
@@ -85,7 +98,8 @@ function CPMMHelpers:validateRemoveFunding(from, quantity)
   return not error
 end
 
--- @dev get pool balances
+--- Gets pool balances
+--- @return table<string> Pool balances for each ID
 function CPMMHelpers:getPoolBalances()
   -- Get poolBalances
   local selves = {}

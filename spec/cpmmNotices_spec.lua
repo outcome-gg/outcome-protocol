@@ -176,46 +176,6 @@ describe("#market #conditionalTokens #cpmmNotices", function()
     }
 	end)
 
-  it("should send newMarketNotice", function()
-		local notice = cpmmNotices.newMarketNotice(
-      msgInit.Tags.Configurator,
-      msgInit.Tags.Incentives,
-      msgInit.Tags.CollateralToken,
-      msgInit.Tags.MarketId,
-      msgInit.Tags.ConditionId,
-      _G.CPMM.tokens.positionIds,
-      msgInit.Tags.OutcomeSlotCount,
-      msgInit.Tags.Name,
-      msgInit.Tags.Ticker,
-      msgInit.Tags.Logo,
-      msgInit.Tags.LpFee,
-      msgInit.Tags.CreatorFee,
-      msgInit.Tags.CreatorFeeTarget,
-      msgInit.Tags.ProtocolFee,
-      msgInit.Tags.ProtocolFeeTarget,
-      msgInit
-    )
-    assert.are.same({
-      Action = "New-Market-Notice",
-      MarketId = marketId,
-      ConditionId = conditionId,
-      Configurator = configurator,
-      Incentives = incentives,
-      CollateralToken = collateralToken,
-      PositionIds = json.encode(_G.CPMM.tokens.positionIds),
-      OutcomeSlotCount = outcomeSlotCount,
-      LpFee = lpFee,
-      CreatorFee = creatorFee,
-      CreatorFeeTarget = creatorFeeTarget,
-      ProtocolFee = protocolFee,
-      ProtocolFeeTarget = protocolFeeTarget,
-      Name = name,
-      Ticker = ticker,
-      Logo = logo,
-      Data = "Successfully created market"
-    }, notice)
-	end)
-
   it("should send fundingAddedNotice", function()
     local fundingAdded = {10, 50}
     local notice = cpmmNotices.fundingAddedNotice(

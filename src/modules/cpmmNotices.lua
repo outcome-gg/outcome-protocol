@@ -3,28 +3,11 @@ local json = require('json')
 
 local CPMMNotices = {}
 
-function CPMMNotices.newMarketNotice(configurator, incentives, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
-  return msg.reply({
-    Action = "New-Market-Notice",
-    MarketId = marketId,
-    ConditionId = conditionId,
-    Configurator = configurator,
-    Incentives = incentives,
-    CollateralToken = collateralToken,
-    PositionIds = json.encode(positionIds),
-    OutcomeSlotCount = tostring(outcomeSlotCount),
-    LpFee = lpFee,
-    CreatorFee = creatorFee,
-    CreatorFeeTarget = creatorFeeTarget,
-    ProtocolFee = protocolFee,
-    ProtocolFeeTarget = protocolFeeTarget,
-    Name = name,
-    Ticker = ticker,
-    Logo = logo,
-    Data = "Successfully created market"
-  })
-end
-
+--- Sends a funding added notice
+--- @param from string The address that added funding
+--- @param fundingAdded table The funding added
+--- @param mintAmount number The mint amount
+--- @return Message The funding added notice
 function CPMMNotices.fundingAddedNotice(from, fundingAdded, mintAmount)
   return ao.send({
     Target = from,
@@ -35,6 +18,12 @@ function CPMMNotices.fundingAddedNotice(from, fundingAdded, mintAmount)
   })
 end
 
+--- Sends a funding removed notice
+--- @param from string The address that removed funding
+--- @param sendAmounts table The send amounts
+--- @param collateralRemovedFromFeePool number The collateral removed from the fee pool
+--- @param sharesToBurn number The shares to burn
+--- @return Message The funding removed notice
 function CPMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
   return ao.send({
     Target = from,
@@ -46,6 +35,13 @@ function CPMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFr
   })
 end
 
+--- Sends a buy notice
+--- @param from string The address that bought
+--- @param investmentAmount number The investment amount
+--- @param feeAmount number The fee amount
+--- @param positionId string The position ID
+--- @param outcomeTokensToBuy number The outcome tokens to buy
+--- @return Message The buy notice
 function CPMMNotices.buyNotice(from, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
   return ao.send({
     Target = from,
@@ -58,6 +54,13 @@ function CPMMNotices.buyNotice(from, investmentAmount, feeAmount, positionId, ou
   })
 end
 
+--- Sends a sell notice
+--- @param from string The address that sold
+--- @param returnAmount number The return amount
+--- @param feeAmount number The fee amount
+--- @param positionId string The position ID
+--- @param outcomeTokensToSell number The outcome tokens to sell
+--- @return Message The sell notice
 function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)
   return ao.send({
     Target = from,
@@ -70,6 +73,10 @@ function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, outco
   })
 end
 
+--- Sends an update configurator notice
+--- @param configurator string The updated configurator address
+--- @param msg Message The message received
+--- @return Message The configurator updated notice
 function CPMMNotices.updateConfiguratorNotice(configurator, msg)
   return msg.reply({
     Action = "Configurator-Updated",
@@ -77,6 +84,10 @@ function CPMMNotices.updateConfiguratorNotice(configurator, msg)
   })
 end
 
+--- Sends an update incentives notice
+--- @param incentives string The updated incentives address
+--- @param msg Message The message received
+--- @return Message The incentives updated notice
 function CPMMNotices.updateIncentivesNotice(incentives, msg)
   return msg.reply({
     Action = "Incentives-Updated",
@@ -84,6 +95,11 @@ function CPMMNotices.updateIncentivesNotice(incentives, msg)
   })
 end
 
+--- Sends an update take fee notice
+--- @param creatorFee string The updated creator fee
+--- @param protocolFee string The updated protocol fee
+--- @param takeFee string The updated take fee
+--- @param msg Message The message received
 function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)
   return msg.reply({
     Action = "Take-Fee-Updated",
@@ -93,6 +109,10 @@ function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)
   })
 end
 
+--- Sends an update protocol fee target notice
+--- @param protocolFeeTarget string The updated protocol fee target
+--- @param msg Message The message received
+--- @return Message The protocol fee target updated notice
 function CPMMNotices.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)
   return msg.reply({
     Action = "Protocol-Fee-Target-Updated",
@@ -100,6 +120,10 @@ function CPMMNotices.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)
   })
 end
 
+--- Sends an update logo notice
+--- @param logo string The updated logo
+--- @param msg Message The message received
+--- @return Message The logo updated notice
 function CPMMNotices.updateLogoNotice(logo, msg)
   return msg.reply({
     Action = "Logo-Updated",
