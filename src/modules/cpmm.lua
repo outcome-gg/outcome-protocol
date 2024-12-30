@@ -211,7 +211,7 @@ function CPMMMethods:calcBuyAmount(investmentAmount, positionId)
   for i = 1, #poolBalances do
     if not bint.__eq(bint(i), bint(positionId)) then
       local poolBalance = poolBalances[i]
-      endingOutcomeBalance = CPMMHelpers.ceildiv(tonumber(endingOutcomeBalance * poolBalance), tonumber(poolBalance + investmentAmountMinusFees))
+      endingOutcomeBalance = CPMMHelpers.ceildiv(endingOutcomeBalance * poolBalance, poolBalance + investmentAmountMinusFees)
     end
   end
 
@@ -228,7 +228,7 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
   assert(utils.includes(positionId, self.tokens.positionIds), 'PositionId must be valid!')
 
   local poolBalances = self:getPoolBalances()
-  local returnAmountPlusFees = CPMMHelpers.ceildiv(tonumber(returnAmount * 1e4), tonumber(1e4 - self.lpFee))
+  local returnAmountPlusFees = CPMMHelpers.ceildiv(returnAmount * 1e4, 1e4 - self.lpFee)
   local sellTokenPoolBalance = poolBalances[tonumber(positionId)]
   local endingOutcomeBalance = sellTokenPoolBalance * 1e4
 
@@ -236,7 +236,7 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
     if not bint.__eq(bint(i), bint(positionId)) then
       local poolBalance = poolBalances[i]
       assert(poolBalance - returnAmountPlusFees > 0, "PoolBalance must be greater than return amount plus fees!")
-      endingOutcomeBalance = CPMMHelpers.ceildiv(tonumber(endingOutcomeBalance * poolBalance), tonumber(poolBalance - returnAmountPlusFees))
+      endingOutcomeBalance = CPMMHelpers.ceildiv(endingOutcomeBalance * poolBalance, poolBalance - returnAmountPlusFees)
     end
   end
 
