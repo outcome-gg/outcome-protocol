@@ -1,6 +1,7 @@
 --[[
 ================================================================================
-Based on the AO Cookbook Token Blueprint:
+Module: token.lua
+Adapted from the AO Cookbook Token Blueprint:
 https://cookbook_ao.g8way.io/guides/aos/blueprints/token.html
 Licensed under the Business Source License 1.1 (BSL 1.1)
 ================================================================================
