@@ -197,7 +197,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
   it("should pass buy validation", function()
     -- should not throw an error
 		assert.has_no.errors(function()
-      cpmmValidation.buy(msgBuy)
+      cpmmValidation.buy(msgBuy, _G.CPMM.tokens.positionIds)
     end)
 	end)
 
@@ -205,7 +205,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgBuy.Tags.PositionId = nil
     -- should not throw an error
 		assert.has.error(function()
-      cpmmValidation.buy(msgBuy)
+      cpmmValidation.buy(msgBuy, _G.CPMM.tokens.positionIds)
     end, "PositionId is required!")
 	end)
 
