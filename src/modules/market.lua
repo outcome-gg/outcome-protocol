@@ -1,3 +1,18 @@
+--[[
+======================================================================================
+Outcome © 2025. All Rights Reserved.
+======================================================================================
+This code is proprietary and owned by Outcome.
+
+You are permitted to build applications, integrations, and extensions that interact
+with the Outcome Protocol, provided such usage adheres to the official Outcome
+terms of service and does not result in unauthorized forks or clones of this codebase.
+
+Redistribution, modification, or unauthorized use of this code is strictly prohibited
+without explicit written permission from Outcome.
+======================================================================================
+]]
+
 local Market = {}
 local MarketMethods = {}
 local ao = require('.ao')
@@ -28,7 +43,7 @@ local conditionalTokensValidation = require('modules.conditionalTokensValidation
 --- @param creatorFeeTarget string The market creator fee target
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
---- @return Market The new Market instance 
+--- @return Market market The new Market instance 
 function Market:new(
   configurator,
   incentives,
@@ -108,7 +123,7 @@ CPMM WRITE METHODS
 --- Add funding
 --- Message forwarded from the collateral token
 --- @param msg Message The message received
---- @return nil
+--- @return nil -- TODO: send/specify notice
 function MarketMethods:addFunding(msg)
   cpmmValidation.addFunding(msg)
   local distribution = json.decode(msg.Tags['X-Distribution'])
@@ -122,7 +137,7 @@ end
 --- Remove funding
 --- Message forwarded from the LP token
 --- @param msg Message The message received
---- @return nil
+--- @return nil -- TODO: send/specify notice
 function MarketMethods:removeFunding(msg)
   cpmmValidation.removeFunding(msg)
   -- @dev returns LP tokens if invalid
@@ -134,7 +149,7 @@ end
 --- Buy
 --- Message forwarded from the collateral token
 --- @param msg Message The message received
---- @return Message The buy notice
+--- @return Message buyNotice The buy notice
 function MarketMethods:buy(msg)
   cpmmValidation.buy(msg, self.cpmm.positionIds)
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
@@ -173,7 +188,7 @@ end
 
 --- Sell
 --- @param msg Message The message received
---- @return Message The sell notice
+--- @return Message sellNotice The sell notice
 function MarketMethods:sell(msg)
   cpmmValidation.sell(msg, self.cpmm.positionIds)
   local outcomeTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
@@ -183,7 +198,7 @@ end
 
 --- Withdraw fees
 --- @param msg Message The message received
---- @return Message The amount withdrawn
+--- @return Message withdrawFees The amount withdrawn
 function MarketMethods:withdrawFees(msg)
   return msg.reply({ Data = self.cpmm:withdrawFees(msg.From) })
 end
@@ -196,7 +211,7 @@ CPMM READ METHODS
 
 --- Calc buy amount
 --- @param msg Message The message received
---- @return Message The amount of tokens to be purchased
+--- @return Message buyAmount The amount of tokens to be purchased
 function MarketMethods:calcBuyAmount(msg)
   cpmmValidation.calcBuyAmount(msg, self.cpmm.positionIds)
   local buyAmount = self.cpmm:calcBuyAmount(msg.Tags.InvestmentAmount, msg.Tags.PositionId)
@@ -205,7 +220,7 @@ end
 
 --- Calc sell amount
 --- @param msg Message The message received
---- @return Message The amount of tokens to be sold
+--- @return Message sellAmount The amount of tokens to be sold
 function MarketMethods:calcSellAmount(msg)
   cpmmValidation.calcSellAmount(msg, self.cpmm.positionIds)
   local sellAmount = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
@@ -213,14 +228,14 @@ function MarketMethods:calcSellAmount(msg)
 end
 
 --- Colleced fees
---- @return Message The total unwithdrawn fees collected by the CPMM
+--- @return Message collectedFees The total unwithdrawn fees collected by the CPMM
 function MarketMethods:collectedFees(msg)
   return msg.reply({ Data = self.cpmm:collectedFees() })
 end
 
 --- Fees withdrawable 
 --- @param msg Message The message received
---- @return Message The fees withdrawable by the account
+--- @return Message feesWithdrawable The fees withdrawable by the account
 function MarketMethods:feesWithdrawable(msg)
   local account = msg.Tags['Recipient'] or msg.From
   return msg.reply({ Data = self.cpmm:feesWithdrawableBy(account) })
@@ -234,7 +249,7 @@ LP TOKEN WRITE METHODS
 
 --- Transfer
 --- @param msg Message The message received
---- @return table<Message>|Message|nil The transfer notices, error notice or nothing
+--- @return table<Message>|Message|nil transferNotices The transfer notices, error notice or nothing
 function MarketMethods:transfer(msg)
   tokenValidation.transfer(msg)
   return self.cpmm:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg)
@@ -248,7 +263,7 @@ LP TOKEN READ METHODS
 
 --- Balance
 --- @param msg Message The message received
---- @return Message The balance of the account
+--- @return Message balance The balance of the account
 function MarketMethods:balance(msg)
   local bal = '0'
 
@@ -273,14 +288,14 @@ end
 
 --- Balances
 --- @param msg Message The message received
---- @return Message The balances of all accounts
+--- @return Message balances The balances of all accounts
 function MarketMethods:balances(msg)
   return msg.reply({ Data = json.encode(self.cpmm.token.balances) })
 end
 
---- Total Supply
+--- Total supply
 --- @param msg Message The message received
---- @return Message The total supply of the LP token
+--- @return Message totalSupply The total supply of the LP token
 function MarketMethods:totalSupply(msg)
   return msg.reply({ Data = json.encode(self.cpmm.token.totalSupply) })
 end
@@ -291,9 +306,9 @@ CONDITIONAL TOKENS WRITE METHODS
 ================================
 ]]
 
---- Merge Positions
+--- Merge positions
 --- @param msg Message The message received
---- @return Message The positions merge notice or error message
+--- @return Message mergePositionsNotice The positions merge notice or error message
 function MarketMethods:mergePositions(msg)
   conditionalTokensValidation.mergePositions(msg)
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.From
@@ -321,18 +336,19 @@ function MarketMethods:mergePositions(msg)
   return self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg)
 end
 
---- Report Payouts
+--- Report payouts
 --- @param msg Message The message received
---- @return Message The condition resolution notice
+--- @return Message reportPayoutsNotice The condition resolution notice 
+-- TODO: sync on naming conventions
 function MarketMethods:reportPayouts(msg)
   conditionalTokensValidation.reportPayouts(msg)
   local payouts = json.decode(msg.Tags.Payouts)
   return self.cpmm.tokens:reportPayouts(msg.Tags.QuestionId, payouts, msg)
 end
 
---- Redeem Positions
+--- Redeem positions
 --- @param msg Message The message received
---- @return Message The payout redemption notice
+--- @return Message payoutRedemptionNotice The payout redemption notice
 function MarketMethods:redeemPositions(msg)
   return self.cpmm.tokens:redeemPositions(msg)
 end
@@ -343,9 +359,9 @@ CONDITIONAL TOKENS READ METHODS
 ===============================
 ]]
 
---- Get Payout Numerators
+--- Get payout numerators
 --- @param msg Message The message received
---- @return Message The payout numerators for the condition
+--- @return Message payoutNumerators payout numerators for the condition
 function MarketMethods:getPayoutNumerators(msg)
   return msg.reply({
     Action = "Payout-Numerators",
@@ -354,9 +370,9 @@ function MarketMethods:getPayoutNumerators(msg)
   })
 end
 
---- Get Payout Denominator
+--- Get payout denominator
 --- @param msg Message The message received
---- @return Message The payout denominator for the condition
+--- @return Message payoutDenominator The payout denominator for the condition
 function MarketMethods:getPayoutDenominator(msg)
   return msg.reply({
     Action = "Payout-Denominator",
@@ -371,17 +387,17 @@ SEMI-FUNGIBLE TOKENS WRITE METHODS
 ==================================
 ]]
 
---- Transfer Single
+--- Transfer single
 --- @param msg Message The message received
---- @return table<Message>|Message|nil The transfer notices, error notice or nothing
+--- @return table<Message>|Message|nil transferSingleNotices The transfer notices, error notice or nothing
 function MarketMethods:transferSingle(msg)
   semiFungibleTokensValidation.transferSingle(msg, self.cpmm.tokens.positionIds)
   return self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.TokenId, msg.Tags.Quantity, msg.Tags.Cast, msg)
 end
 
---- Transfer Batch
+--- Transfer batch
 --- @param msg Message The message received
---- @return table<Message>|Message|nil The transfer notices, error notice or nothing
+--- @return table<Message>|Message|nil transferBatchNotices The transfer notices, error notice or nothing
 function MarketMethods:transferBatch(msg)
   semiFungibleTokensValidation.transferBatch(msg, self.cpmm.tokens.positionIds)
   local tokenIds = json.decode(msg.Tags.TokenIds)
@@ -397,7 +413,7 @@ SEMI-FUNGIBLE TOKENS READ METHODS
 
 --- Balance by ID
 --- @param msg Message The message received
---- @return Message The balance of the account filtered by ID
+--- @return Message balanceById The balance of the account filtered by ID
 function MarketMethods:balanceById(msg)
   semiFungibleTokensValidation.balanceById(msg, self.cpmm.tokens.positionIds)
   local account = msg.Tags.Recipient or msg.From
@@ -413,7 +429,7 @@ end
 
 --- Balances by ID
 --- @param msg Message The message received
---- @return Message The balances of the account
+--- @return Message balancesById The balances of all accounts filtered by ID
 function MarketMethods:balancesById(msg)
   semiFungibleTokensValidation.balancesById(msg, self.cpmm.tokens.positionIds)
   local bals = self.cpmm.tokens:getBalances(msg.Tags.TokenId)
@@ -422,7 +438,7 @@ end
 
 --- Batch balance
 --- @param msg Message The message received
---- @return Message The balances filtered by accounts and IDs
+--- @return Message batchBalance The balance accounts filtered by IDs
 function MarketMethods:batchBalance(msg)
   semiFungibleTokensValidation.batchBalance(msg, self.cpmm.tokens.positionIds)
   local recipients = json.decode(msg.Tags.Recipients)
@@ -433,7 +449,7 @@ end
 
 --- Batch balances
 --- @param msg Message The message received
---- @return Message The balances or all accounts filtered by IDs
+--- @return Message batchBalances The balances of all accounts filtered by IDs
 function MarketMethods:batchBalances(msg)
   semiFungibleTokensValidation.batchBalances(msg, self.cpmm.tokens.positionIds)
   local tokenIds = json.decode(msg.Tags.TokenIds)
@@ -443,7 +459,7 @@ end
 
 --- Balances all
 --- @param msg Message The message received
---- @return Message The balances of all accounts
+--- @return Message balances The balances of all accounts
 function MarketMethods:balancesAll(msg)
   return msg.reply({ Data = self.cpmm.tokens.balancesById })
 end
@@ -456,7 +472,7 @@ CONFIGURATOR WRITE METHODS
 
 --- Update configurator
 --- @param msg Message The message received
---- @return Message The configurator update notice
+--- @return Message configuratorUpdateNotice The configurator update notice
 function MarketMethods:updateConfigurator(msg)
   cpmmValidation.updateConfigurator(msg, self.cpmm.configurator)
   return self.cpmm:updateConfigurator(msg.Tags.Configurator, msg)
@@ -464,7 +480,7 @@ end
 
 --- Update incentives
 --- @param msg Message The message received
---- @return Message The incentives update notice
+--- @return Message incentivesUpdateNotice The incentives update notice
 function MarketMethods:updateIncentives(msg)
   cpmmValidation.updateIncentives(msg, self.cpmm.configurator)
   return self.cpmm:updateIncentives(msg.Tags.Incentives, msg)
@@ -472,7 +488,7 @@ end
 
 --- Update take fee
 --- @param msg Message The message received
---- @return Message The take fee update notice
+--- @return Message takeFeeUpdateNotice The take fee update notice
 function MarketMethods:updateTakeFee(msg)
   cpmmValidation.updateTakeFee(msg, self.cpmm.configurator)
   return self.cpmm:updateTakeFee(tonumber(msg.Tags.CreatorFee), tonumber(msg.Tags.ProtocolFee), msg)
@@ -480,7 +496,7 @@ end
 
 --- Update protocol fee target
 --- @param msg Message The message received
---- @return Message The protocol fee target update notice
+--- @return Message protocolTargetUpdateNotice The protocol fee target update notice
 function MarketMethods:updateProtocolFeeTarget(msg)
   cpmmValidation.updateProtocolFeeTarget(msg, self.cpmm.configurator)
   return self.cpmm:updateProtocolFeeTarget(msg.Tags.ProtocolFeeTarget, msg)
@@ -488,7 +504,7 @@ end
 
 --- Update logo
 --- @param msg Message The message received
---- @return Message The logo update notice
+--- @return Message logoUpdateNotice The logo update notice
 function MarketMethods:updateLogo(msg)
   cpmmValidation.updateLogo(msg, self.cpmm.configurator)
   return self.cpmm:updateLogo(msg.Tags.Logo, msg)

@@ -1,3 +1,10 @@
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See cpmm.lua for full license details.
+=========================================================
+]]
+
 local ao = require('.ao')
 local json = require('json')
 

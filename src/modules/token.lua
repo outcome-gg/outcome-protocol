@@ -1,3 +1,33 @@
+--[[
+================================================================================
+Based on the AO Cookbook Token Blueprint:
+https://cookbook_ao.g8way.io/guides/aos/blueprints/token.html
+Licensed under the Business Source License 1.1 (BSL 1.1)
+================================================================================
+
+Licensor:          Forward Research  
+Licensed Work:     aos codebase. The Licensed Work is (c) 2024 Forward Research  
+Official License:  https://github.com/permaweb/aos/blob/main/LICENSE  
+Additional Use Grant:  
+  The aos codebases are offered under the BSL 1.1 license for the duration  
+  of the testnet period. After the testnet phase is over, the code will be  
+  made available under either a new evolutionary forking license or a  
+  traditional OSS license (GPLv3/v2, MIT, etc).  
+  More info: https://arweave.medium.com/arweave-is-an-evolutionary-protocol-e072f5e69eaa  
+Change Date:       Four years from the date the Licensed Work is published.  
+Change License:    MPL 2.0  
+
+Notice:  
+This code is provided under the Business Source License 1.1. Redistribution,  
+modification, or unauthorized use of this code must comply with the terms of  
+the Business Source License.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+================================================================================
+]]
+
 local Token = {}
 local TokenMethods = require('modules.tokenNotices')
 local TokenNotices = require('modules.tokenNotices')
@@ -19,7 +49,7 @@ local bint = require('.bint')(256)
 --- @param balances table<string, string> The user token balances
 --- @param totalSupply string The total supply of the token
 --- @param denomination number The number of decimals
---- @return Token The new Token instance
+--- @return Token token The new Token instance
 function Token:new(name, ticker, logo, balances, totalSupply, denomination)
   local token = {
     name = name,

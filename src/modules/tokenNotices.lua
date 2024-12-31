@@ -1,5 +1,11 @@
-local ao = require('.ao')
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See tokens.lua for full license details.
+=========================================================
+]]
 
+local ao = require('.ao')
 local TokenNotices = {}
 
 --- Mint notice

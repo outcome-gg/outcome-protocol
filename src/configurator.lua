@@ -1,6 +1,17 @@
----------------------------------------------------------------------------------
--- All Rights Reserved © Outcome
----------------------------------------------------------------------------------
+--[[
+======================================================================================
+Outcome © 2025. All Rights Reserved.
+======================================================================================
+This code is proprietary and owned by Outcome.
+
+You are permitted to build applications, integrations, and extensions that interact
+with the Outcome Protocol, provided such usage adheres to the official Outcome
+terms of service and does not result in unauthorized forks or clones of this codebase.
+
+Redistribution, modification, or unauthorized use of this code is strictly prohibited
+without explicit written permission from Outcome.
+======================================================================================
+]]
 
 local json = require('json')
 local configurator = require('modules.configurator')

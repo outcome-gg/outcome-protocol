@@ -1,6 +1,12 @@
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See factory.lua for full license details.
+=========================================================
+]]
+
 local json = require('json')
 local ao = ao or require('.ao')
-
 local MarketFactoryNotices = {}
 
 --- Sends a new market notice

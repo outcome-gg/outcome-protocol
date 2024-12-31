@@ -1,3 +1,10 @@
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See factory.lua for full license details.
+=========================================================
+]]
+
 local crypto = require('.crypto')
 local bint = require('.bint')(256)
 local json = require('json')

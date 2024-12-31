@@ -1,5 +1,11 @@
-local sharedUtils = require('modules.sharedUtils')
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See tokens.lua for full license details.
+=========================================================
+]]
 
+local sharedUtils = require('modules.sharedUtils')
 local tokenValidation = {}
 
 --- Validates a transfer message

@@ -1,3 +1,10 @@
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See conditionalTokens.lua for full license details.
+=========================================================
+]]
+
 local ConditionalTokensValidation = {}
 local sharedUtils = require('modules.sharedUtils')
 local json = require('json')

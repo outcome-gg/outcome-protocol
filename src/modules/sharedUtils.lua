@@ -1,3 +1,10 @@
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See market.lua for full license details.
+=========================================================
+]]
+
 local sharedUtils = {}
 
 --- Verify if extracted value is a JSON simple value

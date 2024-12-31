@@ -1,3 +1,18 @@
+--[[
+======================================================================================
+Outcome © 2025. All Rights Reserved.
+======================================================================================
+This code is proprietary and owned by Outcome.
+
+You are permitted to build applications, integrations, and extensions that interact
+with the Outcome Protocol, provided such usage adheres to the official Outcome
+terms of service and does not result in unauthorized forks or clones of this codebase.
+
+Redistribution, modification, or unauthorized use of this code is strictly prohibited
+without explicit written permission from Outcome.
+======================================================================================
+]]
+
 local CPMM = {}
 local CPMMMethods = {}
 local CPMMHelpers = require('modules.cpmmHelpers')
@@ -35,7 +50,7 @@ local conditionalTokens = require('modules.conditionalTokens')
 --- @param creatorFeeTarget string The market creator fee target
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
---- @return CPMM The new CPMM instance 
+--- @return CPMM cpmm The new CPMM instance 
 function CPMM:new(configurator, incentives, collateralToken, marketId, conditionId, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
   local cpmm = {
     marketId = marketId,

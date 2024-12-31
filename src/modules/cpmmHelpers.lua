@@ -1,3 +1,10 @@
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See cpmm.lua for full license details.
+=========================================================
+]]
+
 local bint = require('.bint')(256)
 local ao = require('.ao')
 local json = require('json')

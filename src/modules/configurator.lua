@@ -1,3 +1,18 @@
+--[[
+======================================================================================
+Outcome © 2025. All Rights Reserved.
+======================================================================================
+This code is proprietary and owned by Outcome.
+
+You are permitted to build applications, integrations, and extensions that interact
+with the Outcome Protocol, provided such usage adheres to the official Outcome
+terms of service and does not result in unauthorized forks or clones of this codebase.
+
+Redistribution, modification, or unauthorized use of this code is strictly prohibited
+without explicit written permission from Outcome.
+======================================================================================
+]]
+
 local Configurator = {}
 local ConfiguratorMethods = {}
 local ConfiguratorNotices = require('modules.configuratorNotices')
@@ -20,7 +35,7 @@ ConfiguratorDelay = {
 --- Creates a new Constructor instance 
 --- @param admin string The admin process ID
 --- @param env string The environment
---- @return Configurator The new Configurator instance 
+--- @return Configurator configurator The new Configurator instance 
 function Configurator:new(admin, env)
   assert(type(admin) == "string", 'Admin process ID is required!')
   assert(sharedUtils.isValidArweaveAddress(admin), 'Admin must be a valid Arweave address!')

@@ -1,3 +1,18 @@
+--[[
+======================================================================================
+Outcome © 2025. All Rights Reserved.
+======================================================================================
+This code is proprietary and owned by Outcome.
+
+You are permitted to build applications, integrations, and extensions that interact
+with the Outcome Protocol, provided such usage adheres to the official Outcome
+terms of service and does not result in unauthorized forks or clones of this codebase.
+
+Redistribution, modification, or unauthorized use of this code is strictly prohibited
+without explicit written permission from Outcome.
+======================================================================================
+]]
+
 local ConditionalTokens = {}
 local ConditionalTokensMethods = {}
 local ConditionalTokensNotices = require('modules.conditionalTokensNotices')
@@ -40,7 +55,7 @@ local json = require("json")
 --- @param creatorFeeTarget string The process ID to receive the creator fee
 --- @param protocolFee number The protocol fee to be paid, in basis points
 --- @param protocolFeeTarget string The process ID to receive the protocol fee
---- @return ConditionalTokens The new ConditionalTokens instance
+--- @return ConditionalTokens conditionalTokens The new ConditionalTokens instance
 function ConditionalTokens:new(
   name,
   ticker,

@@ -1,25 +1,74 @@
----------------------------------------------------------------------------------
--- All Rights Reserved © Outcome
----------------------------------------------------------------------------------
+--[[
+======================================================================================
+Outcome © 2025. All Rights Reserved.
+======================================================================================
+This code is proprietary and owned by Outcome.
+
+You are permitted to build applications, integrations, and extensions that interact
+with the Outcome Protocol, provided such usage adheres to the official Outcome
+terms of service and does not result in unauthorized forks or clones of this codebase.
+
+Redistribution, modification, or unauthorized use of this code is strictly prohibited
+without explicit written permission from Outcome.
+======================================================================================
+]]
 
 local ao = require('.ao')
 local market = require('modules.market')
----------------------------------------------------------------------------------
--- MARKET -----------------------------------------------------------------------
----------------------------------------------------------------------------------
-Env = 'DEV'
-Version = '1.0.1'
+
+Env = "DEV"
+Version = "1.0.1"
+
+--[[
+======
+MARKET
+======
+]]
+
+Configurator = Configurator or "default_configurator"
+Incentives = Incentives or ""
+CollateralToken = CollateralToken or ""
+MarketId = MarketId or ""
+ConditionId = ConditionId or ""
+PositionIds = PositionIds or {}
+Name = Name or ""
+Ticker = Ticker or ""
+Logo = Logo or ""
+LpFee = LpFee or 0
+CreatorFee = CreatorFee or 0
+CreatorFeeTarget = CreatorFeeTarget or ""
+ProtocolFee = ProtocolFee or 0
+ProtocolFeeTarget = ProtocolFeeTarget or ""
+
 -- @dev Reset state while in DEV mode
-if not Market or Env == 'DEV' then Market = market:new() end
--- @dev Expected LP Token namespace variables, set during `init`
-Name = ''
-Ticker = ''
-Logo = ''
-Denominator = nil
----------------------------------------------------------------------------------
--- MATCHING ---------------------------------------------------------------------
----------------------------------------------------------------------------------
--- CPMM
+if not Market or Env == 'DEV' then
+  Market = market:new(
+    Configurator,
+    Incentives,
+    CollateralToken,
+    MarketId,
+    ConditionId,
+    PositionIds,
+    Name,
+    Ticker,
+    Logo,
+    LpFee,
+    CreatorFee,
+    CreatorFeeTarget,
+    ProtocolFee,
+    ProtocolFeeTarget
+  )
+end
+
+--[[
+========
+MATCHING
+========
+]]
+
+--- Match on add funding to CPMM
+--- @param msg Message The message to match
+--- @return boolean True if the message is to add funding, false otherwise
 local function isAddFunding(msg)
   if (
     msg.From == Market.cpmm.tokens.collateralToken and
@@ -32,6 +81,9 @@ local function isAddFunding(msg)
   end
 end
 
+--- Match on remove funding from CPMM
+--- @param msg Message The message to match
+--- @return boolean True if the message is to remove funding, false otherwise
 local function isRemoveFunding(msg)
   if (
     msg.From == ao.id and
@@ -44,6 +96,9 @@ local function isRemoveFunding(msg)
   end
 end
 
+--- Match on buy from CPMM
+--- @param msg Message The message to match
+--- @return boolean True if the message is to buy, false otherwise
 local function isBuy(msg)
   if (
     msg.From == Market.cpmm.tokens.collateralToken and
@@ -56,224 +111,304 @@ local function isBuy(msg)
   end
 end
 
----------------------------------------------------------------------------------
--- INFO HANDLER -----------------------------------------------------------------
----------------------------------------------------------------------------------
+--[[
+============
+INFO HANDLER
+============
+]]
 
--- Info
+--- Market info handler
+--- @param msg Message The message received
+--- @return Message infoNotice The info notice
 Handlers.add("Info", {Action = "Info"}, function(msg)
-  Market:info(msg)
+  return Market:info(msg)
 end)
 
----------------------------------------------------------------------------------
--- CPMM WRITE HANDLERS ----------------------------------------------------------
----------------------------------------------------------------------------------
+--[[
+===================
+CPMM WRITE HANDLERS
+===================
+]]
 
--- Init
-Handlers.add("Init", {Action = "Init"}, function(msg)
-  Market:init(msg)
-  -- Set LP Token namespace variables
-  Name = Market.cpmm.token.name
-  Ticker = Market.cpmm.token.ticker
-  Logo = Market.cpmm.token.logo
-  Denomination = Market.cpmm.token.denomination
-end)
+-- -- Init
+-- Handlers.add("Init", {Action = "Init"}, function(msg)
+--   Market:init(msg)
+--   -- Set LP Token namespace variables
+--   Name = Market.cpmm.token.name
+--   Ticker = Market.cpmm.token.ticker
+--   Logo = Market.cpmm.token.logo
+--   Denomination = Market.cpmm.token.denomination
+-- end)
 
--- Add Funding
+--- Add funding handler
+--- @param msg Message The message received
+--- @return Message addFundingNotice The add funding notice
 Handlers.add('Add-Funding', isAddFunding, function(msg)
-  Market:addFunding(msg)
+  return Market:addFunding(msg)
 end)
 
--- Remove Funding
--- @dev called on credit-notice from ao.id with X-Action == 'Remove-Funding'
+--- Remove funding handler
+--- @param msg Message The message received
+--- @return Message removeFundingNotice The remove funding notice
 Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
-  Market:removeFunding(msg)
+  return Market:removeFunding(msg)
 end)
 
--- Buy
--- @dev called on credit-notice from collateralToken with X-Action == 'Buy'
+--- Buy handler
+--- @param msg Message The message received
+--- @return Message buyNotice The buy notice
 Handlers.add("Buy", isBuy, function(msg)
-  Market:buy(msg)
+  return Market:buy(msg)
 end)
 
--- Sell
--- @dev refactoring as now within same process
+--- Sell handler
+--- @param msg Message The message received
+--- @return Message sellNotice The sell notice
 Handlers.add("Sell", {Action = "Sell"}, function(msg)
-  Market:sell(msg)
+  return Market:sell(msg)
 end)
 
--- Withdraw Fees
--- @dev Withdraws withdrawable fees to the message sender
+--- Withdraw fees handler
+--- @param msg Message The message received
+--- @return Message withdrawFees The amount withdrawn
 Handlers.add("Withdraw-Fees", {Action = "Withdraw-Fees"}, function(msg)
-  Market:withdrawFees(msg)
+  return Market:withdrawFees(msg)
 end)
 
----------------------------------------------------------------------------------
--- CPMM READ HANDLERS -----------------------------------------------------------
----------------------------------------------------------------------------------
+--[[
+==================
+CPMM READ HANDLERS
+==================
+]]
 
--- Calc Buy Amount
+--- Calc buy amount handler
+--- @param msg Message The message received
+--- @return Message buyAmount The amount of tokens to be purchased
 Handlers.add("Calc-Buy-Amount", {Action = "Calc-Buy-Amount"}, function(msg)
-  Market:calcBuyAmount(msg)
+  return Market:calcBuyAmount(msg)
 end)
 
--- Calc Sell Amount
+--- Calc sell amount handler
+--- @param msg Message The message received
+--- @return Message sellAmount The amount of tokens to be sold
 Handlers.add("Calc-Sell-Amount", {Action = "Calc-Sell-Amount"}, function(msg)
-  Market:calcSellAmount(msg)
+  return Market:calcSellAmount(msg)
 end)
 
--- Collected Fees
--- @dev Returns fees collected by the protocol that haven't been withdrawn
+--- Colleced fees handler
+--- @param msg Message The message received
+--- @return Message collectedFees The total unwithdrawn fees collected by the CPMM
 Handlers.add("Collected-Fees", {Action = "Collected-Fees"}, function(msg)
-  Market:collectedFees(msg)
+  return Market:collectedFees(msg)
 end)
 
--- Fees Withdrawable
--- @dev Returns fees withdrawable by the message sender
+--- Fees withdrawable handler
+--- @param msg Message The message received
+--- @return Message feesWithdrawable The fees withdrawable by the account
 Handlers.add("Fees-Withdrawable", {Action = "Fees-Withdrawable"}, function(msg)
-  Market:feesWithdrawable(msg)
+  return Market:feesWithdrawable(msg)
 end)
 
----------------------------------------------------------------------------------
--- LP TOKEN WRITE HANDLERS ------------------------------------------------------
----------------------------------------------------------------------------------
+--[[
+=======================
+LP TOKEN WRITE HANDLERS
+=======================
+]]
 
--- Transfer
+--- Transfer handler
+--- @param msg Message The message received
+--- @return table<Message>|Message|nil transferNotices The transfer notices, error notice or nothing
 Handlers.add('Transfer', {Action = "Transfer"}, function(msg)
-  Market:transfer(msg)
+  return Market:transfer(msg)
 end)
 
----------------------------------------------------------------------------------
--- LP TOKEN READ HANDLERS -------------------------------------------------------
----------------------------------------------------------------------------------
+--[[
+======================
+LP TOKEN READ HANDLERS
+======================
+]]
 
--- Balance
+--- Balance handler
+--- @param msg Message The message received
+--- @return Message balance The balance of the account
 Handlers.add('Balance', {Action = "Balance"}, function(msg)
-  Market:balance(msg)
+  return Market:balance(msg)
 end)
 
--- Balances
+--- Balances handler
+--- @param msg Message The message received
+--- @return Message balances The balances of all accounts
 Handlers.add('Balances', {Action = "Balances"}, function(msg)
-  Market:balances(msg)
+  return Market:balances(msg)
 end)
 
--- Total Supply
+--- Total supply handler
+--- @param msg Message The message received
+--- @return Message totalSupply The total supply of the LP token
 Handlers.add('Total-Supply', {Action = "Total-Supply"}, function(msg)
-  Market:totalSupply(msg)
+  return Market:totalSupply(msg)
 end)
 
----------------------------------------------------------------------------------
--- CTF WRITE HANDLERS -----------------------------------------------------------
----------------------------------------------------------------------------------
+--[[
+=================================
+CONDITIONAL TOKENS WRITE HANDLERS
+=================================
+]]
 
--- Merge Positions
+--- Merge positions handler
+--- @param msg Message The message received
+--- @return Message mergePositionsNotice The positions merge notice or error message
 Handlers.add("Merge-Positions", {Action = "Merge-Positions"}, function(msg)
-  Market:mergePositions(msg)
+  return Market:mergePositions(msg)
 end)
 
--- Report Payouts
+--- Report payouts handler
+--- @param msg Message The message received
+--- @return Message reportPayoutsNotice The condition resolution notice 
 Handlers.add("Report-Payouts", {Action = "Report-Payouts"}, function(msg)
-  Market:reportPayouts(msg)
+  return Market:reportPayouts(msg)
 end)
 
--- Redeem Positions
+--- Redeem positions handler
+--- @param msg Message The message received
+--- @return Message payoutRedemptionNotice The payout redemption notice
 Handlers.add("Redeem-Positions", {Action = "Redeem-Positions"}, function(msg)
-  Market:redeemPositions(msg)
+  return Market:redeemPositions(msg)
 end)
 
----------------------------------------------------------------------------------
--- CTF READ HANDLERS ------------------------------------------------------------
----------------------------------------------------------------------------------
+--[[
+================================
+CONDITIONAL TOKENS READ HANDLERS
+================================
+]]
 
--- Get Payout Numerators
+--- Get payout numerators handler
+--- @param msg Message The message received
+--- @return Message payoutNumerators payout numerators for the condition
 Handlers.add("Get-Payout-Numerators", {Action = "Get-Payout-Numerators"}, function(msg)
-  Market:getPayoutNumerators(msg)
+  return Market:getPayoutNumerators(msg)
 end)
 
--- Get Payout Denominator
+--- Get payout denominator handler
+--- @param msg Message The message received
+--- @return Message payoutDenominator The payout denominator for the condition
 Handlers.add("Get-Payout-Denominator", {Action = "Get-Payout-Denominator"}, function(msg)
-  Market:getPayoutDenominator(msg)
+  return Market:getPayoutDenominator(msg)
 end)
 
----------------------------------------------------------------------------------
--- SEMI-FUNGIBLE TOKEN WRITE HANDLERS -------------------------------------------
----------------------------------------------------------------------------------
+--[[
+===================================
+SEMI-FUNGIBLE TOKENS WRITE HANDLERS
+===================================
+]]
 
--- Transfer Single
+--- Transfer single handler
+--- @param msg Message The message received
+--- @return table<Message>|Message|nil transferSingleNotices The transfer notices, error notice or nothing
 Handlers.add('Transfer-Single', {Action = "Transfer-Single"}, function(msg)
-  Market:transferSingle(msg)
+  return Market:transferSingle(msg)
 end)
 
--- Transfer Batch
+--- Transfer batch handler
+--- @param msg Message The message received
+--- @return table<Message>|Message|nil transferBatchNotices The transfer notices, error notice or nothing
 Handlers.add('Transfer-Batch', {Action = "Transfer-Batch"}, function(msg)
-  Market:transferBatch(msg)
+  return Market:transferBatch(msg)
 end)
 
----------------------------------------------------------------------------------
--- SEMI-FUNGIBLE TOKEN READ HANDLERS --------------------------------------------
----------------------------------------------------------------------------------
+--[[
+==================================
+SEMI-FUNGIBLE TOKENS READ HANDLERS
+==================================
+]]
 
--- Balance By Id
+--- Balance by ID handler
+--- @param msg Message The message received
+--- @return Message balanceById The balance of the account filtered by ID
 Handlers.add("Balance-By-Id", {Action = "Balance-By-Id"}, function(msg)
-  Market:balanceById(msg)
+  return Market:balanceById(msg)
 end)
 
--- Balances By Id
+--- Balances by ID handler
+--- @param msg Message The message received
+--- @return Message balancesById The balances of all accounts filtered by ID
 Handlers.add('Balances-By-Id', {Action = "Balances-By-Id"}, function(msg)
-  Market:balancesById(msg)
+  return Market:balancesById(msg)
 end)
 
--- Batch Balance (Filtered by users and ids)
+--- Batch balance handler
+--- @param msg Message The message received
+--- @return Message batchBalance The balance accounts filtered by IDs
 Handlers.add("Batch-Balance", {Action = "Batch-Balance"}, function(msg)
-  Market:batchBalance(msg)
+  return Market:batchBalance(msg)
 end)
 
--- Batch Balances (Filtered by Ids, only)
+--- Batch balances hanlder
+--- @param msg Message The message received
+--- @return Message batchBalances The balances of all accounts filtered by IDs
 Handlers.add('Batch-Balances', {Action = "Batch-Balances"}, function(msg)
-  Market:batchBalances(msg)
+  return Market:batchBalances(msg)
 end)
 
--- Balances All
+--- Balances all handler
+--- @param msg Message The message received
+--- @return Message balances The balances of all accounts
 Handlers.add('Balances-All', {Action = "Balances-All"}, function(msg)
-  Market:balancesAll(msg)
+  return Market:balancesAll(msg)
 end)
 
----------------------------------------------------------------------------------
--- CONFIG HANDLERS --------------------------------------------------------------
----------------------------------------------------------------------------------
+--[[
+===========================
+CONFIGURATOR WRITE HANDLERS
+===========================
+]]
 
--- Update Configurator
+--- Update configurator handler
+--- @param msg Message The message received
+--- @return Message configuratorUpdateNotice The configurator update notice
 Handlers.add('Update-Configurator', {Action = "Update-Configurator"}, function(msg)
-  Market:updateConfigurator(msg)
+  return Market:updateConfigurator(msg)
 end)
 
--- Update Incentives
+--- Update incentives handler
+--- @param msg Message The message received
+--- @return Message incentivesUpdateNotice The incentives update notice
 Handlers.add('Update-Incentives', {Action = "Update-Incentives"}, function(msg)
-  Market:updateIncentives(msg)
+  return Market:updateIncentives(msg)
 end)
 
--- Update Take Fee Percentage
+--- Update take fee handler
+--- @param msg Message The message received
+--- @return Message takeFeeUpdateNotice The take fee update notice
 Handlers.add('Update-Take-Fee', {Action = "Update-Take-Fee"}, function(msg)
-  Market:updateTakeFee(msg)
+  return Market:updateTakeFee(msg)
 end)
 
--- Update Protocol Fee Target
+--- Update protocol fee target handler
+--- @param msg Message The message received
+--- @return Message protocolTargetUpdateNotice The protocol fee target update notice
 Handlers.add('Update-Protocol-Fee-Target', {Action = "Update-Protocol-Fee-Target"}, function(msg)
-  Market:updateProtocolFeeTarget(msg)
+  return Market:updateProtocolFeeTarget(msg)
 end)
 
--- Update Logo
+--- Update logo handler
+--- @param msg Message The message received
+--- @return Message logoUpdateNotice The logo update notice
 Handlers.add('Update-Logo', {Action = "Update-Logo"}, function(msg)
-  Market:updateLogo(msg)
+  return Market:updateLogo(msg)
 end)
 
----------------------------------------------------------------------------------
--- EVAL HANDLER -----------------------------------------------------------------
----------------------------------------------------------------------------------
+--[[
+=============
+EVAL HANDLERS
+=============
+]]
 
--- Eval
+--- Eval 
+--- @param msg Message The message received
+--- @return Message The eval complete notice
 Handlers.once("Complete-Eval", {Action = "Complete-Eval"}, function(msg)
-  Market:completeEval(msg)
+  return Market:completeEval(msg)
 end)
 
 -- @dev TODO: remove?

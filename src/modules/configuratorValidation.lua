@@ -1,3 +1,10 @@
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See configurator.lua for full license details.
+=========================================================
+]]
+
 local ConfiguratorValidation = {}
 local sharedUtils = require('modules.sharedUtils')
 
