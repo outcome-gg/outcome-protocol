@@ -13,11 +13,8 @@ without explicit written permission from Outcome.
 ======================================================================================
 ]]
 
-local ao = require('.ao')
 local market = require('modules.market')
-
-Env = "DEV"
-Version = "1.0.1"
+local constants = require('modules.constants')
 
 --[[
 ======
@@ -25,40 +22,53 @@ MARKET
 ======
 ]]
 
-Configurator = Configurator or "default_configurator"
-Incentives = Incentives or ""
-CollateralToken = CollateralToken or ""
-MarketId = MarketId or ""
-ConditionId = ConditionId or ""
-PositionIds = PositionIds or {}
-Name = Name or ""
-Ticker = Ticker or ""
-Logo = Logo or ""
-LpFee = LpFee or 0
-CreatorFee = CreatorFee or 0
-CreatorFeeTarget = CreatorFeeTarget or ""
-ProtocolFee = ProtocolFee or 0
-ProtocolFeeTarget = ProtocolFeeTarget or ""
+Env = "DEV"
+Version = "1.0.1"
+
+--- Represents Market Config
+--- @class MarketConfig
+--- @field configurator string The Configurator process ID
+--- @field incentives string The Incentives process ID
+--- @field collateralToken string The Collateral Token process ID
+--- @field marketId string The Market process ID
+--- @field conditionId string The Condition process ID
+--- @field positionIds table<string> The Position process IDs
+--- @field name string The Market name
+--- @field ticker string The Market ticker
+--- @field logo string The Market logo
+--- @field lpFee number The LP fee
+--- @field creatorFee number The Creator fee
+--- @field creatorFeeTarget string The Creator fee target
+--- @field protocolFee number The Protocol fee
+--- @field protocolFeeTarget string The Protocol fee target
+
+MarketConfig = MarketConfig or constants.testMarketConfig
 
 -- @dev Reset state while in DEV mode
 if not Market or Env == 'DEV' then
   Market = market:new(
-    Configurator,
-    Incentives,
-    CollateralToken,
-    MarketId,
-    ConditionId,
-    PositionIds,
-    Name,
-    Ticker,
-    Logo,
-    LpFee,
-    CreatorFee,
-    CreatorFeeTarget,
-    ProtocolFee,
-    ProtocolFeeTarget
+    MarketConfig.configurator,
+    MarketConfig.incentives,
+    MarketConfig.collateralToken,
+    MarketConfig.marketId,
+    MarketConfig.conditionId,
+    MarketConfig.positionIds,
+    MarketConfig.name,
+    MarketConfig.ticker,
+    MarketConfig.logo,
+    MarketConfig.lpFee,
+    MarketConfig.creatorFee,
+    MarketConfig.creatorFeeTarget,
+    MarketConfig.protocolFee,
+    MarketConfig.protocolFeeTarget
   )
 end
+
+-- Set LP Token namespace variables
+Name = MarketConfig.name
+Ticker = MarketConfig.ticker
+Logo = MarketConfig.logo
+Denomination = constants.denomination
 
 --[[
 ========
