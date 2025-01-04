@@ -26,7 +26,6 @@ local conditionalTokens = require('modules.conditionalTokens')
 
 --- Represents a CPMM (Constant Product Market Maker)
 --- @class CPMM
---- @field marketId string The market ID
 --- @field incentives string The process ID of the incentives controller
 --- @field configurator string The process ID of the configurator
 --- @field initialized boolean The flag that is set to true once initialized
@@ -39,7 +38,6 @@ local conditionalTokens = require('modules.conditionalTokens')
 --- @param configurator string The process ID of the configurator
 --- @param incentives string The process ID of the incentives controller
 --- @param collateralToken string The address of the collateral token
---- @param marketId string The market ID
 --- @param conditionId string The condition ID
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name 
@@ -51,9 +49,8 @@ local conditionalTokens = require('modules.conditionalTokens')
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
 --- @return CPMM cpmm The new CPMM instance 
-function CPMM:new(configurator, incentives, collateralToken, marketId, conditionId, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
+function CPMM:new(configurator, incentives, collateralToken, conditionId, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
   local cpmm = {
-    marketId = marketId,
     configurator = configurator,
     incentives = incentives,
     poolBalances = {},
@@ -64,7 +61,7 @@ function CPMM:new(configurator, incentives, collateralToken, marketId, condition
     initialized = true
   }
   cpmm.token = token:new(
-    name,
+    name .. " LP Token",
     ticker,
     logo,
     {}, -- balances
@@ -72,7 +69,7 @@ function CPMM:new(configurator, incentives, collateralToken, marketId, condition
     constants.denomination
   )
   cpmm.tokens = conditionalTokens:new(
-    name,
+    name .. " Conditional Token",
     ticker,
     logo,
     {}, -- balancesById

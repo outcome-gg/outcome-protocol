@@ -32,7 +32,6 @@ local conditionalTokensValidation = require('modules.conditionalTokensValidation
 --- @param configurator string The process ID of the configurator
 --- @param incentives string The process ID of the incentives controller
 --- @param collateralToken string The address of the collateral token
---- @param marketId string The market ID
 --- @param conditionId string The condition ID
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name 
@@ -48,7 +47,6 @@ function Market:new(
   configurator,
   incentives,
   collateralToken,
-  marketId,
   conditionId,
   positionIds,
   name,
@@ -65,7 +63,6 @@ function Market:new(
       configurator,
       incentives,
       collateralToken,
-      marketId,
       conditionId,
       positionIds,
       name,
@@ -78,15 +75,7 @@ function Market:new(
       protocolFeeTarget
     )
   }
-  setmetatable(market, {
-    __index = function(_, k)
-      if MarketMethods[k] then
-        return MarketMethods[k]
-      else
-        return nil
-      end
-    end
-   })
+  setmetatable(market, { __index = MarketMethods })
   return market
 end
 

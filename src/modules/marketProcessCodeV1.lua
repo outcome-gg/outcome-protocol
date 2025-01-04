@@ -1692,22 +1692,36 @@ See market.lua for full license details.
 ]]
 
 local constants = {}
-
+local json = require('json')
+-- Market Factory
+constants.configurator = "test-this-is-valid-arweave-wallet-address-1"
+constants.incentives = "test-this-is-valid-arweave-wallet-address-2"
+constants.collateralToken = "test-this-is-valid-arweave-wallet-address-3"
+constants.conditionId = "test-this-is-valid-condition-id-1"
+constants.positionIds = json.encode({"1", "2"})
+constants.marketName = "Outcome Market"
+constants.marketTicker = "OUTCOME"
+constants.marketLogo = "https://test.com/logo.png"
+constants.lpFee = "100"
+constants.creatorFee = "250"
+constants.creatorFeeTarget = "test-this-is-valid-arweave-wallet-address-4"
+constants.protocolFee = "250"
+constants.protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-5"
+constants.maximumTakeFee = "500"
 -- Market
 constants.testMarketConfig = {
   configurator = "test-this-is-valid-arweave-wallet-address-6",
   incentives = "test-this-is-valid-arweave-wallet-address-8",
   collateralToken = "test-this-is-valid-arweave-wallet-address-2",
-  marketId = "this-is-valid-market-id",
   conditionId = "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
-  positionIds = {"1", "2"},
+  positionIds = json.encode({"1", "2"}),
   name = "Test Market",
   ticker = "TST",
   logo = "https://test.com/logo.png",
-  lpFee = 100,
-  creatorFee = 100,
+  lpFee = "100",
+  creatorFee = "100",
   creatorFeeTarget = "test-this-is-valid-arweave-wallet-address-3",
-  protocolFee = 100,
+  protocolFee = "100",
   protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-4"
 }
 -- CPMM
@@ -2001,7 +2015,6 @@ local function _loaded_mod_modules_semiFungibleTokens()
 Outcome © 2025. MIT License.
 Module: semiFungibleTokens.lua
 ==============================================================================
-
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
@@ -2610,7 +2623,6 @@ local conditionalTokens = require('modules.conditionalTokens')
 
 --- Represents a CPMM (Constant Product Market Maker)
 --- @class CPMM
---- @field marketId string The market ID
 --- @field incentives string The process ID of the incentives controller
 --- @field configurator string The process ID of the configurator
 --- @field initialized boolean The flag that is set to true once initialized
@@ -2623,7 +2635,6 @@ local conditionalTokens = require('modules.conditionalTokens')
 --- @param configurator string The process ID of the configurator
 --- @param incentives string The process ID of the incentives controller
 --- @param collateralToken string The address of the collateral token
---- @param marketId string The market ID
 --- @param conditionId string The condition ID
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name 
@@ -2635,9 +2646,8 @@ local conditionalTokens = require('modules.conditionalTokens')
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
 --- @return CPMM cpmm The new CPMM instance 
-function CPMM:new(configurator, incentives, collateralToken, marketId, conditionId, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
+function CPMM:new(configurator, incentives, collateralToken, conditionId, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
   local cpmm = {
-    marketId = marketId,
     configurator = configurator,
     incentives = incentives,
     poolBalances = {},
@@ -2648,7 +2658,7 @@ function CPMM:new(configurator, incentives, collateralToken, marketId, condition
     initialized = true
   }
   cpmm.token = token:new(
-    name,
+    name .. " LP Token",
     ticker,
     logo,
     {}, -- balances
@@ -2656,7 +2666,7 @@ function CPMM:new(configurator, incentives, collateralToken, marketId, condition
     constants.denomination
   )
   cpmm.tokens = conditionalTokens:new(
-    name,
+    name .. " Conditional Token",
     ticker,
     logo,
     {}, -- balancesById
@@ -3493,7 +3503,6 @@ local conditionalTokensValidation = require('modules.conditionalTokensValidation
 --- @param configurator string The process ID of the configurator
 --- @param incentives string The process ID of the incentives controller
 --- @param collateralToken string The address of the collateral token
---- @param marketId string The market ID
 --- @param conditionId string The condition ID
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name 
@@ -3509,7 +3518,6 @@ function Market:new(
   configurator,
   incentives,
   collateralToken,
-  marketId,
   conditionId,
   positionIds,
   name,
@@ -3526,7 +3534,6 @@ function Market:new(
       configurator,
       incentives,
       collateralToken,
-      marketId,
       conditionId,
       positionIds,
       name,
@@ -3539,15 +3546,7 @@ function Market:new(
       protocolFeeTarget
     )
   }
-  setmetatable(market, {
-    __index = function(_, k)
-      if MarketMethods[k] then
-        return MarketMethods[k]
-      else
-        return nil
-      end
-    end
-   })
+  setmetatable(market, { __index = MarketMethods })
   return market
 end
 
@@ -4010,6 +4009,7 @@ without explicit written permission from Outcome.
 
 local market = require('modules.market')
 local constants = require('modules.constants')
+local json = require('json')
 
 --[[
 ======
@@ -4020,49 +4020,71 @@ MARKET
 Env = "DEV"
 Version = "1.0.1"
 
---- Represents Market Config
---- @class MarketConfig
---- @field configurator string The Configurator process ID
---- @field incentives string The Incentives process ID
---- @field collateralToken string The Collateral Token process ID
---- @field marketId string The Market process ID
---- @field conditionId string The Condition process ID
---- @field positionIds table<string> The Position process IDs
---- @field name string The Market name
---- @field ticker string The Market ticker
---- @field logo string The Market logo
---- @field lpFee number The LP fee
---- @field creatorFee number The Creator fee
---- @field creatorFeeTarget string The Creator fee target
---- @field protocolFee number The Protocol fee
---- @field protocolFeeTarget string The Protocol fee target
+--- Represents Market Configuration  
+--- @class MarketConfiguration  
+--- @field configurator string The Configurator process ID  
+--- @field incentives string The Incentives process ID  
+--- @field collateralToken string The Collateral Token process ID  
+--- @field marketId string The Market process ID  
+--- @field conditionId string The Condition process ID  
+--- @field positionIds table<string> The Position process IDs  
+--- @field name string The Market name  
+--- @field ticker string The Market ticker  
+--- @field logo string The Market logo  
+--- @field lpFee number The LP fee  
+--- @field creatorFee number The Creator fee  
+--- @field creatorFeeTarget string The Creator fee target  
+--- @field protocolFee number The Protocol fee  
+--- @field protocolFeeTarget string The Protocol fee target  
 
-MarketConfig = MarketConfig or constants.testMarketConfig
+--- Retrieve Market Configuration  
+--- Fetches configuration parameters from the environment, set by the market factory
+--- @return MarketConfiguration marketConfiguration The market configuration  
+local function retrieveMarketConfig()
+  local config = {
+    configurator = ao.env.Process.Tags.Configurator or '',
+    incentives = ao.env.Process.Tags.Incentives or '',
+    collateralToken = ao.env.Process.Tags.CollateralToken or '',
+    conditionId = ao.env.Process.Tags.ConditionId or '',
+    positionIds = json.decode(ao.env.Process.Tags.PositionIds or '[]'),
+    name = ao.env.Process.Tags.Name or '',
+    ticker = ao.env.Process.Tags.Ticker or '',
+    logo = ao.env.Process.Tags.Logo or '',
+    lpFee = tonumber(ao.env.Process.Tags.LpFee) or 0,
+    creatorFee = tonumber(ao.env.Process.Tags.CreatorFee) or 0,
+    creatorFeeTarget = ao.env.Process.Tags.CreatorFeeTarget or '',
+    protocolFee = tonumber(ao.env.Process.Tags.ProtocolFee) or 0,
+    protocolFeeTarget = ao.env.Process.Tags.ProtocolFeeTarget or ''
+  }
+  -- update name and ticker with a unique postfix
+  local postfix = string.sub(ao.id, 1, 4) .. string.sub(ao.id, -4)
+  -- shorten name to first word and append postfix
+  config.name = string.match(config.name, "^(%S+)") .. "-" .. postfix
+  config.ticker = config.ticker .. "-" .. postfix
+  return config
+end
 
--- @dev Reset state while in DEV mode
+--- @dev Reset Market state during development mode or if uninitialized
 if not Market or Env == 'DEV' then
+  local marketConfig = retrieveMarketConfig()
   Market = market:new(
-    MarketConfig.configurator,
-    MarketConfig.incentives,
-    MarketConfig.collateralToken,
-    MarketConfig.marketId,
-    MarketConfig.conditionId,
-    MarketConfig.positionIds,
-    MarketConfig.name,
-    MarketConfig.ticker,
-    MarketConfig.logo,
-    MarketConfig.lpFee,
-    MarketConfig.creatorFee,
-    MarketConfig.creatorFeeTarget,
-    MarketConfig.protocolFee,
-    MarketConfig.protocolFeeTarget
+    marketConfig.configurator,
+    marketConfig.incentives,
+    marketConfig.collateralToken,
+    marketConfig.conditionId,
+    marketConfig.positionIds,
+    marketConfig.name,
+    marketConfig.ticker,
+    marketConfig.logo,
+    marketConfig.lpFee,
+    marketConfig.creatorFee,
+    marketConfig.creatorFeeTarget,
+    marketConfig.protocolFee,
+    marketConfig.protocolFeeTarget
   )
 end
 
 -- Set LP Token namespace variables
-Name = MarketConfig.name
-Ticker = MarketConfig.ticker
-Logo = MarketConfig.logo
 Denomination = constants.denomination
 
 --[[
@@ -4122,7 +4144,7 @@ INFO HANDLER
 ============
 ]]
 
---- Market info handler
+--- Info handler
 --- @param msg Message The message received
 --- @return Message infoNotice The info notice
 Handlers.add("Info", {Action = "Info"}, function(msg)
@@ -4134,16 +4156,6 @@ end)
 CPMM WRITE HANDLERS
 ===================
 ]]
-
--- -- Init
--- Handlers.add("Init", {Action = "Init"}, function(msg)
---   Market:init(msg)
---   -- Set LP Token namespace variables
---   Name = Market.cpmm.token.name
---   Ticker = Market.cpmm.token.ticker
---   Logo = Market.cpmm.token.logo
---   Denomination = Market.cpmm.token.denomination
--- end)
 
 --- Add funding handler
 --- @param msg Message The message received
@@ -4419,5 +4431,6 @@ end)
 -- @dev TODO: remove?
 ao.send({Target = ao.id, Action = 'Complete-Eval'})
 
-return "ok"    
+return "ok"
+
 ]===]
