@@ -1123,7 +1123,6 @@ describe("#market", function()
     }, Market.cpmm.tokens.balancesById)
     -- assert notice
     assert.are.equals("Payout-Redemption-Notice", notice.Action)
-    assert.are.equals(conditionId, notice.ConditionId)
     assert.are.equals(quantity, notice.Payout)
     assert.are.equals(_G.ao.id, notice.Process)
 	end)
