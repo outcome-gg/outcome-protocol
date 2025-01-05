@@ -13,8 +13,8 @@ without explicit written permission from Outcome.
 ======================================================================================
 ]]
 
-local marketFactory = require('modules.factory')
-local marketFactoryValidation = require('modules.factoryValidation')
+local marketFactory = require('modules.marketFactory')
+local marketFactoryValidation = require('modules.marketFactoryValidation')
 local constants = require('modules.constants')
 local json = require('json')
 

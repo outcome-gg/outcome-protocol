@@ -15,10 +15,9 @@ without explicit written permission from Outcome.
 
 local MarketFactory = {}
 local MarketFactoryMethods = {}
-local MarketFactoryNotices = require('modules.factoryNotices')
-local json = require('json')
-local constants = require('modules.constants')
+local MarketFactoryNotices = require('modules.marketFactoryNotices')
 local marketProcessCode = require('modules.marketProcessCodeV1')
+local json = require('json')
 
 --- Represents a MarketFactory
 --- @class MarketFactory
