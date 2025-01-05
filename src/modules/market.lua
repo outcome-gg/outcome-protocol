@@ -338,7 +338,7 @@ end
 --- @return Message reportPayoutsNotice The condition resolution notice 
 -- TODO: sync on naming conventions
 function MarketMethods:reportPayouts(msg)
-  conditionalTokensValidation.reportPayouts(msg)
+  conditionalTokensValidation.reportPayouts(msg, self.cpmm.tokens.resolutionAgent)
   local payouts = json.decode(msg.Tags.Payouts)
   return self.cpmm.tokens:reportPayouts(payouts, msg)
 end

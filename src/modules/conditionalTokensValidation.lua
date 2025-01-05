@@ -36,7 +36,9 @@ end
 
 --- Validates the reporrtPayouts message
 --- @param msg Message The message to be validated
-function ConditionalTokensValidation.reportPayouts(msg)
+--- @param resolutionAgent string The resolution agent process ID
+function ConditionalTokensValidation.reportPayouts(msg, resolutionAgent)
+  assert(msg.From == resolutionAgent, "Sender must be resolution agent!")
   validatePayouts(msg.Tags.Payouts)
 end
 

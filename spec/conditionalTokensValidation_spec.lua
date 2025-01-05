@@ -4,8 +4,9 @@ local json = require("json")
 
 -- Mock the CPMM object
 ---@diagnostic disable-next-line: missing-fields
-_G.CPMM = { tokens = { positionIds = { "1", "2", "3" } } }
+_G.CPMM = { tokens = { positionIds = { "1", "2", "3" }, resolutionAgent = "test-this-is-valid-arweave-wallet-address-0" } }
 
+local resolutionAgent = ""
 local sender = ""
 local quantity = ""
 local questionId = ""
@@ -16,6 +17,7 @@ local msgPayouts = {}
 describe("#market #conditionalTokens #conditionalTokensValidation", function()
   before_each(function()
     -- set variables
+    resolutionAgent = "test-this-is-valid-arweave-wallet-address-0"
     sender = "test-this-is-valid-arweave-wallet-address-1"
     quantity = "100"
     payouts = {1, 0}
@@ -28,7 +30,7 @@ describe("#market #conditionalTokens #conditionalTokensValidation", function()
     }
     -- create a message object
     msgPayouts = {
-      From = sender,
+      From = resolutionAgent,
       Tags = {
         QuestionId = questionId,
         Payouts = json.encode(payouts),
@@ -86,15 +88,23 @@ describe("#market #conditionalTokens #conditionalTokensValidation", function()
   it("should pass report payouts validation", function()
     -- should not throw an error
 		assert.has_no.errors(function()
-      conditionalTokensValidation.reportPayouts(msgPayouts)
+      conditionalTokensValidation.reportPayouts(msgPayouts, resolutionAgent)
     end)
+	end)
+
+  it("should fail report payouts validation when sender ~= resolutionAgent", function()
+    msgPayouts.From = sender
+    -- should throw an error
+		assert.has.error(function()
+      conditionalTokensValidation.reportPayouts(msgPayouts, resolutionAgent)
+    end, "Sender must be resolution agent!")
 	end)
 
   it("should fail report payouts validation when missing payouts", function()
     -- should throw an error
 		assert.has.error(function()
       msgPayouts.Tags.Payouts = nil
-      conditionalTokensValidation.reportPayouts(msgPayouts)
+      conditionalTokensValidation.reportPayouts(msgPayouts, resolutionAgent)
     end, "Payouts is required!")
 	end)
 
@@ -102,7 +112,7 @@ describe("#market #conditionalTokens #conditionalTokensValidation", function()
     -- should throw an error
 		assert.has.error(function()
       msgPayouts.Tags.Payouts = "not-a-json-array"
-      conditionalTokensValidation.reportPayouts(msgPayouts)
+      conditionalTokensValidation.reportPayouts(msgPayouts, resolutionAgent)
     end, "Payouts must be valid JSON Array!")
 	end)
 
@@ -110,7 +120,7 @@ describe("#market #conditionalTokens #conditionalTokensValidation", function()
     -- should throw an error
 		assert.has.error(function()
       msgPayouts.Tags.Payouts = "[1, 0, 'invalid']"
-      conditionalTokensValidation.reportPayouts(msgPayouts)
+      conditionalTokensValidation.reportPayouts(msgPayouts, resolutionAgent)
     end, "Payouts must be valid JSON Array!")
 	end)
 end)
