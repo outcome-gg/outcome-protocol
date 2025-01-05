@@ -15,6 +15,7 @@ without explicit written permission from Outcome.
 
 local MarketFactory = {}
 local MarketFactoryMethods = {}
+local MarketFactoryNotices = require('modules.factoryNotices')
 local json = require('json')
 local crypto = require('.crypto')
 local constants = require('modules.constants')
@@ -43,6 +44,9 @@ function MarketFactory:new()
     protocolFee = constants.protocolFee,
     protocolFeeTarget = constants.protocolFeeTarget,
     maximumTakeFee = constants.maximumTakeFee,
+    utilityToken = constants.utilityToken,
+    minimumPayment = constants.minimumPayment,
+    collateralTokens = constants.collateralTokens,
     payoutNumerators = {},
     payoutDenominator = {},
     messageToProcessMapping = {},
@@ -55,7 +59,38 @@ function MarketFactory:new()
   return marketFactory
 end
 
+--[[
+===========
+INFO METHOD
+===========
+]]
+
+--- Info
+--- @param msg Message The message received
+--- @return Message The info message
+function MarketFactoryMethods:info(msg)
+  print("self.collateralTokens", json.encode(self.collateralTokens))
+  return msg.reply({
+    Configurator = self.configurator,
+    Incentives = self.incentives,
+    LpFee = self.lpFee,
+    ProtocolFee = self.protocolFee,
+    ProtocolFeeTarget = self.protocolFeeTarget,
+    MaximumTakeFee = self.maximumTakeFee,
+    UtilityToken = self.utilityToken,
+    MinimumPayment = self.minimumPayment,
+    CollateralTokens = json.encode(self.collateralTokens),
+  })
+end
+
+--[[
+=============
+WRITE METHODS
+=============
+]]
+
 --- Spawn market
+--- @param collateralToken string The collateral token address
 --- @param question string The question to be answered by the resolutionAgent
 --- @param resolutionAgent string The process assigned to report the result for the prepared condition
 --- @param outcomeSlotCount number The number of outcome slots which should be used for this condition
@@ -63,8 +98,9 @@ end
 --- @param creatorFeeTarget string The creator fee target
 --- @param msg Message The message received
 --- @return Message marketSpawnedNotice The market spawned notice
-function MarketFactoryMethods:spawnMarket(question, resolutionAgent, outcomeSlotCount, creatorFee, creatorFeeTarget, msg)
+function MarketFactoryMethods:spawnMarket(collateralToken, question, resolutionAgent, outcomeSlotCount, creatorFee, creatorFeeTarget, msg)
   -- prepare condition
+  -- @dev TODO: remove conditionId & market dependencies
   local questionId = self.getQuestionId(question)
   local conditionId = self.getConditionId(resolutionAgent, questionId, outcomeSlotCount)
   self:prepareCondition(conditionId, outcomeSlotCount)
@@ -84,34 +120,18 @@ function MarketFactoryMethods:spawnMarket(question, resolutionAgent, outcomeSlot
     ["ProtocolFee"] = tostring(self.protocolFee),
     ["ProtocolFeeTarget"] = self.protocolFeeTarget,
     -- Creator-controlled market parameters
-    ["CollateralToken"] = msg.From,
-    ["Creator"] = msg.From, -- @dev TODO: replace with msg.Sender
+    ["CollateralToken"] = collateralToken,
+    ["Creator"] = msg.Sender,
     ["CreatorFee"] = tostring(creatorFee),
     ["CreatorFeeTarget"] = creatorFeeTarget,
-    ["Question"] = msg.Tags.Question,
+    ["Question"] = question,
     ["ConditionId"] = conditionId,
     ["PositionIds"] = json.encode(self.getPositionIds(outcomeSlotCount)),
   })
+  -- -- burn payment @dev TODO: decide if required
+  -- ao.send({Target = msg.From, Action = "Burn", Quantity = msg.Tags.Quantity})
   -- send notice
-  return msg.reply({Action = "Market-Spawned", ["Original-Msg-Id"] = msg.Id})
-end
-
---- Handle spawned market
---- Updates mappings and tables
---- @param msg Message The message received
---- @return boolean success True if successful, false otherwise
-function MarketFactoryMethods:spawnedMarket(msg)
-  local originalMsgId = msg.Tags["Original-Msg-Id"]
-  local processId = msg.Tags["Process"]
-  local creator = msg.Tags["Creator"]
-  -- add mapping
-  self.messageToProcessMapping[originalMsgId] = processId
-  -- add to pending init
-  table.insert(self.marketsPendingInit, processId)
-  -- add to creator init
-  if not self.marketsInitByCreator[creator] then self.marketsInitByCreator[creator] = {} end
-  table.insert(self.marketsInitByCreator[creator], processId)
-  return true
+  return MarketFactoryNotices.spawnMarketNotice(collateralToken, msg.Sender, creatorFee, creatorFeeTarget, question, conditionId, outcomeSlotCount, msg)
 end
 
 function MarketFactoryMethods:initMarket(msg)
@@ -132,8 +152,14 @@ function MarketFactoryMethods:initMarket(msg)
   end
   self.marketsPendingInit = {}
   -- send notice
-  return msg.reply({Action = "Market-Init", ["Market-Process-Ids"] = json.encode(processIds)})
+  return MarketFactoryNotices.initMarketNotice(processIds, msg)
 end
+
+--[[
+============
+READ METHODS
+============
+]]
 
 function MarketFactoryMethods:marketsPending(msg)
   return msg.reply({Data = json.encode(self.marketsPendingInit)})
@@ -157,6 +183,141 @@ function MarketFactoryMethods:getLatestProcessIdForCreator(creator, msg)
   local creatorMarkets = self.marketsInitByCreator[creator] or {}
   return msg.reply({Data = creatorMarkets[#creatorMarkets]})
 end
+
+--[[
+====================
+CONFIGURATOR METHODS
+====================
+]]
+
+--- Update configurator
+--- @param updateConfigurator string The new configurator address
+--- @param msg Message The message received
+--- @return Message updateConfiguratorNotice The update configurator notice
+function MarketFactoryMethods:updateConfigurator(updateConfigurator, msg)
+  self.configurator = updateConfigurator
+  return MarketFactoryNotices.updateConfiguratorNotice(updateConfigurator, msg)
+end
+
+--- Update incentives
+--- @param updateIncentives string The new incentives address
+--- @param msg Message The message received
+--- @return Message updateIncentivesNotice The update incentives notice
+function MarketFactoryMethods:updateIncentives(updateIncentives, msg)
+  self.incentives = updateIncentives
+  return MarketFactoryNotices.updateIncentivesNotice(updateIncentives, msg)
+end
+
+--- Update lpFee
+--- @param updateLpFee string The new lpFee
+--- @param msg Message The message received
+--- @return Message updateLpFeeNotice The update lpFee notice
+function MarketFactoryMethods:updateLpFee(updateLpFee, msg)
+  self.lpFee = updateLpFee
+  return MarketFactoryNotices.updateLpFeeNotice(updateLpFee, msg)
+end
+
+--- Update protocolFee
+--- @param updateProtocolFee string The new protocolFee
+--- @param msg Message The message received
+--- @return Message updateProtocolFeeNotice The update protocolFee notice
+function MarketFactoryMethods:updateProtocolFee(updateProtocolFee, msg)
+  self.protocolFee = updateProtocolFee
+  return MarketFactoryNotices.updateProtocolFeeNotice(updateProtocolFee, msg)
+end
+
+--- Update protocolFeeTarget
+--- @param updateProtocolFeeTarget string The new protocolFeeTarget
+--- @param msg Message The message received
+--- @return Message updateProtocolFeeTargetNotice The update protocolFeeTarget notice
+function MarketFactoryMethods:updateProtocolFeeTarget(updateProtocolFeeTarget, msg)
+  self.protocolFeeTarget = updateProtocolFeeTarget
+  return MarketFactoryNotices.updateProtocolFeeTargetNotice(updateProtocolFeeTarget, msg)
+end
+
+--- Update maximumTakeFee
+--- @param updateMaximumTakeFee string The new maximumTakeFee
+--- @param msg Message The message received
+--- @return Message updateMaximumTakeFeeNotice The update maximumTakeFee notice
+function MarketFactoryMethods:updateMaximumTakeFee(updateMaximumTakeFee, msg)
+  self.maximumTakeFee = updateMaximumTakeFee
+  return MarketFactoryNotices.updateMaximumTakeFeeNotice(updateMaximumTakeFee, msg)
+end
+
+--- Update minimumPayment
+--- @param updateMinimumPayment string The new minimumPayment
+--- @param msg Message The message received
+--- @return Message updateMinimumPaymentNotice The update minimumPayment notice
+function MarketFactoryMethods:updateMinimumPayment(updateMinimumPayment, msg)
+  self.minimumPayment = updateMinimumPayment
+  return MarketFactoryNotices.updateMinimumPaymentNotice(updateMinimumPayment, msg)
+end
+
+--- Update utilityToken
+--- @param updateUtilityToken string The new utilityToken
+--- @param msg Message The message received
+--- @return Message updateUtilityTokenNotice The update utilityToken notice
+function MarketFactoryMethods:updateUtilityToken(updateUtilityToken, msg)
+  self.utilityToken = updateUtilityToken
+  return MarketFactoryNotices.updateUtilityTokenNotice(updateUtilityToken, msg)
+end
+
+--- Approve collateralToken
+--- @param collateralToken string The approved collateral token address
+--- @param isApprove boolean True to approve, false to disapprove
+--- @param msg Message The message received
+--- @return Message approveCollateralTokenNotice The approveCollateralToken notice
+function MarketFactoryMethods:approveCollateralToken(collateralToken, isApprove, msg)
+  self.collateralTokens[collateralToken] = isApprove
+  return MarketFactoryNotices.approveCollateralTokenNotice(collateralToken, isApprove, msg)
+end
+
+--- Transfer
+--- @dev Acts as a fallback to recover tokens sent in error
+--- @param token string The token address
+--- @param recipient string The recipient address
+--- @param quantity string The quantity to transfer
+--- @param msg Message The message received
+--- @return Message transferMessage The transfer message
+function MarketFactoryMethods:transfer(token, recipient, quantity, msg)
+  ao.send({
+    Target = token,
+    Action = "Transfer",
+    Recipient = recipient,
+    Quantity = quantity,
+  })
+  return MarketFactoryNotices.transferNotice(token, recipient, quantity, msg)
+end
+
+--[[
+================
+CALLBACK METHODS
+================
+]]
+
+--- Handle spawned market
+--- Updates mappings and tables
+--- @param msg Message The message received
+--- @return boolean success True if successful, false otherwise
+function MarketFactoryMethods:spawnedMarket(msg)
+  local originalMsgId = msg.Tags["Original-Msg-Id"]
+  local processId = msg.Tags["Process"]
+  local creator = msg.Tags["Creator"]
+  -- add mapping
+  self.messageToProcessMapping[originalMsgId] = processId
+  -- add to pending init
+  table.insert(self.marketsPendingInit, processId)
+  -- add to creator init
+  if not self.marketsInitByCreator[creator] then self.marketsInitByCreator[creator] = {} end
+  table.insert(self.marketsInitByCreator[creator], processId)
+  return true
+end
+
+--[[
+================
+INTERNAL METHODS
+================
+]]
 
 -- @dev Constructs a question ID from a question string and ao.id.
 -- @param question The question to be answered by the resolutionAgent.

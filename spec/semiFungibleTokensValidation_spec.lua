@@ -123,7 +123,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     -- should throw an error
     assert.has.error(function()
       semiFungibleTokensValidation.transferSingle(msg, _G.Market.cpmm.tokens.positionIds)
-    end, "Invalid tokenId!")
+    end, "Invalid TokenId!")
 	end)
 
   it("should fail transfer-single validation when quantity is missing", function()
@@ -229,7 +229,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     -- should throw an error
     assert.has.error(function()
       semiFungibleTokensValidation.transferBatch(msgBatch, _G.Market.cpmm.tokens.positionIds)
-    end, "Invalid tokenId!")
+    end, "Invalid TokenId!")
 	end)
 
   it("should fail transfer-batch validation when quantity not passed as a string", function()
@@ -300,7 +300,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     -- should throw an error
     assert.has.error(function()
       semiFungibleTokensValidation.balanceById(msgBalance, _G.Market.cpmm.tokens.positionIds)
-    end, "Invalid tokenId!")
+    end, "Invalid TokenId!")
 	end)
 
   it("should pass balances-by-id validation", function()
@@ -316,7 +316,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     -- should throw an error
     assert.has.error(function()
       semiFungibleTokensValidation.balancesById(msgBalances, _G.Market.cpmm.tokens.positionIds)
-    end, "Invalid tokenId!")
+    end, "Invalid TokenId!")
 	end)
 
   it("should pass batch-balance validation", function()
@@ -384,7 +384,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensValidation", function()
     -- should throw an error
     assert.has.error(function()
       semiFungibleTokensValidation.batchBalances(msgBatchBalances, _G.Market.cpmm.tokens.positionIds)
-    end, "Invalid tokenId!")
+    end, "Invalid TokenId!")
 	end)
 
   it("should fail batch-balances validation when input array lengths are zero", function()

@@ -22,6 +22,9 @@ constants.creatorFeeTarget = "test-this-is-valid-arweave-wallet-address-4"
 constants.protocolFee = "250"
 constants.protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-5"
 constants.maximumTakeFee = "500"
+constants.utilityToken = "test-this-is-valid-arweave-wallet-address-6"
+constants.minimumPayment = "1000"
+constants.collateralTokens = {"test-this-is-valid-arweave-wallet-address-7"}
 -- Market
 constants.testMarketConfig = {
   configurator = "test-this-is-valid-arweave-wallet-address-6",

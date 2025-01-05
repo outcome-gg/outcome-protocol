@@ -7,7 +7,6 @@ local json = require("json")
 local marketFactory = ""
 local sender = ""
 local recipient = ""
-local marketId = ""
 local conditionId = ""
 local collateralToken = ""
 local outcomeSlotCount
@@ -72,7 +71,6 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     marketFactory = "test-this-is-valid-arweave-wallet-address-0"
     sender = "test-this-is-valid-arweave-wallet-address-1"
     recipient = "test-this-is-valid-arweave-wallet-address-2"
-    marketId = "this-is-valid-market-id"
     conditionId = "this-is-valid-condition-id"
     collateralToken = "test-this-is-valid-arweave-wallet-address-2"
     outcomeSlotCount = 2
@@ -105,7 +103,6 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       configurator,
       incentives,
       collateralToken,
-      marketId,
       conditionId,
       positionIds,
       name,
@@ -121,7 +118,6 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 		msgInit = {
       From = marketFactory,
       Tags = {
-        MarketId = marketId,
         ConditionId = conditionId,
         CollateralToken = collateralToken,
         OutcomeSlotCount = outcomeSlotCount,
@@ -301,7 +297,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 
   it("should have initial state", function()
     local token_ = token:new(
-      name,
+      name .. " LP Token",
       ticker,
       logo,
       {},
@@ -309,7 +305,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       denomination
     )
     local tokens_ = tokens:new(
-      name,
+      name .. " Conditional Tokens",
       ticker,
       logo,
       balancesById,
@@ -324,7 +320,6 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       protocolFeeTarget
     )
     -- assert initial state
-		assert.is.same(marketId, CPMM.marketId)
     assert.is.same(incentives, CPMM.incentives)
     assert.is.same(configurator, CPMM.configurator)
     assert.is.same(true, CPMM.initialized)

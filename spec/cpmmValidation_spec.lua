@@ -214,7 +214,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- should not throw an error
 		assert.has.error(function()
       cpmmValidation.buy(msgBuy, _G.CPMM.tokens.positionIds)
-    end, "Invalid positionId!")
+    end, "Invalid PositionId!")
 	end)
 
   it("should fail buy validation when missing quantity", function()
@@ -253,7 +253,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- should not throw an error
 		assert.has.error(function()
       cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
-    end, "Invalid positionId!")
+    end, "Invalid PositionId!")
 	end)
 
   it("should fail sell validation when missing quantity", function()
@@ -324,7 +324,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- should not throw an error
 		assert.has.error(function()
       cpmmValidation.calcBuyAmount(msgCalcBuyAmount, _G.CPMM.tokens.positionIds)
-    end, "Invalid positionId!")
+    end, "Invalid PositionId!")
 	end)
 
   it("should fail calcBuyAmount validation when missing investmentAmount", function()
@@ -363,7 +363,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- should not throw an error
 		assert.has.error(function()
       cpmmValidation.calcSellAmount(msgCalcSellAmount, _G.CPMM.tokens.positionIds)
-    end, "Invalid positionId!")
+    end, "Invalid PositionId!")
 	end)
 
   it("should fail calcSellAmount validation when missing returnAmount", function()

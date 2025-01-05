@@ -5,60 +5,157 @@ See factory.lua for full license details.
 =========================================================
 ]]
 
-local json = require('json')
-local ao = ao or require('.ao')
 local MarketFactoryNotices = {}
+local json = require('json')
 
---- Sends a new market notice
---- @param configurator string The configurator address
---- @param incentives string The incentives address
+--- Spawn market notice
 --- @param collateralToken string The collateral token address
---- @param marketId string The market ID
---- @param conditionId string The condition ID
---- @param positionIds table The position IDs
---- @param outcomeSlotCount number The number of outcome slots
---- @param name string The market name
---- @param ticker string The market ticker
---- @param logo string The market logo
---- @param lpFee number The LP fee
+--- @param creator string The creator address
 --- @param creatorFee number The creator fee
 --- @param creatorFeeTarget string The creator fee target
---- @param protocolFee number The protocol fee
---- @param protocolFeeTarget string The protocol fee target
+--- @param question string The market question
+--- @param conditionId string The condition ID
+--- @param outcomeSlotCount number The number of outcome slots
 --- @param msg Message The message received
---- @return Message The new market notice
-function MarketFactoryNotices.newMarketNotice(configurator, incentives, collateralToken, marketId, conditionId, positionIds, outcomeSlotCount, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget, msg)
+--- @return Message spawnMarketNotice The spawn market notice
+function MarketFactoryNotices.spawnMarketNotice(collateralToken, creator, creatorFee, creatorFeeTarget, question, conditionId, outcomeSlotCount, msg)
   return msg.reply({
-    Action = "New-Market-Notice",
-    MarketId = marketId,
-    ConditionId = conditionId,
-    Configurator = configurator,
-    Incentives = incentives,
+    Action = "Market-Spawned-Notice",
     CollateralToken = collateralToken,
-    PositionIds = json.encode(positionIds),
-    OutcomeSlotCount = tostring(outcomeSlotCount),
-    LpFee = lpFee,
+    Creator = creator,
     CreatorFee = creatorFee,
     CreatorFeeTarget = creatorFeeTarget,
-    ProtocolFee = protocolFee,
-    ProtocolFeeTarget = protocolFeeTarget,
-    Name = name,
-    Ticker = ticker,
-    Logo = logo,
-    Data = "Successfully created market"
+    Question = question,
+    ConditionId = conditionId,
+    OutcomeSlotCount = outcomeSlotCount,
+    ["Original-Msg-Id"] = msg.Id
   })
 end
 
---- Prepare condition notice
---- @param conditionId string The condition ID
---- @param outcomeSlotCount number The number of outcome slots
+--- Init market notice
+--- @param marketProcessIds table The market process IDs
 --- @param msg Message The message received
---- @return Message The condition preparation notice
-function MarketFactoryNotices.conditionPreparationNotice(conditionId, outcomeSlotCount, msg)
+--- @return Message initMarketNotice The init market notice
+function MarketFactoryNotices.initMarketNotice(marketProcessIds, msg)
   return msg.reply({
-    Action = "Condition-Preparation-Notice",
-    ConditionId = conditionId,
-    OutcomeSlotCount = tostring(outcomeSlotCount)
+    Action = "Market-Init-Notice",
+    MarketProcessIds = json.encode(marketProcessIds)
+  })
+end
+
+--- Update configurator notice
+--- @param updateConfigurator string The new configurator address
+--- @param msg Message The message received
+--- @return Message updateConfiguratorNotice The update configurator notice
+function MarketFactoryNotices.updateConfiguratorNotice(updateConfigurator, msg)
+  return msg.reply({
+    Action = "Update-Configurator-Notice",
+    UpdateConfigurator = updateConfigurator
+  })
+end
+
+--- Update incentives notice
+--- @param updateIncentives string The new incentives address
+--- @param msg Message The message received
+--- @return Message updateIncentivesNotice The update incentives notice
+function MarketFactoryNotices.updateIncentivesNotice(updateIncentives, msg)
+  return msg.reply({
+    Action = "Update-Incentives-Notice",
+    UpdateIncentives = updateIncentives
+  })
+end
+
+--- Update lpFee notice
+--- @param updateLpFee string The new lp fee
+--- @param msg Message The message received
+--- @return Message updateLpFeeNotice The update lp fee notice
+function MarketFactoryNotices.updateLpFeeNotice(updateLpFee, msg)
+  return msg.reply({
+    Action = "Update-LpFee-Notice",
+    UpdateLpFee = updateLpFee
+  })
+end
+
+--- Update protocolFee notice
+--- @param updateProtocolFee string The new protocol fee
+--- @param msg Message The message received
+--- @return Message updateProtocolFeeNotice The update protocol fee notice
+function MarketFactoryNotices.updateProtocolFeeNotice(updateProtocolFee, msg)
+  return msg.reply({
+    Action = "Update-ProtocolFee-Notice",
+    UpdateProtocolFee = updateProtocolFee
+  })
+end
+
+--- Update protocolFeeTarget notice
+--- @param updateProtocolFeeTarget string The new protocol fee target
+--- @param msg Message The message received
+--- @return Message updateProtocolFeeTargetNotice The update protocol fee target notice
+function MarketFactoryNotices.updateProtocolFeeTargetNotice(updateProtocolFeeTarget, msg)
+  return msg.reply({
+    Action = "Update-ProtocolFeeTarget-Notice",
+    UpdateProtocolFeeTarget = updateProtocolFeeTarget
+  })
+end
+
+--- Update maximumTakeFee notice
+--- @param updateMaximumTakeFee string The new maximum take fee
+--- @param msg Message The message received
+--- @return Message updateMaximumTakeFeeNotice The update maximum take fee notice
+function MarketFactoryNotices.updateMaximumTakeFeeNotice(updateMaximumTakeFee, msg)
+  return msg.reply({
+    Action = "Update-MaximumTakeFee-Notice",
+    UpdateMaximumTakeFee = updateMaximumTakeFee
+  })
+end
+
+--- Update utilityToken notice
+--- @param updateUtilityToken string The new utility token address
+--- @param msg Message The message received
+--- @return Message updateUtilityTokenNotice The update utility token notice
+function MarketFactoryNotices.updateUtilityTokenNotice(updateUtilityToken, msg)
+  return msg.reply({
+    Action = "Update-UtilityToken-Notice",
+    UpdateUtilityToken = updateUtilityToken
+  })
+end
+
+--- Update minimumPayment notice
+--- @param minimumPayment string The new minimum payment amount
+--- @param msg Message The message received
+--- @return Message updateMinimumPaymentNotice The update minimum payment amount notice
+function MarketFactoryNotices.updateMinimumPaymentNotice(minimumPayment, msg)
+  return msg.reply({
+    Action = "Update-MinimumPayment-Notice",
+    UpdateMinimumPayment = minimumPayment
+  })
+end
+
+--- Approve collateral token notice
+--- @param collateralToken string The collateral token address
+--- @param isApprove boolean The approval status, true if approved, false otherwise
+--- @param msg Message The message received
+--- @return Message approveCollateralTokenNotice The approve collateral token notice
+function MarketFactoryNotices.approveCollateralTokenNotice(collateralToken, isApprove, msg)
+  return msg.reply({
+    Action = "Approve-CollateralToken-Notice",
+    CollateralToken = collateralToken,
+    IsApprove = tostring(isApprove)
+  })
+end
+
+--- Transfer notice
+--- @param token string The token address
+--- @param recipient string The recipient address
+--- @param quantity number The quantity to transfer
+--- @param msg Message The message received
+--- @return Message transferNotice The transfer notice
+function MarketFactoryNotices.transferNotice(token, recipient, quantity, msg)
+  return msg.reply({
+    Action = "Transfer-Notice",
+    Token = token,
+    Recipient = recipient,
+    Quantity = quantity
   })
 end
 

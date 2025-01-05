@@ -22,7 +22,7 @@ local function isSimpleValue(value)
     return true
   end
   -- Check for boolean
-  if value == "true" or value == "false" then
+  if string.lower(value) == "true" or string.lower(value) == "false" then
     return true
   end
   return false
@@ -79,6 +79,13 @@ end
 --- @return boolean
 function sharedUtils.isValidArweaveAddress(address)
 	return type(address) == "string" and #address == 43 and string.match(address, "^[%w-_]+$") ~= nil
+end
+
+--- Verify if a valid boolean string
+--- @param value any
+--- @return boolean
+function sharedUtils.isValidBooleanString(value)
+  return type(value) == "string" and (string.lower(value) == "true" or string.lower(value) == "false")
 end
 
 return sharedUtils

@@ -69,7 +69,7 @@ function CPMM:new(configurator, incentives, collateralToken, conditionId, positi
     constants.denomination
   )
   cpmm.tokens = conditionalTokens:new(
-    name .. " Conditional Token",
+    name .. " Conditional Tokens",
     ticker,
     logo,
     {}, -- balancesById

@@ -10,7 +10,6 @@ local marketFactory = ""
 local minter = ""
 local sender = ""
 local recipient = ""
-local marketId = ""
 local conditionId = ""
 local collateralToken = ""
 local outcomeSlotCount = ""
@@ -96,7 +95,6 @@ describe("#market", function()
     minter = "test-this-is-valid-arweave-wallet-address-0"
     sender = "test-this-is-valid-arweave-wallet-address-1"
     recipient = "test-this-is-valid-arweave-wallet-address-2"
-    marketId = "this-is-valid-market-id"
     -- @dev mock init state for testing
     conditionId = tostring(crypto.digest.keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount)).asHex())
     collateralToken = "test-this-is-valid-arweave-wallet-address-2"
@@ -137,7 +135,6 @@ describe("#market", function()
       configurator,
       incentives,
       collateralToken,
-      marketId,
       conditionId,
       positionIds,
       name,
@@ -153,7 +150,6 @@ describe("#market", function()
 		msgInit = {
       From = marketFactory,
       Tags = {
-        MarketId = marketId,
         ConditionId = conditionId,
         CollateralToken = collateralToken,
         OutcomeSlotCount = outcomeSlotCount,
@@ -470,7 +466,7 @@ describe("#market", function()
 
   it("should have initial state", function()
     local token_ = token:new(
-      name,
+      name .. " LP Token",
       ticker,
       logo,
       {},
@@ -478,7 +474,7 @@ describe("#market", function()
       denomination
     )
     local tokens_ = tokens:new(
-      name,
+      name .. " Conditional Tokens",
       ticker,
       logo,
       balancesById,
@@ -493,7 +489,6 @@ describe("#market", function()
       protocolFeeTarget
     )
     -- assert initial state
-		assert.is.same(marketId, Market.cpmm.marketId)
     assert.is.same(incentives, Market.cpmm.incentives)
     assert.is.same(configurator, Market.cpmm.configurator)
     assert.is.same(true, Market.cpmm.initialized)
