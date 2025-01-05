@@ -13,13 +13,9 @@ local sender = ""
 local recipient = ""
 local resolutionAgent = ""
 local collateralToken = ""
-local questionId = ""
-local conditionId = ""
 local positionIds = {}
-local outcomeSlotCount = nil
 local creatorFee = nil
 local protocolFee = nil
-local payout = nil
 local payouts = {}
 local totalPayout = nil
 local protocolFeeTarget = ""
@@ -27,12 +23,10 @@ local creatorFeeTarget = ""
 local quantity = ""
 local payoutNumerators = {}
 local payoutDenominator = nil
-local msgPrepareCondition = {}
 local msgSplitPosition = {}
 local msgMergePositions = {}
 local msgReportPayouts = {}
 local msgRedeemPositions = {}
-local msgOutcomeSlotCount = {}
 
 local function getTagValue(tags, targetName)
   for _, tag in ipairs(tags) do
@@ -50,7 +44,6 @@ describe("#market #conditionalTokens", function()
     recipient = "test-this-is-valid-arweave-wallet-address-2"
     resolutionAgent = "test-this-is-valid-arweave-wallet-address-3"
     collateralToken = "test-this-is-valid-arweave-wallet-address-4"
-    questionId = "this-is-a-valid-question-id"
     payout = 50 -- collateral tokens
     payouts = { 1, 0, 0 }
     totalPayout = 100 -- collateral tokens
@@ -62,9 +55,6 @@ describe("#market #conditionalTokens", function()
     balancesById = {}
     totalSupplyById = {}
     denomination = 12
-    -- set conditional tokens variables
-    conditionId = tostring(crypto.digest.keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount)).asHex())
-    outcomeSlotCount = 3
     positionIds = { "1", "2", "3" }
     payoutNumerators = {0, 0, 0}
     payoutDenominator = 0
@@ -80,7 +70,7 @@ describe("#market #conditionalTokens", function()
       balancesById,
       totalSupplyById,
       denomination,
-      conditionId,
+      resolutionAgent,
       collateralToken,
       positionIds,
       creatorFee,
@@ -88,16 +78,6 @@ describe("#market #conditionalTokens", function()
       protocolFee,
       protocolFeeTarget
     )
-
-    -- create a message object
-		msgPrepareCondition = {
-      From = sender,
-      Tags = {
-        ConditionId = conditionId,
-        OutcomeSlotCount = outcomeSlotCount,
-      },
-      reply = function(message) return message end
-    }
     -- create a message object
     msgSplitPosition = {
       From = sender,
@@ -105,7 +85,6 @@ describe("#market #conditionalTokens", function()
         Process = _G.ao.id,
         Stakeholder = sender,
         CollateralToken = collateralToken,
-        ConditionId = conditionId,
         Quantity = quantity,
       },
       ["X-Action"] = "FOO",
@@ -125,7 +104,6 @@ describe("#market #conditionalTokens", function()
     msgReportPayouts = {
       From = resolutionAgent,
       Tags = {
-        QuestionId = questionId,
         Payouts = payouts,
       },
       reply = function(message) return message end
@@ -133,14 +111,6 @@ describe("#market #conditionalTokens", function()
     -- create a message object
     msgRedeemPositions = {
       From = sender,
-      reply = function(message) return message end
-    }
-    -- create a message object
-    msgOutcomeSlotCount = {
-      From = sender,
-      Tags = {
-        ConditionId = conditionId,
-      },
       reply = function(message) return message end
     }
 	end)
@@ -153,8 +123,7 @@ describe("#market #conditionalTokens", function()
     assert.are.same(balancesById, ConditionalTokens.balancesById)
     assert.are.same(totalSupplyById, ConditionalTokens.totalSupplyById)
     assert.are.same(denomination, ConditionalTokens.denomination)
-    assert.are.same(conditionId, ConditionalTokens.conditionId)
-    assert.are.same(outcomeSlotCount, ConditionalTokens.outcomeSlotCount)
+    assert.are.same(resolutionAgent, ConditionalTokens.resolutionAgent)
     assert.are.same(positionIds, ConditionalTokens.positionIds)
     assert.are.same(payoutNumerators, ConditionalTokens.payoutNumerators)
     assert.are.same(payoutDenominator, ConditionalTokens.payoutDenominator)
@@ -163,21 +132,6 @@ describe("#market #conditionalTokens", function()
     assert.are.same(protocolFee, ConditionalTokens.protocolFee)
     assert.are.same(protocolFeeTarget, ConditionalTokens.protocolFeeTarget)
 	end)
-
-  -- it("should prepare condition", function()
-  --   local notice = ConditionalTokens:prepareCondition(
-  --     msgPrepareCondition.Tags.ConditionId,
-  --     msgPrepareCondition.Tags.OutcomeSlotCount,
-  --     msgPrepareCondition
-  --   )
-  --   -- asert state change
-  --   assert.are.same({[conditionId] = {0,0,0}}, ConditionalTokens.payoutNumerators)
-  --   assert.are.same({[conditionId] = 0}, ConditionalTokens.payoutDenominator)
-  --   -- assert notice
-  --   assert.are.equals("Condition-Preparation-Notice", notice.Action)
-  --   assert.are.equals(msgPrepareCondition.Tags.ConditionId, notice.ConditionId)
-  --   assert.are.equals(tostring(msgPrepareCondition.Tags.OutcomeSlotCount), notice.OutcomeSlotCount)
-	-- end)
 
   it("should split position", function()
     local notice = ConditionalTokens:splitPosition(
@@ -202,7 +156,6 @@ describe("#market #conditionalTokens", function()
     assert.are.equals("Split-Position-Notice", notice[2].Action)
     assert.are.equals(msgSplitPosition.Tags.Quantity, notice[2].Quantity)
     assert.are.equals(msgSplitPosition.Tags.CollateralToken, notice[2].CollateralToken)
-    assert.are.equals(msgSplitPosition.Tags.ConditionId, notice[2].ConditionId)
     assert.are.equals(msgSplitPosition.Tags.Process, notice[2].Process)
     assert.are.equals(msgSplitPosition["X-Action"], notice[2]["X-Action"])
 	end)
@@ -238,7 +191,6 @@ describe("#market #conditionalTokens", function()
     -- assert notice
     assert.are.equals("Merge-Positions-Notice", notice.Action)
     assert.are.equals(msgSplitPosition.Tags.Quantity, notice.Quantity)
-    assert.are.equals(msgSplitPosition.Tags.ConditionId, notice.ConditionId)
 	end)
 
   it("should merge positions (isSell == false)", function()
@@ -272,7 +224,6 @@ describe("#market #conditionalTokens", function()
     -- assert notice
     assert.are.equals("Merge-Positions-Notice", notice.Action)
     assert.are.equals(msgSplitPosition.Tags.Quantity, notice.Quantity)
-    assert.are.equals(msgSplitPosition.Tags.ConditionId, notice.ConditionId)
 	end)
 
   it("should fail to merge positions (position not split)", function()
@@ -317,7 +268,6 @@ describe("#market #conditionalTokens", function()
     )
     -- report payouts
     local notice = ConditionalTokens:reportPayouts(
-      msgReportPayouts.Tags.QuestionId,
       msgReportPayouts.Tags.Payouts,
       msgReportPayouts
     )
@@ -327,10 +277,7 @@ describe("#market #conditionalTokens", function()
     -- assert notice
     assert.are.equals("Condition-Resolution-Notice", notice.Action)
     assert.are.equals(json.encode(msgReportPayouts.Tags.Payouts), notice.PayoutNumerators)
-    assert.are.equals(msgReportPayouts.Tags.QuestionId, notice.QuestionId)
     assert.are.equals(msgReportPayouts.From, notice.ResolutionAgent)
-    assert.are.equals(conditionId, notice.ConditionId)
-    assert.are.equals(tostring(outcomeSlotCount), notice.OutcomeSlotCount)
 	end)
 
   it("should fail to report payouts (not resolution agent)", function()
@@ -346,7 +293,6 @@ describe("#market #conditionalTokens", function()
     -- should throw an error
     assert.has.error(function()
       ConditionalTokens:reportPayouts(
-        msgReportPayouts.Tags.QuestionId,
         msgReportPayouts.Tags.Payouts,
         msgReportPayouts
       )
@@ -366,7 +312,6 @@ describe("#market #conditionalTokens", function()
     -- should throw an error
     assert.has.error(function()
       ConditionalTokens:reportPayouts(
-        msgReportPayouts.Tags.QuestionId,
         msgReportPayouts.Tags.Payouts,
         msgReportPayouts
       )
@@ -382,14 +327,12 @@ describe("#market #conditionalTokens", function()
     )
     -- report payouts
     ConditionalTokens:reportPayouts(
-      msgReportPayouts.Tags.QuestionId,
       msgReportPayouts.Tags.Payouts,
       msgReportPayouts
     )
     -- should throw an error
     assert.has.error(function()
       ConditionalTokens:reportPayouts(
-        msgReportPayouts.Tags.QuestionId,
         msgReportPayouts.Tags.Payouts,
         msgReportPayouts
       )
@@ -409,7 +352,6 @@ describe("#market #conditionalTokens", function()
     -- should throw an error
     assert.has.error(function()
       ConditionalTokens:reportPayouts(
-        msgReportPayouts.Tags.QuestionId,
         msgReportPayouts.Tags.Payouts,
         msgReportPayouts
       )
@@ -426,7 +368,6 @@ describe("#market #conditionalTokens", function()
     )
     -- report payouts
     ConditionalTokens:reportPayouts(
-      msgReportPayouts.Tags.QuestionId,
       msgReportPayouts.Tags.Payouts,
       msgReportPayouts
     )
@@ -448,7 +389,6 @@ describe("#market #conditionalTokens", function()
     }, ConditionalTokens.balancesById)
     -- assert notice
     assert.are.equals("Payout-Redemption-Notice", notice.Action)
-    assert.are.equals(conditionId, notice.ConditionId)
     assert.are.equals(quantity, notice.Payout)
     assert.are.equals(_G.ao.id, notice.Process)
 	end)
@@ -480,7 +420,6 @@ describe("#market #conditionalTokens", function()
     )
     -- report payouts
     ConditionalTokens:reportPayouts(
-      msgReportPayouts.Tags.QuestionId,
       msgReportPayouts.Tags.Payouts,
       msgReportPayouts
     )
@@ -492,34 +431,6 @@ describe("#market #conditionalTokens", function()
         msgRedeemPositions
       )
     end, "no stake to redeem")
-	end)
-
-  it("should get outcomeSlotCount (when prepared)", function()
-    -- get outcomeSlotCount
-    local result = ConditionalTokens:getOutcomeSlotCount(
-      msgOutcomeSlotCount
-    )
-    -- assert result
-    assert.are.equals(outcomeSlotCount, result)
-	end)
-
-  it("should fail to get outcomeSlotCount (missing conditionId)", function()
-    -- should throw an error
-    assert.has.error(function()
-      msgOutcomeSlotCount.Tags.ConditionId = nil
-      ConditionalTokens:getOutcomeSlotCount(
-        msgOutcomeSlotCount
-      )
-    end, "ConditionId is required!")
-	end)
-
-  it("should get condition id", function()
-    local result = ConditionalTokens.getConditionId(
-      resolutionAgent,
-      questionId,
-      outcomeSlotCount
-    )
-    assert.are.equals(conditionId, result)
 	end)
 
   it("should return total payout minus take fee", function()

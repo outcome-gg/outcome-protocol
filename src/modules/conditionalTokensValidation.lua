@@ -37,7 +37,6 @@ end
 --- Validates the reporrtPayouts message
 --- @param msg Message The message to be validated
 function ConditionalTokensValidation.reportPayouts(msg)
-  assert(msg.Tags.QuestionId, "QuestionId is required!")
   validatePayouts(msg.Tags.Payouts)
 end
 

@@ -17,7 +17,6 @@ local MarketFactory = {}
 local MarketFactoryMethods = {}
 local MarketFactoryNotices = require('modules.factoryNotices')
 local json = require('json')
-local crypto = require('.crypto')
 local constants = require('modules.constants')
 local marketProcessCode = require('modules.marketProcessCodeV1')
 
@@ -69,7 +68,6 @@ INFO METHOD
 --- @param msg Message The message received
 --- @return Message The info message
 function MarketFactoryMethods:info(msg)
-  print("self.collateralTokens", json.encode(self.collateralTokens))
   return msg.reply({
     Configurator = self.configurator,
     Incentives = self.incentives,
@@ -81,6 +79,23 @@ function MarketFactoryMethods:info(msg)
     MinimumPayment = self.minimumPayment,
     CollateralTokens = json.encode(self.collateralTokens),
   })
+end
+
+--[[
+================
+INTERNAL METHODS
+================
+]]
+
+--- Generate position IDs
+--- @param outcomeSlotCount number The number of outcome slots
+--- @return table<string> A basic partition based on outcomeSlotCount
+local function getPositionIds(outcomeSlotCount)
+  local positionIds = {}
+  for i = 1, outcomeSlotCount do
+    table.insert(positionIds, tostring(i))
+  end
+  return positionIds
 end
 
 --[[
@@ -99,11 +114,6 @@ WRITE METHODS
 --- @param msg Message The message received
 --- @return Message marketSpawnedNotice The market spawned notice
 function MarketFactoryMethods:spawnMarket(collateralToken, question, resolutionAgent, outcomeSlotCount, creatorFee, creatorFeeTarget, msg)
-  -- prepare condition
-  -- @dev TODO: remove conditionId & market dependencies
-  local questionId = self.getQuestionId(question)
-  local conditionId = self.getConditionId(resolutionAgent, questionId, outcomeSlotCount)
-  self:prepareCondition(conditionId, outcomeSlotCount)
   -- spawn market
   ao.spawn(ao.env.Module.Id, {
     -- Factory parameters
@@ -125,8 +135,7 @@ function MarketFactoryMethods:spawnMarket(collateralToken, question, resolutionA
     ["CreatorFee"] = tostring(creatorFee),
     ["CreatorFeeTarget"] = creatorFeeTarget,
     ["Question"] = question,
-    ["ConditionId"] = conditionId,
-    ["PositionIds"] = json.encode(self.getPositionIds(outcomeSlotCount)),
+    ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount)),
   })
   -- -- burn payment @dev TODO: decide if required
   -- ao.send({Target = msg.From, Action = "Burn", Quantity = msg.Tags.Quantity})
@@ -311,70 +320,6 @@ function MarketFactoryMethods:spawnedMarket(msg)
   if not self.marketsInitByCreator[creator] then self.marketsInitByCreator[creator] = {} end
   table.insert(self.marketsInitByCreator[creator], processId)
   return true
-end
-
---[[
-================
-INTERNAL METHODS
-================
-]]
-
--- @dev Constructs a question ID from a question string and ao.id.
--- @param question The question to be answered by the resolutionAgent.
-function MarketFactoryMethods.getQuestionId(question)
-  return crypto.digest.keccak256(question .. ao.id).asHex()
-end
-
--- @dev Constructs a condition ID from a resolutionAgent, a question ID, and the outcome slot count for the question.
--- @param ResolutionAgent The process assigned to report the result for the prepared condition.
--- @param QuestionId An identifier for the question to be answered by the resolutionAgent.
--- @param OutcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
-function MarketFactoryMethods.getConditionId(resolutionAgent, questionId, outcomeSlotCount)
-  return crypto.digest.keccak256(resolutionAgent .. questionId .. outcomeSlotCount).asHex()
-end
-
--- @dev Constructs an outcome collection ID from a condition ID and outcome collection.
--- @param conditionId Condition ID of the outcome collection to combine with the parent outcome collection.
--- @param indexSet Index set of the outcome collection to combine with the parent outcome collection.
-function MarketFactoryMethods.getCollectionId(conditionId, indexSet)
-  -- Hash parentCollectionId & (conditionId, indexSet) separately
-  return crypto.digest.keccak256(conditionId .. indexSet).asHex()
-end
-
--- @dev This function prepares a condition by initializing a payout vector associated with the condition.
--- If the condition has already been prepared, the function returns the conditionId.
--- @param conditionId An identifier for the condition to be prepared.
--- @param outcomeSlotCount The number of outcome slots which should be used for this condition. Must not exceed 256.
-function MarketFactoryMethods:prepareCondition(conditionId, outcomeSlotCount)
-  -- Return conditionId if the condition has already been prepared.
-  if self.payoutNumerators[conditionId] then
-    -- Return false if the condition has already been resolved.
-    if self.payoutDenominator[conditionId] ~= 0 then
-      return false, conditionId
-    end
-    -- Return true otherwise.
-    return true, conditionId
-  end
-  -- Initialize the payout vector associated with the condition.
-  self.payoutNumerators[conditionId] = {}
-  for _ = 1, outcomeSlotCount do
-    table.insert(self.payoutNumerators[conditionId], 0)
-  end
-  -- Initialize the denominator to zero to indicate that the condition has not been resolved.
-  self.payoutDenominator[conditionId] = 0
-  -- Return conditionId once prepared.
-  return true, conditionId
-end
-
---- Generate position IDs
---- @param outcomeSlotCount number The number of outcome slots
---- @return table<string> A basic partition based on outcomeSlotCount
-function MarketFactoryMethods.getPositionIds(outcomeSlotCount)
-  local positionIds = {}
-  for i = 1, outcomeSlotCount do
-    table.insert(positionIds, tostring(i))
-  end
-  return positionIds
 end
 
 return MarketFactory

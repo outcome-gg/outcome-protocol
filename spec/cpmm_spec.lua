@@ -322,7 +322,6 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- assert initial state
     assert.is.same(incentives, CPMM.incentives)
     assert.is.same(configurator, CPMM.configurator)
-    assert.is.same(true, CPMM.initialized)
     assert.is.same({}, CPMM.poolBalances)
     assert.is.same({}, CPMM.withdrawnFees)
     assert.is.same('0', CPMM.feePoolWeight)

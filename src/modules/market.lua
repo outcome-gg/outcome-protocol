@@ -31,8 +31,10 @@ local conditionalTokensValidation = require('modules.conditionalTokensValidation
 --- Creates a new Market instance
 --- @param configurator string The process ID of the configurator
 --- @param incentives string The process ID of the incentives controller
---- @param collateralToken string The address of the collateral token
---- @param conditionId string The condition ID
+--- @param collateralToken string The process ID of the collateral token
+--- @param resolutionAgent string The process ID of the resolution agent
+--- @param creator string The address of the market creator
+--- @param question string The market question
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name 
 --- @param ticker string The CPMM token(s) ticker 
@@ -47,7 +49,9 @@ function Market:new(
   configurator,
   incentives,
   collateralToken,
-  conditionId,
+  resolutionAgent,
+  creator,
+  question,
   positionIds,
   name,
   ticker,
@@ -63,7 +67,7 @@ function Market:new(
       configurator,
       incentives,
       collateralToken,
-      conditionId,
+      resolutionAgent,
       positionIds,
       name,
       ticker,
@@ -73,7 +77,9 @@ function Market:new(
       creatorFeeTarget,
       protocolFee,
       protocolFeeTarget
-    )
+    ),
+    question = question,
+    creator = creator
   }
   setmetatable(market, { __index = MarketMethods })
   return market
@@ -88,11 +94,13 @@ function MarketMethods:info(msg)
     Ticker = self.cpmm.token.ticker,
     Logo = self.cpmm.token.logo,
     Denomination = tostring(self.cpmm.token.denomination),
-    ConditionId = self.cpmm.tokens.conditionId,
     PositionIds = json.encode(self.cpmm.tokens.positionIds),
     CollateralToken = self.cpmm.tokens.collateralToken,
     Configurator = self.cpmm.configurator,
     Incentives = self.cpmm.incentives,
+    ResolutionAgent = self.cpmm.resolutionAgent,
+    Question = self.question,
+    Creator = self.creator,
     LpFee = tostring(self.cpmm.lpFee),
     LpFeePoolWeight = self.cpmm.feePoolWeight,
     LpFeeTotalWithdrawn = self.cpmm.totalWithdrawnFees,
@@ -332,7 +340,7 @@ end
 function MarketMethods:reportPayouts(msg)
   conditionalTokensValidation.reportPayouts(msg)
   local payouts = json.decode(msg.Tags.Payouts)
-  return self.cpmm.tokens:reportPayouts(msg.Tags.QuestionId, payouts, msg)
+  return self.cpmm.tokens:reportPayouts(payouts, msg)
 end
 
 --- Redeem positions

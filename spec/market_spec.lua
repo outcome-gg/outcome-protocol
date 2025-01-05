@@ -10,9 +10,9 @@ local marketFactory = ""
 local minter = ""
 local sender = ""
 local recipient = ""
-local conditionId = ""
 local collateralToken = ""
-local outcomeSlotCount = ""
+local creator = ""
+local question = ""
 local name = ""
 local ticker = ""
 local logo = ""
@@ -40,7 +40,6 @@ local returnAmount = ""
 local investmentAmount = ""
 local maxOutcomeTokensToSell = ""
 local resolutionAgent = ""
-local questionId = ""
 local tokenIds = {}
 local quantities = {}
 local remainingBalances = {}
@@ -96,9 +95,9 @@ describe("#market", function()
     sender = "test-this-is-valid-arweave-wallet-address-1"
     recipient = "test-this-is-valid-arweave-wallet-address-2"
     -- @dev mock init state for testing
-    conditionId = tostring(crypto.digest.keccak256(resolutionAgent .. questionId .. tostring(outcomeSlotCount)).asHex())
     collateralToken = "test-this-is-valid-arweave-wallet-address-2"
-    outcomeSlotCount = "2"
+    creator = "test-this-is-valid-arweave-wallet-address-3"
+    question = "What is the meaning of life?"
     name = "Test Market"
     ticker = "TST"
     logo = "https://test.com/logo.png"
@@ -125,7 +124,6 @@ describe("#market", function()
     positionIds = {"1", "2"}
     distribution = {50, 50}
     resolutionAgent = "test-this-is-valid-arweave-wallet-address-10"
-    questionId = "this-is-a-valid-question-id"
     payouts = { 1, 0 }
     tokenIds = { "1", "2" }
     quantities = { "100", "200" }
@@ -135,7 +133,9 @@ describe("#market", function()
       configurator,
       incentives,
       collateralToken,
-      conditionId,
+      resolutionAgent,
+      creator,
+      question,
       positionIds,
       name,
       ticker,
@@ -150,9 +150,10 @@ describe("#market", function()
 		msgInit = {
       From = marketFactory,
       Tags = {
-        ConditionId = conditionId,
         CollateralToken = collateralToken,
-        OutcomeSlotCount = outcomeSlotCount,
+        ResolutionAgent = resolutionAgent,
+        Creator = creator,
+        Question = question,
         Name = name,
         Ticker = ticker,
         Logo = logo,
@@ -327,7 +328,6 @@ describe("#market", function()
         Process = _G.ao.id,
         Stakeholder = sender,
         CollateralToken = collateralToken,
-        ConditionId = conditionId,
         Quantity = quantity,
       },
       ["X-Action"] = "FOO",
@@ -347,7 +347,6 @@ describe("#market", function()
     msgReportPayouts = {
       From = resolutionAgent,
       Tags = {
-        QuestionId = questionId,
         Payouts = json.encode(payouts),
       },
       reply = function(message) return message end
@@ -480,7 +479,7 @@ describe("#market", function()
       balancesById,
       totalSupplyById,
       denomination,
-      conditionId,
+      resolutionAgent,
       collateralToken,
       positionIds,
       creatorFee,
@@ -491,7 +490,6 @@ describe("#market", function()
     -- assert initial state
     assert.is.same(incentives, Market.cpmm.incentives)
     assert.is.same(configurator, Market.cpmm.configurator)
-    assert.is.same(true, Market.cpmm.initialized)
     assert.is.same({}, Market.cpmm.poolBalances)
     assert.is.same({}, Market.cpmm.withdrawnFees)
     assert.is.same('0', Market.cpmm.feePoolWeight)
@@ -1094,10 +1092,7 @@ describe("#market", function()
     -- assert notice
     assert.are.equals("Condition-Resolution-Notice", notice.Action)
     assert.are.equals(msgReportPayouts.Tags.Payouts, notice.PayoutNumerators)
-    assert.are.equals(msgReportPayouts.Tags.QuestionId, notice.QuestionId)
     assert.are.equals(msgReportPayouts.From, notice.ResolutionAgent)
-    assert.are.equals(conditionId, notice.ConditionId)
-    assert.are.equals(tostring(outcomeSlotCount), notice.OutcomeSlotCount)
 	end)
 
   it("should redeem positions", function()

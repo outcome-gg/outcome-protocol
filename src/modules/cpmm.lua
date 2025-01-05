@@ -28,7 +28,6 @@ local conditionalTokens = require('modules.conditionalTokens')
 --- @class CPMM
 --- @field incentives string The process ID of the incentives controller
 --- @field configurator string The process ID of the configurator
---- @field initialized boolean The flag that is set to true once initialized
 --- @field poolBalances table<string, ...> The pool balance for each respective position ID
 --- @field withdrawnFees table<string, string> The amount of fees withdrawn by an account
 --- @field feePoolWeight string The total amount of fees collected
@@ -37,8 +36,8 @@ local conditionalTokens = require('modules.conditionalTokens')
 --- Creates a new CPMM instance
 --- @param configurator string The process ID of the configurator
 --- @param incentives string The process ID of the incentives controller
---- @param collateralToken string The address of the collateral token
---- @param conditionId string The condition ID
+--- @param collateralToken string The process ID of the collateral token
+--- @param resolutionAgent string The process ID of the resolution agent
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name 
 --- @param ticker string The CPMM token(s) ticker 
@@ -49,7 +48,7 @@ local conditionalTokens = require('modules.conditionalTokens')
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
 --- @return CPMM cpmm The new CPMM instance 
-function CPMM:new(configurator, incentives, collateralToken, conditionId, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
+function CPMM:new(configurator, incentives, collateralToken, resolutionAgent, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
   local cpmm = {
     configurator = configurator,
     incentives = incentives,
@@ -57,8 +56,7 @@ function CPMM:new(configurator, incentives, collateralToken, conditionId, positi
     withdrawnFees = {},
     feePoolWeight = "0",
     totalWithdrawnFees = "0",
-    lpFee = tonumber(lpFee),
-    initialized = true
+    lpFee = tonumber(lpFee)
   }
   cpmm.token = token:new(
     name .. " LP Token",
@@ -75,7 +73,7 @@ function CPMM:new(configurator, incentives, collateralToken, conditionId, positi
     {}, -- balancesById
     {}, -- totalSupplyById
     constants.denomination,
-    conditionId,
+    resolutionAgent,
     collateralToken,
     positionIds,
     creatorFee,

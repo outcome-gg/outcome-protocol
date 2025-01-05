@@ -30,9 +30,8 @@ local json = require("json")
 --- @field balancesById table<string, table<string, string>> The account token balances by ID
 --- @field totalSupplyById table<string, string> The total supply of the token by ID
 --- @field denomination number The number of decimals
---- @field conditionId string The condition ID
+--- @field resolutionAgent string The process ID of the resolution agent
 --- @field collateralToken string The process ID of the collateral token
---- @field outcomeSlotCount number The number of outcome slots
 --- @field positionIds table<string> The position IDs representing outcomes
 --- @field payoutNumerators table<number> The relative payouts for each outcome slot
 --- @field payoutDenominator number The sum of payout numerators, zero if unreported
@@ -48,7 +47,7 @@ local json = require("json")
 --- @param balancesById table<string, table<string, string>> The account token balances by ID
 --- @param totalSupplyById table<string, string> The total supply of the token by ID
 --- @param denomination number The number of decimals
---- @param conditionId string The condition ID
+--- @param resolutionAgent string The process ID of the resolution agent
 --- @param collateralToken string The process ID of the collateral token
 --- @param positionIds table<string> The position IDs representing outcomes
 --- @param creatorFee number The creator fee to be paid, in basis points
@@ -63,7 +62,7 @@ function ConditionalTokens:new(
   balancesById,
   totalSupplyById,
   denomination,
-  conditionId,
+  resolutionAgent,
   collateralToken,
   positionIds,
   creatorFee,
@@ -73,9 +72,8 @@ function ConditionalTokens:new(
 )
   ---@class ConditionalTokens : SemiFungibleTokens
   local conditionalTokens = SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)
-  conditionalTokens.conditionId = conditionId
+  conditionalTokens.resolutionAgent = resolutionAgent
   conditionalTokens.collateralToken = collateralToken
-  conditionalTokens.outcomeSlotCount = #positionIds
   conditionalTokens.positionIds = positionIds
   conditionalTokens.creatorFee = tonumber(creatorFee) or 0
   conditionalTokens.creatorFeeTarget = creatorFeeTarget
@@ -122,7 +120,7 @@ function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity,
   -- Mint the stake in the split target positions.
   self:batchMint(from, self.positionIds, quantities, msg)
   -- Send notice.
-  return self.positionSplitNotice(from, collateralToken, self.conditionId, quantity, msg)
+  return self.positionSplitNotice(from, collateralToken, quantity, msg)
 end
 
 --- Merge positions
@@ -153,25 +151,20 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     })
   end
   -- Send notice.
-  return self.positionsMergeNotice(self.conditionId, quantity, msg)
+  return self.positionsMergeNotice(quantity, msg)
 end
 
 --- Report payouts
---- @param questionId string The question ID the resolution agent is answering for (TODO: remove)
 --- @param payouts table<number> The resolution agent's answer
 --- @param msg Message The message received
 --- @return Message The condition resolution notice
-function ConditionalTokensMethods:reportPayouts(questionId, payouts, msg)
-  -- IMPORTANT, the payouts length accuracy is enforced because outcomeSlotCount is part of the hash.
-  local outcomeSlotCount = #payouts
-  assert(#payouts == self.outcomeSlotCount, "Payouts must match outcome slot count!")
-  -- IMPORTANT, the resolutionAgent is enforced to be the sender because it's part of the hash.
-  local conditionId = self.getConditionId(msg.From, questionId, tostring(outcomeSlotCount))
-  assert(conditionId == self.conditionId, "Sender not resolution agent!")
+function ConditionalTokensMethods:reportPayouts(payouts, msg)
+  assert(#payouts == #self.positionIds, "Payouts must match outcome slot count!")
+  assert(msg.From == self.resolutionAgent, "Sender not resolution agent!")
   assert(self.payoutDenominator == 0, "payout denominator already set")
   -- Set the payout vector for the condition.
   local den = 0
-  for i = 1, outcomeSlotCount do
+  for i = 1, #self.positionIds do
     local num = payouts[i]
     den = den + num
     assert(self.payoutNumerators[i] == 0, "payout numerator already set")
@@ -180,7 +173,7 @@ function ConditionalTokensMethods:reportPayouts(questionId, payouts, msg)
   assert(den > 0, "payout is all zeroes")
   self.payoutDenominator = den
   -- Send the condition resolution notice.
-  return self.conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, self.payoutNumerators, msg)
+  return self.conditionResolutionNotice(msg.From, self.payoutNumerators, msg)
 end
 
 --- Redeem positions
@@ -210,26 +203,7 @@ function ConditionalTokensMethods:redeemPositions(msg)
     self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)
   end
   -- Send notice.
-  return self.payoutRedemptionNotice(self.collateralToken, self.conditionId, totalPayout, msg)
-end
-
---- Get OutcomeSlotCount
---- Gets the number of outcome slots associated with a condition
----@param msg Message The message received
----@return number The number of outcome slots, zero if the condition has not been prepared
-function ConditionalTokensMethods:getOutcomeSlotCount(msg)
-  assert(msg.Tags.ConditionId, "ConditionId is required!")
-  return self.payoutNumerators and #self.payoutNumerators or 0
-end
-
---- Get ConditionId
---- Constructs a condition ID from a resolutionAgent, question ID, and the outcome slot count
---- @param resolutionAgent string The process ID assigned to report the result for the prepared condition
---- @param questionId string An identifier for the question to be answered by the resolutionAgent
---- @param outcomeSlotCount string The number of outcome slots used for this condition. Must not exceed 256.
---- @return string The condition ID
-function ConditionalTokensMethods.getConditionId(resolutionAgent, questionId, outcomeSlotCount)
-  return crypto.digest.keccak256(resolutionAgent .. questionId .. outcomeSlotCount).asHex()
+  return self.payoutRedemptionNotice(self.collateralToken, totalPayout, msg)
 end
 
 --- Return total payout minus take fee

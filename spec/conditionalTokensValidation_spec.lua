@@ -90,14 +90,6 @@ describe("#market #conditionalTokens #conditionalTokensValidation", function()
     end)
 	end)
 
-  it("should fail report payouts validation when missing questionId", function()
-    -- should throw an error
-		assert.has.error(function()
-      msgPayouts.Tags.QuestionId = nil
-      conditionalTokensValidation.reportPayouts(msgPayouts)
-    end, "QuestionId is required!")
-	end)
-
   it("should fail report payouts validation when missing payouts", function()
     -- should throw an error
 		assert.has.error(function()

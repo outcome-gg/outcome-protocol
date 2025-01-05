@@ -31,8 +31,9 @@ Version = "1.0.1"
 --- @field configurator string The Configurator process ID  
 --- @field incentives string The Incentives process ID  
 --- @field collateralToken string The Collateral Token process ID  
---- @field marketId string The Market process ID  
---- @field conditionId string The Condition process ID  
+--- @field resolutionAgent string The Resolution Agent process ID
+--- @field creator string The Creator address
+--- @field question string The Market question 
 --- @field positionIds table<string> The Position process IDs  
 --- @field name string The Market name  
 --- @field ticker string The Market ticker  
@@ -51,7 +52,7 @@ local function retrieveMarketConfig()
     configurator = ao.env.Process.Tags.Configurator or '',
     incentives = ao.env.Process.Tags.Incentives or '',
     collateralToken = ao.env.Process.Tags.CollateralToken or '',
-    conditionId = ao.env.Process.Tags.ConditionId or '',
+    question = ao.env.Process.Tags.Question or '',
     positionIds = json.decode(ao.env.Process.Tags.PositionIds or '[]'),
     name = ao.env.Process.Tags.Name or '',
     ticker = ao.env.Process.Tags.Ticker or '',
@@ -77,7 +78,9 @@ if not Market or Env == 'DEV' then
     marketConfig.configurator,
     marketConfig.incentives,
     marketConfig.collateralToken,
-    marketConfig.conditionId,
+    marketConfig.resolutionAgent,
+    marketConfig.creator,
+    marketConfig.question,
     marketConfig.positionIds,
     marketConfig.name,
     marketConfig.ticker,
