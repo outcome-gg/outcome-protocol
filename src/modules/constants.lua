@@ -8,23 +8,20 @@ See market.lua for full license details.
 local constants = {}
 local json = require('json')
 -- Market Factory
-constants.configurator = "test-this-is-valid-arweave-wallet-address-1"
-constants.incentives = "test-this-is-valid-arweave-wallet-address-2"
-constants.collateralToken = "test-this-is-valid-arweave-wallet-address-3"
-constants.conditionId = "test-this-is-valid-condition-id-1"
-constants.positionIds = json.encode({"1", "2"})
-constants.marketName = "Outcome Market"
-constants.marketTicker = "OUTCOME"
-constants.marketLogo = "https://test.com/logo.png"
-constants.lpFee = "100"
-constants.creatorFee = "250"
-constants.creatorFeeTarget = "test-this-is-valid-arweave-wallet-address-4"
-constants.protocolFee = "250"
-constants.protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-5"
-constants.maximumTakeFee = "500"
-constants.utilityToken = "test-this-is-valid-arweave-wallet-address-6"
-constants.minimumPayment = "1000"
-constants.collateralTokens = {"test-this-is-valid-arweave-wallet-address-7"}
+constants.marketFactory = {
+  configurator = "test-this-is-valid-arweave-wallet-address-1",
+  incentives = "test-this-is-valid-arweave-wallet-address-2",
+  namePrefix = "Outcome Market",
+  tickerPrefix = "OUTCOME",
+  logo = "https://test.com/logo.png",
+  lpFee = "100",
+  protocolFee = "250",
+  protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-3",
+  maximumTakeFee = "500",
+  utilityToken = "test-this-is-valid-arweave-wallet-address-4",
+  minimumPayment = "1000",
+  collateralTokens = {"test-this-is-valid-arweave-wallet-address-5"}
+}
 -- Market
 constants.testMarketConfig = {
   configurator = "test-this-is-valid-arweave-wallet-address-6",

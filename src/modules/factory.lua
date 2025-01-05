@@ -25,33 +25,44 @@ local marketProcessCode = require('modules.marketProcessCodeV1')
 --- @field payoutNumerators table<string, table<number>> Payout Numerators for each outcomeSlot
 --- @field payoutDenominator table<string, number> Payout Denominator
 --- @field messageToProcessMapping table<string, string> Mapping of message IDs to process IDs
+--- @field marketsSpawnedByCreator table<string, table<string>> List of markets spawned by creator
 --- @field marketsPendingInit table<string> List of markets pending initialization
 --- @field marketsInit table<string> List of initialized markets
---- @field marketsInitByCreator table<string, table<string>> List of initialized markets by creator
 --- @field marketProcessCode table<string, string> Market process code
 
 --- Create a new MarketFactory instance
 --- @return MarketFactory marketFactory The new MarketFactory instance
-function MarketFactory:new()
+function MarketFactory:new(
+  configurator,
+  incentives,
+  namePrefix,
+  tickerPrefix,
+  logo,
+  lpFee,
+  protocolFee,
+  protocolFeeTarget,
+  maximumTakeFee,
+  utilityToken,
+  minimumPayment,
+  collateralTokens
+)
   local marketFactory = {
-    configurator = constants.configurator,
-    incentives = constants.incentives,
-    marketName = constants.marketName,
-    marketTicker = constants.marketTicker,
-    marketLogo = constants.marketLogo,
-    lpFee = constants.lpFee,
-    protocolFee = constants.protocolFee,
-    protocolFeeTarget = constants.protocolFeeTarget,
-    maximumTakeFee = constants.maximumTakeFee,
-    utilityToken = constants.utilityToken,
-    minimumPayment = constants.minimumPayment,
-    collateralTokens = constants.collateralTokens,
-    payoutNumerators = {},
-    payoutDenominator = {},
+    configurator = configurator,
+    incentives = incentives,
+    namePrefix = namePrefix,
+    tickerPrefix = tickerPrefix,
+    logo = logo,
+    lpFee = lpFee,
+    protocolFee = protocolFee,
+    protocolFeeTarget = protocolFeeTarget,
+    maximumTakeFee = maximumTakeFee,
+    utilityToken = utilityToken,
+    minimumPayment = minimumPayment,
+    collateralTokens = collateralTokens,
     messageToProcessMapping = {},
+    marketsSpawnedByCreator = {},
     marketsPendingInit = {},
     marketsInit = {},
-    marketsInitByCreator = {},
     marketProcessCode = marketProcessCode
   }
   setmetatable(marketFactory, { __index = MarketFactoryMethods })
@@ -106,20 +117,21 @@ WRITE METHODS
 
 --- Spawn market
 --- @param collateralToken string The collateral token address
+--- @param resolutionAgent string The process assigned to report the market result
 --- @param question string The question to be answered by the resolutionAgent
---- @param resolutionAgent string The process assigned to report the result for the prepared condition
 --- @param outcomeSlotCount number The number of outcome slots which should be used for this condition
+--- @param creator string The creator address
 --- @param creatorFee number The creator fee
 --- @param creatorFeeTarget string The creator fee target
 --- @param msg Message The message received
 --- @return Message marketSpawnedNotice The market spawned notice
-function MarketFactoryMethods:spawnMarket(collateralToken, question, resolutionAgent, outcomeSlotCount, creatorFee, creatorFeeTarget, msg)
+function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, question, outcomeSlotCount, creator, creatorFee, creatorFeeTarget, msg)
   -- spawn market
   ao.spawn(ao.env.Module.Id, {
     -- Factory parameters
     ["Action"] = "Spawn-Market",
     ["Original-Msg-Id"] = msg.Id,
-    -- Admin-controlled market parameters
+    -- Configurator-controlled parameters
     ["Authority"] = ao.authorities[1],
     ["Name"] = self.marketName,
     ["Ticker"] = self.marketTicker,
@@ -129,18 +141,17 @@ function MarketFactoryMethods:spawnMarket(collateralToken, question, resolutionA
     ["Incentives"] = self.incentives,
     ["ProtocolFee"] = tostring(self.protocolFee),
     ["ProtocolFeeTarget"] = self.protocolFeeTarget,
-    -- Creator-controlled market parameters
+    -- Creator-controlled parameters
+    ["ResolutionAgent "] = resolutionAgent,
     ["CollateralToken"] = collateralToken,
-    ["Creator"] = msg.Sender,
+    ["Creator"] = creator,
     ["CreatorFee"] = tostring(creatorFee),
     ["CreatorFeeTarget"] = creatorFeeTarget,
     ["Question"] = question,
     ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount)),
   })
-  -- -- burn payment @dev TODO: decide if required
-  -- ao.send({Target = msg.From, Action = "Burn", Quantity = msg.Tags.Quantity})
   -- send notice
-  return MarketFactoryNotices.spawnMarketNotice(collateralToken, msg.Sender, creatorFee, creatorFeeTarget, question, conditionId, outcomeSlotCount, msg)
+  return MarketFactoryNotices.spawnMarketNotice(resolutionAgent, collateralToken, msg.Sender, creatorFee, creatorFeeTarget, question, outcomeSlotCount, msg)
 end
 
 function MarketFactoryMethods:initMarket(msg)
@@ -153,12 +164,10 @@ function MarketFactoryMethods:initMarket(msg)
       Action = "Eval",
       Data = self.marketProcessCode,
     })
+    -- add to markets init
     table.insert(self.marketsInit, processIds[i])
   end
-  -- update tables
-  for i = 1, #processIds do
-    table.insert(self.marketsInit, processIds[i])
-  end
+  -- reset pending init
   self.marketsPendingInit = {}
   -- send notice
   return MarketFactoryNotices.initMarketNotice(processIds, msg)
@@ -175,11 +184,11 @@ function MarketFactoryMethods:marketsPending(msg)
 end
 
 function MarketFactoryMethods:marketsInitialized(msg)
-  return msg.reply({Data = json.encode(self.marketsInitialized)})
+  return msg.reply({Data = json.encode(self.marketsInit)})
 end
 
-function MarketFactoryMethods:marketsInitializedByCreator(msg)
-  local creatorMarkets = self.marketsInitByCreator[msg.Tags.Creator] or {}
+function MarketFactoryMethods:marketsByCreator(msg)
+  local creatorMarkets = self.marketsSpawnedByCreator[msg.Tags.Creator] or {}
   return msg.reply({Data = json.encode(creatorMarkets)})
 end
 
@@ -189,7 +198,7 @@ function MarketFactoryMethods:getProcessId(msg)
 end
 
 function MarketFactoryMethods:getLatestProcessIdForCreator(creator, msg)
-  local creatorMarkets = self.marketsInitByCreator[creator] or {}
+  local creatorMarkets = self.marketsSpawnedByCreator[creator] or {}
   return msg.reply({Data = creatorMarkets[#creatorMarkets]})
 end
 
@@ -316,9 +325,9 @@ function MarketFactoryMethods:spawnedMarket(msg)
   self.messageToProcessMapping[originalMsgId] = processId
   -- add to pending init
   table.insert(self.marketsPendingInit, processId)
-  -- add to creator init
-  if not self.marketsInitByCreator[creator] then self.marketsInitByCreator[creator] = {} end
-  table.insert(self.marketsInitByCreator[creator], processId)
+  -- add to pending by creator
+  if not self.marketsPendingByCreator[creator] then self.marketsPendingByCreator[creator] = {} end
+  table.insert(self.marketsPendingByCreator[creator], processId)
   return true
 end
 

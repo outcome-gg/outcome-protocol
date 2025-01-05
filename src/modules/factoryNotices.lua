@@ -9,24 +9,24 @@ local MarketFactoryNotices = {}
 local json = require('json')
 
 --- Spawn market notice
+--- @param resolutionAgent string The resolution agent address
 --- @param collateralToken string The collateral token address
 --- @param creator string The creator address
 --- @param creatorFee number The creator fee
 --- @param creatorFeeTarget string The creator fee target
 --- @param question string The market question
---- @param conditionId string The condition ID
 --- @param outcomeSlotCount number The number of outcome slots
 --- @param msg Message The message received
 --- @return Message spawnMarketNotice The spawn market notice
-function MarketFactoryNotices.spawnMarketNotice(collateralToken, creator, creatorFee, creatorFeeTarget, question, conditionId, outcomeSlotCount, msg)
+function MarketFactoryNotices.spawnMarketNotice(resolutionAgent, collateralToken, creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, msg)
   return msg.reply({
     Action = "Market-Spawned-Notice",
+    ResolutionAgent = resolutionAgent,
     CollateralToken = collateralToken,
     Creator = creator,
     CreatorFee = creatorFee,
     CreatorFeeTarget = creatorFeeTarget,
     Question = question,
-    ConditionId = conditionId,
     OutcomeSlotCount = outcomeSlotCount,
     ["Original-Msg-Id"] = msg.Id
   })
@@ -147,7 +147,7 @@ end
 --- Transfer notice
 --- @param token string The token address
 --- @param recipient string The recipient address
---- @param quantity number The quantity to transfer
+--- @param quantity string The quantity to transfer
 --- @param msg Message The message received
 --- @return Message transferNotice The transfer notice
 function MarketFactoryNotices.transferNotice(token, recipient, quantity, msg)

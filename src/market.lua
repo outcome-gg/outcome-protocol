@@ -26,7 +26,7 @@ MARKET
 Env = "DEV"
 Version = "1.0.1"
 
---- Represents Market Configuration  
+--- Represents the Market Configuration  
 --- @class MarketConfiguration  
 --- @field configurator string The Configurator process ID  
 --- @field incentives string The Incentives process ID  

@@ -15,6 +15,21 @@ _G.ao = {
 		end
 		return obj
 	end,
+  spawn = function()
+    return {
+      reply = function(msg)
+        return msg
+      end
+    }
+  end,
+  env = {
+    Module = {
+      Id = "test"
+    }
+  },
+  authorities = {
+    "test"
+  },
 	id = "test"
 }
 

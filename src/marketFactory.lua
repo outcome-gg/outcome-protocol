@@ -15,6 +15,8 @@ without explicit written permission from Outcome.
 
 local marketFactory = require('modules.factory')
 local marketFactoryValidation = require('modules.factoryValidation')
+local constants = require('modules.constants')
+local json = require('json')
 
 --[[
 ==============
@@ -26,8 +28,60 @@ Name = "Outcome Market Factory"
 Version = '1.0.1'
 Env = 'DEV'
 
+--- Represents the Market Factory Configuration  
+--- @class MarketFactoryConfiguration  
+--- @field configurator string The Configurator process ID  
+--- @field incentives string The Incentives process ID  
+--- @field namePrefix string The Market name prefix
+--- @field tickerPrefix string The Market ticker prefix
+--- @field logo string The Market default logo  
+--- @field lpFee number The Market LP fee  
+--- @field protocolFee number The Market Protocol fee  
+--- @field protocolFeeTarget string The Market Protocol fee target  
+--- @field maximumTakeFee number The maximum market take fee
+--- @field minimumPayment number The minimum payment to spawn a market
+--- @field utilityToken string The utility token address
+--- @field collateralTokens table The approved collateral tokens
+
+--- Retrieve Market Factory Configuration  
+--- Fetches configuration parameters, stored as constants
+--- @return MarketFactoryConfiguration marketFactoryConfiguration The market factory configuration  
+local function retrieveMarketFactoryConfig()
+  local config = {
+    configurator = constants.marketFactory.configurator,
+    incentives = constants.marketFactory.incentives,
+    namePrefix = constants.marketFactory.namePrefix,
+    tickerPrefix = constants.marketFactory.tickerPrefix,
+    logo = constants.marketFactory.logo,
+    lpFee = constants.marketFactory.lpFee,
+    protocolFee = constants.marketFactory.protocolFee,
+    protocolFeeTarget = constants.marketFactory.protocolFeeTarget,
+    maximumTakeFee = constants.marketFactory.maximumTakeFee,
+    minimumPayment = constants.marketFactory.minimumPayment,
+    utilityToken = constants.marketFactory.utilityToken,
+    collateralTokens = constants.marketFactory.collateralTokens
+  }
+  return config
+end
+
 -- @dev Reset state while in DEV mode
-if not MarketFactory or Env == 'DEV' then MarketFactory = marketFactory:new() end
+if not MarketFactory or Env == 'DEV' then
+  local marketFactoryConfig = retrieveMarketFactoryConfig()
+  MarketFactory = marketFactory:new(
+    marketFactoryConfig.configurator,
+    marketFactoryConfig.incentives,
+    marketFactoryConfig.namePrefix,
+    marketFactoryConfig.tickerPrefix,
+    marketFactoryConfig.logo,
+    marketFactoryConfig.lpFee,
+    marketFactoryConfig.protocolFee,
+    marketFactoryConfig.protocolFeeTarget,
+    marketFactoryConfig.maximumTakeFee,
+    marketFactoryConfig.minimumPayment,
+    marketFactoryConfig.utilityToken,
+    marketFactoryConfig.collateralTokens
+  )
+end
 
 --[[
 ========
@@ -75,9 +129,11 @@ WRITE HANDLERS
 Handlers.add("Spawn-Market", isSpawnMarket, function(msg)
   marketFactoryValidation.validateSpawnMarket(msg, MarketFactory.collateralTokens, MarketFactory.minimumFundingAmounts)
   return MarketFactory:spawnMarket(
-    msg.Tags["X-Question"],
+    msg.Tags["X-CollateralToken"],
     msg.Tags["X-ResolutionAgent"],
+    msg.Tags["X-Question"],
     tonumber(msg.Tags["X-OutcomeSlotCount"]),
+    msg.Sender,
     tonumber(msg.Tags["X-CreatorFee"]),
     msg.Tags["X-CreatorFeeTarget"],
     msg
@@ -111,12 +167,12 @@ Handlers.add("Markets-Init", {Action = "Markets-Init"}, function(msg)
   return MarketFactory:marketsInitialized(msg)
 end)
 
---- Markets initialized by creator handler
+--- Markets by creator handler
 --- @param msg Message The message to handle
---- @return Message marketsInitializedByCreator The markets initialized by creator
-Handlers.add("Markets-Init-By-Creator", {Action = "Markets-Init-By-Creator"}, function(msg)
-  marketFactoryValidation.validateMarketsInitByCreator(msg)
-  return MarketFactory:marketsInitializedByCreator(msg)
+--- @return Message marketsByCreator The markets by creator
+Handlers.add("Markets-By-Creator", {Action = "Markets-By-Creator"}, function(msg)
+  marketFactoryValidation.validateMarketsByCreator(msg)
+  return MarketFactory:marketsByCreator(msg)
 end)
 
 --- Get process ID handler
