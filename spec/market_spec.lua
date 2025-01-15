@@ -1,10 +1,8 @@
 require("luacov")
 local market = require("modules.market")
-local cpmm = require("modules.cpmm")
-local token = require("modules.token")
-local tokens = require("modules.conditionalTokens")
+local token = require("market.modules.token")
+local tokens = require("market.modules.conditionalTokens")
 local json = require("json")
-local crypto = require(".crypto")
 
 local marketFactory = ""
 local minter = ""
@@ -33,8 +31,8 @@ local configurator = ""
 local newConfigurator = ""
 local incentives = ""
 local newIncentives = ""
+local activity = ""
 local quantity = ""
-local burnQuantity = ""
 local tokenId = ""
 local returnAmount = ""
 local investmentAmount = ""
@@ -114,6 +112,7 @@ describe("#market", function()
     configurator = "test-this-is-valid-arweave-wallet-address-6"
     newConfigurator = "test-this-is-valid-arweave-wallet-address-7"
     incentives = "test-this-is-valid-arweave-wallet-address-8"
+    activity = "test-this-is-valid-arweave-wallet-address-9"
     newIncentives = "test-this-is-valid-arweave-wallet-address-9"
     quantity = "100"
     tokenId = "1"
@@ -132,6 +131,7 @@ describe("#market", function()
     Market = market:new(
       configurator,
       incentives,
+      activity,
       collateralToken,
       resolutionAgent,
       creator,

@@ -2,7 +2,7 @@ require("luacov")
 local crypto = require(".crypto")
 local json = require("json")
 -- @dev loads the configurator handlers
-local configurator = require("configurator")
+local _ = require("configurator")
 
 local admin = ""
 local updateAdmin = ""

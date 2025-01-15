@@ -1,5 +1,5 @@
 require("luacov")
-local marketFactory = require("modules.marketFactory")
+local marketFactory = require("marketFactory.modules.marketFactory")
 local constants = require("modules.constants")
 local json = require("json")
 

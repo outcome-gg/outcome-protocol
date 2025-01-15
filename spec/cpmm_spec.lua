@@ -1,7 +1,7 @@
 require("luacov")
-local cpmm = require("modules.cpmm")
-local token = require("modules.token")
-local tokens = require("modules.conditionalTokens")
+local cpmm = require("market.modules.cpmm")
+local token = require("market.modules.token")
+local tokens = require("market.modules.conditionalTokens")
 local json = require("json")
 
 local marketFactory = ""
