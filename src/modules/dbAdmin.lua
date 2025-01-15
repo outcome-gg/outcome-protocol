@@ -35,4 +35,42 @@ function dbAdmin:exec(sql)
     return results
 end
 
+function dbAdmin:safeExec(sql, returnResults, ...)
+    returnResults = returnResults or false
+    local placeholderCount = select(2, sql:gsub("?", ""))
+    local params = {...}
+    assert(placeholderCount == #params, string.format("Expected %d parameters but got %d", placeholderCount, #params))
+    -- Sanitize parameters
+    for i, param in ipairs(params) do
+        if type(param) == "string" then
+            params[i] = string.format("'%s'", param:gsub("'", "''"))
+        elseif param == nil then
+            params[i] = "NULL"
+        else
+            params[i] = tostring(param)
+        end
+    end
+    -- Replace placeholders (`?`) with sanitized values
+    local query = sql:gsub("%?", function()
+        return table.remove(params, 1) or error("Placeholder mismatch: '?' without parameter.")
+    end)
+    -- Execute the final query
+    if returnResults then
+        local results = {}
+        local ok, err = pcall(function()
+            for row in self.db:nrows(query) do
+                table.insert(results, row)
+            end
+        end)
+        assert(ok, string.format("Database execution failed: %s\nQuery: %s", tostring(err), query))
+        return results
+    else
+        local ok, err = pcall(function()
+            self.db:exec(query)
+        end)
+        assert(ok, string.format("Database execution failed: %s\nQuery: %s", tostring(err), query))
+    end
+end
+
+
 return dbAdmin

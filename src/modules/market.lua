@@ -31,6 +31,7 @@ local conditionalTokensValidation = require('modules.conditionalTokensValidation
 --- Creates a new Market instance
 --- @param configurator string The process ID of the configurator
 --- @param incentives string The process ID of the incentives controller
+--- @param activity string The process ID of the activity process
 --- @param collateralToken string The process ID of the collateral token
 --- @param resolutionAgent string The process ID of the resolution agent
 --- @param creator string The address of the market creator
@@ -48,6 +49,7 @@ local conditionalTokensValidation = require('modules.conditionalTokensValidation
 function Market:new(
   configurator,
   incentives,
+  activity,
   collateralToken,
   resolutionAgent,
   creator,
@@ -79,7 +81,8 @@ function Market:new(
       protocolFeeTarget
     ),
     question = question,
-    creator = creator
+    creator = creator,
+    activity = activity
   }
   setmetatable(market, { __index = MarketMethods })
   return market
@@ -112,6 +115,42 @@ function MarketMethods:info(msg)
 end
 
 --[[
+=============
+ACTIVITY LOGS
+=============
+]]
+
+local function logFunding(activity, user, operation, quantity, msg)
+  return msg.forward(activity, {
+    Target = activity,
+    Action = "Log-Funding",
+    User = user,
+    Operation = operation,
+    Quantity = quantity,
+  })
+end
+
+local function logPrediction(activity, user, operation, outcome, quantity, price, msg)
+  return msg.forward(activity, {
+    Target = activity,
+    Action = "Log-Prediction",
+    User = user,
+    Operation = operation,
+    Outcome = outcome,
+    Quantity = quantity,
+    Price = price
+  })
+end
+
+local function logProbabilities(activity, probabilities, msg)
+  return msg.forward(activity, {
+    Target = activity,
+    Action = "Log-Prediction",
+    Probabilities = probabilities
+  })
+end
+
+--[[
 ==================
 CPMM WRITE METHODS
 ==================
@@ -128,6 +167,8 @@ function MarketMethods:addFunding(msg)
   -- @dev returns collateral tokens if invalid
   if self.cpmm:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
     self.cpmm:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, distribution, msg)
+    -- @dev log addFunding
+    logFunding(self.activity, msg.Tags.Sender, 'add', msg.Tags.Quantity, msg)
   end
 end
 
@@ -140,6 +181,8 @@ function MarketMethods:removeFunding(msg)
   -- @dev returns LP tokens if invalid
   if self.cpmm:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
     self.cpmm:removeFunding(msg.Tags.Sender, msg.Tags.Quantity, msg)
+    -- @dev log removeFunding
+    logFunding(self.activity, msg.Tags.Sender, 'remove', msg.Tags.Quantity, msg)
   end
 end
 
@@ -180,7 +223,12 @@ function MarketMethods:buy(msg)
     })
     assert(false, errorMessage)
   end
-  return self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
+  local notice = self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
+  -- @dev log prediction
+  local price = tostring.bint.__div(outcomeTokensToBuy, bint(msg.Tags.Quantity))
+  logPrediction(self.activity, onBehalfOf, "buy", msg.Tags['X-PositionId'], msg.Tags.Quantity, price, msg)
+  logProbabilities(self.activity, json.encode(self.cpmm.calcProbabilities()))
+  return notice
 end
 
 --- Sell
@@ -190,7 +238,12 @@ function MarketMethods:sell(msg)
   cpmmValidation.sell(msg, self.cpmm.positionIds)
   local outcomeTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   assert(bint.__le(bint(outcomeTokensToSell), bint(msg.Tags.MaxOutcomeTokensToSell)), 'Maximum sell amount not sufficient!')
-  return self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
+  local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
+  -- @dev log prediction
+  local price = tostring.bint.__div(outcomeTokensToSell, bint(msg.Tags.Quantity))
+  logPrediction(self.activity, msg.From, "sell", msg.Tags.PositionId, msg.Tags.Quantity, price, msg)
+  logProbabilities(self.activity, json.encode(self.cpmm.calcProbabilities()))
+  return notice
 end
 
 --- Withdraw fees
@@ -505,22 +558,6 @@ end
 function MarketMethods:updateLogo(msg)
   cpmmValidation.updateLogo(msg, self.cpmm.configurator)
   return self.cpmm:updateLogo(msg.Tags.Logo, msg)
-end
-
---[[
-==================
-EVAL WRITE METHODS
-==================
-]]
-
---- Eval
---- @param msg Message The message received
---- @return Message The eval complete notice
-function MarketMethods:completeEval(msg)
-  return msg.forward('NRKvM8X3TqjGGyrqyB677aVbxgONo5fBHkbxbUSa_Ug', {
-    Action = 'Eval-Completed',
-    Data = 'Eval-Completed'
-  })
 end
 
 return Market

@@ -254,6 +254,27 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
   return tostring(bint.ceil(returnAmountPlusFees + CPMMHelpers.ceildiv(endingOutcomeBalance, 1e4) - sellTokenPoolBalance))
 end
 
+--- Calc probabilities
+--- @return table<string, number> probabilities A table mapping each positionId to its probability (as a decimal percentage)
+function CPMMMethods:calcProbabilities()
+  local poolBalances = self:getPoolBalances()
+  local totalBalance = bint(0)
+  local probabilities = {}
+  -- Calculate total balance
+  for i = 1, #self.tokens.positionIds do
+    totalBalance = bint.__add(totalBalance, bint(poolBalances[i]))
+  end
+  assert(bint.__gt(totalBalance, bint(0)), 'Total pool balance must be greater than zero!')
+  -- Calculate probabilities for each positionId
+  for i = 1, #self.tokens.positionIds do
+    local positionId = self.tokens.positionIds[i]
+    local balance = bint(poolBalances[i])
+    local probability = bint.__div(bint.__mul(balance, bint(100)), totalBalance)
+    probabilities[positionId] = tonumber(probability)
+  end
+  return probabilities
+end
+
 --- Buy
 --- @param from string The process ID of the account that initiates the buy
 --- @param onBehalfOf string The process ID of the account to receive the tokens
