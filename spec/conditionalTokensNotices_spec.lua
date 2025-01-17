@@ -1,5 +1,5 @@
 require("luacov")
-local conditionalTokensNotices = require("modules.conditionalTokensNotices")
+local conditionalTokensNotices = require("marketModules.conditionalTokensNotices")
 local json = require("json")
 
 local sender = ""

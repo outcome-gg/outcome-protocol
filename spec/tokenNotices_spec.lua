@@ -1,5 +1,5 @@
 require("luacov")
-local tokenNotices = require("modules.tokenNotices")
+local tokenNotices = require("marketModules.tokenNotices")
 local json = require("json")
 
 -- Define variables

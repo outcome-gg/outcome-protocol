@@ -1,5 +1,5 @@
 require("luacov")
-local conditionalTokensValidation = require("modules.conditionalTokensValidation")
+local conditionalTokensValidation = require("marketModules.conditionalTokensValidation")
 local json = require("json")
 
 -- Mock the CPMM object

@@ -1,5 +1,5 @@
 require("luacov")
-local cpmmValidation = require("modules.cpmmValidation")
+local cpmmValidation = require("marketModules.cpmmValidation")
 local json = require("json")
 
 local marketFactory = ""

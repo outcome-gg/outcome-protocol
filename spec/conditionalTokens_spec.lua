@@ -1,5 +1,5 @@
 require("luacov")
-local conditionalTokens = require("modules.conditionalTokens")
+local conditionalTokens = require("marketModules.conditionalTokens")
 local crypto = require(".crypto")
 local json = require("json")
 

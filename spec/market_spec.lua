@@ -1,7 +1,7 @@
 require("luacov")
-local market = require("modules.market")
-local token = require("market.modules.token")
-local tokens = require("market.modules.conditionalTokens")
+local market = require("marketModules.market")
+local token = require("marketModules.token")
+local tokens = require("marketModules.conditionalTokens")
 local json = require("json")
 
 local marketFactory = ""
@@ -32,6 +32,7 @@ local newConfigurator = ""
 local incentives = ""
 local newIncentives = ""
 local activity = ""
+local ocmToken = ""
 local quantity = ""
 local tokenId = ""
 local returnAmount = ""
@@ -113,10 +114,10 @@ describe("#market", function()
     newConfigurator = "test-this-is-valid-arweave-wallet-address-7"
     incentives = "test-this-is-valid-arweave-wallet-address-8"
     activity = "test-this-is-valid-arweave-wallet-address-9"
+    ocmToken = "test-this-is-valid-arweave-wallet-address-9"
     newIncentives = "test-this-is-valid-arweave-wallet-address-9"
     quantity = "100"
     tokenId = "1"
-    burnQuantity = "50"
     returnAmount = "90"
     investmentAmount = "100"
     maxOutcomeTokensToSell = "140"
@@ -132,6 +133,7 @@ describe("#market", function()
       configurator,
       incentives,
       activity,
+      ocmToken,
       collateralToken,
       resolutionAgent,
       creator,

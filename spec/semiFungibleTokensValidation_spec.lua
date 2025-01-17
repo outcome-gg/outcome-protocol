@@ -1,5 +1,5 @@
 require("luacov")
-local semiFungibleTokensValidation = require("modules.semiFungibleTokensValidation")
+local semiFungibleTokensValidation = require("marketModules.semiFungibleTokensValidation")
 local json = require("json")
 
 -- Mock the Market.cpmm object

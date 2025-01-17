@@ -1,5 +1,5 @@
 require("luacov")
-local cpmmNotices = require("modules.cpmmNotices")
+local cpmmNotices = require("marketModules.cpmmNotices")
 local json = require("json")
 
 local marketFactory = ""

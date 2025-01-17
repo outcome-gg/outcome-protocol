@@ -330,115 +330,9 @@
          </h1>
       </div>
 
-      <div class="hidden file warning" id="src-configurator-modules-sharedutils">
+      <div class="hidden file danger" id="src-marketmodules-conditionaltokens">
          <h2 class="title">
-            src/configurator/modules/sharedUtils.lua
-            <span class="stats">
-               <span class="cov">
-                  <span class="bg" style="width: 56.76%"></span>
-                  <span><strong>56.76%</strong> Coverage</span>
-               </span>
-               <span class="hits"><strong>21</strong> Hits</span>
-               <span class="miss"><strong>16</strong> Missed</span>
-            </span>
-         </h2>
-         <pre class="prettyprint lang-lua linenums">--[[
-=========================================================
-Part of the Outcome codebase © 2025. All Rights Reserved.
-See market.lua for full license details.
-=========================================================
-]]
-
-<span class="fc" data-hits="1">local sharedUtils = {}</span>
-
---- Verify if extracted value is a JSON simple value
---- @param value any
---- @return boolean
-local function isSimpleValue(value)
-  -- Trim whitespace
-<span class="fc" data-hits="5">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
-  -- Check for a quoted string: &quot;someValue&quot;
-<span class="fc" data-hits="5">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
-<span class="nc">    return true</span>
-  end
-  -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
-<span class="fc" data-hits="5">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
-<span class="fc" data-hits="4">    return true</span>
-  end
-  -- Check for boolean
-<span class="fc" data-hits="1">  if string.lower(value) == &quot;true&quot; or string.lower(value) == &quot;false&quot; then</span>
-<span class="nc">    return true</span>
-  end
-<span class="fc" data-hits="1">  return false</span>
-end
-
---- Verify if a valid JSON object
---- @param str any
---- @return boolean
-<span class="fc" data-hits="1">function sharedUtils.isValidKeyValueJSON(str)</span>
-<span class="nc">  if type(str) ~= &quot;string&quot; then return false end</span>
-  -- Trim whitespace
-<span class="nc">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
-  -- Ensure it starts with `{` and ends with `}`
-<span class="nc">  local isObject = str:match(&quot;^%{%s*(.-)%s*%}$&quot;)</span>
-<span class="nc">  if not isObject then return false end</span>
-  -- This pattern only extracts the key and the entire raw value
-<span class="nc">  local keyValuePattern = &#39;^%s*&quot;([^&quot;]+)&quot;%s*:%s*(.-)%s*$&#39;</span>
-  -- Check all key-value pairs
-<span class="nc">  for keyValue in isObject:gmatch(&quot;[^,]+&quot;) do</span>
-<span class="nc">    local key, rawValue = keyValue:match(keyValuePattern)</span>
-<span class="nc">    if not key or not rawValue then</span>
-<span class="nc">      return false</span>
-    end
-    -- Now validate that rawValue is a valid JSON simple value
-<span class="nc">    if not isSimpleValue(rawValue) then</span>
-<span class="nc">      return false</span>
-    end
-  end
-<span class="nc">  return true</span>
-end
-
---- Verify if a valid JSON array
---- @param str any
---- @return boolean
-<span class="fc" data-hits="1">function sharedUtils.isJSONArray(str)</span>
-<span class="fc" data-hits="3">  if type(str) ~= &quot;string&quot; then return false end</span>
-  -- Trim whitespace
-<span class="fc" data-hits="3">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
-  -- Ensure it starts with `[` and ends with `]`
-<span class="fc" data-hits="3">  local isArray = str:match(&quot;^%[%s*(.-)%s*%]$&quot;)</span>
-<span class="fc" data-hits="3">  if not isArray then return false end</span>
-  -- Split the array elements and validate each one
-<span class="fc" data-hits="6">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
-<span class="fc" data-hits="5">    value = value:match(&quot;^%s*(.-)%s*$&quot;) -- Trim whitespace around each value</span>
-<span class="fc" data-hits="5">    if not isSimpleValue(value) then</span>
-<span class="fc" data-hits="1">      return false</span>
-    end
-  end
-<span class="fc" data-hits="1">  return true</span>
-end
-
---- Verify if a valid Arweave address
---- @param address any
---- @return boolean
-<span class="fc" data-hits="1">function sharedUtils.isValidArweaveAddress(address)</span>
-<span class="nc">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[%w-_]+$&quot;) ~= nil</span>
-end
-
---- Verify if a valid boolean string
---- @param value any
---- @return boolean
-<span class="fc" data-hits="1">function sharedUtils.isValidBooleanString(value)</span>
-<span class="nc">  return type(value) == &quot;string&quot; and (string.lower(value) == &quot;true&quot; or string.lower(value) == &quot;false&quot;)</span>
-end
-
-<span class="fc" data-hits="1">return sharedUtils</span>
-</pre>
-      </div>
-
-      <div class="hidden file danger" id="src-market-modules-conditionaltokens">
-         <h2 class="title">
-            src/market/modules/conditionalTokens.lua
+            src/marketModules/conditionalTokens.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 16.85%"></span>
@@ -465,8 +359,8 @@ without explicit written permission from Outcome.
 
 <span class="fc" data-hits="1">local ConditionalTokens = {}</span>
 <span class="fc" data-hits="1">local ConditionalTokensMethods = {}</span>
-<span class="fc" data-hits="1">local ConditionalTokensNotices = require(&#39;modules.conditionalTokensNotices&#39;)</span>
-<span class="fc" data-hits="1">local SemiFungibleTokens = require(&#39;modules.semiFungibleTokens&#39;)</span>
+<span class="fc" data-hits="1">local ConditionalTokensNotices = require(&#39;marketModules.conditionalTokensNotices&#39;)</span>
+<span class="fc" data-hits="1">local SemiFungibleTokens = require(&#39;marketModules.semiFungibleTokens&#39;)</span>
 <span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
 <span class="fc" data-hits="1">local crypto = require(&#39;.crypto&#39;)</span>
 <span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
@@ -694,9 +588,9 @@ end
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-market-modules-conditionaltokensnotices">
+      <div class="hidden file success-high" id="src-marketmodules-conditionaltokensnotices">
          <h2 class="title">
-            src/market/modules/conditionalTokensNotices.lua
+            src/marketModules/conditionalTokensNotices.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
@@ -785,9 +679,9 @@ end
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-market-modules-conditionaltokensvalidation">
+      <div class="hidden file success-high" id="src-marketmodules-conditionaltokensvalidation">
          <h2 class="title">
-            src/market/modules/conditionalTokensValidation.lua
+            src/marketModules/conditionalTokensValidation.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 100.00%"></span>
@@ -805,7 +699,7 @@ See conditionalTokens.lua for full license details.
 ]]
 
 <span class="fc" data-hits="1">local ConditionalTokensValidation = {}</span>
-<span class="fc" data-hits="1">local sharedUtils = require(&#39;modules.sharedUtils&#39;)</span>
+<span class="fc" data-hits="1">local sharedUtils = require(&#39;marketModules.sharedUtils&#39;)</span>
 <span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
 
 --- Validates quantity
@@ -845,9 +739,9 @@ end
 </pre>
       </div>
 
-      <div class="hidden file danger" id="src-market-modules-semifungibletokens">
+      <div class="hidden file danger" id="src-marketmodules-semifungibletokens">
          <h2 class="title">
-            src/market/modules/semiFungibleTokens.lua
+            src/marketModules/semiFungibleTokens.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 14.41%"></span>
@@ -884,7 +778,7 @@ THE SOFTWARE.
 
 <span class="fc" data-hits="1">local SemiFungibleTokens = {}</span>
 <span class="fc" data-hits="1">local SemiFungibleTokensMethods = {}</span>
-<span class="fc" data-hits="1">local SemiFungibleTokensNotices = require(&#39;modules.semiFungibleTokensNotices&#39;)</span>
+<span class="fc" data-hits="1">local SemiFungibleTokensNotices = require(&#39;marketModules.semiFungibleTokensNotices&#39;)</span>
 <span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
 <span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
 
@@ -1162,9 +1056,9 @@ end
 </pre>
       </div>
 
-      <div class="hidden file danger" id="src-market-modules-semifungibletokensnotices">
+      <div class="hidden file danger" id="src-marketmodules-semifungibletokensnotices">
          <h2 class="title">
-            src/market/modules/semiFungibleTokensNotices.lua
+            src/marketModules/semiFungibleTokensNotices.lua
             <span class="stats">
                <span class="cov">
                   <span class="bg" style="width: 24.44%"></span>
@@ -1351,9 +1245,115 @@ end
 </pre>
       </div>
 
+      <div class="hidden file warning" id="src-marketmodules-sharedutils">
+         <h2 class="title">
+            src/marketModules/sharedUtils.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 56.76%"></span>
+                  <span><strong>56.76%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>21</strong> Hits</span>
+               <span class="miss"><strong>16</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums">--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See market.lua for full license details.
+=========================================================
+]]
+
+<span class="fc" data-hits="1">local sharedUtils = {}</span>
+
+--- Verify if extracted value is a JSON simple value
+--- @param value any
+--- @return boolean
+local function isSimpleValue(value)
+  -- Trim whitespace
+<span class="fc" data-hits="5">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
+  -- Check for a quoted string: &quot;someValue&quot;
+<span class="fc" data-hits="5">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
+<span class="nc">    return true</span>
+  end
+  -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
+<span class="fc" data-hits="5">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
+<span class="fc" data-hits="4">    return true</span>
+  end
+  -- Check for boolean
+<span class="fc" data-hits="1">  if string.lower(value) == &quot;true&quot; or string.lower(value) == &quot;false&quot; then</span>
+<span class="nc">    return true</span>
+  end
+<span class="fc" data-hits="1">  return false</span>
+end
+
+--- Verify if a valid JSON object
+--- @param str any
+--- @return boolean
+<span class="fc" data-hits="1">function sharedUtils.isValidKeyValueJSON(str)</span>
+<span class="nc">  if type(str) ~= &quot;string&quot; then return false end</span>
+  -- Trim whitespace
+<span class="nc">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
+  -- Ensure it starts with `{` and ends with `}`
+<span class="nc">  local isObject = str:match(&quot;^%{%s*(.-)%s*%}$&quot;)</span>
+<span class="nc">  if not isObject then return false end</span>
+  -- This pattern only extracts the key and the entire raw value
+<span class="nc">  local keyValuePattern = &#39;^%s*&quot;([^&quot;]+)&quot;%s*:%s*(.-)%s*$&#39;</span>
+  -- Check all key-value pairs
+<span class="nc">  for keyValue in isObject:gmatch(&quot;[^,]+&quot;) do</span>
+<span class="nc">    local key, rawValue = keyValue:match(keyValuePattern)</span>
+<span class="nc">    if not key or not rawValue then</span>
+<span class="nc">      return false</span>
+    end
+    -- Now validate that rawValue is a valid JSON simple value
+<span class="nc">    if not isSimpleValue(rawValue) then</span>
+<span class="nc">      return false</span>
+    end
+  end
+<span class="nc">  return true</span>
+end
+
+--- Verify if a valid JSON array
+--- @param str any
+--- @return boolean
+<span class="fc" data-hits="1">function sharedUtils.isJSONArray(str)</span>
+<span class="fc" data-hits="3">  if type(str) ~= &quot;string&quot; then return false end</span>
+  -- Trim whitespace
+<span class="fc" data-hits="3">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
+  -- Ensure it starts with `[` and ends with `]`
+<span class="fc" data-hits="3">  local isArray = str:match(&quot;^%[%s*(.-)%s*%]$&quot;)</span>
+<span class="fc" data-hits="3">  if not isArray then return false end</span>
+  -- Split the array elements and validate each one
+<span class="fc" data-hits="6">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
+<span class="fc" data-hits="5">    value = value:match(&quot;^%s*(.-)%s*$&quot;) -- Trim whitespace around each value</span>
+<span class="fc" data-hits="5">    if not isSimpleValue(value) then</span>
+<span class="fc" data-hits="1">      return false</span>
+    end
+  end
+<span class="fc" data-hits="1">  return true</span>
+end
+
+--- Verify if a valid Arweave address
+--- @param address any
+--- @return boolean
+<span class="fc" data-hits="1">function sharedUtils.isValidArweaveAddress(address)</span>
+<span class="nc">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[%w-_]+$&quot;) ~= nil</span>
+end
+
+--- Verify if a valid boolean string
+--- @param value any
+--- @return boolean
+<span class="fc" data-hits="1">function sharedUtils.isValidBooleanString(value)</span>
+<span class="nc">  return type(value) == &quot;string&quot; and (string.lower(value) == &quot;true&quot; or string.lower(value) == &quot;false&quot;)</span>
+end
+
+<span class="fc" data-hits="1">return sharedUtils</span>
+</pre>
+      </div>
+
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-01-15 16:11:57
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-01-17 13:14:21
    </footer>
 
    <script type="text/javascript">

@@ -1,5 +1,5 @@
 local crypto = require(".crypto")
-local configurator = require("modules.configurator")
+local configurator = require("configuratorModules.configurator")
 
 local admin = ""
 local delay = nil

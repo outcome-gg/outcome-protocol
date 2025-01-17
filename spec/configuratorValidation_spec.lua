@@ -1,4 +1,4 @@
-local configuratorValidation = require("modules.configuratorValidation")
+local configuratorValidation = require("configuratorModules.configuratorValidation")
 
 -- Mock the Configurator object
 ---@diagnostic disable-next-line: missing-fields

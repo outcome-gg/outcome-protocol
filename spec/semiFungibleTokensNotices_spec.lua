@@ -1,5 +1,5 @@
 require("luacov")
-local semiFungibleTokensNotices = require("modules.semiFungibleTokensNotices")
+local semiFungibleTokensNotices = require("marketModules.semiFungibleTokensNotices")
 local json = require("json")
 
 -- Define variables

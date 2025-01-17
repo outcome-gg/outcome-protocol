@@ -1,4 +1,4 @@
-local configuratorNotices = require("modules.configuratorNotices")
+local configuratorNotices = require("configuratorModules.configuratorNotices")
 
 -- Define variables
 local admin = ""

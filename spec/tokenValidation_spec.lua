@@ -1,5 +1,5 @@
 require("luacov")
-local tokenValidation = require("modules.tokenValidation")
+local tokenValidation = require("marketModules.tokenValidation")
 
 local msg = {}
 

@@ -1,5 +1,5 @@
 require("luacov")
-local cpmmHelpers = require("modules.cpmmHelpers")
+local cpmmHelpers = require("marketModules.cpmmHelpers")
 local json = require("json")
 
 local x = 0

@@ -1,8 +1,6 @@
 package.path =
 	"./src/configurator/?.lua;" ..
-	"./src/configurator/modules/?.lua;" ..
 	"./src/market/?.lua;" ..
-	"./src/market/modules/?.lua;" ..
 	"./src/?.lua;" ..
 	package.path
 
@@ -79,9 +77,9 @@ _G.Colors = {
 }
 
 -- Force reload modules that may have been cached
-package.loaded["modules.configurator"] = nil
-package.loaded["modules.tokenNotices"] = nil
-package.loaded["modules.tokenValidation"] = nil
+package.loaded["configurator.configurator"] = nil
+package.loaded["market.tokenNotices"] = nil
+package.loaded["market.tokenValidation"] = nil
 package.loaded["crypto"] = nil
 
 print("Setup global ao mocks successfully...")

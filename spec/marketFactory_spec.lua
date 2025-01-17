@@ -1,6 +1,6 @@
 require("luacov")
-local marketFactory = require("marketFactory.modules.marketFactory")
-local constants = require("modules.constants")
+local marketFactory = require("marketFactoryModules.marketFactory")
+local constants = require("marketFactoryModules.constants")
 local json = require("json")
 
 local sender = ""
