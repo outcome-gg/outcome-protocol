@@ -59,7 +59,7 @@ WRITE HANDLERS
 --- @return Message|nil logFundingNotice The log funding notice or nil if cast is false
 Handlers.add("Log-Funding", {Action = "Log-Funding"}, function(msg)
   activityValidation.validateLogFunding(msg)
-  return activity:logFunding(msg.Tags.User, msg.Tags.Action, msg.Tags.Quantity, msg.Timestamp, false, msg)
+  return activity:logFunding(msg.Tags.User, msg.Tags.Operation, msg.Tags.Quantity, msg.Timestamp, false, msg)
 end)
 
 --- Log prediction handler
@@ -67,7 +67,7 @@ end)
 --- @return Message|nil logPredictionNotice The log prediction notice or nil if cast is false
 Handlers.add("Log-Prediction", {Action = "Log-Prediction"}, function(msg)
   activityValidation.validateLogPrediction(msg)
-  return activity:logPrediction(msg.Tags.User, msg.Tags.Action, msg.Tags.Quantity, msg.Tags.Outcome, msg.Tags.Price, msg.Timestamp, false, msg)
+  return activity:logPrediction(msg.Tags.User, msg.Tags.Operation, msg.Tags.Quantity, msg.Tags.Outcome, msg.Tags.Price, msg.Timestamp, false, msg)
 end)
 
 --- Log probabilities handler
@@ -75,7 +75,7 @@ end)
 --- @return Message|nil logProbabilitiesNotice The log probabilities notice or nil if cast is false
 Handlers.add("Log-Probabilities", {Action = "Log-Probabilities"}, function(msg)
   activityValidation.validateLogProbabilities(msg)
-  return activity:logProbabilities(msg.Tags.User, msg.Tags.Action, msg.Tags.Probabilities, msg.Timestamp, false, msg)
+  return activity:logProbabilities(msg.Tags.User, msg.Tags.Operation, msg.Tags.Probabilities, msg.Timestamp, false, msg)
 end)
 
 --[[

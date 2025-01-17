@@ -15,12 +15,14 @@ without explicit written permission from Outcome.
 
 local Market = {}
 local MarketMethods = {}
+local MarketNotices = require("modules.marketNotices")
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
 local cpmm = require('modules.cpmm')
 local cpmmValidation = require('modules.cpmmValidation')
 local tokenValidation = require('modules.tokenValidation')
+local marketValidation = require('modules.marketValidation')
 local semiFungibleTokensValidation = require('modules.semiFungibleTokensValidation')
 local conditionalTokensValidation = require('modules.conditionalTokensValidation')
 
@@ -32,6 +34,7 @@ local conditionalTokensValidation = require('modules.conditionalTokensValidation
 --- @param configurator string The process ID of the configurator
 --- @param incentives string The process ID of the incentives controller
 --- @param activity string The process ID of the activity process
+--- @param ocmToken string The process ID of the OCM token process
 --- @param collateralToken string The process ID of the collateral token
 --- @param resolutionAgent string The process ID of the resolution agent
 --- @param creator string The address of the market creator
@@ -50,6 +53,7 @@ function Market:new(
   configurator,
   incentives,
   activity,
+  ocmToken,
   collateralToken,
   resolutionAgent,
   creator,
@@ -82,7 +86,8 @@ function Market:new(
     ),
     question = question,
     creator = creator,
-    activity = activity
+    activity = activity,
+    ocmToken = ocmToken
   }
   setmetatable(market, { __index = MarketMethods })
   return market
@@ -120,22 +125,43 @@ ACTIVITY LOGS
 =============
 ]]
 
-local function logFunding(activity, user, operation, quantity, msg)
+local function logFunding(incentivized, ocmToken, activity, user, operation, collateral, quantity, msg)
+  -- log funding for incentives
+  ao.send({
+    Target = ocmToken,
+    Action = 'Log-Funding',
+    User = user,
+    Operation = operation,
+    Collateral = collateral,
+    Quantity = quantity
+  })
+  -- log funding for activity
   return msg.forward(activity, {
-    Target = activity,
     Action = "Log-Funding",
     User = user,
     Operation = operation,
+    Collateral = collateral,
     Quantity = quantity,
   })
 end
 
-local function logPrediction(activity, user, operation, outcome, quantity, price, msg)
+local function logPrediction(incentivized, ocmToken, activity, user, operation, collateral, outcome, quantity, price, msg)
+  -- log prediction for incentives
+  ao.send({
+    Target = ocmToken,
+    Action = 'Log-Prediction',
+    User = user,
+    Operation = operation,
+    Collateral = collateral,
+    Quantity = quantity,
+    Price = price
+  })
+  -- log prediction for activity
   return msg.forward(activity, {
-    Target = activity,
     Action = "Log-Prediction",
     User = user,
     Operation = operation,
+    Collateral = collateral,
     Outcome = outcome,
     Quantity = quantity,
     Price = price
@@ -167,8 +193,8 @@ function MarketMethods:addFunding(msg)
   -- @dev returns collateral tokens if invalid
   if self.cpmm:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
     self.cpmm:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, distribution, msg)
-    -- @dev log addFunding
-    logFunding(self.activity, msg.Tags.Sender, 'add', msg.Tags.Quantity, msg)
+    -- log funding
+    logFunding(self.ocmToken, self.activity, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
   end
 end
 
@@ -181,8 +207,8 @@ function MarketMethods:removeFunding(msg)
   -- @dev returns LP tokens if invalid
   if self.cpmm:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
     self.cpmm:removeFunding(msg.Tags.Sender, msg.Tags.Quantity, msg)
-    -- @dev log removeFunding
-    logFunding(self.activity, msg.Tags.Sender, 'remove', msg.Tags.Quantity, msg)
+    -- log funding
+    logFunding(self.ocmToken, self.activity, msg.Tags.Sender, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
   end
 end
 
@@ -224,9 +250,9 @@ function MarketMethods:buy(msg)
     assert(false, errorMessage)
   end
   local notice = self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
-  -- @dev log prediction
+  -- log prediction and probabilities
   local price = tostring.bint.__div(outcomeTokensToBuy, bint(msg.Tags.Quantity))
-  logPrediction(self.activity, onBehalfOf, "buy", msg.Tags['X-PositionId'], msg.Tags.Quantity, price, msg)
+  logPrediction(self.ocmToken, self.activity, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags['X-PositionId'], msg.Tags.Quantity, price, msg)
   logProbabilities(self.activity, json.encode(self.cpmm.calcProbabilities()))
   return notice
 end
@@ -239,9 +265,9 @@ function MarketMethods:sell(msg)
   local outcomeTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   assert(bint.__le(bint(outcomeTokensToSell), bint(msg.Tags.MaxOutcomeTokensToSell)), 'Maximum sell amount not sufficient!')
   local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
-  -- @dev log prediction
+  -- log prediction and probabilities
   local price = tostring.bint.__div(outcomeTokensToSell, bint(msg.Tags.Quantity))
-  logPrediction(self.activity, msg.From, "sell", msg.Tags.PositionId, msg.Tags.Quantity, price, msg)
+  logPrediction(self.ocmToken, self.activity, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.PositionId, msg.Tags.Quantity, price, msg)
   logProbabilities(self.activity, json.encode(self.cpmm.calcProbabilities()))
   return notice
 end

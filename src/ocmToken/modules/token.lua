@@ -34,15 +34,6 @@ local TokenMethods = {}
 local TokenNotices = require('modules.tokenNotices')
 local bint = require('.bint')(256)
 
---- Represents a Token
---- @class Token
---- @field name string The token name
---- @field ticker string The token ticker
---- @field logo string The token logo Arweave TxID
---- @field balances table<string, string> The user token balances
---- @field totalSupply string The total supply of the token
---- @field denomination number The number of decimals
-
 --- Creates a new Token instance
 --- @param name string The token name
 --- @param ticker string The token ticker

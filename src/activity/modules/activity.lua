@@ -47,19 +47,19 @@ WRITE METHODS
 
 --- Log funding
 --- @param user string The user ID
---- @param action string The funding action
+--- @param operation string The funding operation
 --- @param amount string The funding amount
 --- @param timestamp string The funding timestamp
 --- @param cast boolean Whether to cast the message
 --- @param msg Message The message received
 --- @return Message|nil logFundingNotice The log funding notice or nil if cast is false
-function ActivityMethods:logFunding(user, action, amount, timestamp, cast, msg)
+function ActivityMethods:logFunding(user, operation, amount, timestamp, cast, msg)
   -- Insert user if they don't exist
   if #self.db:getUser(user) == 0 then
     self.db:insertUser(user, timestamp)
   end
   -- Insert funding
-  local funding = self.db:insertFunding(msg.Id, user, action, amount, timestamp)
+  local funding = self.db:insertFunding(msg.Id, user, operation, amount, timestamp)
   -- Send notice if cast is true
   if cast then
     return self.logFundingNotice(funding, msg)
@@ -68,7 +68,7 @@ end
 
 --- Log prediction
 --- @param user string The user ID
---- @param action string The prediction action
+--- @param operation string The prediction operation
 --- @param amount string The prediction amount
 --- @param outcome string The prediction outcome
 --- @param price string The prediction price
@@ -76,13 +76,13 @@ end
 --- @param cast boolean Whether to cast the message
 --- @param msg Message The message received
 --- @return Message|nil logPredictionNotice The log prediction notice or nil if cast is false
-function ActivityMethods:logPrediction(user, action, outcome, amount, price, timestamp, cast, msg)
+function ActivityMethods:logPrediction(user, operation, outcome, amount, price, timestamp, cast, msg)
   -- Insert user if they don't exist
   if #self.db:getUser(user) == 0 then
     self.db:insertUser(user, timestamp)
   end
   -- Insert prediction
-  local prediction = self.db:insertPrediction(msg.Id, user, action, outcome, amount, price, timestamp)
+  local prediction = self.db:insertPrediction(msg.Id, user, operation, outcome, amount, price, timestamp)
   -- Send notice if cast is true
   if cast then
     return self.logPredictionNotice(prediction, msg)
