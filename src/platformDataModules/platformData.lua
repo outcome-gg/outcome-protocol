@@ -18,6 +18,7 @@ local PlatformDataMethods = {}
 local PlatformDataNotices = require('platformDataModules.platformDataNotices')
 local activity = require('platformDataModules.activity')
 local chatroom = require('platformDataModules.chatroom')
+local json = require('json')
 
 --- Represents PlatformData
 --- @class PlatformData
@@ -29,12 +30,10 @@ local chatroom = require('platformDataModules.chatroom')
 --- @field moderators table<string> The moderators
 
 --- Creates a new PlatformData instance
-function PlatformData:new(db, dbAdmin, configurator, moderators)
+function PlatformData:new(db, configurator, moderators)
   local platformData = {
-    db = db,
-    dbAdmin = dbAdmin,
-    activity = activity:new(dbAdmin),
-    chatroom = chatroom:new(dbAdmin),
+    activity = activity:new(db.dbAdmin),
+    chatroom = chatroom:new(db.dbAdmin),
     configurator = configurator,
     moderators = moderators
   }
@@ -51,6 +50,19 @@ function PlatformData:new(db, dbAdmin, configurator, moderators)
     end
   })
   return platformData
+end
+
+--[[
+===========
+INFO METHOD
+===========
+]]
+
+function PlatformDataMethods:info(msg)
+  return msg.reply({
+    Configurator = self.configurator,
+    Moderators = json.encode(self.moderators)
+  })
 end
 
 --[[

@@ -15,7 +15,7 @@ without explicit written permission from Outcome.
 
 local Chatroom = {}
 local ChatroomMethods = {}
-local ChatroomNotices = require('chatroomModules.chatroomNotices')
+local ChatroomNotices = require('platformDataModules.chatroomNotices')
 local json = require('json')
 
 --- Creates a new Chatroom instance

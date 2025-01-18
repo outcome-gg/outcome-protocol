@@ -6,16 +6,16 @@ See activity.lua for full license details.
 ]]
 
 local ActivityValidation = {}
-local sharedValidation = require('chatroomModules.sharedValidation')
-local sharedUtils = require('chatroomModules.sharedUtils')
+local sharedValidation = require('platformDataModules.sharedValidation')
+local sharedUtils = require('platformDataModules.sharedUtils')
 
 --- Validate log funding
 --- @param msg Message The message received
 function ActivityValidation.validateLogFunding(msg)
   sharedValidation.validateAddress(msg.Tags.User, "User")
   assert(type(msg.Tags.Operation) == "string", "Operation is required!")
-  assert(msg.Tags.Operation == "add" or msg.Tags.Operation == "remove", "Operation must be add or subtract")
-  assert(type(msg.Tags.Amount) == "string", "Amount is required!")
+  assert(msg.Tags.Operation == "add" or msg.Tags.Operation == "remove", "Operation must be 'add' or 'remove'!")
+  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
   assert(msg.Tags.Timestamp:match("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d$"), "Timestamp must be in the format YYYY-MM-DD HH:MM:SS")
 end
 

@@ -15,9 +15,9 @@ without explicit written permission from Outcome.
 
 local Activity = {}
 local ActivityMethods = {}
-local ActivityNotices = require('activityModules.activityNotices')
-local dbHelpers = require('activityModules.dbHelpers')
-local constants = require('activityModules.constants')
+local ActivityNotices = require('platformDataModules.activityNotices')
+local dbHelpers = require('platformDataModules.dbHelpers')
+local constants = require('platformDataModules.constants')
 local json = require('json')
 
 function Activity:new(dbAdmin)

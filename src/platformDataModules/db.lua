@@ -15,7 +15,7 @@ without explicit written permission from Outcome.
 
 local Db = {}
 local sqlite3 = require('lsqlite3')
-local constants = require('activityModules.constants')
+local constants = require('platformDataModules.constants')
 
 --[[
 =========
@@ -115,14 +115,14 @@ end
 function Db:new()
   local conn = sqlite3.open_memory()
   local db = {
-    dbAdmin = require('modules.dbAdmin').new(conn),
-    intervals = constants.db.intervals,
-    rangeDurations = constants.db.rangeDurations,
-    maxInterval = constants.db.maxInterval,
-    maxRangeDuration = constants.db.maxRangeDuration,
-    defaultLimit = constants.db.defaultLimit,
-    defaultOffset = constants.db.defaultOffset,
-    defaultActivityWindow = constants.db.defaultActivityWindow
+    dbAdmin = require('platformDataModules.dbAdmin').new(conn),
+    intervals = constants.intervals,
+    rangeDurations = constants.rangeDurations,
+    maxInterval = constants.maxInterval,
+    maxRangeDuration = constants.maxRangeDuration,
+    defaultLimit = constants.defaultLimit,
+    defaultOffset = constants.defaultOffset,
+    defaultActivityWindow = constants.defaultActivityWindow
   }
   -- init database
   initDb(conn, db.dbAdmin)

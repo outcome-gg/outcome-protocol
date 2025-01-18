@@ -6,9 +6,9 @@ See chatroom.lua for full license details.
 ]]
 
 local ChatroomValidation = {}
-local sharedValidation = require('chatroomModules.sharedValidation')
-local sharedUtils = require('chatroomModules.sharedUtils')
-local utils = require('modules.utils')
+local sharedValidation = require('platformDataModules.sharedValidation')
+local sharedUtils = require('platformDataModules.sharedUtils')
+local utils = require('platformDataModules.utils')
 local json = require('json')
 
 --- Validates a broadcast

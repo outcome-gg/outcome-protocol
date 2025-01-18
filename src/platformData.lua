@@ -13,11 +13,11 @@ without explicit written permission from Outcome.
 ======================================================================================
 ]]
 
-local db = require("db")
-local platformData = require("platformModules.platformData")
-local activityValidation = require("platformModules.activityValidation")
-local chatroomValidation = require("platformModules.chatroomValidation")
-local constants = require("platformModules.constants")
+local db = require("platformDataModules.db")
+local platformData = require("platformDataModules.platformData")
+local activityValidation = require("platformDataModules.activityValidation")
+local chatroomValidation = require("platformDataModules.chatroomValidation")
+local constants = require("platformDataModules.constants")
 local json = require("json")
 
 --[[
@@ -57,6 +57,19 @@ if not PlatformData or Env == 'DEV' then
 end
 
 --[[
+============
+INFO HANDLER
+============
+]]
+
+--- Info handler
+--- @param msg Message The message received
+--- @return Message info The info
+Handlers.add("Info", {Action = "Info"}, function(msg)
+  return PlatformData:info(msg)
+end)
+
+--[[
 =======================
 ACTIVITY WRITE HANDLERS
 =======================
@@ -91,7 +104,6 @@ end)
 ACTIVITY READ HANDLERS
 ======================
 ]]
-
 
 --- Get active funding users handler
 --- @param msg Message The message received
