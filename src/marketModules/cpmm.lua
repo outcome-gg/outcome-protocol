@@ -26,7 +26,6 @@ local conditionalTokens = require('marketModules.conditionalTokens')
 
 --- Represents a CPMM (Constant Product Market Maker)
 --- @class CPMM
---- @field incentives string The process ID of the incentives controller
 --- @field configurator string The process ID of the configurator
 --- @field poolBalances table<string, ...> The pool balance for each respective position ID
 --- @field withdrawnFees table<string, string> The amount of fees withdrawn by an account
@@ -35,7 +34,6 @@ local conditionalTokens = require('marketModules.conditionalTokens')
 
 --- Creates a new CPMM instance
 --- @param configurator string The process ID of the configurator
---- @param incentives string The process ID of the incentives controller
 --- @param collateralToken string The process ID of the collateral token
 --- @param resolutionAgent string The process ID of the resolution agent
 --- @param positionIds table<string, ...> The position IDs
@@ -48,10 +46,9 @@ local conditionalTokens = require('marketModules.conditionalTokens')
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
 --- @return CPMM cpmm The new CPMM instance 
-function CPMM:new(configurator, incentives, collateralToken, resolutionAgent, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
+function CPMM:new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
   local cpmm = {
     configurator = configurator,
-    incentives = incentives,
     poolBalances = {},
     withdrawnFees = {},
     feePoolWeight = "0",
@@ -415,15 +412,6 @@ end
 function CPMMMethods:updateConfigurator(configurator, msg)
   self.configurator = configurator
   return self.updateConfiguratorNotice(configurator, msg)
-end
-
---- Update incentives controller
---- @param incentives string The process ID of the new incentives controller
---- @param msg Message The message received
---- @return Message The update incentives notice
-function CPMMMethods:updateIncentives(incentives, msg)
-  self.incentives = incentives
-  return self.updateIncentivesNotice(incentives, msg)
 end
 
 --- Update take fee

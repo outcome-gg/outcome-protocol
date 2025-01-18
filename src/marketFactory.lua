@@ -38,7 +38,7 @@ Env = 'DEV'
 --- @field protocolFee number The Market Protocol fee  
 --- @field protocolFeeTarget string The Market Protocol fee target  
 --- @field maximumTakeFee number The maximum market take fee
---- @field minimumPayment number The minimum payment to spawn a market
+--- @field minimumStake number The minimum stake to spawn a market
 --- @field utilityToken string The utility token address
 --- @field collateralTokens table The approved collateral tokens
 
@@ -55,10 +55,7 @@ local function retrieveMarketFactoryConfig()
     lpFee = constants.marketFactory.lpFee,
     protocolFee = constants.marketFactory.protocolFee,
     protocolFeeTarget = constants.marketFactory.protocolFeeTarget,
-    maximumTakeFee = constants.marketFactory.maximumTakeFee,
-    minimumPayment = constants.marketFactory.minimumPayment,
-    utilityToken = constants.marketFactory.utilityToken,
-    collateralTokens = constants.marketFactory.collateralTokens
+    approvedCollateralTokens = constants.marketFactory.approvedCollateralTokens
   }
   return config
 end
@@ -76,31 +73,8 @@ if not MarketFactory or Env == 'DEV' then
     marketFactoryConfig.protocolFee,
     marketFactoryConfig.protocolFeeTarget,
     marketFactoryConfig.maximumTakeFee,
-    marketFactoryConfig.minimumPayment,
-    marketFactoryConfig.utilityToken,
-    marketFactoryConfig.collateralTokens
+    marketFactoryConfig.approvedCollateralTokens
   )
-end
-
---[[
-========
-MATCHING
-========
-]]
-
---- Match on spawn market
---- @param msg Message The message to match
---- @return boolean True if the message is to add funding, false otherwise
-local function isSpawnMarket(msg)
-  if (
-    msg.From == MarketFactory.utilityToken and
-    msg.Action == "Credit-Notice" and
-    msg["X-Action"] == "Spawn-Market"
-  ) then
-    return true
-  else
-    return false
-  end
 end
 
 --[[
@@ -125,16 +99,16 @@ WRITE HANDLERS
 --- Spawn market handler
 --- @param msg Message The message to handle
 --- @return Message spawnedMarketNotice The spawned market notice
-Handlers.add("Spawn-Market", isSpawnMarket, function(msg)
-  marketFactoryValidation.validateSpawnMarket(msg, MarketFactory.collateralTokens, MarketFactory.minimumFundingAmounts)
+Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
+  marketFactoryValidation.validateSpawnMarket(msg, MarketFactory.approvedCollateralTokens)
   return MarketFactory:spawnMarket(
-    msg.Tags["X-CollateralToken"],
-    msg.Tags["X-ResolutionAgent"],
-    msg.Tags["X-Question"],
-    tonumber(msg.Tags["X-OutcomeSlotCount"]),
-    msg.Sender,
-    tonumber(msg.Tags["X-CreatorFee"]),
-    msg.Tags["X-CreatorFeeTarget"],
+    msg.Tags["CollateralToken"],
+    msg.Tags["ResolutionAgent"],
+    msg.Tags["Question"],
+    tonumber(msg.Tags["OutcomeSlotCount"]),
+    msg.From,
+    tonumber(msg.Tags["CreatorFee"]),
+    msg.Tags["CreatorFeeTarget"],
     msg
   )
 end)

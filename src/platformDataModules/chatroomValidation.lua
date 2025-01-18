@@ -17,26 +17,6 @@ function ChatroomValidation.validateBroadcast(msg)
   assert(type(msg.Tags.Body) == "string", "Body is required!")
 end
 
---- Validates a getUser
---- @param msg Message The message received
-function ChatroomValidation.validateGetUser(msg)
-  sharedValidation.validateAddress(msg.Tags.User, "User")
-end
-
---- Validates a getUsers
---- @param msg Message The message received
-function ChatroomValidation.validateGetUsers(msg)
-  if msg.Tags.Silenced then assert(sharedUtils.isValidBooleanString(msg.Tags.Silenced), "Silenced must be a boolean!") end
-  if msg.Tags.Limit then sharedValidation.validatePositiveInteger(msg.Tags.Limit, "Limit") end
-  if msg.Tags.Offset then sharedValidation.validatePositiveInteger(msg.Tags.Offset, "Offset") end
-  if msg.Tags.Timestamp then
-    assert(msg.Tags.Timestamp:match("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d$"), "Timestamp must be in the format YYYY-MM-DD HH:MM:SS")
-  end
-  if msg.Tags.OrderDirection then
-    assert(msg.Tags.OrderDirection == "ASC" or msg.Tags.OrderDirection == "DESC", "OrderDirection must be ASC or DESC")
-  end
-end
-
 --- Validates a getMessage
 --- @param msg Message The message received
 function ChatroomValidation.validateGetMessage(msg)
@@ -58,15 +38,14 @@ function ChatroomValidation.validateGetMessages(msg)
   if msg.Tags.Keyword then assert(type(msg.Tags.Keyword) == "string", "Keyword must be a string") end
 end
 
--- TODO: move to marketActivityValidation.lua??
--- --- Validate a getActiveChatroomUsers
--- --- @param msg Message The message received
--- function MarketChatroomValidation.validateGetActiveChatroomUsers(msg)
---   if msg.Tags.Hours then sharedValidation.validatePositiveInteger(msg.Tags.Hours, "Hours") end
---   if msg.Tags.Timestamp then
---     assert(msg.Tags.Timestamp:match("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d$"), "Timestamp must be in the format YYYY-MM-DD HH:MM:SS")
---   end
--- end
+--- Validate a getActiveChatroomUsers
+--- @param msg Message The message received
+function ChatroomValidation.validateGetActiveChatroomUsers(msg)
+  if msg.Tags.Hours then sharedValidation.validatePositiveInteger(msg.Tags.Hours, "Hours") end
+  if msg.Tags.Timestamp then
+    assert(msg.Tags.Timestamp:match("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d$"), "Timestamp must be in the format YYYY-MM-DD HH:MM:SS")
+  end
+end
 
 --- Validate setUserSilence
 --- @param moderators table<string> The list of moderators

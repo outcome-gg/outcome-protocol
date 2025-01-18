@@ -258,17 +258,6 @@ describe("#market #conditionalTokens #cpmmNotices", function()
     }, notice)
 	end)
 
-  it("should send updateIncentivesNotice", function()
-    local notice = cpmmNotices.updateIncentivesNotice(
-      msgUpdateIncentives.Tags.Incentives,
-      msgUpdateIncentives
-    )
-    assert.are.same({
-      Action = "Incentives-Updated",
-      Data = msgUpdateIncentives.Tags.Incentives
-    }, notice)
-	end)
-
   it("should send updateTakeFeeNotice", function()
     local notice = cpmmNotices.updateTakeFeeNotice(
       msgUpdateTakeFee.Tags.CreatorFee,

@@ -28,6 +28,7 @@ local json = require('json')
 --- @field marketsPendingInit table<string> List of markets pending initialization
 --- @field marketsInit table<string> List of initialized markets
 --- @field marketProcessCode table<string, string> Market process code
+--- @field approvedCollateralTokens table<string, boolean> Approved collateral tokens
 
 --- Create a new MarketFactory instance
 --- @return MarketFactory marketFactory The new MarketFactory instance
@@ -41,9 +42,7 @@ function MarketFactory:new(
   protocolFee,
   protocolFeeTarget,
   maximumTakeFee,
-  utilityToken,
-  minimumPayment,
-  collateralTokens
+  approvedCollateralTokens
 )
   local marketFactory = {
     configurator = configurator,
@@ -55,16 +54,24 @@ function MarketFactory:new(
     protocolFee = protocolFee,
     protocolFeeTarget = protocolFeeTarget,
     maximumTakeFee = maximumTakeFee,
-    utilityToken = utilityToken,
-    minimumPayment = minimumPayment,
-    collateralTokens = collateralTokens,
+    approvedCollateralTokens = approvedCollateralTokens,
     messageToProcessMapping = {},
     marketsSpawnedByCreator = {},
     marketsPendingInit = {},
     marketsInit = {},
     marketProcessCode = marketProcessCode
   }
-  setmetatable(marketFactory, { __index = MarketFactoryMethods })
+  setmetatable(marketFactory, {
+    __index = function(_, k)
+      if MarketFactoryMethods[k] then
+        return MarketFactoryMethods[k]
+      elseif MarketFactoryNotices[k] then
+        return MarketFactoryNotices[k]
+      else
+        return nil
+      end
+    end
+  })
   return marketFactory
 end
 
@@ -85,9 +92,7 @@ function MarketFactoryMethods:info(msg)
     ProtocolFee = self.protocolFee,
     ProtocolFeeTarget = self.protocolFeeTarget,
     MaximumTakeFee = self.maximumTakeFee,
-    UtilityToken = self.utilityToken,
-    MinimumPayment = self.minimumPayment,
-    CollateralTokens = json.encode(self.collateralTokens),
+    ApprovedCollateralTokens = json.encode(self.approvedCollateralTokens),
   })
 end
 
@@ -150,7 +155,7 @@ function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, ques
     ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount)),
   })
   -- send notice
-  return MarketFactoryNotices.spawnMarketNotice(resolutionAgent, collateralToken, msg.Sender, creatorFee, creatorFeeTarget, question, outcomeSlotCount, msg)
+  return self.spawnMarketNotice(resolutionAgent, collateralToken, msg.Sender, creatorFee, creatorFeeTarget, question, outcomeSlotCount, msg)
 end
 
 function MarketFactoryMethods:initMarket(msg)
@@ -169,7 +174,7 @@ function MarketFactoryMethods:initMarket(msg)
   -- reset pending init
   self.marketsPendingInit = {}
   -- send notice
-  return MarketFactoryNotices.initMarketNotice(processIds, msg)
+  return self.initMarketNotice(processIds, msg)
 end
 
 --[[
@@ -213,7 +218,7 @@ CONFIGURATOR METHODS
 --- @return Message updateConfiguratorNotice The update configurator notice
 function MarketFactoryMethods:updateConfigurator(updateConfigurator, msg)
   self.configurator = updateConfigurator
-  return MarketFactoryNotices.updateConfiguratorNotice(updateConfigurator, msg)
+  return self.updateConfiguratorNotice(updateConfigurator, msg)
 end
 
 --- Update incentives
@@ -222,7 +227,7 @@ end
 --- @return Message updateIncentivesNotice The update incentives notice
 function MarketFactoryMethods:updateIncentives(updateIncentives, msg)
   self.incentives = updateIncentives
-  return MarketFactoryNotices.updateIncentivesNotice(updateIncentives, msg)
+  return self.updateIncentivesNotice(updateIncentives, msg)
 end
 
 --- Update lpFee
@@ -231,7 +236,7 @@ end
 --- @return Message updateLpFeeNotice The update lpFee notice
 function MarketFactoryMethods:updateLpFee(updateLpFee, msg)
   self.lpFee = updateLpFee
-  return MarketFactoryNotices.updateLpFeeNotice(updateLpFee, msg)
+  return self.updateLpFeeNotice(updateLpFee, msg)
 end
 
 --- Update protocolFee
@@ -240,7 +245,7 @@ end
 --- @return Message updateProtocolFeeNotice The update protocolFee notice
 function MarketFactoryMethods:updateProtocolFee(updateProtocolFee, msg)
   self.protocolFee = updateProtocolFee
-  return MarketFactoryNotices.updateProtocolFeeNotice(updateProtocolFee, msg)
+  return self.updateProtocolFeeNotice(updateProtocolFee, msg)
 end
 
 --- Update protocolFeeTarget
@@ -249,7 +254,7 @@ end
 --- @return Message updateProtocolFeeTargetNotice The update protocolFeeTarget notice
 function MarketFactoryMethods:updateProtocolFeeTarget(updateProtocolFeeTarget, msg)
   self.protocolFeeTarget = updateProtocolFeeTarget
-  return MarketFactoryNotices.updateProtocolFeeTargetNotice(updateProtocolFeeTarget, msg)
+  return self.updateProtocolFeeTargetNotice(updateProtocolFeeTarget, msg)
 end
 
 --- Update maximumTakeFee
@@ -258,25 +263,7 @@ end
 --- @return Message updateMaximumTakeFeeNotice The update maximumTakeFee notice
 function MarketFactoryMethods:updateMaximumTakeFee(updateMaximumTakeFee, msg)
   self.maximumTakeFee = updateMaximumTakeFee
-  return MarketFactoryNotices.updateMaximumTakeFeeNotice(updateMaximumTakeFee, msg)
-end
-
---- Update minimumPayment
---- @param updateMinimumPayment string The new minimumPayment
---- @param msg Message The message received
---- @return Message updateMinimumPaymentNotice The update minimumPayment notice
-function MarketFactoryMethods:updateMinimumPayment(updateMinimumPayment, msg)
-  self.minimumPayment = updateMinimumPayment
-  return MarketFactoryNotices.updateMinimumPaymentNotice(updateMinimumPayment, msg)
-end
-
---- Update utilityToken
---- @param updateUtilityToken string The new utilityToken
---- @param msg Message The message received
---- @return Message updateUtilityTokenNotice The update utilityToken notice
-function MarketFactoryMethods:updateUtilityToken(updateUtilityToken, msg)
-  self.utilityToken = updateUtilityToken
-  return MarketFactoryNotices.updateUtilityTokenNotice(updateUtilityToken, msg)
+  return self.updateMaximumTakeFeeNotice(updateMaximumTakeFee, msg)
 end
 
 --- Approve collateralToken
@@ -285,8 +272,8 @@ end
 --- @param msg Message The message received
 --- @return Message approveCollateralTokenNotice The approveCollateralToken notice
 function MarketFactoryMethods:approveCollateralToken(collateralToken, isApprove, msg)
-  self.collateralTokens[collateralToken] = isApprove
-  return MarketFactoryNotices.approveCollateralTokenNotice(collateralToken, isApprove, msg)
+  self.approvedCollateralTokens[collateralToken] = isApprove
+  return self.approveCollateralTokenNotice(collateralToken, isApprove, msg)
 end
 
 --- Transfer
@@ -303,7 +290,7 @@ function MarketFactoryMethods:transfer(token, recipient, quantity, msg)
     Recipient = recipient,
     Quantity = quantity,
   })
-  return MarketFactoryNotices.transferNotice(token, recipient, quantity, msg)
+  return self.transferNotice(token, recipient, quantity, msg)
 end
 
 --[[

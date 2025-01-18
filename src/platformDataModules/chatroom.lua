@@ -16,21 +16,12 @@ without explicit written permission from Outcome.
 local Chatroom = {}
 local ChatroomMethods = {}
 local ChatroomNotices = require('chatroomModules.chatroomNotices')
-local chatroomDb = require('chatroomModules.chatroomDb')
 local json = require('json')
 
---- Represents a Chatroom
---- @class Chatroom
---- @field db table The database
---- @field configurator string The configurator
---- @field moderators table<string> The moderators
-
 --- Creates a new Chatroom instance
-function Chatroom:new(configurator, moderators)
+function Chatroom:new(dbAdmin)
   local chatroom = {
-    db = chatroomDb:new(),
-    configurator,
-    moderators
+    dbAdmin = dbAdmin
   }
   -- set metatable
   setmetatable(chatroom, {
@@ -60,18 +51,23 @@ WRITE METHODS
 --- @param cast boolean Whether to cast the message
 --- @param msg Message The message received
 --- @return Message|nil broadcastNotice The broadcast notice or nil if cast is false 
-function ChatroomMethods:broadcast(user, body, timestamp, cast, msg)
+function ChatroomMethods:broadcast(market, user, body, timestamp, cast, msg)
   -- Create user if not exists
-  local chatroomUser = self.db:getUser(user)
+  local chatroomUser = self.dbAdmin:safeExec(string.format("SELECT * FROM Users WHERE id = ?;", true, user))
   if not chatroomUser.id then
-    chatroomUser = self.db:insertUser(user)
+    chatroomUser = self.dbAdmin:safeExec("INSERT INTO Users (id) VALUES (?, ?);", true, user, timestamp)
   end
   -- Check if user is silenced
   if chatroomUser.silenced then
     return msg.reply({ Action = 'Broadcast-Error', Data = 'User is silenced'})
   end
   -- Insert message
-  local message = self.data:insertMessage(msg.Id, user, body, timestamp)
+  local message = self.dbAdmin:safeExec(
+    [[
+      INSERT INTO Messages (id, market, user, body, timestamp) 
+      VALUES (?, ?, ?, ?, ?);
+    ]], true, msg.Id, market, user, body, timestamp
+  )
   -- Broadcast message if cast
   if cast then return self.broadcastNotice(message, msg) end
 end
@@ -82,38 +78,12 @@ READ METHODS
 ============
 ]]
 
---- Get user
---- @param id string The user ID
---- @param msg Message The message received
---- @return Message user The user
-function ChatroomMethods:getUser(id, msg)
-  local user = self.db:getUser(id)
-  return msg.reply({ Data = json.encode(user) })
-end
-
---- Get users
---- @param params table The query parameters
---- @param msg Message The message received
---- @return Message users The users
-function ChatroomMethods:getUsers(params, msg)
-  local users = self.db:getUsers(params)
-  return msg.reply({ Data = json.encode(users) })
-end
-
---- Get user count
---- @param msg Message The message received
---- @return Message userCount The user count
-function ChatroomMethods:getUserCount(msg)
-  local userCount = self.db:getUserCount()
-  return msg.reply({ Data = json.encode(userCount) })
-end
-
 --- Get message
 --- @param id string The message ID
 --- @param msg Message The message received
 --- @return Message The message
 function ChatroomMethods:getMessage(id, msg)
-  local message = self.db:getMessage(id)
+  local message = self.dbAdmin:safeExec(string.format("SELECT * FROM Messages WHERE id = ?;", true, id))
   return msg.reply({ Data = json.encode(message) })
 end
 
@@ -122,7 +92,8 @@ end
 --- @param msg Message The message received
 --- @return Message The messages
 function ChatroomMethods:getMessages(params, msg)
-  local messages = self.db:getMessages(params)
+  local query, bindings = self.buildMessageQuery(params, false)
+  local messages = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
   return msg.reply({ Data = json.encode(messages) })
 end
 
@@ -131,7 +102,14 @@ end
 --- @param msg Message The message received
 --- @return Message activeChatroomUsers The active chatroom users
 function ChatroomMethods:getActiveChatroomUsers(params, msg)
-  local activeUsers = self.db:getActiveChatroomUsers(params)
+  local query, bindings = self.dbHelpers.buildMessageQuery({
+    user = nil, -- No specific user filtering for chatroom activity
+    visible = true,
+    hours = params.hours,
+    market = params.market,
+    startTimestamp = params.startTimestamp,
+  }, true) -- 'true' for count query
+  local activeUsers = self.dbHelpers:executeCountQuery(self.dbAdmin, query, bindings)
   return msg.reply({ Data = json.encode(activeUsers) })
 end
 
@@ -147,7 +125,16 @@ MODERATOR METHODS
 --- @param msg Message The message received
 --- @return Message setUserSilenceNotice The set user silence notice
 function ChatroomMethods:setUserSilence(id, silenced, msg)
-  local user = self.db:setUserSilence(id, silenced)
+  -- Validate id
+  if not id or type(id) ~= "string" then
+    error("Parameter 'id' must be a valid string.")
+  end
+  -- Validate silenced
+  if type(silenced) ~= "boolean" then
+    error("Parameter 'silenced' must be a boolean (true or false).")
+  end
+  -- Execute the query
+  local user = self.dbAdmin:safeExec("UPDATE Users SET silenced = ? WHERE id = ?;", true, silenced and 1 or 0, id)
   return self.setUserSilenceNotice(user, silenced, msg)
 end
 
@@ -158,7 +145,24 @@ end
 --- @return Message setMessageVisibilityNotice The set message visibility notice
 function ChatroomMethods:setMessageVisibility(entity, id, visible, msg)
   assert(entity == 'message' or entity == 'user', "Entity must be message or user")
-  local messages = self.db:setMessageVisibility(entity, id, visible)
+  -- Validate 'entity'
+  if entity ~= "message" and entity ~= "user" then
+    error("Parameter 'target' must be either 'message' or 'user'.")
+  end
+  -- Validate 'id'
+  if not id or type(id) ~= "string" then
+    error("Parameter 'id' must be a valid string.")
+  end
+  -- Validate 'visible'
+  if type(visible) ~= "boolean" then
+    error("Parameter 'visible' must be a boolean (true or false).")
+  end
+  -- Build Query
+  local query = entity == "message"
+    and "UPDATE Messages SET visible = ? WHERE id = ?;"
+    or "UPDATE Messages SET visible = ? WHERE user = ?;"
+  -- Execute Query with Bindings
+  local messages = self.dbAdmin:safeExec(query, true, visible and 1 or 0, id)
   return self.setMessageVisibilityNotice(messages, entity, visible, msg)
 end
 
@@ -169,41 +173,40 @@ end
 --- @return Message deleteMessagesNotice The delete messages notice
 function ChatroomMethods:deleteMessages(entity, id, msg)
   assert(entity == 'message' or entity == 'user', "Entity must be message or user")
-  self.db:deleteMessages(entity, id)
+  -- Validate 'entity'
+  if entity ~= "message" and entity ~= "user" then
+    error("Parameter 'target' must be either 'message' or 'user'.")
+  end
+  -- Validate 'id'
+  if not id or type(id) ~= "string" then
+    error("Parameter 'id' must be a valid string.")
+  end
+  -- Build Query
+  local query = entity == "message"
+    and "DELETE FROM Messages WHERE id = ?;"
+    or "DELETE FROM Messages WHERE user = ?;"
+  -- Execute Query with Bindings
+  self.dbAdmin:safeExec(query, false, id)
   return self.deleteMessagesNotice(id, entity, msg)
 end
 
 --- Delete old messages
---- @param days string The days to keep from now
+--- @param days number The days to keep from now
 --- @param msg Message The message received
 --- @return Message deleteOldMessagesNotice The delete old messages notice
 function ChatroomMethods:deleteOldMessages(days, msg)
-  self.db:deleteOldMessages(days)
+  -- Validate 'days'
+  if not days or days <= 0 or math.floor(days) ~= days then
+    error("Parameter 'days' must be a positive integer.")
+  end
+  -- Query with a placeholder
+  local query = [[
+    DELETE FROM Messages 
+    WHERE timestamp < datetime('now', ?);
+  ]]
+  -- Execute query with parameter binding
+  self.dbAdmin:safeExec(query, false, string.format("-%d days", days))
   return self.deleteOldMessagesNotice(days, msg)
-end
-
---[[
-====================
-CONFIGURATOR METHODS
-====================
-]]
-
---- Update configurator
---- @param updateConfigurator string The new configurator address
---- @param msg Message The message received
---- @return Message updateConfiguratorNotice The update configurator notice
-function ChatroomMethods:updateConfigurator(updateConfigurator, msg)
-  self.configurator = updateConfigurator
-  return self.updateConfiguratorNotice(updateConfigurator, msg)
-end
-
---- Update moderators
---- @param moderators table The list of moderators
---- @param msg Message The message received
---- @return Message updateModeratorsNotice The update moderators notice
-function ChatroomMethods:updateModerators(moderators, msg)
-  self.moderators = moderators
-  return self.updateModeratorsNotice(moderators, msg)
 end
 
 return Chatroom

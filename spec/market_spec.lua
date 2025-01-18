@@ -31,8 +31,8 @@ local configurator = ""
 local newConfigurator = ""
 local incentives = ""
 local newIncentives = ""
-local activity = ""
-local ocmToken = ""
+local dataIndex = ""
+local newDataIndex = ""
 local quantity = ""
 local tokenId = ""
 local returnAmount = ""
@@ -62,6 +62,7 @@ local msgTransferSingle = {}
 local msgTransferBatch = {}
 local msgTransferError = {}
 local msgUpdateConfigurator = {}
+local msgUpdateDataIndex = {}
 local msgUpdateIncentives = {}
 local msgUpdateTakeFee = {}
 local msgUpdateProtocolFeeTarget = {}
@@ -113,9 +114,9 @@ describe("#market", function()
     configurator = "test-this-is-valid-arweave-wallet-address-6"
     newConfigurator = "test-this-is-valid-arweave-wallet-address-7"
     incentives = "test-this-is-valid-arweave-wallet-address-8"
-    activity = "test-this-is-valid-arweave-wallet-address-9"
-    ocmToken = "test-this-is-valid-arweave-wallet-address-9"
     newIncentives = "test-this-is-valid-arweave-wallet-address-9"
+    dataIndex = "test-this-is-valid-arweave-wallet-address10"
+    newDataIndex = "test-this-is-valid-arweave-wallet-address11"
     quantity = "100"
     tokenId = "1"
     returnAmount = "90"
@@ -132,8 +133,7 @@ describe("#market", function()
     Market = market:new(
       configurator,
       incentives,
-      activity,
-      ocmToken,
+      dataIndex,
       collateralToken,
       resolutionAgent,
       creator,
@@ -165,7 +165,8 @@ describe("#market", function()
         ProtocolFee = protocolFee,
         ProtocolFeeTarget = protocolFeeTarget,
         Configurator = configurator,
-        Incentives = incentives
+        Incentives = incentives,
+        DataIndex = dataIndex,
       },
       reply = function(message) return message end
     }
@@ -375,6 +376,14 @@ describe("#market", function()
       reply = function(message) return message end
     }
     -- create a message object
+    msgUpdateDataIndex = {
+      From = configurator,
+      Tags = {
+        DataIndex = newDataIndex
+      },
+      reply = function(message) return message end
+    }
+    -- create a message object
     msgUpdateTakeFee = {
       From = configurator,
       Tags = {
@@ -490,7 +499,6 @@ describe("#market", function()
       protocolFeeTarget
     )
     -- assert initial state
-    assert.is.same(incentives, Market.cpmm.incentives)
     assert.is.same(configurator, Market.cpmm.configurator)
     assert.is.same({}, Market.cpmm.poolBalances)
     assert.is.same({}, Market.cpmm.withdrawnFees)
@@ -1375,6 +1383,21 @@ describe("#market", function()
     assert.are.equal(msgUpdateConfigurator.Tags.Configurator, notice.Data)
 	end)
 
+  it("should update data index", function()
+    local notice = {}
+    -- should not throw an error
+		assert.has.no.error(function()
+      notice = Market:updateDataIndex(
+        msgUpdateDataIndex
+      )
+    end)
+    -- assert state
+    assert.are.equal(msgUpdateDataIndex.Tags.DataIndex, Market.dataIndex)
+    -- assert notice
+    assert.are.equal("Data-Index-Updated", notice.Action)
+    assert.are.equal(msgUpdateDataIndex.Tags.DataIndex, notice.Data)
+	end)
+
   it("should update incentives", function()
     local notice = {}
     -- should not throw an error
@@ -1384,7 +1407,7 @@ describe("#market", function()
       )
     end)
     -- assert state
-    assert.are.equal(msgUpdateIncentives.Tags.Incentives, Market.cpmm.incentives)
+    assert.are.equal(msgUpdateIncentives.Tags.Incentives, Market.incentives)
     -- assert notice
     assert.are.equal("Incentives-Updated", notice.Action)
     assert.are.equal(msgUpdateIncentives.Tags.Incentives, notice.Data)

@@ -22,13 +22,6 @@ function ActivityNotices.logPredictionNotice(prediction, msg)
   })
 end
 
-function ActivityNotices.updateConfiguratorNotice(updateConfigurator, msg)
-  return msg.reply({
-    Action = "Update-Configurator-Notice",
-    UpdateConfigurator = updateConfigurator
-  })
-end
-
 function ActivityNotices.updateIntervalsNotice(updateIntervals, msg)
   return msg.reply({
     Action = "Update-Intervals-Notice",

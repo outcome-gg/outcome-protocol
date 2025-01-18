@@ -101,7 +101,6 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- Instantiate objects
     CPMM = cpmm:new(
       configurator,
-      incentives,
       collateralToken,
       conditionId,
       positionIds,
@@ -320,7 +319,6 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       protocolFeeTarget
     )
     -- assert initial state
-    assert.is.same(incentives, CPMM.incentives)
     assert.is.same(configurator, CPMM.configurator)
     assert.is.same({}, CPMM.poolBalances)
     assert.is.same({}, CPMM.withdrawnFees)
@@ -1223,22 +1221,6 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- assert notice
     assert.are.equal("Configurator-Updated", notice.Action)
     assert.are.equal(msgUpdateConfigurator.Tags.Configurator, notice.Data)
-	end)
-
-  it("should update incentives", function()
-    local notice = {}
-    -- should not throw an error
-		assert.has.no.error(function()
-      notice = CPMM:updateIncentives(
-      msgUpdateIncentives.Tags.Incentives,
-      msgUpdateIncentives
-    )
-    end)
-    -- assert state
-    assert.are.equal(msgUpdateIncentives.Tags.Incentives, CPMM.incentives)
-    -- assert notice
-    assert.are.equal("Incentives-Updated", notice.Action)
-    assert.are.equal(msgUpdateIncentives.Tags.Incentives, notice.Data)
 	end)
 
   it("should update take fee" , function()

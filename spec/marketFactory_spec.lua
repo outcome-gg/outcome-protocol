@@ -37,18 +37,16 @@ describe("#marketFactory", function()
     creatorFeeTarget = 'test-this-is-valid-arweave-wallet-address-3'
     -- create a market factory object
     FACTORY = marketFactory:new(
-      constants.marketFactory.configurator,
-      constants.marketFactory.incentives,
-      constants.marketFactory.namePrefix,
-      constants.marketFactory.tickerPrefix,
-      constants.marketFactory.logo,
-      constants.marketFactory.lpFee,
-      constants.marketFactory.protocolFee,
-      constants.marketFactory.protocolFeeTarget,
-      constants.marketFactory.maximumTakeFee,
-      constants.marketFactory.utilityToken,
-      constants.marketFactory.minimumPayment,
-      constants.marketFactory.collateralTokens
+      constants.configurator,
+      constants.incentives,
+      constants.namePrefix,
+      constants.tickerPrefix,
+      constants.logo,
+      constants.lpFee,
+      constants.protocolFee,
+      constants.protocolFeeTarget,
+      constants.maximumTakeFee,
+      constants.approvedCollateralTokens
     )
     -- create a message object
     msg = {
@@ -97,15 +95,13 @@ describe("#marketFactory", function()
     end)
     -- assert correct response
     assert.are.same({
-      Configurator = constants.marketFactory.configurator,
-      Incentives = constants.marketFactory.incentives,
-      LpFee = constants.marketFactory.lpFee,
-      ProtocolFee = constants.marketFactory.protocolFee,
-      ProtocolFeeTarget = constants.marketFactory.protocolFeeTarget,
-      MaximumTakeFee = constants.marketFactory.maximumTakeFee,
-      UtilityToken = constants.marketFactory.utilityToken,
-      MinimumPayment = constants.marketFactory.minimumPayment,
-      CollateralTokens = json.encode(constants.marketFactory.collateralTokens)
+      Configurator = constants.configurator,
+      Incentives = constants.incentives,
+      LpFee = constants.lpFee,
+      ProtocolFee = constants.protocolFee,
+      ProtocolFeeTarget = constants.protocolFeeTarget,
+      MaximumTakeFee = constants.maximumTakeFee,
+      ApprovedCollateralTokens = json.encode(constants.approvedCollateralTokens)
     }, info)
   end)
 
@@ -373,44 +369,6 @@ describe("#marketFactory", function()
     }, notice)
   end)
 
-  it("should update utility token", function()
-    local notice = {}
-    -- should not throw an error
-    local newUtilityToken = "test-this-is-valid-arweave-wallet-address-7"
-    assert.has_no.errors(function()
-      notice = FACTORY:updateUtilityToken(
-        newUtilityToken,
-        msg
-      )
-    end)
-    -- assert state change
-    assert.are.same(newUtilityToken, FACTORY.utilityToken)
-    -- assert notice
-    assert.are.same({
-      Action = "Update-UtilityToken-Notice",
-      UpdateUtilityToken = newUtilityToken
-    }, notice)
-  end)
-
-  it("should update minimum payment", function()
-    local notice = {}
-    -- should not throw an error
-    local newMinimumPayment = "123"
-    assert.has_no.errors(function()
-      notice = FACTORY:updateMinimumPayment(
-        newMinimumPayment,
-        msg
-      )
-    end)
-    -- assert state change
-    assert.are.same(newMinimumPayment, FACTORY.minimumPayment)
-    -- assert notice
-    assert.are.same({
-      Action = "Update-MinimumPayment-Notice",
-      UpdateMinimumPayment = newMinimumPayment
-    }, notice)
-  end)
-
   it("should approve collateral token", function()
     local notice = {}
     -- should not throw an error
@@ -422,10 +380,10 @@ describe("#marketFactory", function()
       )
     end)
     -- assert state change
-    local updatedCollateralTokens = constants.marketFactory.collateralTokens
-    table.insert(updatedCollateralTokens, collateralToken)
+    local updatedCollateralTokens = constants.approvedCollateralTokens
+    updatedCollateralTokens[collateralToken] = true
 
-    assert.are.same(updatedCollateralTokens, FACTORY.collateralTokens)
+    assert.are.same(updatedCollateralTokens, FACTORY.approvedCollateralTokens)
     -- assert notice
     assert.are.same({
       Action = "Approve-CollateralToken-Notice",
@@ -450,7 +408,7 @@ describe("#marketFactory", function()
       )
     end)
     -- assert state change
-    assert.are.same(constants.marketFactory.collateralTokens, FACTORY.collateralTokens)
+    assert.are.same(constants.collateralTokens, FACTORY.collateralTokens)
     -- assert notice
     assert.are.same({
       Action = "Approve-CollateralToken-Notice",

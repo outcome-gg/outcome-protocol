@@ -15,12 +15,14 @@ without explicit written permission from Outcome.
 
 local Market = {}
 local MarketMethods = {}
+local MarketNotices = require('marketModules.marketNotices')
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
 local cpmm = require('marketModules.cpmm')
 local cpmmValidation = require('marketModules.cpmmValidation')
 local tokenValidation = require('marketModules.tokenValidation')
+local marketValidation = require('marketModules.marketValidation')
 local semiFungibleTokensValidation = require('marketModules.semiFungibleTokensValidation')
 local conditionalTokensValidation = require('marketModules.conditionalTokensValidation')
 
@@ -31,8 +33,7 @@ local conditionalTokensValidation = require('marketModules.conditionalTokensVali
 --- Creates a new Market instance
 --- @param configurator string The process ID of the configurator
 --- @param incentives string The process ID of the incentives controller
---- @param activity string The process ID of the activity process
---- @param ocmToken string The process ID of the OCM token process
+--- @param dataIndex string The process ID of the data index process
 --- @param collateralToken string The process ID of the collateral token
 --- @param resolutionAgent string The process ID of the resolution agent
 --- @param creator string The address of the market creator
@@ -50,8 +51,7 @@ local conditionalTokensValidation = require('marketModules.conditionalTokensVali
 function Market:new(
   configurator,
   incentives,
-  activity,
-  ocmToken,
+  dataIndex,
   collateralToken,
   resolutionAgent,
   creator,
@@ -69,7 +69,6 @@ function Market:new(
   local market = {
     cpmm = cpmm:new(
       configurator,
-      incentives,
       collateralToken,
       resolutionAgent,
       positionIds,
@@ -84,10 +83,20 @@ function Market:new(
     ),
     question = question,
     creator = creator,
-    activity = activity,
-    ocmToken = ocmToken
+    incentives = incentives,
+    dataIndex = dataIndex
   }
-  setmetatable(market, { __index = MarketMethods })
+  setmetatable(market, {
+    __index = function(_, k)
+      if MarketMethods[k] then
+        return MarketMethods[k]
+      elseif MarketNotices[k] then
+        return MarketNotices[k]
+      else
+        return nil
+      end
+    end
+  })
   return market
 end
 
@@ -103,7 +112,8 @@ function MarketMethods:info(msg)
     PositionIds = json.encode(self.cpmm.tokens.positionIds),
     CollateralToken = self.cpmm.tokens.collateralToken,
     Configurator = self.cpmm.configurator,
-    Incentives = self.cpmm.incentives,
+    Incentives = self.incentives,
+    DataIndex = self.dataIndex,
     ResolutionAgent = self.cpmm.resolutionAgent,
     Question = self.question,
     Creator = self.creator,
@@ -123,18 +133,18 @@ ACTIVITY LOGS
 =============
 ]]
 
-local function logFunding(incentivized, ocmToken, activity, user, operation, collateral, quantity, msg)
+local function logFunding(incentives, dataIndex, user, operation, collateral, quantity, msg)
   -- log funding for incentives
   ao.send({
-    Target = ocmToken,
+    Target = incentives,
     Action = 'Log-Funding',
     User = user,
     Operation = operation,
     Collateral = collateral,
     Quantity = quantity
   })
-  -- log funding for activity
-  return msg.forward(activity, {
+  -- log funding for dataIndex
+  return msg.forward(dataIndex, {
     Action = "Log-Funding",
     User = user,
     Operation = operation,
@@ -143,10 +153,10 @@ local function logFunding(incentivized, ocmToken, activity, user, operation, col
   })
 end
 
-local function logPrediction(incentivized, ocmToken, activity, user, operation, collateral, outcome, quantity, price, msg)
+local function logPrediction(incentives, dataIndex, user, operation, collateral, outcome, quantity, price, msg)
   -- log prediction for incentives
   ao.send({
-    Target = ocmToken,
+    Target = incentives,
     Action = 'Log-Prediction',
     User = user,
     Operation = operation,
@@ -154,8 +164,8 @@ local function logPrediction(incentivized, ocmToken, activity, user, operation, 
     Quantity = quantity,
     Price = price
   })
-  -- log prediction for activity
-  return msg.forward(activity, {
+  -- log prediction for dataIndex
+  return msg.forward(dataIndex, {
     Action = "Log-Prediction",
     User = user,
     Operation = operation,
@@ -166,9 +176,8 @@ local function logPrediction(incentivized, ocmToken, activity, user, operation, 
   })
 end
 
-local function logProbabilities(activity, probabilities, msg)
-  return msg.forward(activity, {
-    Target = activity,
+local function logProbabilities(dataIndex, probabilities, msg)
+  return msg.forward(dataIndex, {
     Action = "Log-Prediction",
     Probabilities = probabilities
   })
@@ -192,7 +201,7 @@ function MarketMethods:addFunding(msg)
   if self.cpmm:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
     self.cpmm:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, distribution, msg)
     -- log funding
-    logFunding(self.ocmToken, self.activity, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
+    logFunding(self.incentives, self.dataIndex, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
   end
 end
 
@@ -206,7 +215,7 @@ function MarketMethods:removeFunding(msg)
   if self.cpmm:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
     self.cpmm:removeFunding(msg.Tags.Sender, msg.Tags.Quantity, msg)
     -- log funding
-    logFunding(self.ocmToken, self.activity, msg.Tags.Sender, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
+    logFunding(self.incentives, self.dataIndex, msg.Tags.Sender, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
   end
 end
 
@@ -250,8 +259,8 @@ function MarketMethods:buy(msg)
   local notice = self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
   -- log prediction and probabilities
   local price = tostring.bint.__div(outcomeTokensToBuy, bint(msg.Tags.Quantity))
-  logPrediction(self.ocmToken, self.activity, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags['X-PositionId'], msg.Tags.Quantity, price, msg)
-  logProbabilities(self.activity, json.encode(self.cpmm.calcProbabilities()))
+  logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags['X-PositionId'], msg.Tags.Quantity, price, msg)
+  logProbabilities(self.dataIndex, json.encode(self.cpmm.calcProbabilities()))
   return notice
 end
 
@@ -265,8 +274,8 @@ function MarketMethods:sell(msg)
   local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
   -- log prediction and probabilities
   local price = tostring.bint.__div(outcomeTokensToSell, bint(msg.Tags.Quantity))
-  logPrediction(self.ocmToken, self.activity, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.PositionId, msg.Tags.Quantity, price, msg)
-  logProbabilities(self.activity, json.encode(self.cpmm.calcProbabilities()))
+  logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.PositionId, msg.Tags.Quantity, price, msg)
+  logProbabilities(self.dataIndex, json.encode(self.cpmm.calcProbabilities()))
   return notice
 end
 
@@ -552,12 +561,22 @@ function MarketMethods:updateConfigurator(msg)
   return self.cpmm:updateConfigurator(msg.Tags.Configurator, msg)
 end
 
+--- Update data index
+--- @param msg Message The message received
+--- @return Message dataIndexUpdateNotice The incentives update notice
+function MarketMethods:updateDataIndex(msg)
+  marketValidation.updateDataIndex(msg, self.cpmm.configurator)
+  self.dataIndex = msg.Tags.DataIndex
+  return self.updateDataIndexNotice(msg.Tags.DataIndex, msg)
+end
+
 --- Update incentives
 --- @param msg Message The message received
 --- @return Message incentivesUpdateNotice The incentives update notice
 function MarketMethods:updateIncentives(msg)
-  cpmmValidation.updateIncentives(msg, self.cpmm.configurator)
-  return self.cpmm:updateIncentives(msg.Tags.Incentives, msg)
+  marketValidation.updateIncentives(msg, self.cpmm.configurator)
+  self.incentives = msg.Tags.Incentives
+  return self.updateIncentivesNotice(msg.Tags.Incentives, msg)
 end
 
 --- Update take fee

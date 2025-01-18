@@ -32,6 +32,7 @@ function DbHelpers.buildQuery(baseQuery, params, allowedActions, isCount, tableN
   -- Validate parameters
   DbHelpers.validateParams(params, allowedActions)
   -- Extract parameters
+  local market = params.market
   local user = params.user
   local silenced = params.silenced
   local action = params.action
@@ -48,6 +49,10 @@ function DbHelpers.buildQuery(baseQuery, params, allowedActions, isCount, tableN
   local conditions = {}
   local bindings = {}
   -- Add filters
+  if market then
+    table.insert(conditions, "market = ?")
+    table.insert(bindings, market)
+  end
   if user then
     table.insert(conditions, "user = ?")
     table.insert(bindings, user)
@@ -147,8 +152,8 @@ function DbHelpers.buildProbabilitiesQuery(params, isCount)
 end
 
 -- Execute a count query and return the result
-function DbHelpers:executeCountQuery(query, bindings)
-  local result = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
+function DbHelpers:executeCountQuery(dbAdmin, query, bindings)
+  local result = dbAdmin:safeExec(query, true, table.unpack(bindings))
   return result[1] and tonumber(result[1].count) or 0
 end
 

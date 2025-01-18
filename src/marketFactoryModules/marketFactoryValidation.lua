@@ -8,8 +8,6 @@ See factory.lua for full license details.
 local marketFactoryValidation = {}
 local sharedValidation = require('marketFactoryModules.sharedValidation')
 local sharedUtils = require('marketFactoryModules.sharedUtils')
-local bint = require('.bint')(256)
-local utils = require('.utils')
 
 --[[
 =============
@@ -19,24 +17,15 @@ WRITE METHODS
 
 --- Validates a spawnMarket message
 --- @param msg Message The message received
-function marketFactoryValidation.validateSpawnMarket(msg, marketCollateralTokens, minimumPayment)
-  if minimumPayment[msg.From] and bint.lt(bint(msg.Tags.Quantity), bint(minimumPayment[msg.From])) then
-    ao.send({
-      Target = msg.From,
-      Action = 'Transfer',
-      Recipient = msg.Sender,
-      Quantity = msg.Tags.Quantity,
-      Error = "Insufficient payment. Minimum required: " .. minimumPayment[msg.From]
-    })
-    return
-  end
+function marketFactoryValidation.validateSpawnMarket(msg, approvedCollateralTokens)
+  -- TODO @dev: check staking balance or sender == approved
   assert(type(msg.Tags.Question) == "string", "Question is required!")
   sharedValidation.validateAddress(msg.Tags.ResolutionAgent, "ResolutionAgent")
   sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")
   sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, "CreatorFee")
   sharedValidation.validateAddress(msg.Tags.CreatorFeeTarget, "CreatorFeeTarget")
   sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
-  assert(utils.includes(msg.Tags.CollateralToken, marketCollateralTokens), "CollateralToken not approved!")
+  assert(approvedCollateralTokens[msg.Tags.CollateralToken], "CollateralToken not approved!")
 end
 
 --[[
@@ -108,22 +97,6 @@ end
 function marketFactoryValidation.validateUpdateMaximumTakeFee(msg, configurator)
   assert(msg.From == configurator, 'Sender must be configurator!')
   sharedValidation.validatePositiveIntegerOrZero(msg.Tags.UpdateMaximumTakeFee, "UpdateMaximumTakeFee")
-end
-
---- Validates an update minimumPayment message
---- @param msg Message The message received
---- @param configurator string The configurator address
-function marketFactoryValidation.validateUpdateMinimumPayment(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.UpdateMinimumPayment, "UpdateMinimumPayment")
-end
-
---- Validates an update utilityToken message
---- @param msg Message The message received
---- @param configurator string The configurator address
-function marketFactoryValidation.validateUpdateUtilityToken(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.UpdateUtilityToken, "UpdateUtilityToken")
 end
 
 --- Validates an approve collateralToken message

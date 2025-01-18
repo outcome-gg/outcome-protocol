@@ -91,17 +91,6 @@ function CPMMNotices.updateConfiguratorNotice(configurator, msg)
   })
 end
 
---- Sends an update incentives notice
---- @param incentives string The updated incentives address
---- @param msg Message The message received
---- @return Message The incentives updated notice
-function CPMMNotices.updateIncentivesNotice(incentives, msg)
-  return msg.reply({
-    Action = "Incentives-Updated",
-    Data = incentives
-  })
-end
-
 --- Sends an update take fee notice
 --- @param creatorFee string The updated creator fee
 --- @param protocolFee string The updated protocol fee

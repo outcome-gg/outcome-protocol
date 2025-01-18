@@ -30,8 +30,7 @@ Version = "1.0.1"
 --- @class MarketConfiguration  
 --- @field configurator string The Configurator process ID  
 --- @field incentives string The Incentives process ID  
---- @field activity string The Activity process ID
---- @field ocmToken string The OCM Token process ID
+--- @field dataIndex string The Data Index process ID
 --- @field collateralToken string The Collateral Token process ID  
 --- @field resolutionAgent string The Resolution Agent process ID
 --- @field creator string The Creator address
@@ -53,8 +52,7 @@ local function retrieveMarketConfig()
   local config = {
     configurator = ao.env.Process.Tags.Configurator or '',
     incentives = ao.env.Process.Tags.Incentives or '',
-    activity = ao.env.Process.Tags.Activity or '',
-    ocmToken = ao.env.Process.Tags.OcmToken or '',
+    dataIndex = ao.env.Process.Tags.DataIndex or '',
     collateralToken = ao.env.Process.Tags.CollateralToken or '',
     question = ao.env.Process.Tags.Question or '',
     positionIds = json.decode(ao.env.Process.Tags.PositionIds or '[]'),
@@ -81,8 +79,7 @@ if not Market or Env == 'DEV' then
   Market = market:new(
     marketConfig.configurator,
     marketConfig.incentives,
-    marketConfig.activity,
-    marketConfig.ocmToken,
+    marketConfig.dataIndex,
     marketConfig.collateralToken,
     marketConfig.resolutionAgent,
     marketConfig.creator,

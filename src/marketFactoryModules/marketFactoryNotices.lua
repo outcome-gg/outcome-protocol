@@ -109,28 +109,6 @@ function MarketFactoryNotices.updateMaximumTakeFeeNotice(updateMaximumTakeFee, m
   })
 end
 
---- Update utilityToken notice
---- @param updateUtilityToken string The new utility token address
---- @param msg Message The message received
---- @return Message updateUtilityTokenNotice The update utility token notice
-function MarketFactoryNotices.updateUtilityTokenNotice(updateUtilityToken, msg)
-  return msg.reply({
-    Action = "Update-UtilityToken-Notice",
-    UpdateUtilityToken = updateUtilityToken
-  })
-end
-
---- Update minimumPayment notice
---- @param minimumPayment string The new minimum payment amount
---- @param msg Message The message received
---- @return Message updateMinimumPaymentNotice The update minimum payment amount notice
-function MarketFactoryNotices.updateMinimumPaymentNotice(minimumPayment, msg)
-  return msg.reply({
-    Action = "Update-MinimumPayment-Notice",
-    UpdateMinimumPayment = minimumPayment
-  })
-end
-
 --- Approve collateral token notice
 --- @param collateralToken string The collateral token address
 --- @param isApprove boolean The approval status, true if approved, false otherwise
