@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 33.04%"></span>
-                  <span><strong>33.04%</strong> Coverage</span>
+                  <span class="bg" style="width: 30.36%"></span>
+                  <span><strong>30.36%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>111</strong> Hits</span>
-               <span class="miss"><strong>225</strong> Missed</span>
+               <span class="hits"><strong>102</strong> Hits</span>
+               <span class="miss"><strong>234</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -335,11 +335,11 @@
             src/marketModules/conditionalTokens.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 16.85%"></span>
-                  <span><strong>16.85%</strong> Coverage</span>
+                  <span class="bg" style="width: 6.74%"></span>
+                  <span><strong>6.74%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>15</strong> Hits</span>
-               <span class="miss"><strong>74</strong> Missed</span>
+               <span class="hits"><strong>6</strong> Hits</span>
+               <span class="miss"><strong>83</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -363,8 +363,8 @@ without explicit written permission from Outcome.
 <span class="fc" data-hits="1">local SemiFungibleTokens = require(&#39;marketModules.semiFungibleTokens&#39;)</span>
 <span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
 <span class="fc" data-hits="1">local crypto = require(&#39;.crypto&#39;)</span>
-<span class="fc" data-hits="1">local ao = require(&#39;.ao&#39;)</span>
-<span class="fc" data-hits="1">local json = require(&quot;json&quot;)</span>
+<span class="nc">local ao = require(&#39;.ao&#39;)</span>
+<span class="nc">local json = require(&quot;json&quot;)</span>
 
 --- Represents ConditionalTokens
 --- @class ConditionalTokens
@@ -399,7 +399,7 @@ without explicit written permission from Outcome.
 --- @param protocolFee number The protocol fee to be paid, in basis points
 --- @param protocolFeeTarget string The process ID to receive the protocol fee
 --- @return ConditionalTokens conditionalTokens The new ConditionalTokens instance
-<span class="fc" data-hits="1">function ConditionalTokens:new(</span>
+<span class="nc">function ConditionalTokens:new(</span>
   name,
   ticker,
   logo,
@@ -454,7 +454,7 @@ end
 --- @param quantity string The quantity of collateral to split
 --- @param msg Message The message received
 --- @return Message The position split notice
-<span class="fc" data-hits="1">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)</span>
+<span class="nc">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal split positions.
 <span class="nc">  local quantities = {}</span>
@@ -474,7 +474,7 @@ end
 --- @param isSell boolean True if the merge is a sell, false otherwise
 --- @param msg Message The message received
 --- @return Message The positions merge notice
-<span class="fc" data-hits="1">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)</span>
+<span class="nc">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal merge positions.
 <span class="nc">  local quantities = {}</span>
@@ -502,7 +502,7 @@ end
 --- @param payouts table&lt;number&gt; The resolution agent&#39;s answer
 --- @param msg Message The message received
 --- @return Message The condition resolution notice
-<span class="fc" data-hits="1">function ConditionalTokensMethods:reportPayouts(payouts, msg)</span>
+<span class="nc">function ConditionalTokensMethods:reportPayouts(payouts, msg)</span>
 <span class="nc">  assert(#payouts == #self.positionIds, &quot;Payouts must match outcome slot count!&quot;)</span>
 <span class="nc">  assert(msg.From == self.resolutionAgent, &quot;Sender not resolution agent!&quot;)</span>
 <span class="nc">  assert(self.payoutDenominator == 0, &quot;payout denominator already set&quot;)</span>
@@ -524,7 +524,7 @@ end
 --- Transfers any payout minus fees to the message sender
 --- @param msg Message The message received
 --- @return Message The payout redemption notice
-<span class="fc" data-hits="1">function ConditionalTokensMethods:redeemPositions(msg)</span>
+<span class="nc">function ConditionalTokensMethods:redeemPositions(msg)</span>
 <span class="nc">  local den = self.payoutDenominator</span>
 <span class="nc">  assert(den &gt; 0, &quot;result for condition not received yet&quot;)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;condition not prepared yet&quot;)</span>
@@ -556,7 +556,7 @@ end
 --- @param from string The account to receive the payout minus fees
 --- @param totalPayout number The total payout assciated with the acount stake
 --- @return table&lt;Message&gt; The protocol fee, creator fee and payout messages
-<span class="fc" data-hits="1">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)</span>
+<span class="nc">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)</span>
 <span class="nc">  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))</span>
 <span class="nc">  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))</span>
 <span class="nc">  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))</span>
@@ -584,7 +584,7 @@ end
 <span class="nc">  return { ao.send(protocolFeeTxn), ao.send(creatorFeeTxn), ao.send(totalPayoutMinutTakeFeeTxn) }</span>
 end
 
-<span class="fc" data-hits="1">return ConditionalTokens</span>
+<span class="nc">return ConditionalTokens</span>
 </pre>
       </div>
 
@@ -1353,7 +1353,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-01-18 16:12:57
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-01-19 07:07:08
    </footer>
 
    <script type="text/javascript">

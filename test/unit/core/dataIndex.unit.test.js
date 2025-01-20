@@ -17,7 +17,7 @@ const USER_PID = 'USER_PID'
  ************************/
 
 test('load dbAdmin module', async () => {
-  const dbAdminCode = fs.readFileSync('./src/core/DbAdmin.lua', 'utf-8')
+  const dbAdminCode = fs.readFileSync('./src/_core/DbAdmin.lua', 'utf-8')
   const result = await Send({
     Action: 'Eval',
     Data: `
@@ -32,7 +32,7 @@ test('load dbAdmin module', async () => {
 })
 
 test('Load source', async () => {
-  const code = fs.readFileSync('./src/core/dataIndex.lua', 'utf-8')
+  const code = fs.readFileSync('./src/_core/dataIndex.lua', 'utf-8')
   const result = await Send({ Action: "Eval", Data: code })
   assert.equal(result.Output.data.output, "OK")
 

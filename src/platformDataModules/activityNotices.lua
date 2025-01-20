@@ -8,17 +8,36 @@ See activity.lua for full license details.
 local ActivityNotices = {}
 local json = require('json')
 
-function ActivityNotices.logFundingNotice(funding, msg)
+function ActivityNotices.logFundingNotice(market, user, operation, collateral, amount, msg)
   return msg.reply({
     Action = "Log-Funding-Notice",
-    Data = json.encode(funding)
+    Market = market,
+    User = user,
+    Operation = operation,
+    Collateral = collateral,
+    Quantity = amount
   })
 end
 
-function ActivityNotices.logPredictionNotice(prediction, msg)
+function ActivityNotices.logPredictionNotice(market, user, operation, collateral, outcome, amount, price, msg)
   return msg.reply({
     Action = "Log-Prediction-Notice",
-    Data = json.encode(prediction)
+    Market = market,
+    User = user,
+    Operation = operation,
+    Collateral = collateral,
+    Outcome = outcome,
+    Quantity = amount,
+    Price = price
+  })
+end
+
+
+function ActivityNotices.logProbabilitiesNotice(market, probabilities, msg)
+  return msg.reply({
+    Action = "Log-Probabilities-Notice",
+    Market = market,
+    Probabilities = json.encode(probabilities)
   })
 end
 

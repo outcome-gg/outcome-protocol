@@ -178,8 +178,8 @@ end
 
 local function logProbabilities(dataIndex, probabilities, msg)
   return msg.forward(dataIndex, {
-    Action = "Log-Prediction",
-    Probabilities = probabilities
+    Action = "Log-Probabilities",
+    Probabilities = json.encode(probabilities)
   })
 end
 
@@ -260,7 +260,7 @@ function MarketMethods:buy(msg)
   -- log prediction and probabilities
   local price = tostring.bint.__div(outcomeTokensToBuy, bint(msg.Tags.Quantity))
   logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags['X-PositionId'], msg.Tags.Quantity, price, msg)
-  logProbabilities(self.dataIndex, json.encode(self.cpmm.calcProbabilities()))
+  logProbabilities(self.dataIndex, self.cpmm.calcProbabilities())
   return notice
 end
 
@@ -275,7 +275,7 @@ function MarketMethods:sell(msg)
   -- log prediction and probabilities
   local price = tostring.bint.__div(outcomeTokensToSell, bint(msg.Tags.Quantity))
   logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.PositionId, msg.Tags.Quantity, price, msg)
-  logProbabilities(self.dataIndex, json.encode(self.cpmm.calcProbabilities()))
+  logProbabilities(self.dataIndex, self.cpmm.calcProbabilities())
   return notice
 end
 

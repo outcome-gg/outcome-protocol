@@ -62,20 +62,20 @@ WRITE METHODS
 --- @return Message|nil logFundingNotice The log funding notice or nil if cast is false
 function ActivityMethods:logFunding(user, operation, collateral, amount, timestamp, cast, msg)
   -- Insert user if they don't exist
-  local numUsers = #self.dbAdmin:safeExec(string.format("SELECT * FROM Users WHERE id = ?;", true, user))
+  local numUsers = #self.dbAdmin:safeExec("SELECT * FROM Users WHERE id = ?;", true, user)
   if numUsers == 0 then
-    self.dbAdmin:safeExec("INSERT INTO Users (id) VALUES (?, ?);", true, user, timestamp)
+    self.dbAdmin:safeExec("INSERT INTO Users (id, timestamp) VALUES (?, ?);", false, user, timestamp)
   end
   -- Insert funding
-  local funding = self.dbAdmin:safeExec(
+  self.dbAdmin:safeExec(
     [[
       INSERT INTO Fundings (id, market, user, operation, collateral, amount, timestamp) 
       VALUES (?, ?, ?, ?, ?, ?, ?);
-    ]], true, msg.Id, msg.From, user, operation, collateral, amount, timestamp
+    ]], false, msg.Id, msg.From, user, operation, collateral, amount, timestamp
   )
   -- Send notice if cast is true
   if cast then
-    return self.logFundingNotice(funding, msg)
+    return self.logFundingNotice(msg.From, user, operation, collateral, amount, msg)
   end
 end
 
@@ -92,12 +92,12 @@ end
 --- @return Message|nil logPredictionNotice The log prediction notice or nil if cast is false
 function ActivityMethods:logPrediction(user, operation, collateral, outcome, amount, price, timestamp, cast, msg)
   -- Insert user if they don't exist
-  local numUsers = #self.dbAdmin:safeExec(string.format("SELECT * FROM Users WHERE id = ?;", true, user))
+  local numUsers = #self.dbAdmin:safeExec("SELECT * FROM Users WHERE id = ?;", true, user)
   if numUsers == 0 then
-    self.dbAdmin:safeExec("INSERT INTO Users (id) VALUES (?, ?);", true, user, timestamp)
+    self.dbAdmin:safeExec("INSERT INTO Users (id) VALUES (?, ?);", false, user, timestamp)
   end
   -- Insert prediction
-  local prediction = dbAdmin:safeExec(
+  self.dbAdmin:safeExec(
     [[
       INSERT INTO Predictions (id, market, user, operation, collateral, outcome, amount, price, timestamp)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
@@ -105,53 +105,39 @@ function ActivityMethods:logPrediction(user, operation, collateral, outcome, amo
   )
   -- Send notice if cast is true
   if cast then
-    return self.logPredictionNotice(prediction, msg)
+    return self.logPredictionNotice(msg.From, user, operation, collateral, outcome, amount, price, msg)
   end
 end
 
 --- Log probabilities
 --- @param probabilities table<string> The probabilities (@dev from: self.cpmm:calcProbabilities())
---- @param positionIds table<string> The position IDs
 --- @param timestamp string The probabilities timestamp
 --- @return Message|nil logProbabilitiesNotice The log probabilities notice or nil if cast is false
-function ActivityMethods:logProbabilities(probabilities, positionIds, timestamp, cast, msg)
-  -- Validate Parameters
-  if type(positionIds) ~= "table" or type(probabilities) ~= "table" then
-    error("Parameters 'positionIds' and 'probabilities' must be tables.")
-  end
-  if #positionIds ~= #probabilities then
-    error("Parameters 'positionIds' and 'probabilities' must have the same length.")
-  end
-  if type(timestamp) ~= "string" or not timestamp:match("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d$") then
-    error("Parameter 'timestamp' must match format: 'YYYY-MM-DD HH:MM:SS'.")
-  end
+function ActivityMethods:logProbabilities(probabilities, timestamp, cast, msg)
   -- Insert into ProbabilitySets
   self.dbAdmin:safeExec(
     "INSERT INTO ProbabilitySets (id, market, timestamp) VALUES (?, ?, ?);",
-    false, msg.Id, timestamp
+    false, msg.Id, msg.From, timestamp
   )
   -- Insert into Probabilities
   local probability_query = [[
-    INSERT INTO Probabilities (id, set_id, market, outcome, probability) 
-    VALUES (?, ?, ?, ?, ?);
+    INSERT INTO Probabilities (id, set_id, outcome, probability) 
+    VALUES (?, ?, ?, ?);
   ]]
-  for i = 1, #positionIds do
-    local probability_id = string.format("%s_%d", msg.Id, i) -- Generate unique ID
+  for positionId, probability in pairs(probabilities) do
+    local probabilityId = string.format("%s_%d", msg.Id, positionId) -- Generate unique ID
     self.dbAdmin:safeExec(
       probability_query,
       false,
-      probability_id,
+      probabilityId,
       msg.Id,
-      positionIds[i],
-      probabilities[i]
+      positionId,
+      probability
     )
   end
-  -- Return the inserted probabilities
-  local probabilities_ = self.dbAdmin:safeExec("SELECT * FROM Probabilities WHERE set_id = ?;", true, msg.Id)
-
   -- Send notice if cast is true
   if cast then
-    return self.logProbabilitiesNotice(probabilities_, msg)
+    return self.logProbabilitiesNotice(msg.From, probabilities, msg)
   end
 end
 

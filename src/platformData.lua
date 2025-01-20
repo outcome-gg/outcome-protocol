@@ -13,12 +13,96 @@ without explicit written permission from Outcome.
 ======================================================================================
 ]]
 
-local db = require("platformDataModules.db")
+local dbSchema = require("platformDataModules.dbSchema")
 local platformData = require("platformDataModules.platformData")
 local activityValidation = require("platformDataModules.activityValidation")
 local chatroomValidation = require("platformDataModules.chatroomValidation")
 local constants = require("platformDataModules.constants")
+local sqlite3 = require('lsqlite3')
 local json = require("json")
+
+--[[
+=========
+DB SCHEMA
+=========
+]]
+
+USERS = [[
+  CREATE TABLE IF NOT EXISTS Users (
+    id TEXT PRIMARY KEY,
+    silenced BOOLEAN DEFAULT false,
+    timestamp TEXT NOT NULL
+  );
+]]
+
+MARKETS = [[
+  CREATE TABLE IF NOT EXISTS Markets (
+    id TEXT PRIMARY KEY,
+    timestamp TEXT NOT NULL
+  );
+]]
+
+MESSAGES = [[
+  CREATE TABLE IF NOT EXISTS Messages (
+    id TEXT PRIMARY KEY,
+    market TEXT NOT NULL,
+    user TEXT NOT NULL,
+    body TEXT NOT NULL,
+    visible BOOLEAN DEFAULT true,
+    timestamp TEXT NOT NULL,
+    FOREIGN KEY (market) REFERENCES Markets(id),
+    FOREIGN KEY (user) REFERENCES Users(id)
+  );
+]]
+
+FUNDINGS = [[
+  CREATE TABLE IF NOT EXISTS Fundings (
+    id TEXT PRIMARY KEY,
+    market TEXT NOT NULL,
+    user TEXT NOT NULL,
+    operation TEXT NOT NULL CHECK (operation IN ('add', 'remove')),
+    collateral TEXT NOT NULL,
+    amount NUMBER NOT NULL,
+    timestamp TEXT NOT NULL,
+    FOREIGN KEY (market) REFERENCES Markets(id),
+    FOREIGN KEY (user) REFERENCES Users(id)
+  );
+]]
+
+PREDICTIONS = [[
+  CREATE TABLE IF NOT EXISTS Predictions (
+    id TEXT PRIMARY KEY,
+    market TEXT NOT NULL,
+    user TEXT NOT NULL,
+    operation TEXT NOT NULL CHECK (operation IN ('buy', 'sell')),
+    collateral TEXT NOT NULL,
+    outcome TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    price REAL NOT NULL,
+    timestamp TEXT NOT NULL,
+    FOREIGN KEY (market) REFERENCES Markets(id),
+    FOREIGN KEY (user) REFERENCES Users(id)
+  );
+]]
+
+PROBABILITY_SETS = [[
+  CREATE TABLE IF NOT EXISTS ProbabilitySets (
+    id TEXT PRIMARY KEY,
+    market TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    FOREIGN KEY (market) REFERENCES Markets(id)
+  );
+]]
+
+PROBABILITIES = [[
+  CREATE TABLE IF NOT EXISTS Probabilities (
+    id TEXT PRIMARY KEY,
+    set_id TEXT NOT NULL,
+    outcome TEXT NOT NULL,
+    probability REAL NOT NULL,
+    FOREIGN KEY (set_id) REFERENCES ProbabilitySets(id)
+  );
+]]
 
 --[[
 =============
@@ -26,9 +110,24 @@ PLATFORM DATA
 =============
 ]]
 
-Db = Db or db:new()
 Env = "DEV"
 Version = "1.0.1"
+if not Db or Env == "DEV" then Db = sqlite3.open_memory() end
+DbAdmin = require('platformDataModules.dbAdmin').new(Db)
+
+local function initDb()
+  Db:exec(USERS)
+  Db:exec(MARKETS)
+  Db:exec(MESSAGES)
+  Db:exec(FUNDINGS)
+  Db:exec(PREDICTIONS)
+  Db:exec(PROBABILITY_SETS)
+  Db:exec(PROBABILITIES)
+  return DbAdmin:tables()
+end
+
+local tables = initDb()
+print("tables: " .. json.encode(tables))
 
 --- Represents the PlatformData Configuration
 --- @class PlatformDataConfiguration
@@ -50,7 +149,7 @@ end
 if not PlatformData or Env == 'DEV' then
   local platformDataConfig = retrievePlatformDataConfig()
   PlatformData = platformData:new(
-    Db,
+    DbAdmin,
     platformDataConfig.configurator,
     platformDataConfig.moderators
   )
@@ -80,7 +179,8 @@ ACTIVITY WRITE HANDLERS
 --- @return Message|nil logFundingNotice The log funding notice or nil if cast is false
 Handlers.add("Log-Funding", {Action = "Log-Funding"}, function(msg)
   activityValidation.validateLogFunding(msg)
-  return PlatformData.activity:logFunding(msg.Tags.User, msg.Tags.Operation, msg.Tags.Collateral, msg.Tags.Quantity, false, msg)
+  local cast = msg.Tags.Cast == "true"
+  return PlatformData.activity:logFunding(msg.Tags.User, msg.Tags.Operation, msg.Tags.Collateral, msg.Tags.Quantity, os.time(), cast, msg)
 end)
 
 --- Log prediction handler
@@ -88,7 +188,8 @@ end)
 --- @return Message|nil logPredictionNotice The log prediction notice or nil if cast is false
 Handlers.add("Log-Prediction", {Action = "Log-Prediction"}, function(msg)
   activityValidation.validateLogPrediction(msg)
-  return PlatformData.activity:logPrediction(msg.Tags.User, msg.Tags.Operation, msg.Tags.Collateral, msg.Tags.Quantity, msg.Tags.Outcome, msg.Tags.Price, false, msg)
+  local cast = msg.Tags.Cast == "true"
+  return PlatformData.activity:logPrediction(msg.Tags.User, msg.Tags.Operation, msg.Tags.Collateral, msg.Tags.Outcome, msg.Tags.Quantity, msg.Tags.Price, os.time(), cast, msg)
 end)
 
 --- Log probabilities handler
@@ -96,7 +197,9 @@ end)
 --- @return Message|nil logProbabilitiesNotice The log probabilities notice or nil if cast is false
 Handlers.add("Log-Probabilities", {Action = "Log-Probabilities"}, function(msg)
   activityValidation.validateLogProbabilities(msg)
-  return PlatformData.activity:logProbabilities(msg.Tags.User, msg.Tags.Operation, msg.Tags.Probabilities, false, msg)
+  local cast = msg.Tags.Cast == "true"
+  local probabilities = json.decode(msg.Tags.Probabilities)
+  return PlatformData.activity:logProbabilities(probabilities, os.time(), cast, msg)
 end)
 
 --[[
@@ -104,6 +207,28 @@ end)
 ACTIVITY READ HANDLERS
 ======================
 ]]
+
+-- Get user handler
+-- @param msg Message The message received
+-- @return Message user The user
+Handlers.add("Get-User", {Action = "Get-User"}, function(msg)
+  activityValidation.validateGetUser(msg)
+  return PlatformData.activity:getUser(msg.Tags.User, msg)
+end)
+
+-- Get users handler
+-- @param msg Message The message received
+-- @return Message users The users
+Handlers.add("Get-Users", {Action = "Get-Users"}, function(msg)
+  activityValidation.validateGetUsers(msg)
+  return PlatformData.activity:getUsers(msg)
+end)
+
+-- Get user count
+-- @param msg Message The message received
+Handlers.add("Get-User-Count", {Action = "Get-User-Count"}, function(msg)
+  return PlatformData.activity:getUserCount(msg)
+end)
 
 --- Get active funding users handler
 --- @param msg Message The message received
@@ -145,14 +270,6 @@ Handlers.add("Get-Probabilities", {Action = "Get-Probabilities"}, function(msg)
   return PlatformData.activity:getProbabilities(msg)
 end)
 
---- Get latest probabilities
---- @param msg Message The message received
---- @return Message latestProbabilities The latest probabilities
-Handlers.add("Get-Latest-Probabilities", {Action = "Get-Latest-Probabilities"}, function(msg)
-  activityValidation.validateGetLatestProbabilities(msg)
-  return PlatformData.activity:getLatestProbabilities(msg)
-end)
-
 --- Get probabilities for chart
 --- @param msg Message The message received
 --- @return Message probabilitiesForChart The probabilities for chart
@@ -181,22 +298,6 @@ CHATROOM READ HANDLERS
 ======================
 ]]
 
---- Get user handler
---- @param msg Message The message received
---- @return Message user The user
-Handlers.add("Get-User", {Action = "Get-User"}, function(msg)
-  chatroomValidation.validateGetUser(msg)
-  return PlatformData.chatroom:getUser(msg.Tags.User, msg)
-end)
-
---- Get users handler
---- @param msg Message The message received
---- @return Message users The users
-Handlers.add("Get-Users", {Action = "Get-Users"}, function(msg)
-  chatroomValidation.validateGetUsers(msg)
-  return PlatformData.chatroom:getUsers(msg)
-end)
-
 --- Get message handler
 --- @param msg Message The message received
 --- @return Message message The message
@@ -211,6 +312,14 @@ end)
 Handlers.add("Get-Messages", {Action = "Get-Messages"}, function(msg)
   chatroomValidation.validateGetMessages(msg)
   return PlatformData.chatroom:getMessages(msg)
+end)
+
+--- Get active chatroom users handler
+--- @param msg Message The message received
+--- @return Message activeChatroomUsers The active chatroom users
+Handlers.add("Get-Active-Chatroom-Users", {Action = "Get-Active-Chatroom-Users"}, function(msg)
+  chatroomValidation.validateGetActiveChatroomUsers(msg)
+  return PlatformData.chatroom:getActiveChatroomUsers(msg)
 end)
 
 --[[
@@ -272,20 +381,6 @@ Handlers.add("Update-Moderators", {Action = "Update-Moderators"}, function(msg)
   chatroomValidation.validateUpdateModerators(PlatformData.chatroom.configurator, msg)
   local moderators = json.decode(msg.Tags.Moderators)
   return PlatformData.chatroom:updateModerators(moderators, msg)
-end)
-
---[[
-=====================
-CONFIGURATOR HANDLERS
-=====================
-]]
-
---- Update configurator handler
---- @param msg Message The message received
---- @return Message updateConfiguratorNotice The update configurator notice
-Handlers.add("Update-Configurator", {Action = "Update-Configurator"}, function(msg)
-  activityValidation.validateUpdateConfigurator(msg)
-  return PlatformData.activity:updateConfigurator(msg.Tags.Configurator, msg)
 end)
 
 --- Update intervals handler

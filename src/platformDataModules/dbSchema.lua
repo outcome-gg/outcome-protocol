@@ -13,9 +13,10 @@ without explicit written permission from Outcome.
 ======================================================================================
 ]]
 
-local Db = {}
+local DbSchema = {}
 local sqlite3 = require('lsqlite3')
 local constants = require('platformDataModules.constants')
+local json = require('json')
 
 --[[
 =========
@@ -112,10 +113,8 @@ local function initDb(db, dbAdmin)
 end
 
 
-function Db:new()
-  local conn = sqlite3.open_memory()
-  local db = {
-    dbAdmin = require('platformDataModules.dbAdmin').new(conn),
+function DbSchema:new(db, dbAdmin)
+  local dbSchema = {
     intervals = constants.intervals,
     rangeDurations = constants.rangeDurations,
     maxInterval = constants.maxInterval,
@@ -125,10 +124,11 @@ function Db:new()
     defaultActivityWindow = constants.defaultActivityWindow
   }
   -- init database
-  initDb(conn, db.dbAdmin)
+  local tables = initDb(db, dbAdmin)
+  print("tables: " .. json.encode(tables))
   -- set metatable
-  setmetatable(db, {})
-  return db
+  setmetatable(dbSchema, {})
+  return dbSchema
 end
 
-return Db
+return DbSchema

@@ -67,14 +67,6 @@ function cpmmValidation.updateConfigurator(msg, configurator)
   sharedValidation.validateAddress(msg.Tags.Configurator, 'Configurator')
 end
 
---- Validates update incentives
---- @param msg Message The message to be validated
---- @param configurator string The configurator address
-function cpmmValidation.updateIncentives(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.Incentives, 'Incentives')
-end
-
 --- Validates update take fee
 --- @param msg Message The message to be validated
 --- @param configurator string The configurator address
