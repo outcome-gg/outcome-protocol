@@ -151,11 +151,74 @@ describe("platformData.integration.test", function () {
     })
 
     it("+ve should log market w/o cast", async () => {
-      
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Log-Market" },
+          { name: "Market", value: "test-this-is-valid-arweave-wallet-address-1" },
+          { name: "Creator", value: "test-this-is-valid-arweave-wallet-address-2" },
+          { name: "CreatorFee", value: "200" },
+          { name: "CreatorFeeTarget", value: "test-this-is-valid-arweave-wallet-address-3" },
+          { name: "Question", value: "who will win the US election?" },
+          { name: "OutcomeSlotCount", value: "2" },
+          { name: "Collateral", value: "test-this-is-valid-arweave-wallet-address-4" },
+          { name: "ResolutionAgent", value: "test-this-is-valid-arweave-wallet-address-5" },
+          { name: "Category", value: "politics" },
+          { name: "Subcategory", value: "US election" },
+          { name: "Logo", value: "https://www.arweave.net/123456" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(0)
+     
     })
 
     it("-ve should fail log market validation", async () => {
-      
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Log-Market" },
+          { name: "Market", value: "test-this-is-valid-arweave-wallet-address-1" },
+          { name: "Creator", value: "test-this-is-valid-arweave-wallet-address-2" },
+          { name: "CreatorFee", value: "200" },
+          { name: "CreatorFeeTarget", value: "test-this-is-NOT-valid" },
+          { name: "Question", value: "who will win the US election?" },
+          { name: "OutcomeSlotCount", value: "2" },
+          { name: "Collateral", value: "test-this-is-valid-arweave-wallet-address-4" },
+          { name: "ResolutionAgent", value: "test-this-is-valid-arweave-wallet-address-5" },
+          { name: "Category", value: "politics" },
+          { name: "Subcategory", value: "US election" },
+          { name: "Logo", value: "https://www.arweave.net/123456" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      expect(Error).to.contain("CreatorFeeTarget must be a valid Arweave address!")
     })
 
     it("+ve should log funding", async () => {
@@ -460,301 +523,43 @@ describe("platformData.integration.test", function () {
   })
 
   /* 
-  * ACTIVITY READ HANDLERS
-  */
-  describe("ACTIVITY READ HANDLERS", function () {
-    it("+ve should get user", async () => {
-      await message({
-        process: platformData,
-        tags: [
-          { name: "Action", value: "Get-User" },
-          { name: "User", value: "test-this-is-valid-arweave-wallet-address-1" }
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: platformData,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.equal(1)
-      const user = JSON.parse(Messages[0].Data)
-
-      expect(user["id"]).to.equal("test-this-is-valid-arweave-wallet-address-1")
-      expect(user["silenced"]).to.equal(0)
-      expect(Number(user["timestamp"])).to.be.greaterThan(1737389232801)
-    })
-
-    it("-ve should fail get user validation", async () => {
-      await message({
-        process: platformData,
-        tags: [
-          { name: "Action", value: "Get-User" },
-          { name: "User", value: "not-a-valid-arweave-wallet-address" }
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: platformData,
-      });
-
-      expect(Error).to.contain("User must be a valid Arweave address!")
-    })
-
-    it("+ve should get users", async () => {
-      await message({
-        process: platformData,
-        tags: [
-          { name: "Action", value: "Get-Users" }
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: platformData,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.equal(1)
-      const users = JSON.parse(Messages[0].Data)
-      const user = users[0]
-
-      expect(user["id"]).to.equal("test-this-is-valid-arweave-wallet-address-1")
-      expect(user["silenced"]).to.equal(0)
-      expect(Number(user["timestamp"])).to.be.greaterThan(1737389232801)
-    })
-
-    it("+ve should get users (silenced)", async () => {
-      await message({
-        process: platformData,
-        tags: [
-          { name: "Action", value: "Get-Users" },
-          { name: "Silenced", value: "true" }
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: platformData,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.equal(1)
-      const users = JSON.parse(Messages[0].Data)
-      
-      expect(users.length).to.equal(0)
-    })
-
-    it("-ve should fail get users validation", async () => {
-      await message({
-        process: platformData,
-        tags: [
-          { name: "Action", value: "Get-Users" },
-          { name: "Silenced", value: "foo" }
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: platformData,
-      });
-
-      expect(Error).to.contain("Silenced must be a boolean!")
-    })
-
-    it("+ve should get user count", async () => {
-      await message({
-        process: platformData,
-        tags: [
-          { name: "Action", value: "Get-User-Count" }
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: platformData,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.equal(1)
-      const userCount = JSON.parse(Messages[0].Data)
-      expect(userCount).to.equal(1)
-    })
-
-    it("-ve should fail get user count validation", async () => {
-      await message({
-        process: platformData,
-        tags: [
-          { name: "Action", value: "Get-User-Count" },
-          { name: "Silenced", value: "foo" }
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: platformData,
-      });
-
-      expect(Error).to.contain("Silenced must be a boolean!")
-    })
-
-    it("+ve should get active funding users", async () => {
-      await message({
-        process: platformData,
-        tags: [
-          { name: "Action", value: "Get-Active-Funding-Users" }
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: platformData,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.equal(1)
-      const users = JSON.parse(Messages[0].Data)
-      const user = users[0]
-
-      expect(user["user"]).to.equal("test-this-is-valid-arweave-wallet-address-1")
-      expect(user["market"]).to.equal(walletAddress)
-      expect(user["net_funding"]).to.equal(200000000000000)
-    })
-
-    it("-ve should fail get active funding users validation", async () => {
-    })
-
-    it("+ve should get active funding user count", async () => {
-      await message({
-        process: platformData,
-        tags: [
-          { name: "Action", value: "Get-Active-Funding-User-Count" }
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: platformData,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.equal(1)
-      const userCount = Messages[0].Data
-      expect(userCount).to.equal(1)
-    })
-
-    it("+ve should get active funding users by activity", async () => {
-     
-    })
-
-    it("-ve should fail get active funding users by activity validation", async () => {
-    })
-
-    it("+ve should get active prediction users", async () => {
-    })
-
-    it("-ve should fail active prediction users validation", async () => {
-    })
-
-    it("+ve should get active users", async () => {
-    })
-
-    it("-ve should fail active users validation", async () => {
-    })
-
-    it("+ve should get probabilities", async () => {
-    })
-
-    it("-ve should fail get probabilities validation", async () => {
-    })
-
-    it("+ve should get probabilities for chart", async () => {
-    })
-
-    it("-ve should fail get probabilities for chart validation", async () => {
-    })
-  })
-
-  /* 
   * CHATROOM WRITE HANDLERS
   */
   describe("CHATROOM WRITE HANDLERS", function () {
     it("+ve should broadcast message", async () => {
-    
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Broadcast" },
+          { name: "Market", value: "test-this-is-valid-arweave-wallet-address-1" },
+          { name: "Cast", value: "true" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "I'm IN!",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      
+      const action = Messages[0].Tags.find(t => t.name === 'Action').value
+      const market = Messages[0].Tags.find(t => t.name === 'Market').value
+      const body = Messages[0].Data
+
+      expect(action).to.eql("Broadcast-Notice")
+      expect(market).to.eql("test-this-is-valid-arweave-wallet-address-1")
+      expect(body).to.eql("I'm IN!")
     })
 
     it("-ve should fail broadcast message validation", async () => {
@@ -763,121 +568,151 @@ describe("platformData.integration.test", function () {
   })
 
   /* 
-  * CHATROOM READ HANDLERS
+  * READ HANDLERS
   */
-  describe("CHATROOM READ HANDLERS", function () {
-    it("+ve should get message", async () => {
-    
+  describe("READ HANDLERS", function () {
+    it("+ve should query", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Query" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "SELECT * FROM Users WHERE id = 'test-this-is-valid-arweave-wallet-address-1';",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const users = JSON.parse(Messages[0].Data)
+      const user = users[0]
+
+      expect(user["id"]).to.equal("test-this-is-valid-arweave-wallet-address-1")
+      expect(user["silenced"]).to.equal(0)
+      expect(Number(user["timestamp"])).to.be.greaterThan(1737389232801)
     })
 
-    it("-ve should fail get message validation", async () => {
+    it("-ve should fail query validation", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Query" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "DELETE * FROM Users;",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
-    })
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
 
-    it("+ve should get messages", async () => {
-    
-    })
-
-    it("-ve should fail get messages validation", async () => {
-
-    })
-
-    it("+ve should get active chatroom users", async () => {
-    
-    })
-
-    it("-ve should fail get active chatroom users validation", async () => {
-
+      expect(Error).to.contain("Forbidden keyword found in query!")
     })
   })
 
   /* 
   * MODERATOR HANDLERS
   */
-  describe("MODERATOR HANDLERS", function () {
-    it("+ve should set user silence", async () => {
+  // describe("MODERATOR HANDLERS", function () {
+  //   it("+ve should set user silence", async () => {
     
-    })
+  //   })
 
-    it("-ve should fail set user silence validation", async () => {
+  //   it("-ve should fail set user silence validation", async () => {
 
-    })
+  //   })
 
-    it("+ve should set message visibility", async () => {
+  //   it("+ve should set message visibility", async () => {
     
-    })
+  //   })
 
-    it("-ve should fail set message visibility validation", async () => {
+  //   it("-ve should fail set message visibility validation", async () => {
 
-    })
+  //   })
 
-    it("+ve should delete messages", async () => {
+  //   it("+ve should delete messages", async () => {
     
-    })
+  //   })
 
-    it("-ve should fail delete messages validation", async () => {
+  //   it("-ve should fail delete messages validation", async () => {
 
-    })
+  //   })
 
-    it("+ve should delete old messages", async () => {
+  //   it("+ve should delete old messages", async () => {
     
-    })
+  //   })
 
-    it("-ve should fail delete old messages validation", async () => {
+  //   it("-ve should fail delete old messages validation", async () => {
 
-    })
-  })
+  //   })
+  // })
 
   /* 
   * CONFIGURATOR HANDLERS
   */
-  describe("CONFIGURATOR HANDLERS", function () {
-    it("+ve should update configurator", async () => {
+  // describe("CONFIGURATOR HANDLERS", function () {
+  //   it("+ve should update configurator", async () => {
     
-    })
+  //   })
 
-    it("-ve should fail update configurator validation", async () => {
+  //   it("-ve should fail update configurator validation", async () => {
 
-    })
+  //   })
 
-    it("+ve should update moderators", async () => {
+  //   it("+ve should update moderators", async () => {
     
-    })
+  //   })
 
-    it("-ve should fail update moderators validation", async () => {
+  //   it("-ve should fail update moderators validation", async () => {
 
-    })
+  //   })
 
-    it("+ve should update intervals", async () => {
+  //   it("+ve should update intervals", async () => {
     
-    })
+  //   })
 
-    it("-ve should fail update intervals validation", async () => {
+  //   it("-ve should fail update intervals validation", async () => {
 
-    })
+  //   })
 
-    it("+ve should update range durations", async () => {
+  //   it("+ve should update range durations", async () => {
     
-    })
+  //   })
 
-    it("-ve should fail update range durations validation", async () => {
+  //   it("-ve should fail update range durations validation", async () => {
 
-    })
+  //   })
 
-    it("+ve should update max interval", async () => {
+  //   it("+ve should update max interval", async () => {
     
-    })
+  //   })
 
-    it("-ve should fail update max interval validation", async () => {
+  //   it("-ve should fail update max interval validation", async () => {
 
-    })
+  //   })
 
-    it("+ve should update max range duration", async () => {
+  //   it("+ve should update max range duration", async () => {
     
-    })
+  //   })
 
-    it("-ve should fail update max range duration validation", async () => {
+  //   it("-ve should fail update max range duration validation", async () => {
 
-    })
-  })
+  //   })
+  // })
 })

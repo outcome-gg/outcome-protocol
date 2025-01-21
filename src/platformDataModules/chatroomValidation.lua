@@ -14,7 +14,10 @@ local json = require('json')
 --- Validates a broadcast
 --- @param msg Message The message received
 function ChatroomValidation.validateBroadcast(msg)
-  assert(type(msg.Tags.Body) == "string", "Body is required!")
+  assert(type(msg.Data) == "string", "Data is required!")
+  assert(#msg.Data > 0, "Data cannot be empty!")
+  assert(#msg.Data < 280, "Data cannot be longer than 280 characters!")
+  sharedValidation.validateAddress(msg.Tags.Market, "Market")
 end
 
 --- Validates a getMessage

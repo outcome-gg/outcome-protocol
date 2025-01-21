@@ -1,4 +1,5 @@
 local DbHelpers = {}
+local json = require("json")
 
 -- General validation for parameters
 function DbHelpers.validateParams(params, allowedActions)
@@ -75,15 +76,18 @@ function DbHelpers.buildQuery(baseQuery, params, allowedActions, isCount, tableN
   end
   -- Add time filter if applicable
   if startTimestamp then
-    table.insert(conditions, "timestamp >= ?")
-    table.insert(bindings, startTimestamp)
+    print("h1")
+    -- table.insert(conditions, "timestamp >= ?")
+    -- table.insert(bindings, startTimestamp)
   elseif hours then
-    table.insert(conditions, "timestamp >= datetime('now', ? || ' hours')")
-    table.insert(bindings, '-' .. hours)
+    print("h2")
+    -- table.insert(conditions, "timestamp >= datetime('now', ? || ' hours')")
+    -- table.insert(bindings, '-' .. hours)
   elseif timestamp then
-    local comparator = (orderDirection == "ASC") and ">" or "<"
-    table.insert(conditions, string.format("timestamp %s ?", comparator))
-    table.insert(bindings, timestamp)
+    print("h3")
+    -- local comparator = (orderDirection == "ASC") and ">=" or "<="
+    -- table.insert(conditions, string.format("timestamp %s ?", comparator))
+    -- table.insert(bindings, timestamp)
   end
   -- Apply WHERE clause
   if #conditions > 0 then
@@ -141,7 +145,9 @@ function DbHelpers.buildProbabilitiesQuery(params, isCount, isFinalizedQuery)
     FROM Probabilities PE
     JOIN ProbabilitySets PS ON PE.set_id = PS.id
   ]]
+  print("queryyy" .. query)
   -- Use shared logic
+  print("params" .. json.encode(params))
   return DbHelpers.buildQuery(query, params, nil, isCount, nil, isFinalizedQuery)
 end
 

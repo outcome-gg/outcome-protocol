@@ -28,4 +28,14 @@ function PlatformDataValidation.validateUpdateModerators(configurator, msg)
   end
 end
 
+--- Validate updateReaders
+--- @param msg Message The message received
+function PlatformDataValidation.validateUpdateReaders(configurator, msg)
+  assert(msg.From == configurator, "Sender must be the configurator!")
+  local readers = json.decode(msg.tags.Readers)
+  for _, reader in ipairs(readers) do
+    sharedValidation.validateAddress(reader, "Reader")
+  end
+end
+
 return PlatformDataValidation

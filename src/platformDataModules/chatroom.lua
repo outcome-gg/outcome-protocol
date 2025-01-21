@@ -45,6 +45,7 @@ WRITE METHODS
 ]]
 
 --- Broadcast
+--- @param market string The market ID
 --- @param user string The user ID
 --- @param body string The message body
 --- @param timestamp string The message timestamp
@@ -52,66 +53,70 @@ WRITE METHODS
 --- @param msg Message The message received
 --- @return Message|nil broadcastNotice The broadcast notice or nil if cast is false 
 function ChatroomMethods:broadcast(market, user, body, timestamp, cast, msg)
-  -- Create user if not exists
-  local chatroomUser = self.dbAdmin:safeExec(string.format("SELECT * FROM Users WHERE id = ?;", true, user))
-  if not chatroomUser.id then
-    chatroomUser = self.dbAdmin:safeExec("INSERT INTO Users (id) VALUES (?, ?);", true, user, timestamp)
+  -- Create user if doesn't exists
+  local users = self.dbAdmin:safeExec("SELECT * FROM Users WHERE id = ?;", true, user)
+  if #users == 0 then
+    self.dbAdmin:safeExec("INSERT INTO Users (id, timestamp) VALUES (?, ?);", false, user, timestamp)
   end
+  local chatroomUser = self.dbAdmin:safeExec("SELECT * FROM Users WHERE id = ?;", true, user)[1]
   -- Check if user is silenced
-  if chatroomUser.silenced then
+  print("chatroomUser " .. json.encode(chatroomUser))
+  if chatroomUser.silenced == "true" then
+
     return msg.reply({ Action = 'Broadcast-Error', Data = 'User is silenced'})
   end
   -- Insert message
-  local message = self.dbAdmin:safeExec(
+  self.dbAdmin:safeExec(
     [[
       INSERT INTO Messages (id, market, user, body, timestamp) 
       VALUES (?, ?, ?, ?, ?);
-    ]], true, msg.Id, market, user, body, timestamp
+    ]], false, msg.Id, market, user, body, timestamp
   )
+  print("here")
   -- Broadcast message if cast
-  if cast then return self.broadcastNotice(message, msg) end
+  if cast then return self.broadcastNotice(body, market, msg) end
 end
 
---[[
-============
-READ METHODS
-============
-]]
+-- --[[
+-- ============
+-- READ METHODS
+-- ============
+-- ]]
 
---- Get message
---- @param id string The message ID
---- @param msg Message The message received
---- @return Message The message
-function ChatroomMethods:getMessage(id, msg)
-  local message = self.dbAdmin:safeExec(string.format("SELECT * FROM Messages WHERE id = ?;", true, id))
-  return msg.reply({ Data = json.encode(message) })
-end
+-- --- Get message
+-- --- @param id string The message ID
+-- --- @param msg Message The message received
+-- --- @return Message The message
+-- function ChatroomMethods:getMessage(id, msg)
+--   local message = self.dbAdmin:safeExec(string.format("SELECT * FROM Messages WHERE id = ?;", true, id))
+--   return msg.reply({ Data = json.encode(message) })
+-- end
 
---- Get messages
---- @param params table The query parameters
---- @param msg Message The message received
---- @return Message The messages
-function ChatroomMethods:getMessages(params, msg)
-  local query, bindings = self.buildMessageQuery(params, false)
-  local messages = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
-  return msg.reply({ Data = json.encode(messages) })
-end
+-- --- Get messages
+-- --- @param params table The query parameters
+-- --- @param msg Message The message received
+-- --- @return Message The messages
+-- function ChatroomMethods:getMessages(params, msg)
+--   local query, bindings = self.buildMessageQuery(params, false)
+--   local messages = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
+--   return msg.reply({ Data = json.encode(messages) })
+-- end
 
---- Get active chatroom users
---- @param params table The query parameters
---- @param msg Message The message received
---- @return Message activeChatroomUsers The active chatroom users
-function ChatroomMethods:getActiveChatroomUsers(params, msg)
-  local query, bindings = self.dbHelpers.buildMessageQuery({
-    user = nil, -- No specific user filtering for chatroom activity
-    visible = true,
-    hours = params.hours,
-    market = params.market,
-    startTimestamp = params.startTimestamp,
-  }, true) -- 'true' for count query
-  local activeUsers = self.dbHelpers:executeCountQuery(self.dbAdmin, query, bindings)
-  return msg.reply({ Data = json.encode(activeUsers) })
-end
+-- --- Get active chatroom users
+-- --- @param params table The query parameters
+-- --- @param msg Message The message received
+-- --- @return Message activeChatroomUsers The active chatroom users
+-- function ChatroomMethods:getActiveChatroomUsers(params, msg)
+--   local query, bindings = self.dbHelpers.buildMessageQuery({
+--     user = nil, -- No specific user filtering for chatroom activity
+--     visible = true,
+--     hours = params.hours,
+--     market = params.market,
+--     startTimestamp = params.startTimestamp,
+--   }, true) -- 'true' for count query
+--   local activeUsers = self.dbHelpers:executeCountQuery(self.dbAdmin, query, bindings)
+--   return msg.reply({ Data = json.encode(activeUsers) })
+-- end
 
 --[[
 =================

@@ -13,7 +13,6 @@ without explicit written permission from Outcome.
 ======================================================================================
 ]]
 
-local dbSchema = require("platformDataModules.dbSchema")
 local platformData = require("platformDataModules.platformData")
 local activityValidation = require("platformDataModules.activityValidation")
 local chatroomValidation = require("platformDataModules.chatroomValidation")
@@ -149,7 +148,8 @@ print("tables: " .. json.encode(tables))
 --- Represents the PlatformData Configuration
 --- @class PlatformDataConfiguration
 --- @field configurator string The configurator
---- @field Moderators table<string> The moderators
+--- @field moderators table<string> The moderators
+--- @field readers table<string> The readers
 
 --- Retrieve PlatformData Configuration
 --- Fetches configuration parameters from constants
@@ -157,7 +157,8 @@ print("tables: " .. json.encode(tables))
 local function retrievePlatformDataConfig()
   local config = {
     configurator = constants.configurator,
-    moderators = constants.moderators
+    moderators = constants.moderators,
+    readers = constants.readers
   }
   return config
 end
@@ -168,7 +169,8 @@ if not PlatformData or Env == 'DEV' then
   PlatformData = platformData:new(
     DbAdmin,
     platformDataConfig.configurator,
-    platformDataConfig.moderators
+    platformDataConfig.moderators,
+    platformDataConfig.readers
   )
 end
 
@@ -230,104 +232,6 @@ Handlers.add("Log-Probabilities", {Action = "Log-Probabilities"}, function(msg)
   return PlatformData.activity:logProbabilities(probabilities, os.time(), cast, msg)
 end)
 
---[[
-======================
-ACTIVITY READ HANDLERS
-======================
-]]
-
--- Get user handler
--- @param msg Message The message received
--- @return Message user The user
-Handlers.add("Get-User", {Action = "Get-User"}, function(msg)
-  activityValidation.validateGetUser(msg)
-  return PlatformData.activity:getUser(msg.Tags.User, msg)
-end)
-
--- Get users handler
--- @param msg Message The message received
--- @return Message users The users
-Handlers.add("Get-Users", {Action = "Get-Users"}, function(msg)
-  activityValidation.validateGetUsers(msg)
-  local params = {
-    silenced = msg.Tags.Silenced,
-    limit = msg.Tags.Limit,
-    offset = msg.Tags.Offset,
-    timestamp = msg.Tags.Timestamp,
-    orderDirection = msg.Tags.OrderDirection
-  }
-  return PlatformData.activity:getUsers(params, msg)
-end)
-
--- Get user count
--- @param msg Message The message received
-Handlers.add("Get-User-Count", {Action = "Get-User-Count"}, function(msg)
-  activityValidation.validateGetUserCount(msg)
-  local params = {
-    silenced = msg.Tags.Silenced,
-    limit = msg.Tags.Limit,
-    offset = msg.Tags.Offset,
-    timestamp = msg.Tags.Timestamp,
-    orderDirection = msg.Tags.OrderDirection
-  }
-  return PlatformData.activity:getUserCount(params, msg)
-end)
-
---- Get active funding users handler
---- @param msg Message The message received
---- @return Message activeFundingUsers The active funding users
-Handlers.add("Get-Active-Funding-Users", {Action = "Get-Active-Funding-Users"}, function(msg)
-  activityValidation.validateGetActiveFundingUsers(msg)
-  return PlatformData.activity:getActiveFundingUsers(msg.Tags.Market, msg.Tags.StartTimestamp, msg)
-end)
-
---- Get active funding users handler
---- @param msg Message The message received
---- @return Message activeFundingUserCount The active funding user count
-Handlers.add("Get-Active-Funding-User-Count", {Action = "Get-Active-Funding-User-Count"}, function(msg)
-  activityValidation.validateGetActiveFundingUsers(msg)
-  return PlatformData.activity:getActiveFundingUserCount(msg.Tags.Market, msg.Tags.StartTimestamp, msg)
-end)
-
---- Get active funding users by activity handler
---- @param msg Message The message received
---- @return Message activeFundingUsersByActivity The active funding users by activity
-Handlers.add("Get-Active-Funding-Users-By-Activity", {Action = "Get-Active-Funding-Users-By-Activity"}, function(msg)
-  activityValidation.validateGetActiveFundingUsersByActivity(msg)
-  return PlatformData.activity:getActiveFundingUsersByActivity(msg)
-end)
-
---- Get active prediction users handler
---- @param msg Message The message received
---- @return Message activePredictionUsers The active prediction users
-Handlers.add("Get-Active-Prediction-Users", {Action = "Get-Active-Prediction-Users"}, function(msg)
-  activityValidation.validateGetActivePredictionUsers(msg)
-  return PlatformData.activity:getActivePredictionUsers(msg)
-end)
-
---- Get active users
---- @param msg Message The message received
---- @return Message activeUsers The active users
-Handlers.add("Get-Active-Users", {Action = "Get-Active-Users"}, function(msg)
-  activityValidation.validateGetActiveUsers(msg)
-  return PlatformData.activity:getActiveUsers(msg)
-end)
-
---- Get probabilities
---- @param msg Message The message received
---- @return Message probabilities The probabilities
-Handlers.add("Get-Probabilities", {Action = "Get-Probabilities"}, function(msg)
-  activityValidation.validateGetProbabilities(msg)
-  return PlatformData.activity:getProbabilities(msg)
-end)
-
---- Get probabilities for chart
---- @param msg Message The message received
---- @return Message probabilitiesForChart The probabilities for chart
-Handlers.add("Get-Probabilities-For-Chart", {Action = "Get-Probabilities-For-Chart"}, function(msg)
-  activityValidation.validateGetProbabilitiesForChart(msg)
-  return PlatformData.activity:getProbabilitiesForChart(msg)
-end)
 
 --[[
 =======================
@@ -340,37 +244,23 @@ CHATROOM WRITE HANDLERS
 --- @return Message broadcastNotice The broadcast notice
 Handlers.add("Broadcast", {Action = "Broadcast"}, function(msg)
   chatroomValidation.validateBroadcast(msg)
-  return PlatformData.chatroom:broadcast(msg.From, msg.Tags.Body, os.time(), false, msg) -- do not cast
+  local cast = msg.Tags.Cast == "true"
+  local body = tostring(msg.Data)
+  return PlatformData.chatroom:broadcast(msg.Tags.Market, msg.From, body, os.time(), cast, msg)
 end)
 
 --[[
-======================
-CHATROOM READ HANDLERS
-======================
+=============
+READ HANDLERS
+=============
 ]]
 
---- Get message handler
---- @param msg Message The message received
---- @return Message message The message
-Handlers.add("Get-Message", {Action = "Get-Message"}, function(msg)
-  chatroomValidation.validateGetMessage(msg)
-  return PlatformData.chatroom:getMessage(msg.Tags.MessageId, msg)
-end)
-
---- Get messages handler
---- @param msg Message The message received
---- @return Message messages The messages
-Handlers.add("Get-Messages", {Action = "Get-Messages"}, function(msg)
-  chatroomValidation.validateGetMessages(msg)
-  return PlatformData.chatroom:getMessages(msg)
-end)
-
---- Get active chatroom users handler
---- @param msg Message The message received
---- @return Message activeChatroomUsers The active chatroom users
-Handlers.add("Get-Active-Chatroom-Users", {Action = "Get-Active-Chatroom-Users"}, function(msg)
-  chatroomValidation.validateGetActiveChatroomUsers(msg)
-  return PlatformData.chatroom:getActiveChatroomUsers(msg)
+-- Query handler
+-- @param msg Message The message received
+-- @return Message queryResults The query results
+Handlers.add("Query", {Action = "Query"}, function(msg)
+  local normalizedSql = activityValidation.validateQuery(PlatformData.readers, msg)
+  return PlatformData:query(normalizedSql, msg)
 end)
 
 --[[
@@ -434,34 +324,11 @@ Handlers.add("Update-Moderators", {Action = "Update-Moderators"}, function(msg)
   return PlatformData.chatroom:updateModerators(moderators, msg)
 end)
 
---- Update intervals handler
+--- Update readers handler
 --- @param msg Message The message received
---- @return Message updateIntervalsNotice The update intervals notice
-Handlers.add("Update-Intervals", {Action = "Update-Intervals"}, function(msg)
-  activityValidation.validateUpdateIntervals(msg)
-  return PlatformData.activity:updateIntervals(msg.Tags.Intervals, msg)
-end)
-
---- Update range durations
---- @param msg Message The message received
---- @return Message updateRangeDurationsNotice The update range durations notice
-Handlers.add("Update-Range-Durations", {Action = "Update-Range-Durations"}, function(msg)
-  activityValidation.validateUpdateRangeDurations(msg)
-  return PlatformData.activity:updateRangeDurations(msg.Tags.RangeDurations, msg)
-end)
-
---- Update max interval handler
---- @param msg Message The message received
---- @return Message updateMaxIntervalNotice The update max interval notice
-Handlers.add("Update-Max-Interval", {Action = "Update-Max-Interval"}, function(msg)
-  activityValidation.validateUpdateMaxInterval(msg)
-  return PlatformData.activity:updateMaxInterval(msg.Tags.MaxInterval, msg)
-end)
-
---- Update max range duration handler
---- @param msg Message The message received
---- @return Message updateMaxRangeDurationNotice The update max range duration notice
-Handlers.add("Update-Max-Range-Duration", {Action = "Update-Max-Range-Duration"}, function(msg)
-  activityValidation.validateUpdateMaxRangeDuration(msg)
-  return PlatformData.activity:updateMaxRangeDuration(msg.Tags.MaxRangeDuration, msg)
+--- @return Message updateReadersNotice The update readers notice
+Handlers.add("Update-Readers", {Action = "Update-Readers"}, function(msg)
+  chatroomValidation.validateUpdateReaders(PlatformData.chatroom.configurator, msg)
+  local readers = json.decode(msg.Tags.Readers)
+  return PlatformData.chatroom:updateReaders(readers, msg)
 end)

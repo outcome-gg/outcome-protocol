@@ -30,13 +30,14 @@ local json = require('json')
 --- @field moderators table<string> The moderators
 
 --- Creates a new PlatformData instance
-function PlatformData:new(dbAdmin, configurator, moderators)
+function PlatformData:new(dbAdmin, configurator, moderators, readers)
   local platformData = {
     dbAdmin = dbAdmin,
     activity = activity:new(dbAdmin),
     chatroom = chatroom:new(dbAdmin),
     configurator = configurator,
-    moderators = moderators
+    moderators = moderators,
+    readers = readers
   }
   -- set metatable
   setmetatable(platformData, {
@@ -68,6 +69,21 @@ function PlatformDataMethods:info(msg)
 end
 
 --[[
+============
+READ METHODS
+============
+]]
+
+--- Query
+--- @param sql string The SQL query
+--- @param msg Message The message received
+--- @return Message queryResults The query results
+function PlatformDataMethods:query(sql, msg)
+  local results = self.dbAdmin:exec(sql)
+  return msg.reply({ Action = 'Query-Results', Data = json.encode(results) })
+end
+
+--[[
 ====================
 CONFIGURATOR METHODS
 ====================
@@ -89,6 +105,15 @@ end
 function PlatformDataMethods:updateModerators(moderators, msg)
   self.moderators = moderators
   return self.updateModeratorsNotice(moderators, msg)
+end
+
+--- Update readers
+--- @param readers table The list of readers
+--- @param msg Message The message received
+--- @return Message updateReadersNotice The update readers notice
+function PlatformDataMethods:updateReaders(readers, msg)
+  self.readers = readers
+  return self.updateReadersNotice(readers, msg)
 end
 
 return PlatformData

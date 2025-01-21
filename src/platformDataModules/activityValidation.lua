@@ -8,6 +8,8 @@ See activity.lua for full license details.
 local ActivityValidation = {}
 local sharedValidation = require('platformDataModules.sharedValidation')
 local sharedUtils = require('platformDataModules.sharedUtils')
+local utils = require('platformDataModules.utils')
+local json = require('json')
 
 --- Validate log market
 --- @param msg Message The message received
@@ -53,47 +55,35 @@ function ActivityValidation.validateLogProbabilities(msg)
   assert(sharedUtils.isValidKeyValueJSON(msg.Tags.Probabilities), "Probabilities must be valid JSON!")
 end
 
---- Validate get user
---- @param msg Message The message received
-function ActivityValidation.validateGetUser(msg)
-  sharedValidation.validateAddress(msg.Tags.User, "User")
+local function normalize_query(query)
+  -- Remove comments (both single-line -- and multi-line /* */)
+  query = query:gsub("%-%-.-\n", "")  -- Remove single-line comments
+  query = query:gsub("/%*.-%*/", "")  -- Remove multi-line comments
+  -- Collapse multiple spaces into one
+  query = query:gsub("%s+", " ")
+  -- Trim leading and trailing spaces
+  query = query:match("^%s*(.-)%s*$")
+  -- Convert to lowercase
+  query = query:lower()
+  return query
 end
 
---- Validate get users
+--- Validate query
 --- @param msg Message The message received
-function ActivityValidation.validateGetUsers(msg)
-  if msg.Tags.Silenced then assert(sharedUtils.isValidBooleanString(msg.Tags.Silenced), "Silenced must be a boolean!") end
-  if msg.Tags.Limit then sharedValidation.validatePositiveInteger(msg.Tags.Limit, "Limit") end
-  if msg.Tags.Offset then sharedValidation.validatePositiveInteger(msg.Tags.Offset, "Offset") end
-  if msg.Tags.Timestamp then
-    assert(msg.Tags.Timestamp:match("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d$"), "Timestamp must be in the format YYYY-MM-DD HH:MM:SS")
+--- @param readers table<string> The list of approved readers
+--- @return string The normalized SQL query
+function ActivityValidation.validateQuery(readers, msg)
+  assert(utils.includes(msg.From, readers), "Sender must be reader!")
+  local sql = tostring(msg.Data)
+  assert(sql and type(sql) == "string", "SQL query is required!")
+  -- normalize query to remove comments and spaces
+  sql = normalize_query(sql)
+  -- check for forbidden keywords
+  local forbiddenKeywords = {"DELETE", "DROP", "TRUNCATE", "ALTER", "CREATE", "INSERT", "UPDATE"}
+  for _, keyword in ipairs(forbiddenKeywords) do
+    assert(not sql:upper():match(keyword), "Forbidden keyword found in query!")
   end
-  if msg.Tags.OrderDirection then
-    assert(msg.Tags.OrderDirection == "ASC" or msg.Tags.OrderDirection == "DESC", "OrderDirection must be ASC or DESC")
-  end
-end
-
---- Validate get user count
---- @param msg Message The message received
-function ActivityValidation.validateGetUserCount(msg)
-  if msg.Tags.Silenced then assert(sharedUtils.isValidBooleanString(msg.Tags.Silenced), "Silenced must be a boolean!") end
-  if msg.Tags.Limit then sharedValidation.validatePositiveInteger(msg.Tags.Limit, "Limit") end
-  if msg.Tags.Offset then sharedValidation.validatePositiveInteger(msg.Tags.Offset, "Offset") end
-  if msg.Tags.Timestamp then
-    assert(msg.Tags.Timestamp:match("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d$"), "Timestamp must be in the format YYYY-MM-DD HH:MM:SS")
-  end
-  if msg.Tags.OrderDirection then
-    assert(msg.Tags.OrderDirection == "ASC" or msg.Tags.OrderDirection == "DESC", "OrderDirection must be ASC or DESC")
-  end
-end
-
---- Validate get active funding users
---- @param msg Message The message received
-function ActivityValidation.validateGetActiveFundingUsers(msg)
-  if msg.Tags.Market then sharedValidation.validateAddress(msg.Tags.Market, "Market") end
-  if msg.Tags.StartTimestamp then
-    assert(msg.Tags.StartTimestamp:match("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d$"), "StartTimestamp must be in the format YYYY-MM-DD HH:MM:SS")
-  end
+  return sql
 end
 
 return ActivityValidation

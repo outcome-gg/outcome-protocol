@@ -59,32 +59,4 @@ function ActivityNotices.logProbabilitiesNotice(market, probabilities, msg)
   })
 end
 
-function ActivityNotices.updateIntervalsNotice(updateIntervals, msg)
-  return msg.reply({
-    Action = "Update-Intervals-Notice",
-    UpdateIntervals = updateIntervals
-  })
-end
-
-function ActivityNotices.updateRangeDurationsNotice(updateRangeDurations, msg)
-  return msg.reply({
-    Action = "Update-Range-Durations-Notice",
-    UpdateRangeDurations = updateRangeDurations
-  })
-end
-
-function ActivityNotices.updateMaxIntervalNotice(updateMaxInterval, msg)
-  return msg.reply({
-    Action = "Update-Max-Interval-Notice",
-    UpdateMaxInterval = updateMaxInterval
-  })
-end
-
-function ActivityNotices.updateMaxRangeDurationNotice(updateMaxRangeDuration, msg)
-  return msg.reply({
-    Action = "Update-Max-Range-Duration-Notice",
-    UpdateMaxRangeDuration = updateMaxRangeDuration
-  })
-end
-
 return ActivityNotices

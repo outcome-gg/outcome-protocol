@@ -8,10 +8,11 @@ See chatroom.lua for full license details.
 local ChatroomNotices = {}
 local json = require('json')
 
-function ChatroomNotices.broadcastNotice(message, msg)
+function ChatroomNotices.broadcastNotice(body, market, msg)
   return msg.reply({
     Action = "Broadcast-Notice",
-    Data = json.encode(message)
+    Market = market,
+    Data = body
   })
 end
 
