@@ -31,14 +31,14 @@ USERS = [[
   CREATE TABLE IF NOT EXISTS Users (
     id TEXT PRIMARY KEY,
     silenced BOOLEAN DEFAULT false,
-    timestamp TEXT NOT NULL
+    timestamp NUMBER NOT NULL
   );
 ]]
 
 MARKETS = [[
   CREATE TABLE IF NOT EXISTS Markets (
     id TEXT PRIMARY KEY,
-    timestamp TEXT NOT NULL
+    timestamp NUMBER NOT NULL
   );
 ]]
 
@@ -49,7 +49,7 @@ MESSAGES = [[
     user TEXT NOT NULL,
     body TEXT NOT NULL,
     visible BOOLEAN DEFAULT true,
-    timestamp TEXT NOT NULL,
+    timestamp NUMBER NOT NULL,
     FOREIGN KEY (market) REFERENCES Markets(id),
     FOREIGN KEY (user) REFERENCES Users(id)
   );
@@ -63,7 +63,7 @@ FUNDINGS = [[
     operation TEXT NOT NULL CHECK (operation IN ('add', 'remove')),
     collateral TEXT NOT NULL,
     amount NUMBER NOT NULL,
-    timestamp TEXT NOT NULL,
+    timestamp NUMBER NOT NULL,
     FOREIGN KEY (market) REFERENCES Markets(id),
     FOREIGN KEY (user) REFERENCES Users(id)
   );
@@ -79,7 +79,7 @@ PREDICTIONS = [[
     outcome TEXT NOT NULL,
     amount TEXT NOT NULL,
     price REAL NOT NULL,
-    timestamp TEXT NOT NULL,
+    timestamp NUMBER NOT NULL,
     FOREIGN KEY (market) REFERENCES Markets(id),
     FOREIGN KEY (user) REFERENCES Users(id)
   );
@@ -89,7 +89,7 @@ PROBABILITY_SETS = [[
   CREATE TABLE IF NOT EXISTS ProbabilitySets (
     id TEXT PRIMARY KEY,
     market TEXT NOT NULL,
-    timestamp TEXT NOT NULL,
+    timestamp NUMBER NOT NULL,
     FOREIGN KEY (market) REFERENCES Markets(id)
   );
 ]]
@@ -221,13 +221,28 @@ end)
 -- @return Message users The users
 Handlers.add("Get-Users", {Action = "Get-Users"}, function(msg)
   activityValidation.validateGetUsers(msg)
-  return PlatformData.activity:getUsers(msg)
+  local params = {
+    silenced = msg.Tags.Silenced,
+    limit = msg.Tags.Limit,
+    offset = msg.Tags.Offset,
+    timestamp = msg.Tags.Timestamp,
+    orderDirection = msg.Tags.OrderDirection
+  }
+  return PlatformData.activity:getUsers(params, msg)
 end)
 
 -- Get user count
 -- @param msg Message The message received
 Handlers.add("Get-User-Count", {Action = "Get-User-Count"}, function(msg)
-  return PlatformData.activity:getUserCount(msg)
+  activityValidation.validateGetUserCount(msg)
+  local params = {
+    silenced = msg.Tags.Silenced,
+    limit = msg.Tags.Limit,
+    offset = msg.Tags.Offset,
+    timestamp = msg.Tags.Timestamp,
+    orderDirection = msg.Tags.OrderDirection
+  }
+  return PlatformData.activity:getUserCount(params, msg)
 end)
 
 --- Get active funding users handler
@@ -235,7 +250,15 @@ end)
 --- @return Message activeFundingUsers The active funding users
 Handlers.add("Get-Active-Funding-Users", {Action = "Get-Active-Funding-Users"}, function(msg)
   activityValidation.validateGetActiveFundingUsers(msg)
-  return PlatformData.activity:getActiveFundingUsers(msg)
+  return PlatformData.activity:getActiveFundingUsers(msg.Tags.Market, msg.Tags.StartTimestamp, msg)
+end)
+
+--- Get active funding users handler
+--- @param msg Message The message received
+--- @return Message activeFundingUserCount The active funding user count
+Handlers.add("Get-Active-Funding-User-Count", {Action = "Get-Active-Funding-User-Count"}, function(msg)
+  activityValidation.validateGetActiveFundingUsers(msg)
+  return PlatformData.activity:getActiveFundingUserCount(msg.Tags.Market, msg.Tags.StartTimestamp, msg)
 end)
 
 --- Get active funding users by activity handler

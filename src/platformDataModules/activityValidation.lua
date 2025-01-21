@@ -58,4 +58,27 @@ function ActivityValidation.validateGetUsers(msg)
   end
 end
 
+--- Validate get user count
+--- @param msg Message The message received
+function ActivityValidation.validateGetUserCount(msg)
+  if msg.Tags.Silenced then assert(sharedUtils.isValidBooleanString(msg.Tags.Silenced), "Silenced must be a boolean!") end
+  if msg.Tags.Limit then sharedValidation.validatePositiveInteger(msg.Tags.Limit, "Limit") end
+  if msg.Tags.Offset then sharedValidation.validatePositiveInteger(msg.Tags.Offset, "Offset") end
+  if msg.Tags.Timestamp then
+    assert(msg.Tags.Timestamp:match("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d$"), "Timestamp must be in the format YYYY-MM-DD HH:MM:SS")
+  end
+  if msg.Tags.OrderDirection then
+    assert(msg.Tags.OrderDirection == "ASC" or msg.Tags.OrderDirection == "DESC", "OrderDirection must be ASC or DESC")
+  end
+end
+
+--- Validate get active funding users
+--- @param msg Message The message received
+function ActivityValidation.validateGetActiveFundingUsers(msg)
+  if msg.Tags.Market then sharedValidation.validateAddress(msg.Tags.Market, "Market") end
+  if msg.Tags.StartTimestamp then
+    assert(msg.Tags.StartTimestamp:match("^%d%d%d%d%-%d%d%-%d%d %d%d:%d%d:%d%d$"), "StartTimestamp must be in the format YYYY-MM-DD HH:MM:SS")
+  end
+end
+
 return ActivityValidation

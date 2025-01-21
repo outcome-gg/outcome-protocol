@@ -28,7 +28,7 @@ function DbHelpers.validateParams(params, allowedActions)
 end
 
 -- Build a query with shared filters
-function DbHelpers.buildQuery(baseQuery, params, allowedActions, isCount, tableName)
+function DbHelpers.buildQuery(baseQuery, params, allowedActions, isCount, tableName, isFinalizedQuery)
   -- Validate parameters
   DbHelpers.validateParams(params, allowedActions)
   -- Extract parameters
@@ -74,8 +74,12 @@ function DbHelpers.buildQuery(baseQuery, params, allowedActions, isCount, tableN
     table.insert(bindings, outcome)
   end
   -- Add time filter if applicable
-  if hours or startTimestamp then
-    query = DbHelpers.buildTimeFilter(query, bindings, hours, startTimestamp)
+  if startTimestamp then
+    table.insert(conditions, "timestamp >= ?")
+    table.insert(bindings, startTimestamp)
+  elseif hours then
+    table.insert(conditions, "timestamp >= datetime('now', ? || ' hours')")
+    table.insert(bindings, '-' .. hours)
   elseif timestamp then
     local comparator = (orderDirection == "ASC") and ">" or "<"
     table.insert(conditions, string.format("timestamp %s ?", comparator))
@@ -98,40 +102,30 @@ function DbHelpers.buildQuery(baseQuery, params, allowedActions, isCount, tableN
     end
   end
   -- Finalize query
-  query = query .. ";"
+  if isFinalizedQuery then
+    query = query .. ";"
+  end
   return query, bindings
 end
 
--- Helper for time-based filters
-function DbHelpers.buildTimeFilter(query, bindings, hours, startTimestamp)
-  if startTimestamp then
-    query = query .. " AND timestamp >= ?"
-    table.insert(bindings, startTimestamp)
-  else
-    query = query .. " AND timestamp >= datetime('now', ? || ' hours')"
-    table.insert(bindings, '-' .. hours)
-  end
-  return query
-end
-
 -- Build specific queries (users, messages, fundings, predictions, probabilities)
-function DbHelpers.buildUserQuery(params, isCount)
-  return DbHelpers.buildQuery("SELECT * FROM Users", params, nil, isCount, "Users")
+function DbHelpers.buildUserQuery(params, isCount, isFinalizedQuery)
+  return DbHelpers.buildQuery("SELECT * FROM Users", params, nil, isCount, "Users", isFinalizedQuery)
 end
 
-function DbHelpers.buildMessageQuery(params, isCount)
-  return DbHelpers.buildQuery("SELECT * FROM Messages", params, nil, isCount, "Messages")
+function DbHelpers.buildMessageQuery(params, isCount, isFinalizedQuery)
+  return DbHelpers.buildQuery("SELECT * FROM Messages", params, nil, isCount, "Messages", isFinalizedQuery)
 end
 
-function DbHelpers.buildFundingsQuery(params, isCount)
-  return DbHelpers.buildQuery("SELECT * FROM Fundings", params, { add = true, remove = true }, isCount, "Fundings")
+function DbHelpers.buildFundingsQuery(params, isCount, isFinalizedQuery)
+  return DbHelpers.buildQuery("SELECT * FROM Fundings", params, { add = true, remove = true }, isCount, "Fundings", isFinalizedQuery)
 end
 
-function DbHelpers.buildPredictionsQuery(params, isCount)
-  return DbHelpers.buildQuery("SELECT * FROM Predictions", params, { buy = true, sell = true }, isCount, "Predictions")
+function DbHelpers.buildPredictionsQuery(params, isCount, isFinalizedQuery)
+  return DbHelpers.buildQuery("SELECT * FROM Predictions", params, { buy = true, sell = true }, isCount, "Predictions", isFinalizedQuery)
 end
 
-function DbHelpers.buildProbabilitiesQuery(params, isCount)
+function DbHelpers.buildProbabilitiesQuery(params, isCount, isFinalizedQuery)
   -- Specific to probabilities (includes join logic)
   local query = isCount and [[
     SELECT COUNT(*) as count
@@ -148,13 +142,13 @@ function DbHelpers.buildProbabilitiesQuery(params, isCount)
     JOIN ProbabilitySets PS ON PE.set_id = PS.id
   ]]
   -- Use shared logic
-  return DbHelpers.buildQuery(query, params, nil, isCount, nil)
+  return DbHelpers.buildQuery(query, params, nil, isCount, nil, isFinalizedQuery)
 end
 
 -- Execute a count query and return the result
 function DbHelpers:executeCountQuery(dbAdmin, query, bindings)
   local result = dbAdmin:safeExec(query, true, table.unpack(bindings))
-  return result[1] and tonumber(result[1].count) or 0
+  return #result
 end
 
 return DbHelpers

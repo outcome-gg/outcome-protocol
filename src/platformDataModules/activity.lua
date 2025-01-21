@@ -152,7 +152,8 @@ READ METHODS
 --- @param msg Message The message received
 --- @return Message user The user
 function ActivityMethods:getUser(id, msg)
-  local user = self.dbAdmin:safeExec(string.format("SELECT * FROM Users WHERE id = ?;", true, id))
+  local user = self.dbAdmin:safeExec("SELECT * FROM Users WHERE id = ?;", true, id)
+  user = user[1] or {}
   return msg.reply({ Data = json.encode(user) })
 end
 
@@ -161,8 +162,8 @@ end
 --- @param msg Message The message received
 --- @return Message users The users
 function ActivityMethods:getUsers(params, msg)
-  local query, bindings = dbHelpers.buildUserQuery(params, false)
-  local users =  self.dbAdmin:safeExec(query, true, table.unpack(bindings))
+  local query, bindings = dbHelpers.buildUserQuery(params, false, true)
+  local users = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
   return msg.reply({ Data = json.encode(users) })
 end
 
@@ -170,31 +171,65 @@ end
 --- @param msg Message The message received
 --- @return Message userCount The user count
 function ActivityMethods:getUserCount(params, msg)
-  local query, bindings = self.buildUserQuery(params, true)
-  local result = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
-  local userCount = result[1] and tonumber(result[1].count) or 0
-  return msg.reply({ Data = json.encode(userCount) })
+  local query, bindings = dbHelpers.buildUserQuery(params, false, true)
+  local users = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
+  return msg.reply({ Data = #users })
 end
 
 --- Get active funding users
 --- @param msg Message The message received
 --- @return Message activeFundingUsers The active funding users
 function ActivityMethods:getActiveFundingUsers(market, startTimestamp, msg)
-  startTimestamp = startTimestamp or os.time()
-  local query, bindings = self.buildFundingsQuery({
+  local query, bindings = dbHelpers.buildFundingsQuery({
     user = nil, -- No specific user filtering
     hours = nil, -- Ignore hours for net funding logic
     market = market,
     startTimestamp = startTimestamp,
-  }, true) -- 'true' for count query
-  -- Net funding balance logic
-  query = query .. [[
-    GROUP BY user
-    HAVING SUM(CASE WHEN operation = 'add' THEN amount ELSE 0 END) 
-         > SUM(CASE WHEN operation = 'remove' THEN amount ELSE 0 END)
-  ]]
-  local activeUsers = dbHelpers.executeCountQuery(self.dbAdmin, query, bindings)
+  },
+    false, -- 'true' for count query
+    false -- 'true' for finalized query
+  )
+  query = string.format([[
+    WITH FilteredFunding AS ( %s )
+    SELECT
+      user,
+      market,
+      SUM(CASE WHEN operation = 'add' THEN amount ELSE 0 END) 
+      - SUM(CASE WHEN operation = 'remove' THEN amount ELSE 0 END) AS net_funding
+    FROM FilteredFunding
+    GROUP BY user, market
+    HAVING net_funding > 0;
+  ]], query)
+  local activeUsers = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
   return msg.reply({ Data = json.encode(activeUsers) })
+end
+
+--- Get active funding users
+--- @param msg Message The message received
+--- @return Message activeFundingUsers The active funding users
+function ActivityMethods:getActiveFundingUserCount(market, startTimestamp, msg)
+  local query, bindings = dbHelpers.buildFundingsQuery({
+    user = nil, -- No specific user filtering
+    hours = nil, -- Ignore hours for net funding logic
+    market = market,
+    startTimestamp = startTimestamp,
+  },
+    false, -- 'true' for count query
+    false -- 'true' for finalized query
+  )
+  query = string.format([[
+    WITH FilteredFunding AS ( %s )
+    SELECT
+      user,
+      market,
+      SUM(CASE WHEN operation = 'add' THEN amount ELSE 0 END) 
+      - SUM(CASE WHEN operation = 'remove' THEN amount ELSE 0 END) AS net_funding
+    FROM FilteredFunding
+    GROUP BY user, market
+    HAVING net_funding > 0;
+  ]], query)
+  local activeUsers = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
+  return msg.reply({ Data = #activeUsers })
 end
 
 --- Get active funding users by activity
@@ -204,12 +239,15 @@ end
 function ActivityMethods:getActiveFundingUsersByActivity(market, hours, startTimestamp, msg)
   hours = hours or self.defaultActivityWindow
   startTimestamp = startTimestamp or os.time()
-  local query, bindings = self.buildFundingsQuery({
+  local query, bindings = dbHelpers.buildFundingsQuery({
     user = nil, -- No specific user filtering
     hours = hours,
     market = market,
     startTimestamp = startTimestamp,
-  }, true) -- 'true' for count query
+  },
+    true, -- 'true' for count query
+    true -- 'true' for finalized query
+  )
   local activeUsers = self:executeCountQuery(self.dbAdmin, query, bindings)
   return msg.reply({ Data = json.encode(activeUsers) })
 end
@@ -281,7 +319,7 @@ function ActivityMethods:getProbabilities(market, timestamp, order, limit, msg)
   order = order or 'DESC'
   limit = limit or self.defaultLimit
   local params = {market = market, timestamp = timestamp, order = order, limit = limit}
-  local query, bindings = dbHelpers.buildProbabilitiesQuery(params, false)
+  local query, bindings = dbHelpers.buildProbabilitiesQuery(params, false, true)
   local probabilities = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
   return msg.reply({ Data = json.encode(probabilities) })
 end
@@ -299,7 +337,7 @@ function ActivityMethods:getProbabilitiesForChart(market, range, msg)
   }
   if market then params.market = market end
   -- Build query with placeholders
-  local query, bindings = self.buildProbabilitiesQuery(params, false, nil) -- No ORDER BY at this stage
+  local query, bindings = self.buildProbabilitiesQuery(params, false, true)
   -- Add GROUP BY and ORDER BY clauses
   query = query .. string.format([[
     GROUP BY 

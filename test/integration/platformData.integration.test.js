@@ -391,34 +391,257 @@ describe("platformData.integration.test", function () {
   */
   describe("ACTIVITY READ HANDLERS", function () {
     it("+ve should get user", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-User" },
+          { name: "User", value: "test-this-is-valid-arweave-wallet-address-1" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const user = JSON.parse(Messages[0].Data)
+
+      expect(user["id"]).to.equal("test-this-is-valid-arweave-wallet-address-1")
+      expect(user["silenced"]).to.equal(0)
+      expect(Number(user["timestamp"])).to.be.greaterThan(1737389232801)
     })
 
     it("-ve should fail get user validation", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-User" },
+          { name: "User", value: "not-a-valid-arweave-wallet-address" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      expect(Error).to.contain("User must be a valid Arweave address!")
     })
 
     it("+ve should get users", async () => {
-    
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Users" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const users = JSON.parse(Messages[0].Data)
+      const user = users[0]
+
+      expect(user["id"]).to.equal("test-this-is-valid-arweave-wallet-address-1")
+      expect(user["silenced"]).to.equal(0)
+      expect(Number(user["timestamp"])).to.be.greaterThan(1737389232801)
+    })
+
+    it("+ve should get users (silenced)", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Users" },
+          { name: "Silenced", value: "true" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const users = JSON.parse(Messages[0].Data)
+      
+      expect(users.length).to.equal(0)
     })
 
     it("-ve should fail get users validation", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Users" },
+          { name: "Silenced", value: "foo" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      expect(Error).to.contain("Silenced must be a boolean!")
     })
 
     it("+ve should get user count", async () => {
-    
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-User-Count" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const userCount = JSON.parse(Messages[0].Data)
+      expect(userCount).to.equal(1)
     })
 
     it("-ve should fail get user count validation", async () => {
-    
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-User-Count" },
+          { name: "Silenced", value: "foo" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      expect(Error).to.contain("Silenced must be a boolean!")
     })
 
     it("+ve should get active funding users", async () => {
-     
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Active-Funding-Users" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const users = JSON.parse(Messages[0].Data)
+      const user = users[0]
+
+      expect(user["user"]).to.equal("test-this-is-valid-arweave-wallet-address-1")
+      expect(user["market"]).to.equal(walletAddress)
+      expect(user["net_funding"]).to.equal(200000000000000)
     })
 
     it("-ve should fail get active funding users validation", async () => {
+    })
+
+    it("+ve should get active funding user count", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Active-Funding-User-Count" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const userCount = Messages[0].Data
+      expect(userCount).to.equal(1)
     })
 
     it("+ve should get active funding users by activity", async () => {
