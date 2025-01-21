@@ -35,6 +35,7 @@ local json = require('json')
 function MarketFactory:new(
   configurator,
   incentives,
+  dataIndex,
   namePrefix,
   tickerPrefix,
   logo,
@@ -47,6 +48,7 @@ function MarketFactory:new(
   local marketFactory = {
     configurator = configurator,
     incentives = incentives,
+    dataIndex = dataIndex,
     namePrefix = namePrefix,
     tickerPrefix = tickerPrefix,
     logo = logo,
@@ -56,6 +58,7 @@ function MarketFactory:new(
     maximumTakeFee = maximumTakeFee,
     approvedCollateralTokens = approvedCollateralTokens,
     messageToProcessMapping = {},
+    messageToMarketConfigMapping = {},
     marketsSpawnedByCreator = {},
     marketsPendingInit = {},
     marketsInit = {},
@@ -88,6 +91,7 @@ function MarketFactoryMethods:info(msg)
   return msg.reply({
     Configurator = self.configurator,
     Incentives = self.incentives,
+    DataIndex = self.dataIndex,
     LpFee = self.lpFee,
     ProtocolFee = self.protocolFee,
     ProtocolFeeTarget = self.protocolFeeTarget,
@@ -115,6 +119,29 @@ end
 
 --[[
 =============
+ACTIVITY LOGS
+=============
+]]
+
+local function logMarket(dataIndex, market, creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, collateralToken, resolutionAgent, category, logo)
+  ao.send({
+    Target = dataIndex,
+    Action = "Log-Market",
+    Market = market,
+    Creator = creator,
+    CreatorFee = creatorFee,
+    CreatorFeeTarget = creatorFeeTarget,
+    Question = question,
+    OutcomeSlotCount = outcomeSlotCount,
+    Collateral = collateralToken,
+    ResolutionAgent = resolutionAgent,
+    Category = category,
+    Logo = logo
+  })
+end
+
+--[[
+=============
 WRITE METHODS
 =============
 ]]
@@ -127,9 +154,15 @@ WRITE METHODS
 --- @param creator string The creator address
 --- @param creatorFee number The creator fee
 --- @param creatorFeeTarget string The creator fee target
+--- @param category string|nil The category of the market
+--- @param subcategory string|nil The subcategory of the market
+--- @param logo string|nil The logo of the market
 --- @param msg Message The message received
 --- @return Message marketSpawnedNotice The market spawned notice
-function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, question, outcomeSlotCount, creator, creatorFee, creatorFeeTarget, msg)
+function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, question, outcomeSlotCount, creator, creatorFee, creatorFeeTarget, category, subcategory, logo, msg)
+  category = category or "undefined"
+  subcategory = subcategory or "undefined"
+  logo = logo or self.marketLogo
   -- spawn market
   ao.spawn(ao.env.Module.Id, {
     -- Factory parameters
@@ -139,7 +172,7 @@ function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, ques
     ["Authority"] = ao.authorities[1],
     ["Name"] = self.marketName,
     ["Ticker"] = self.marketTicker,
-    ["Logo"] = self.marketLogo,
+    ["Logo"] = logo,
     ["LpFee"] = tostring(self.lpFee),
     ["Configurator"] = self.configurator,
     ["Incentives"] = self.incentives,
@@ -154,6 +187,20 @@ function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, ques
     ["Question"] = question,
     ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount)),
   })
+  -- add mapping
+  local marketConfig = {
+    creator = creator,
+    creatorFee = creatorFee,
+    creatorFeeTarget = creatorFeeTarget,
+    question = question,
+    outcomeSlotCount = outcomeSlotCount,
+    collateralToken = collateralToken,
+    resolutionAgent = resolutionAgent,
+    category = category,
+    subcategory = subcategory,
+    logo = logo,
+  }
+  self.messageToMarketConfigMapping[msg.Id] = marketConfig
   -- send notice
   return self.spawnMarketNotice(resolutionAgent, collateralToken, msg.Sender, creatorFee, creatorFeeTarget, question, outcomeSlotCount, msg)
 end
@@ -314,6 +361,9 @@ function MarketFactoryMethods:spawnedMarket(msg)
   -- add to pending by creator
   if not self.marketsPendingByCreator[creator] then self.marketsPendingByCreator[creator] = {} end
   table.insert(self.marketsPendingByCreator[creator], processId)
+  -- log market with data index
+  local marketConfig = self.messageToMarketConfigMapping[originalMsgId]
+  logMarket(self.dataIndex, processId, marketConfig.creator, marketConfig.creatorFee, marketConfig.creatorFeeTarget, marketConfig.question, marketConfig.outcomeSlotCount, marketConfig.collateralToken, marketConfig.resolutionAgent, marketConfig.category, marketConfig.logo)
   return true
 end
 

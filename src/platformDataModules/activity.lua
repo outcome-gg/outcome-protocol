@@ -51,6 +51,34 @@ WRITE METHODS
 =============
 ]]
 
+--- Log market
+--- @param market string The market process ID
+--- @param creator string The market creator
+--- @param creatorFee number The market creator fee
+--- @param creatorFeeTarget string The market creator fee target
+--- @param question string The market question
+--- @param outcomeSlotCount number The market outcome slot count
+--- @param collateral string The market collateral
+--- @param resolutionAgent string The market resolution agent
+--- @param category string The market category
+--- @param subcategory string The market subcategory
+--- @param logo string The market logo
+--- @param timestamp number The market timestamp
+--- @param cast boolean Whether to cast the message
+--- @param msg Message The message received
+--- @return Message|nil logMarketNotice The log market notice or nil if cast is false
+function ActivityMethods:logMarket(market, creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, timestamp, cast, msg)
+  -- Insert market
+  self.dbAdmin:safeExec(
+    "INSERT INTO Markets (id, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
+    false, market, creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, timestamp
+  )
+  -- Send notice if cast is true
+  if cast then
+    return self.logMarketNotice(msg.From, market, creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, msg)
+  end
+end
+
 --- Log funding
 --- @param user string The user ID
 --- @param operation string The funding operation

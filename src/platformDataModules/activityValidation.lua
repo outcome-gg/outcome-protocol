@@ -9,6 +9,21 @@ local ActivityValidation = {}
 local sharedValidation = require('platformDataModules.sharedValidation')
 local sharedUtils = require('platformDataModules.sharedUtils')
 
+--- Validate log market
+--- @param msg Message The message received
+function ActivityValidation.validateLogMarket(msg)
+  sharedValidation.validateAddress(msg.Tags.Market, "Market")
+  sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
+  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, "CreatorFee")
+  sharedValidation.validateAddress(msg.Tags.CreatorFeeTarget, "CreatorFeeTarget")
+  sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")
+  sharedValidation.validateAddress(msg.Tags.Collateral, "Collateral")
+  sharedValidation.validateAddress(msg.Tags.ResolutionAgent, "ResolutionAgent")
+  assert(type(msg.Tags.Category) == "string", "Category is required!")
+  assert(type(msg.Tags.Subcategory) == "string", "Subcategory is required!")
+  assert(type(msg.Tags.Logo) == "string", "Logo is required!")
+end
+
 --- Validate log funding
 --- @param msg Message The message received
 function ActivityValidation.validateLogFunding(msg)

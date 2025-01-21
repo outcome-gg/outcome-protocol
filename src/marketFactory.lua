@@ -31,31 +31,30 @@ Env = 'DEV'
 --- @class MarketFactoryConfiguration  
 --- @field configurator string The Configurator process ID  
 --- @field incentives string The Incentives process ID  
+--- @field dataIndex string The Data Index process ID
 --- @field namePrefix string The Market name prefix
 --- @field tickerPrefix string The Market ticker prefix
 --- @field logo string The Market default logo  
 --- @field lpFee number The Market LP fee  
 --- @field protocolFee number The Market Protocol fee  
 --- @field protocolFeeTarget string The Market Protocol fee target  
---- @field maximumTakeFee number The maximum market take fee
---- @field minimumStake number The minimum stake to spawn a market
---- @field utilityToken string The utility token address
---- @field collateralTokens table The approved collateral tokens
+--- @field approvedCollateralTokens table The approved collateral tokens
 
 --- Retrieve Market Factory Configuration  
 --- Fetches configuration parameters, stored as constants
 --- @return MarketFactoryConfiguration marketFactoryConfiguration The market factory configuration  
 local function retrieveMarketFactoryConfig()
   local config = {
-    configurator = constants.marketFactory.configurator,
-    incentives = constants.marketFactory.incentives,
-    namePrefix = constants.marketFactory.namePrefix,
-    tickerPrefix = constants.marketFactory.tickerPrefix,
-    logo = constants.marketFactory.logo,
-    lpFee = constants.marketFactory.lpFee,
-    protocolFee = constants.marketFactory.protocolFee,
-    protocolFeeTarget = constants.marketFactory.protocolFeeTarget,
-    approvedCollateralTokens = constants.marketFactory.approvedCollateralTokens
+    configurator = Env == 'DEV' and constants.dev.configurator or constants.prod.configurator,
+    incentives = Env == 'DEV' and constants.dev.incentives or constants.prod.incentives,
+    dataIndex = Env == 'DEV' and constants.dev.dataIndex or constants.prod.dataIndex,
+    namePrefix = constants.namePrefix,
+    tickerPrefix = constants.tickerPrefix,
+    logo = constants.logo,
+    lpFee = constants.lpFee,
+    protocolFee = constants.protocolFee,
+    protocolFeeTarget = Env == 'DEV' and constants.dev.protocolFeeTarget or constants.prod.protocolFeeTarget,
+    approvedCollateralTokens =  Env == 'DEV' and constants.dev.approvedCollateralTokens or constants.prod.approvedCollateralTokens
   }
   return config
 end
@@ -66,6 +65,7 @@ if not MarketFactory or Env == 'DEV' then
   MarketFactory = marketFactory:new(
     marketFactoryConfig.configurator,
     marketFactoryConfig.incentives,
+    marketFactoryConfig.dataIndex,
     marketFactoryConfig.namePrefix,
     marketFactoryConfig.tickerPrefix,
     marketFactoryConfig.logo,
@@ -109,6 +109,9 @@ Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
     msg.From,
     tonumber(msg.Tags["CreatorFee"]),
     msg.Tags["CreatorFeeTarget"],
+    msg.Tags["Category"],
+    msg.Tags["Subcategory"],
+    msg.Tags["Logo"],
     msg
   )
 end)

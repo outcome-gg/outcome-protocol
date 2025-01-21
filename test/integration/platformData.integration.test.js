@@ -85,6 +85,79 @@ describe("platformData.integration.test", function () {
   * ACTIVITY WRITE HANDLERS
   */
   describe("ACTIVITY WRITE HANDLERS", function () {
+    it("+ve should log market", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Log-Market" },
+          { name: "Market", value: "test-this-is-valid-arweave-wallet-address-1" },
+          { name: "Creator", value: "test-this-is-valid-arweave-wallet-address-2" },
+          { name: "CreatorFee", value: "200" },
+          { name: "CreatorFeeTarget", value: "test-this-is-valid-arweave-wallet-address-3" },
+          { name: "Question", value: "who will win the US election?" },
+          { name: "OutcomeSlotCount", value: "2" },
+          { name: "Collateral", value: "test-this-is-valid-arweave-wallet-address-4" },
+          { name: "ResolutionAgent", value: "test-this-is-valid-arweave-wallet-address-5" },
+          { name: "Category", value: "politics" },
+          { name: "Subcategory", value: "US election" },
+          { name: "Logo", value: "https://www.arweave.net/123456" },
+          { name: "Cast", value: "true" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.be.greaterThanOrEqual(1)
+      const action = Messages[0].Tags.find(t => t.name === 'Action').value
+      const marketFactory = Messages[0].Tags.find(t => t.name === 'MarketFactory').value
+      const market = Messages[0].Tags.find(t => t.name === 'Market').value
+      const creator = Messages[0].Tags.find(t => t.name === 'Creator').value
+      const creatorFee = Messages[0].Tags.find(t => t.name === 'CreatorFee').value
+      const creatorFeeTarget = Messages[0].Tags.find(t => t.name === 'CreatorFeeTarget').value
+      const question = Messages[0].Tags.find(t => t.name === 'Question').value
+      const outcomeSlotCount = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
+      const collateral = Messages[0].Tags.find(t => t.name === 'Collateral').value
+      const resolutionAgent = Messages[0].Tags.find(t => t.name === 'ResolutionAgent').value
+      const category = Messages[0].Tags.find(t => t.name === 'Category').value
+      const subcategory = Messages[0].Tags.find(t => t.name === 'Subcategory').value
+      const logo = Messages[0].Tags.find(t => t.name === 'Logo').value
+
+      expect(action).to.eql("Log-Market-Notice")
+      expect(marketFactory).to.eql(walletAddress)
+      expect(market).to.eql("test-this-is-valid-arweave-wallet-address-1")
+      expect(creator).to.eql("test-this-is-valid-arweave-wallet-address-2")
+      expect(creatorFee).to.eql("200")
+      expect(creatorFeeTarget).to.eql("test-this-is-valid-arweave-wallet-address-3")
+      expect(question).to.eql("who will win the US election?")
+      expect(outcomeSlotCount).to.eql("2")
+      expect(collateral).to.eql("test-this-is-valid-arweave-wallet-address-4")
+      expect(resolutionAgent).to.eql("test-this-is-valid-arweave-wallet-address-5")
+      expect(category).to.eql("politics")
+      expect(subcategory).to.eql("US election")
+      expect(logo).to.eql("https://www.arweave.net/123456")
+    })
+
+    it("+ve should log market w/o cast", async () => {
+      
+    })
+
+    it("-ve should fail log market validation", async () => {
+      
+    })
+
     it("+ve should log funding", async () => {
       await message({
         process: platformData,

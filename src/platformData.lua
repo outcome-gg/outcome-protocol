@@ -38,9 +38,26 @@ USERS = [[
 MARKETS = [[
   CREATE TABLE IF NOT EXISTS Markets (
     id TEXT PRIMARY KEY,
+    creator TEXT NOT NULL,
+    creator_fee NUMBER NOT NULL,
+    creator_fee_target TEXT NOT NULL,
+    question TEXT NOT NULL,
+    outcome_slot_count NUMBER NOT NULL,
+    collateral TEXT NOT NULL,
+    resolution_agent TEXT NOT NULL,
+    logo TEXT NOT NULL,
     timestamp NUMBER NOT NULL
   );
 ]]
+
+-- RESOLUTION_AGENTS = [[
+--   CREATE TABLE IF NOT EXISTS ResolutionAgents (
+--     id TEXT PRIMARY KEY,
+--     market TEXT NOT NULL,
+--     market_end_timestamp NUMBER NOT NULL,
+--     timestamp NUMBER NOT NULL
+--   );
+-- ]]
 
 MESSAGES = [[
   CREATE TABLE IF NOT EXISTS Messages (
@@ -173,6 +190,17 @@ end)
 ACTIVITY WRITE HANDLERS
 =======================
 ]]
+
+--- Log market handler
+--- @param msg Message The message received
+--- @return Message|nil logMarketNotice The log market notice or nil if cast is false
+Handlers.add("Log-Market", {Action = "Log-Market"}, function(msg)
+  activityValidation.validateLogMarket(msg)
+  local cast = msg.Tags.Cast == "true"
+  local creatorFee = tonumber(msg.Tags.CreatorFee)
+  local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
+  return PlatformData.activity:logMarket(msg.Tags.Market, msg.Tags.Creator, creatorFee, msg.Tags.CreatorFeeTarget, msg.Tags.Question, outcomeSlotCount, msg.Tags.Collateral, msg.Tags.ResolutionAgent, msg.Tags.Category, msg.Tags.Subcategory, msg.Tags.Logo, os.time(), cast, msg)
+end)
 
 --- Log funding handler
 --- @param msg Message The message received

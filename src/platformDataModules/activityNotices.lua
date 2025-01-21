@@ -8,6 +8,25 @@ See activity.lua for full license details.
 local ActivityNotices = {}
 local json = require('json')
 
+
+function ActivityNotices.logMarketNotice(marketFactory, market, creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, msg)
+  return msg.reply({
+    Action = "Log-Market-Notice",
+    MarketFactory = marketFactory,
+    Market = market,
+    Creator = creator,
+    CreatorFee = tostring(creatorFee),
+    CreatorFeeTarget = creatorFeeTarget,
+    Question = question,
+    OutcomeSlotCount = tostring(outcomeSlotCount),
+    Collateral = collateral,
+    ResolutionAgent = resolutionAgent,
+    Category = category,
+    Subcategory = subcategory,
+    Logo = logo
+  })
+end
+
 function ActivityNotices.logFundingNotice(market, user, operation, collateral, amount, msg)
   return msg.reply({
     Action = "Log-Funding-Notice",
@@ -31,7 +50,6 @@ function ActivityNotices.logPredictionNotice(market, user, operation, collateral
     Price = price
   })
 end
-
 
 function ActivityNotices.logProbabilitiesNotice(market, probabilities, msg)
   return msg.reply({
