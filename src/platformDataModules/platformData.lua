@@ -93,7 +93,27 @@ function PlatformDataMethods:getMarkets(params, msg)
       m.timestamp AS timestamp,
       m.creator_fee AS creator_fee,
       COALESCE(f.funding_amount, 0) AS funding_amount,
-      COALESCE(p.bet_volume, 0) AS bet_volume
+      COALESCE(p.bet_volume, 0) AS bet_volume,
+      (
+        SELECT 
+          json_group_object(
+            pr.key, 
+            ROUND(pr.value, 2) -- Round to 2 decimal places
+          )
+        FROM 
+          ProbabilitySets ps
+        INNER JOIN (
+          SELECT 
+            market, 
+            MAX(timestamp) AS latest_timestamp
+          FROM 
+            ProbabilitySets
+          GROUP BY 
+            market
+        ) latest_ps ON ps.market = latest_ps.market AND ps.timestamp = latest_ps.latest_timestamp
+        CROSS JOIN json_each(ps.probabilities) pr
+        WHERE ps.market = m.id
+      ) AS probabilities
     FROM 
       Markets m
     LEFT JOIN (

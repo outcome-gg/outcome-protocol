@@ -147,8 +147,8 @@ end
 function ActivityMethods:logProbabilities(probabilities, timestamp, cast, msg)
   -- Insert into ProbabilitySets
   self.dbAdmin:safeExec(
-    "INSERT INTO ProbabilitySets (id, market, timestamp) VALUES (?, ?, ?);",
-    false, msg.Id, msg.From, timestamp
+    "INSERT INTO ProbabilitySets (id, market, probabilities, timestamp) VALUES (?, ?, ?, ?);",
+    false, msg.Id, msg.From, json.encode(probabilities), timestamp
   )
   -- Insert into Probabilities
   local probability_query = [[

@@ -109,6 +109,7 @@ PROBABILITY_SETS = [[
   CREATE TABLE IF NOT EXISTS ProbabilitySets (
     id TEXT PRIMARY KEY,
     market TEXT NOT NULL,
+    probabilities TEXT NOT NULL,
     timestamp NUMBER NOT NULL,
     FOREIGN KEY (market) REFERENCES Markets(id)
   );

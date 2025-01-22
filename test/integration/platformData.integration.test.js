@@ -671,6 +671,8 @@ describe("platformData.integration.test", function () {
       expect(markets[1]["logo"]).to.equal("https://www.arweave.net/123456")
       expect(markets[1]["bet_volume"]).to.equal(2 * 100*10**12) // log prediction sent twice with 100*10**12
       expect(markets[1]["funding_amount"]).to.equal(2 * 100*10**12) // log funding sent twice with 100*10**12
+      expect(JSON.parse(markets[1]["probabilities"])["1"]).to.equal(0.2)
+      expect(JSON.parse(markets[1]["probabilities"])["2"]).to.equal(0.8)
     })
 
     it("+ve should get markets w/ status==closed", async () => {
