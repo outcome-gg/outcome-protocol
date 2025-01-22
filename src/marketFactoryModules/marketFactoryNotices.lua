@@ -20,14 +20,14 @@ local json = require('json')
 --- @return Message spawnMarketNotice The spawn market notice
 function MarketFactoryNotices.spawnMarketNotice(resolutionAgent, collateralToken, creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, msg)
   return msg.reply({
-    Action = "Market-Spawned-Notice",
+    Action = "Spawn-Market-Notice",
     ResolutionAgent = resolutionAgent,
     CollateralToken = collateralToken,
     Creator = creator,
-    CreatorFee = creatorFee,
+    CreatorFee = tostring(creatorFee),
     CreatorFeeTarget = creatorFeeTarget,
     Question = question,
-    OutcomeSlotCount = outcomeSlotCount,
+    OutcomeSlotCount = tostring(outcomeSlotCount),
     ["Original-Msg-Id"] = msg.Id
   })
 end
@@ -38,7 +38,7 @@ end
 --- @return Message initMarketNotice The init market notice
 function MarketFactoryNotices.initMarketNotice(marketProcessIds, msg)
   return msg.reply({
-    Action = "Market-Init-Notice",
+    Action = "Init-Market-Notice",
     MarketProcessIds = json.encode(marketProcessIds)
   })
 end

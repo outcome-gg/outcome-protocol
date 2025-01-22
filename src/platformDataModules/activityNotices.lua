@@ -38,15 +38,16 @@ function ActivityNotices.logFundingNotice(market, user, operation, collateral, a
   })
 end
 
-function ActivityNotices.logPredictionNotice(market, user, operation, collateral, outcome, amount, price, msg)
+function ActivityNotices.logPredictionNotice(market, user, operation, collateral, amount, outcome, shares, price, msg)
   return msg.reply({
     Action = "Log-Prediction-Notice",
     Market = market,
     User = user,
     Operation = operation,
     Collateral = collateral,
-    Outcome = outcome,
     Quantity = amount,
+    Outcome = outcome,
+    Shares = shares,
     Price = price
   })
 end

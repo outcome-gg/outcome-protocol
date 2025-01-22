@@ -8,6 +8,7 @@ See factory.lua for full license details.
 local marketFactoryValidation = {}
 local sharedValidation = require('marketFactoryModules.sharedValidation')
 local sharedUtils = require('marketFactoryModules.sharedUtils')
+local json = require('json')
 
 --[[
 =============

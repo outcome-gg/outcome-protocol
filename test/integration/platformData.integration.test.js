@@ -7,6 +7,7 @@ import path, { parse } from "path";
 import { error } from "console";
 import dotenv from 'dotenv';
 import { platform } from "os";
+import exp from "constants";
 
 dotenv.config();
 
@@ -90,7 +91,7 @@ describe("platformData.integration.test", function () {
         process: platformData,
         tags: [
           { name: "Action", value: "Log-Market" },
-          { name: "Market", value: "test-this-is-valid-arweave-wallet-address-1" },
+          { name: "Market", value: walletAddress },
           { name: "Creator", value: "test-this-is-valid-arweave-wallet-address-2" },
           { name: "CreatorFee", value: "200" },
           { name: "CreatorFeeTarget", value: "test-this-is-valid-arweave-wallet-address-3" },
@@ -137,7 +138,7 @@ describe("platformData.integration.test", function () {
 
       expect(action).to.eql("Log-Market-Notice")
       expect(marketFactory).to.eql(walletAddress)
-      expect(market).to.eql("test-this-is-valid-arweave-wallet-address-1")
+      expect(market).to.eql(walletAddress)
       expect(creator).to.eql("test-this-is-valid-arweave-wallet-address-2")
       expect(creatorFee).to.eql("200")
       expect(creatorFeeTarget).to.eql("test-this-is-valid-arweave-wallet-address-3")
@@ -330,8 +331,9 @@ describe("platformData.integration.test", function () {
           { name: "User", value: "test-this-is-valid-arweave-wallet-address-1" },
           { name: "Operation", value: "buy" },
           { name: "Collateral", value: "test-this-is-valid-arweave-wallet-address-2" },
-          { name: "Outcome", value: "1" },
           { name: "Quantity", value: parseAmount(100, 12) },
+          { name: "Outcome", value: "1" },
+          { name: "Shares", value: parseAmount(1, 12) },
           { name: "Price", value: "123.123" },
           { name: "Cast", value: "true" },
         ],
@@ -358,8 +360,9 @@ describe("platformData.integration.test", function () {
       const user = Messages[0].Tags.find(t => t.name === 'User').value
       const operation = Messages[0].Tags.find(t => t.name === 'Operation').value
       const collateral = Messages[0].Tags.find(t => t.name === 'Collateral').value
-      const outcome = Messages[0].Tags.find(t => t.name === 'Outcome').value
       const quantity = Messages[0].Tags.find(t => t.name === 'Quantity').value
+      const outcome = Messages[0].Tags.find(t => t.name === 'Outcome').value
+      const shares = Messages[0].Tags.find(t => t.name === 'Shares').value
       const price = Messages[0].Tags.find(t => t.name === 'Price').value
 
       expect(action).to.eql("Log-Prediction-Notice")
@@ -367,8 +370,9 @@ describe("platformData.integration.test", function () {
       expect(user).to.eql("test-this-is-valid-arweave-wallet-address-1")
       expect(operation).to.eql("buy")
       expect(collateral).to.eql("test-this-is-valid-arweave-wallet-address-2")
-      expect(outcome).to.eql("1")
       expect(quantity).to.eql(parseAmount(100, 12))
+      expect(outcome).to.eql("1")
+      expect(shares).to.eql(parseAmount(1, 12))
       expect(price).to.eql("123.123")
     })
 
@@ -380,8 +384,9 @@ describe("platformData.integration.test", function () {
           { name: "User", value: "test-this-is-valid-arweave-wallet-address-1" },
           { name: "Operation", value: "buy" },
           { name: "Collateral", value: "test-this-is-valid-arweave-wallet-address-2" },
-          { name: "Outcome", value: "1" },
           { name: "Quantity", value: parseAmount(100, 12) },
+          { name: "Outcome", value: "1" },
+          { name: "Shares", value: parseAmount(1, 12) },
           { name: "Price", value: "123.123" }
         ],
         signer: createDataItemSigner(wallet),
@@ -413,8 +418,9 @@ describe("platformData.integration.test", function () {
           { name: "User", value: "test-this-is-valid-arweave-wallet-address-1" },
           { name: "Operation", value: "buy" },
           { name: "Collateral", value: "test-this-is-valid-arweave-wallet-address-2" },
-          { name: "Outcome", value: "1" },
           // { name: "Quantity", value: parseAmount(100, 12) },
+          { name: "Outcome", value: "1" },
+          { name: "Shares", value: parseAmount(1, 12) },
           { name: "Price", value: "123.123" },
           { name: "Cast", value: "true" },
         ],
@@ -623,6 +629,555 @@ describe("platformData.integration.test", function () {
       });
 
       expect(Error).to.contain("Forbidden keyword found in query!")
+    })
+
+    it("+ve should get markets", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(2)
+      expect(markets[1]["id"]).to.equal(walletAddress)
+      expect(markets[1]["creator"]).to.equal("test-this-is-valid-arweave-wallet-address-2")
+      expect(markets[1]["creator_fee"]).to.equal(200)
+      expect(markets[1]["creator_fee_target"]).to.equal("test-this-is-valid-arweave-wallet-address-3")
+      expect(markets[1]["question"]).to.equal("who will win the US election?")
+      expect(markets[1]["outcome_slot_count"]).to.equal(2)
+      expect(markets[1]["collateral"]).to.equal("test-this-is-valid-arweave-wallet-address-4")
+      expect(markets[1]["resolution_agent"]).to.equal("test-this-is-valid-arweave-wallet-address-5")
+      expect(markets[1]["category"]).to.equal("politics")
+      expect(markets[1]["subcategory"]).to.equal("US election")
+      expect(markets[1]["logo"]).to.equal("https://www.arweave.net/123456")
+      expect(markets[1]["bet_volume"]).to.equal(2 * 100*10**12) // log prediction sent twice with 100*10**12
+      expect(markets[1]["funding_amount"]).to.equal(2 * 100*10**12) // log funding sent twice with 100*10**12
+    })
+
+    it("+ve should get markets w/ status==closed", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Status", value: "closed" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(0)
+    })
+
+    it("+ve should get markets w/ status==resolved", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Status", value: "resolved" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(0)
+    })
+
+    it("-ve should fail to get markets w/ status==foo", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Status", value: "foo" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+      
+      expect(Error).to.contain("Status must be 'open', 'closed', or 'resolved'!")
+    })
+
+    it("+ve should get markets w/ minFunding==300*10**12", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "MinFunding", value: parseAmount(300, 12) },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(0)
+    })
+
+    it("-ve should fail get markets w/ minFunding==foo", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "MinFunding", value: "foo" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      expect(Error).to.contain("MinFunding must be a number!")
+    })
+
+    it("+ve should get markets w/ creator==walletAddress2", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Creator", value: walletAddress2 },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(0)
+    })
+
+    it("-ve should fail to get markets w/ creator==foo", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Creator", value: "foo" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      expect(Error).to.contain("Creator must be a valid Arweave address!")
+    })
+
+    it("+ve should get markets w/ category==politics", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Category", value: "politics" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(2)
+    })
+
+    it("+ve should no get markets w/ category==foo", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Category", value: "foo" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(0)
+    })
+
+    it("+ve should get markets w/ subcategory==US election", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Subcategory", value: "US election" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(2)
+    })
+
+    it("+ve should get no markets w/ subcategory==foo", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Subcategory", value: "foo" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(0)
+    })
+
+    it("+ve should get markets w/ keyword==election", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Keyword", value: "election" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(2)
+    })
+
+    it("+ve should get no markets w/ keyword==foo", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Keyword", value: "foo" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(0)
+    })
+
+    it("+ve should get markets w/ orderBy==bet_volume", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "OrderBy", value: "bet_volume" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(2)
+      expect(markets[0]["bet_volume"]).to.be.greaterThan(markets[1]["bet_volume"])
+    })
+
+    it("+ve should get markets w/ orderBy==bet_volume orderDirection=ASC", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "OrderBy", value: "bet_volume" },
+          { name: "OrderDirection", value: "ASC" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(2)
+      expect(markets[1]["bet_volume"]).to.be.greaterThan(markets[0]["bet_volume"])
+    })
+
+    it("+ve should get markets w/ limit and offset", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Limit", value: "1" },
+          { name: "Offset", value: "1" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(1)
+      expect(markets[0]["id"]).to.equal(walletAddress)
+      expect(markets[0]["creator"]).to.equal("test-this-is-valid-arweave-wallet-address-2")
+      expect(markets[0]["creator_fee"]).to.equal(200)
+      expect(markets[0]["creator_fee_target"]).to.equal("test-this-is-valid-arweave-wallet-address-3")
+      expect(markets[0]["question"]).to.equal("who will win the US election?")
+      expect(markets[0]["outcome_slot_count"]).to.equal(2)
+      expect(markets[0]["collateral"]).to.equal("test-this-is-valid-arweave-wallet-address-4")
+      expect(markets[0]["resolution_agent"]).to.equal("test-this-is-valid-arweave-wallet-address-5")
+      expect(markets[0]["category"]).to.equal("politics")
+      expect(markets[0]["subcategory"]).to.equal("US election")
+      expect(markets[0]["logo"]).to.equal("https://www.arweave.net/123456")
+      expect(markets[0]["bet_volume"]).to.equal(2 * 100*10**12) // log prediction sent twice with 100*10**12
+      expect(markets[0]["funding_amount"]).to.equal(2 * 100*10**12) // log funding sent twice with 100*10**12
+    })
+
+    it("+ve should get no markets w/ limit and offset > num of results", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Markets" },
+          { name: "Limit", value: "1" },
+          { name: "Offset", value: "5" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const markets = JSON.parse(Messages[0].Data)
+      
+      expect(markets.length).to.be.equal(0)
     })
   })
 

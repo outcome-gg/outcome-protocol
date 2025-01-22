@@ -16,6 +16,7 @@ without explicit written permission from Outcome.
 local marketFactory = require('marketFactoryModules.marketFactory')
 local marketFactoryValidation = require('marketFactoryModules.marketFactoryValidation')
 local constants = require('marketFactoryModules.constants')
+local json = require('json')
 
 --[[
 ==============
@@ -54,7 +55,7 @@ local function retrieveMarketFactoryConfig()
     lpFee = constants.lpFee,
     protocolFee = constants.protocolFee,
     protocolFeeTarget = Env == 'DEV' and constants.dev.protocolFeeTarget or constants.prod.protocolFeeTarget,
-    approvedCollateralTokens =  Env == 'DEV' and constants.dev.approvedCollateralTokens or constants.prod.approvedCollateralTokens
+    approvedCollateralTokens = Env == 'DEV' and constants.dev.approvedCollateralTokens or constants.prod.approvedCollateralTokens
   }
   return config
 end
@@ -100,6 +101,8 @@ WRITE HANDLERS
 --- @param msg Message The message to handle
 --- @return Message spawnedMarketNotice The spawned market notice
 Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
+  print("Spawn-Market11")
+  print("approvedCollateralTokens " .. json.encode(MarketFactory.approvedCollateralTokens))
   marketFactoryValidation.validateSpawnMarket(msg, MarketFactory.approvedCollateralTokens)
   return MarketFactory:spawnMarket(
     msg.Tags["CollateralToken"],

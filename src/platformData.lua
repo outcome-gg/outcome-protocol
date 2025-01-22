@@ -37,6 +37,7 @@ USERS = [[
 MARKETS = [[
   CREATE TABLE IF NOT EXISTS Markets (
     id TEXT PRIMARY KEY,
+    status TEXT NOT NULL CHECK (status IN ('open', 'resolved', 'closed')),
     creator TEXT NOT NULL,
     creator_fee NUMBER NOT NULL,
     creator_fee_target TEXT NOT NULL,
@@ -44,6 +45,8 @@ MARKETS = [[
     outcome_slot_count NUMBER NOT NULL,
     collateral TEXT NOT NULL,
     resolution_agent TEXT NOT NULL,
+    category TEXT NOT NULL,
+    subcategory TEXT NOT NULL,
     logo TEXT NOT NULL,
     timestamp NUMBER NOT NULL
   );
@@ -92,8 +95,9 @@ PREDICTIONS = [[
     user TEXT NOT NULL,
     operation TEXT NOT NULL CHECK (operation IN ('buy', 'sell')),
     collateral TEXT NOT NULL,
-    outcome TEXT NOT NULL,
     amount TEXT NOT NULL,
+    outcome TEXT NOT NULL,
+    shares TEXT NOT NULL,
     price REAL NOT NULL,
     timestamp NUMBER NOT NULL,
     FOREIGN KEY (market) REFERENCES Markets(id),
@@ -219,7 +223,7 @@ end)
 Handlers.add("Log-Prediction", {Action = "Log-Prediction"}, function(msg)
   activityValidation.validateLogPrediction(msg)
   local cast = msg.Tags.Cast == "true"
-  return PlatformData.activity:logPrediction(msg.Tags.User, msg.Tags.Operation, msg.Tags.Collateral, msg.Tags.Outcome, msg.Tags.Quantity, msg.Tags.Price, os.time(), cast, msg)
+  return PlatformData.activity:logPrediction(msg.Tags.User, msg.Tags.Operation, msg.Tags.Collateral, msg.Tags.Quantity, msg.Tags.Outcome, msg.Tags.Shares, msg.Tags.Price, os.time(), cast, msg)
 end)
 
 --- Log probabilities handler
@@ -255,12 +259,34 @@ READ HANDLERS
 =============
 ]]
 
--- Query handler
--- @param msg Message The message received
--- @return Message queryResults The query results
+--- Query handler
+--- @param msg Message The message received
+--- @return Message queryResults The query results
 Handlers.add("Query", {Action = "Query"}, function(msg)
   local normalizedSql = activityValidation.validateQuery(PlatformData.readers, msg)
   return PlatformData:query(normalizedSql, msg)
+end)
+
+
+--- Get markets handler
+--- @param msg Message The message received
+--- @return Message markets The markets
+Handlers.add("Get-Markets", {Action = "Get-Markets"}, function(msg)
+  activityValidation.validateGetMarkets(msg)
+  local params = {
+    status = msg.Tags.Status,
+    collateral = msg.Tags.Collateral,
+    minFunding = msg.Tags.MinFunding,
+    creator = msg.Tags.Creator,
+    category = msg.Tags.Category,
+    subcategory = msg.Tags.Subcategory,
+    keyword = msg.Tags.Keyword,
+    orderBy = msg.Tags.OrderBy or "timestamp",
+    orderDirection = msg.Tags.OrderDirection or "DESC",
+    limit = msg.Tags.Limit or "12",
+    offset = msg.Tags.Offset,
+  }
+  return PlatformData:getMarkets(params, msg)
 end)
 
 --[[

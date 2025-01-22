@@ -15,11 +15,11 @@ local constants = {
   maximumTakeFee = "500",
 }
 constants.dev = {
-  configurator = "test-this-is-valid-arweave-wallet-address-1",
-  incentives = "test-this-is-valid-arweave-wallet-address-2",
-  dataIndex = "test-this-is-valid-arweave-wallet-address-3",
-  protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-4",
-  approvedCollateralTokens = {["test-this-is-valid-arweave-wallet-address-5"] = true},
+  configurator = "8hKbJUFUGnLlxK5_j7kVnH40tcvXQPsYEuBZ0fwke1U",
+  incentives = "haUOiKKmYMGum59nWZx5TVFEkDgI5LakIEY7jgfQgAI",
+  dataIndex = "rXSAUKwZhJkIBTIEyBl1rf8Gtk_88RKQFsx5JvDOwlE",
+  protocolFeeTarget = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0",
+  approvedCollateralTokens = {["WY-SBx8N4d4wJZB3o3h7Uk_zHPLUqBx2qFeh_CDkceQ"] = true},
 }
 constants.prod = {
   configurator = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",

@@ -16,7 +16,6 @@ without explicit written permission from Outcome.
 local Chatroom = {}
 local ChatroomMethods = {}
 local ChatroomNotices = require('platformDataModules.chatroomNotices')
-local json = require('json')
 
 --- Creates a new Chatroom instance
 function Chatroom:new(dbAdmin)
@@ -60,7 +59,6 @@ function ChatroomMethods:broadcast(market, user, body, timestamp, cast, msg)
   end
   local chatroomUser = self.dbAdmin:safeExec("SELECT * FROM Users WHERE id = ?;", true, user)[1]
   -- Check if user is silenced
-  print("chatroomUser " .. json.encode(chatroomUser))
   if chatroomUser.silenced == "true" then
 
     return msg.reply({ Action = 'Broadcast-Error', Data = 'User is silenced'})
@@ -72,7 +70,6 @@ function ChatroomMethods:broadcast(market, user, body, timestamp, cast, msg)
       VALUES (?, ?, ?, ?, ?);
     ]], false, msg.Id, market, user, body, timestamp
   )
-  print("here")
   -- Broadcast message if cast
   if cast then return self.broadcastNotice(body, market, msg) end
 end

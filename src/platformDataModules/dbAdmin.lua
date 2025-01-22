@@ -54,6 +54,7 @@ function dbAdmin:safeExec(sql, returnResults, ...)
     local query = sql:gsub("%?", function()
         return table.remove(params, 1) or error("Placeholder mismatch: '?' without parameter.")
     end)
+    print("dbAdmin query => " .. query)
     -- Execute the final query
     if returnResults then
         local results = {}

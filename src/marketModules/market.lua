@@ -153,7 +153,7 @@ local function logFunding(incentives, dataIndex, user, operation, collateral, qu
   })
 end
 
-local function logPrediction(incentives, dataIndex, user, operation, collateral, outcome, quantity, price, msg)
+local function logPrediction(incentives, dataIndex, user, operation, collateral, quantity, outcome, shares, price, msg)
   -- log prediction for incentives
   ao.send({
     Target = incentives,
@@ -161,8 +161,7 @@ local function logPrediction(incentives, dataIndex, user, operation, collateral,
     User = user,
     Operation = operation,
     Collateral = collateral,
-    Quantity = quantity,
-    Price = price
+    Quantity = quantity
   })
   -- log prediction for dataIndex
   return msg.forward(dataIndex, {
@@ -170,8 +169,9 @@ local function logPrediction(incentives, dataIndex, user, operation, collateral,
     User = user,
     Operation = operation,
     Collateral = collateral,
-    Outcome = outcome,
     Quantity = quantity,
+    Outcome = outcome,
+    Shares = shares,
     Price = price
   })
 end
@@ -259,7 +259,7 @@ function MarketMethods:buy(msg)
   local notice = self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
   -- log prediction and probabilities
   local price = tostring.bint.__div(outcomeTokensToBuy, bint(msg.Tags.Quantity))
-  logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags['X-PositionId'], msg.Tags.Quantity, price, msg)
+  logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], outcomeTokensToBuy, price, msg)
   logProbabilities(self.dataIndex, self.cpmm.calcProbabilities())
   return notice
 end
@@ -274,7 +274,7 @@ function MarketMethods:sell(msg)
   local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
   -- log prediction and probabilities
   local price = tostring.bint.__div(outcomeTokensToSell, bint(msg.Tags.Quantity))
-  logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.PositionId, msg.Tags.Quantity, price, msg)
+  logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags.PositionId, outcomeTokensToSell, price, msg)
   logProbabilities(self.dataIndex, self.cpmm.calcProbabilities())
   return notice
 end

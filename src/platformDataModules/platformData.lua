@@ -83,6 +83,102 @@ function PlatformDataMethods:query(sql, msg)
   return msg.reply({ Action = 'Query-Results', Data = json.encode(results) })
 end
 
+--- Get markets
+--- @param msg Message The message received
+--- @return Message getMarkets The get markets results
+function PlatformDataMethods:getMarkets(params, msg)
+  local query = [[
+    SELECT 
+      m.*, 
+      m.timestamp AS timestamp,
+      m.creator_fee AS creator_fee,
+      COALESCE(f.funding_amount, 0) AS funding_amount,
+      COALESCE(p.bet_volume, 0) AS bet_volume
+    FROM 
+      Markets m
+    LEFT JOIN (
+      SELECT 
+        market, 
+        SUM(CASE WHEN operation = 'add' THEN amount
+                 WHEN operation = 'remove' THEN -amount
+                 ELSE 0 END) AS funding_amount
+      FROM 
+        Fundings
+      GROUP BY 
+        market
+    ) f ON m.id = f.market
+    LEFT JOIN (
+      SELECT 
+        market, 
+        SUM(amount) AS bet_volume
+      FROM 
+        Predictions
+      GROUP BY 
+        market
+    ) p ON m.id = p.market
+  ]]
+
+  local conditions = {}
+  local bindings = {}
+
+  if params then
+    -- Add WHERE clause
+    if params.status then
+      table.insert(conditions, 'status = ?')
+      table.insert(bindings, params.status)
+    end
+    if params.collateral then
+      table.insert(conditions, 'collateral = ?')
+      table.insert(bindings, params.collateral)
+    end
+    if params.creator then
+      table.insert(conditions, 'creator = ?')
+      table.insert(bindings, params.creator)
+    end
+    if params.category then
+      table.insert(conditions, 'category = ?')
+      table.insert(bindings, params.category)
+    end
+    if params.subcategory then
+      table.insert(conditions, 'subcategory = ?')
+      table.insert(bindings, params.subcategory)
+    end
+    if params.keyword then
+      table.insert(conditions, "question LIKE '%' || ? || '%'")
+      table.insert(bindings, params.keyword)
+    end
+    if params.minFunding then
+      table.insert(conditions, "COALESCE(f.funding_amount, 0) = ?")
+      table.insert(bindings, params.minFunding)
+    end
+    if #conditions > 0 then
+      query = query .. ' WHERE ' .. table.concat(conditions, ' AND ')
+    end
+    -- Add ORDER BY clause
+    if params.orderBy then
+      query = query .. ' ORDER BY ' .. params.orderBy
+    end
+    -- Add ORDER DIRECTION clause
+    if params.orderDirection then
+      query = query .. ' ' .. params.orderDirection
+    end
+    -- Add LIMIT clause
+    if params.limit then
+      query = query .. ' LIMIT ?'
+      table.insert(bindings, params.limit)
+    end
+    -- Add OFFSET clause
+    if params.offset then
+      query = query .. ' OFFSET ?'
+      table.insert(bindings, params.offset)
+    end
+    -- Finalize query
+    query = query .. ';'
+  end
+  local results = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
+  return msg.reply({ Action = 'Get-Markets', Data = json.encode(results) })
+end
+
 --[[
 ====================
 CONFIGURATOR METHODS

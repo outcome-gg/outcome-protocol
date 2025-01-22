@@ -71,9 +71,9 @@ function ActivityMethods:logMarket(market, creator, creatorFee, creatorFeeTarget
   -- Insert market
   self.dbAdmin:safeExec(
     [[
-      INSERT INTO Markets (id, market, creator, creator_fee, creator_fee_target, question, outocome_slot_count, collateral, resolution_agent, category, subcategory, logo, timestamp) 
+      INSERT INTO Markets (id, status, creator, creator_fee, creator_fee_target, question, outcome_slot_count, collateral, resolution_agent, category, subcategory, logo, timestamp) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    ]], false, msg.Id, market, creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, timestamp
+    ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, timestamp
   )
   -- Send notice if cast is true
   if cast then
@@ -115,12 +115,13 @@ end
 --- @param collateral string The prediction collateral
 --- @param amount string The prediction amount
 --- @param outcome string The prediction outcome
+--- @param shares string The prediction shares
 --- @param price string The prediction price
 --- @param timestamp string The prediction timestamp
 --- @param cast boolean Whether to cast the message
 --- @param msg Message The message received
 --- @return Message|nil logPredictionNotice The log prediction notice or nil if cast is false
-function ActivityMethods:logPrediction(user, operation, collateral, outcome, amount, price, timestamp, cast, msg)
+function ActivityMethods:logPrediction(user, operation, collateral, amount, outcome, shares, price, timestamp, cast, msg)
   -- Insert user if they don't exist
   local numUsers = #self.dbAdmin:safeExec("SELECT * FROM Users WHERE id = ?;", true, user)
   if numUsers == 0 then
@@ -129,13 +130,13 @@ function ActivityMethods:logPrediction(user, operation, collateral, outcome, amo
   -- Insert prediction
   self.dbAdmin:safeExec(
     [[
-      INSERT INTO Predictions (id, market, user, operation, collateral, outcome, amount, price, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-    ]], true, msg.Id, msg.From, user, operation, collateral, outcome, amount, price, timestamp
+      INSERT INTO Predictions (id, market, user, operation, collateral, amount, outcome, shares, price, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    ]], true, msg.Id, msg.From, user, operation, collateral, amount, outcome, shares, price, timestamp
   )
   -- Send notice if cast is true
   if cast then
-    return self.logPredictionNotice(msg.From, user, operation, collateral, outcome, amount, price, msg)
+    return self.logPredictionNotice(msg.From, user, operation, collateral, amount, outcome, shares, price, msg)
   end
 end
 

@@ -124,8 +124,24 @@ ACTIVITY LOGS
 ]]
 
 local function logMarket(dataIndex, market, creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, collateralToken, resolutionAgent, category, logo)
+  -- log to data index
   ao.send({
     Target = dataIndex,
+    Action = "Log-Market",
+    Market = market,
+    Creator = creator,
+    CreatorFee = creatorFee,
+    CreatorFeeTarget = creatorFeeTarget,
+    Question = question,
+    OutcomeSlotCount = outcomeSlotCount,
+    Collateral = collateralToken,
+    ResolutionAgent = resolutionAgent,
+    Category = category,
+    Logo = logo
+  })
+  -- log to creator
+  ao.send({
+    Target = creator,
     Action = "Log-Market",
     Market = market,
     Creator = creator,
@@ -185,7 +201,7 @@ function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, ques
     ["CreatorFee"] = tostring(creatorFee),
     ["CreatorFeeTarget"] = creatorFeeTarget,
     ["Question"] = question,
-    ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount)),
+    ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount))
   })
   -- add mapping
   local marketConfig = {
@@ -351,6 +367,7 @@ CALLBACK METHODS
 --- @param msg Message The message received
 --- @return boolean success True if successful, false otherwise
 function MarketFactoryMethods:spawnedMarket(msg)
+  print("spawned market")
   local originalMsgId = msg.Tags["Original-Msg-Id"]
   local processId = msg.Tags["Process"]
   local creator = msg.Tags["Creator"]
@@ -361,7 +378,7 @@ function MarketFactoryMethods:spawnedMarket(msg)
   -- add to pending by creator
   if not self.marketsPendingByCreator[creator] then self.marketsPendingByCreator[creator] = {} end
   table.insert(self.marketsPendingByCreator[creator], processId)
-  -- log market with data index
+  -- log market with data index and creator
   local marketConfig = self.messageToMarketConfigMapping[originalMsgId]
   logMarket(self.dataIndex, processId, marketConfig.creator, marketConfig.creatorFee, marketConfig.creatorFeeTarget, marketConfig.question, marketConfig.outcomeSlotCount, marketConfig.collateralToken, marketConfig.resolutionAgent, marketConfig.category, marketConfig.logo)
   return true

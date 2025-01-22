@@ -45,6 +45,7 @@ function ActivityValidation.validateLogPrediction(msg)
   assert(msg.Tags.Operation == "buy" or msg.Tags.Operation == "sell", "Operation must be 'buy' or 'sell'!")
   sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
   sharedValidation.validatePositiveInteger(msg.Tags.Outcome, "Outcome")
+  sharedValidation.validatePositiveInteger(msg.Tags.Shares, "Shares")
   sharedValidation.validatePositiveNumber(msg.Tags.Price, "Price")
 end
 
@@ -84,6 +85,31 @@ function ActivityValidation.validateQuery(readers, msg)
     assert(not sql:upper():match(keyword), "Forbidden keyword found in query!")
   end
   return sql
+end
+
+--- Validate get markets
+--- @param msg Message The message received
+function ActivityValidation.validateGetMarkets(msg)
+  if msg.Tags.Status then 
+    assert(type(msg.Tags.Status) == "string", "Status must be a string!")
+    assert(utils.includes(msg.Tags.Status, {"open", "closed", "resolved"}), "Status must be 'open', 'closed', or 'resolved'!")
+  end
+  if msg.Tags.Collateral then sharedValidation.validateAddress(msg.Tags.Collateral, "Collateral") end
+  if msg.Tags.MinFunding then sharedValidation.validatePositiveInteger(msg.Tags.MinFunding, "MinFunding") end
+  if msg.Tags.Creator then sharedValidation.validateAddress(msg.Tags.Creator, "Creator") end
+  if msg.Tags.Category then assert(type(msg.Tags.Category) == "string", "Category must be a string!") end
+  if msg.Tags.Subcategory then assert(type(msg.Tags.Subcategory) == "string", "Subcategory must be a string!") end
+  if msg.Tags.Keyword then assert(type(msg.Tags.Keyword) == "string", "Keyword must be a string!") end
+  if msg.Tags.Limit then sharedValidation.validatePositiveInteger(msg.Tags.Limit, "Limit") end
+  if msg.Tags.Offset then sharedValidation.validatePositiveInteger(msg.Tags.Offset, "Offset") end
+  if msg.Tags.OrderBy then
+    assert(type(msg.Tags.OrderBy) == "string", "OrderBy must be a string!")
+    assert(utils.includes(msg.Tags.OrderBy, {"question", "creator_fee", "funding_amount", "bet_volume", "timestamp"}), "OrderBy must be 'created', 'funding', 'outcomes', or 'volume'!")
+  end
+  if msg.Tags.OrderDirection then
+    assert(type(msg.Tags.OrderDirection) == "string", "OrderDirection must be a string!")
+    assert(msg.Tags.OrderDirection == "ASC" or msg.Tags.OrderDirection == "DESC", "OrderDirection must be 'ASC' or 'DESC'!")
+  end
 end
 
 return ActivityValidation
