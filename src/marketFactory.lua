@@ -101,13 +101,12 @@ WRITE HANDLERS
 --- @param msg Message The message to handle
 --- @return Message spawnedMarketNotice The spawned market notice
 Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
-  print("Spawn-Market11")
-  print("approvedCollateralTokens " .. json.encode(MarketFactory.approvedCollateralTokens))
   marketFactoryValidation.validateSpawnMarket(msg, MarketFactory.approvedCollateralTokens)
   return MarketFactory:spawnMarket(
     msg.Tags["CollateralToken"],
     msg.Tags["ResolutionAgent"],
     msg.Tags["Question"],
+    msg.Tags["Rules"],
     tonumber(msg.Tags["OutcomeSlotCount"]),
     msg.From,
     tonumber(msg.Tags["CreatorFee"]),

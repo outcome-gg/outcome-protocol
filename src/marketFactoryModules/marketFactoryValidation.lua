@@ -20,13 +20,18 @@ WRITE METHODS
 --- @param msg Message The message received
 function marketFactoryValidation.validateSpawnMarket(msg, approvedCollateralTokens)
   -- TODO @dev: check staking balance or sender == approved
-  assert(type(msg.Tags.Question) == "string", "Question is required!")
+  sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
+  assert(approvedCollateralTokens[msg.Tags.CollateralToken], "CollateralToken not approved!")
   sharedValidation.validateAddress(msg.Tags.ResolutionAgent, "ResolutionAgent")
+  assert(type(msg.Tags.Question) == "string", "Question is required!")
+  assert(type(msg.Tags.Rules) == "string", "Rules is required!")
   sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")
   sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, "CreatorFee")
   sharedValidation.validateAddress(msg.Tags.CreatorFeeTarget, "CreatorFeeTarget")
-  sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
-  assert(approvedCollateralTokens[msg.Tags.CollateralToken], "CollateralToken not approved!")
+  assert(type(msg.Tags.Category) == "string", "Category is required!")
+  assert(type(msg.Tags.Subcategory) == "string", "Subcategory is required!")
+  assert(type(msg.Tags.Logo) == "string", "Logo is required!")
+
 end
 
 --[[

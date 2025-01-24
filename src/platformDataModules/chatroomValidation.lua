@@ -20,6 +20,17 @@ function ChatroomValidation.validateBroadcast(msg)
   sharedValidation.validateAddress(msg.Tags.Market, "Market")
 end
 
+--- Validate get broadcasts
+--- @param msg Message The message received
+function ChatroomValidation.validateGetBroadcasts(msg)
+  sharedValidation.validateAddress(msg.Tags.Market, "Market")
+  if msg.Tags.OrderDirection then
+    assert(msg.Tags.OrderDirection == "ASC" or msg.Tags.OrderDirection == "DESC", "OrderDirection must be 'ASC' or 'DESC'!")
+  end
+  if msg.Tags.Limit then sharedValidation.validatePositiveInteger(msg.Tags.Limit, "Limit") end
+  if msg.Tags.Offset then sharedValidation.validatePositiveInteger(msg.Tags.Offset, "Offset") end
+end
+
 --- Validates a getMessage
 --- @param msg Message The message received
 function ChatroomValidation.validateGetMessage(msg)

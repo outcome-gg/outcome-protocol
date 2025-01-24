@@ -1,5 +1,42 @@
 return [===[
 
+-- module: "marketModules.marketNotices"
+local function _loaded_mod_marketModules_marketNotices()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See market.lua for full license details.
+=========================================================
+]]
+
+local MarketNotices = {}
+
+--- Sends an update incentives notice
+--- @param incentives string The updated incentives address
+--- @param msg Message The message received
+--- @return Message The incentives updated notice
+function MarketNotices.updateIncentivesNotice(incentives, msg)
+  return msg.reply({
+    Action = "Incentives-Updated",
+    Data = incentives
+  })
+end
+
+--- Sends a update data index notice
+--- @param dataIndex string The updated data index
+--- @param msg Message The message received
+--- @return Message The data index updated notice
+function MarketNotices.updateDataIndexNotice(dataIndex, msg)
+  return msg.reply({
+    Action = "Data-Index-Updated",
+    Data = dataIndex
+  })
+end
+
+return MarketNotices
+end
+
+_G.package.loaded["marketModules.marketNotices"] = _loaded_mod_marketModules_marketNotices()
 
 -- module: ".ao"
 local function _loaded_mod_ao()
@@ -798,8 +835,8 @@ end
 
 _G.package.loaded["json"] = _loaded_mod_json()
 
--- module: "modules.cpmmHelpers"
-local function _loaded_mod_modules_cpmmHelpers()
+-- module: "marketModules.cpmmHelpers"
+local function _loaded_mod_marketModules_cpmmHelpers()
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
@@ -809,7 +846,6 @@ See cpmm.lua for full license details.
 
 local bint = require('.bint')(256)
 local ao = require('.ao')
-local json = require('json')
 
 local CPMMHelpers = {}
 
@@ -922,10 +958,10 @@ end
 return CPMMHelpers
 end
 
-_G.package.loaded["modules.cpmmHelpers"] = _loaded_mod_modules_cpmmHelpers()
+_G.package.loaded["marketModules.cpmmHelpers"] = _loaded_mod_marketModules_cpmmHelpers()
 
--- module: "modules.cpmmNotices"
-local function _loaded_mod_modules_cpmmNotices()
+-- module: "marketModules.cpmmNotices"
+local function _loaded_mod_marketModules_cpmmNotices()
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
@@ -1019,17 +1055,6 @@ function CPMMNotices.updateConfiguratorNotice(configurator, msg)
   })
 end
 
---- Sends an update incentives notice
---- @param incentives string The updated incentives address
---- @param msg Message The message received
---- @return Message The incentives updated notice
-function CPMMNotices.updateIncentivesNotice(incentives, msg)
-  return msg.reply({
-    Action = "Incentives-Updated",
-    Data = incentives
-  })
-end
-
 --- Sends an update take fee notice
 --- @param creatorFee string The updated creator fee
 --- @param protocolFee string The updated protocol fee
@@ -1069,7 +1094,7 @@ end
 return CPMMNotices
 end
 
-_G.package.loaded["modules.cpmmNotices"] = _loaded_mod_modules_cpmmNotices()
+_G.package.loaded["marketModules.cpmmNotices"] = _loaded_mod_marketModules_cpmmNotices()
 
 -- module: ".utils"
 local function _loaded_mod_utils()
@@ -1444,8 +1469,8 @@ end
 
 _G.package.loaded[".utils"] = _loaded_mod_utils()
 
--- module: "modules.tokenNotices"
-local function _loaded_mod_modules_tokenNotices()
+-- module: "marketModules.tokenNotices"
+local function _loaded_mod_marketModules_tokenNotices()
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
@@ -1505,10 +1530,10 @@ end
 return TokenNotices
 end
 
-_G.package.loaded["modules.tokenNotices"] = _loaded_mod_modules_tokenNotices()
+_G.package.loaded["marketModules.tokenNotices"] = _loaded_mod_marketModules_tokenNotices()
 
--- module: "modules.token"
-local function _loaded_mod_modules_token()
+-- module: "marketModules.token"
+local function _loaded_mod_marketModules_token()
 --[[
 ================================================================================
 Module: token.lua
@@ -1541,8 +1566,8 @@ FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
 ]]
 
 local Token = {}
-local TokenMethods = require('modules.tokenNotices')
-local TokenNotices = require('modules.tokenNotices')
+local TokenMethods = {}
+local TokenNotices = require('marketModules.tokenNotices')
 local bint = require('.bint')(256)
 
 --- Represents a Token
@@ -1680,10 +1705,10 @@ return Token
 
 end
 
-_G.package.loaded["modules.token"] = _loaded_mod_modules_token()
+_G.package.loaded["marketModules.token"] = _loaded_mod_marketModules_token()
 
--- module: "modules.constants"
-local function _loaded_mod_modules_constants()
+-- module: "marketModules.constants"
+local function _loaded_mod_marketModules_constants()
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
@@ -1693,21 +1718,45 @@ See market.lua for full license details.
 
 local constants = {}
 local json = require('json')
+-- DB
+constants.db = {
+  intervals = {
+    ["1h"] = "1 minute",
+    ["6h"] = "1 minute",
+    ["1d"] = "5 minutes",
+    ["1w"] = "3 hours",
+    ["1M"] = "12 hours",
+    ["max"] = "1 day"
+  },
+  rangeDurations = {
+    ["1h"] = "1 hour",
+    ["6h"] = "6 hours",
+    ["1d"] = "1 day",
+    ["1w"] = "7 days",
+    ["1M"] = "1 month"
+  },
+  maxInterval = "1 day",
+  maxRangeDuration = "100 years",
+  defaultLimit = 50,
+  defaultOffset = 0,
+  defaultActivityWindow = 24,
+  moderators = {},
+}
 -- Market Factory
-constants.configurator = "test-this-is-valid-arweave-wallet-address-1"
-constants.incentives = "test-this-is-valid-arweave-wallet-address-2"
-constants.collateralToken = "test-this-is-valid-arweave-wallet-address-3"
-constants.conditionId = "test-this-is-valid-condition-id-1"
-constants.positionIds = json.encode({"1", "2"})
-constants.marketName = "Outcome Market"
-constants.marketTicker = "OUTCOME"
-constants.marketLogo = "https://test.com/logo.png"
-constants.lpFee = "100"
-constants.creatorFee = "250"
-constants.creatorFeeTarget = "test-this-is-valid-arweave-wallet-address-4"
-constants.protocolFee = "250"
-constants.protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-5"
-constants.maximumTakeFee = "500"
+constants.marketFactory = {
+  configurator = "test-this-is-valid-arweave-wallet-address-1",
+  incentives = "test-this-is-valid-arweave-wallet-address-2",
+  namePrefix = "Outcome Market",
+  tickerPrefix = "OUTCOME",
+  logo = "https://test.com/logo.png",
+  lpFee = "100",
+  protocolFee = "250",
+  protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-3",
+  maximumTakeFee = "500",
+  utilityToken = "test-this-is-valid-arweave-wallet-address-4",
+  minimumPayment = "1000",
+  collateralTokens = {"test-this-is-valid-arweave-wallet-address-5"}
+}
 -- Market
 constants.testMarketConfig = {
   configurator = "test-this-is-valid-arweave-wallet-address-6",
@@ -1724,16 +1773,20 @@ constants.testMarketConfig = {
   protocolFee = "100",
   protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-4"
 }
+-- Activity
+constants.activity = {
+  configurator = "test-this-is-valid-arweave-wallet-address-1",
+}
 -- CPMM
 constants.denomination = 12
 
 return constants
 end
 
-_G.package.loaded["modules.constants"] = _loaded_mod_modules_constants()
+_G.package.loaded["marketModules.constants"] = _loaded_mod_marketModules_constants()
 
--- module: "modules.conditionalTokensNotices"
-local function _loaded_mod_modules_conditionalTokensNotices()
+-- module: "marketModules.conditionalTokensNotices"
+local function _loaded_mod_marketModules_conditionalTokensNotices()
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
@@ -1747,20 +1800,14 @@ local ao = ao or require('.ao')
 local ConditionalTokensNotices = {}
 
 --- Condition resolution notice
---- @param conditionId string The condition ID
 --- @param resolutionAgent string The process assigned to report the result for the prepared condition
---- @param questionId string An identifier for the question to be answered by the resolutionAgent
---- @param outcomeSlotCount number The number of outcome slots
 --- @param payoutNumerators table<number> The payout numerators for each outcome slot
 --- @param msg Message The message received
 --- @return Message The condition resolution notice
-function ConditionalTokensNotices.conditionResolutionNotice(conditionId, resolutionAgent, questionId, outcomeSlotCount, payoutNumerators, msg)
+function ConditionalTokensNotices.conditionResolutionNotice(resolutionAgent, payoutNumerators, msg)
   return msg.reply({
     Action = "Condition-Resolution-Notice",
-    ConditionId = conditionId,
     ResolutionAgent = resolutionAgent,
-    QuestionId = questionId,
-    OutcomeSlotCount = tostring(outcomeSlotCount),
     PayoutNumerators = json.encode(payoutNumerators)
   })
 end
@@ -1768,17 +1815,15 @@ end
 --- Position split notice
 --- @param from string The address of the account that split the position
 --- @param collateralToken string The address of the collateral token
---- @param conditionId string The condition ID
 --- @param quantity string The quantity
 --- @param msg Message The message received
 --- @return Message The position split notice
-function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, conditionId, quantity, msg)
+function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, quantity, msg)
   local notice = {
     Action = "Split-Position-Notice",
     Process = ao.id,
     Stakeholder = from,
     CollateralToken = collateralToken,
-    ConditionId = conditionId,
     Quantity = quantity
   }
   -- Forward tags
@@ -1793,30 +1838,26 @@ function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, con
 end
 
 --- Positions merge notice
---- @param conditionId string The condition ID
 --- @param quantity string The quantity
 --- @param msg Message The message received
 --- @return Message The positions merge notice
-function ConditionalTokensNotices.positionsMergeNotice(conditionId, quantity, msg)
+function ConditionalTokensNotices.positionsMergeNotice(quantity, msg)
   return msg.reply({
     Action = "Merge-Positions-Notice",
-    ConditionId = conditionId, -- TODO: Check if this is needed
     Quantity = quantity
   })
 end
 
 --- Payout redemption notice
 --- @param collateralToken string The address of the collateral token
---- @param conditionId string The condition ID
 --- @param payout string The payout amount
 --- @param msg Message The message received
 --- @return Message The payout redemption notice
-function ConditionalTokensNotices.payoutRedemptionNotice(collateralToken, conditionId, payout, msg)
+function ConditionalTokensNotices.payoutRedemptionNotice(collateralToken, payout, msg)
   return msg.reply({
     Action = "Payout-Redemption-Notice",
     Process = ao.id,
     CollateralToken = collateralToken,
-    ConditionId = conditionId,
     Payout = tostring(payout)
   })
 end
@@ -1825,10 +1866,10 @@ return ConditionalTokensNotices
 
 end
 
-_G.package.loaded["modules.conditionalTokensNotices"] = _loaded_mod_modules_conditionalTokensNotices()
+_G.package.loaded["marketModules.conditionalTokensNotices"] = _loaded_mod_marketModules_conditionalTokensNotices()
 
--- module: "modules.semiFungibleTokensNotices"
-local function _loaded_mod_modules_semiFungibleTokensNotices()
+-- module: "marketModules.semiFungibleTokensNotices"
+local function _loaded_mod_marketModules_semiFungibleTokensNotices()
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
@@ -2006,10 +2047,10 @@ return SemiFungibleTokensNotices
 
 end
 
-_G.package.loaded["modules.semiFungibleTokensNotices"] = _loaded_mod_modules_semiFungibleTokensNotices()
+_G.package.loaded["marketModules.semiFungibleTokensNotices"] = _loaded_mod_marketModules_semiFungibleTokensNotices()
 
--- module: "modules.semiFungibleTokens"
-local function _loaded_mod_modules_semiFungibleTokens()
+-- module: "marketModules.semiFungibleTokens"
+local function _loaded_mod_marketModules_semiFungibleTokens()
 --[[
 ==============================================================================
 Outcome © 2025. MIT License.
@@ -2037,7 +2078,7 @@ THE SOFTWARE.
 
 local SemiFungibleTokens = {}
 local SemiFungibleTokensMethods = {}
-local SemiFungibleTokensNotices = require('modules.semiFungibleTokensNotices')
+local SemiFungibleTokensNotices = require('marketModules.semiFungibleTokensNotices')
 local bint = require('.bint')(256)
 local json = require('json')
 
@@ -2315,10 +2356,10 @@ return SemiFungibleTokens
 
 end
 
-_G.package.loaded["modules.semiFungibleTokens"] = _loaded_mod_modules_semiFungibleTokens()
+_G.package.loaded["marketModules.semiFungibleTokens"] = _loaded_mod_marketModules_semiFungibleTokens()
 
--- module: "modules.conditionalTokens"
-local function _loaded_mod_modules_conditionalTokens()
+-- module: "marketModules.conditionalTokens"
+local function _loaded_mod_marketModules_conditionalTokens()
 --[[
 ======================================================================================
 Outcome © 2025. All Rights Reserved.
@@ -2336,8 +2377,8 @@ without explicit written permission from Outcome.
 
 local ConditionalTokens = {}
 local ConditionalTokensMethods = {}
-local ConditionalTokensNotices = require('modules.conditionalTokensNotices')
-local SemiFungibleTokens = require('modules.semiFungibleTokens')
+local ConditionalTokensNotices = require('marketModules.conditionalTokensNotices')
+local SemiFungibleTokens = require('marketModules.semiFungibleTokens')
 local bint = require('.bint')(256)
 local crypto = require('.crypto')
 local ao = require('.ao')
@@ -2351,9 +2392,8 @@ local json = require("json")
 --- @field balancesById table<string, table<string, string>> The account token balances by ID
 --- @field totalSupplyById table<string, string> The total supply of the token by ID
 --- @field denomination number The number of decimals
---- @field conditionId string The condition ID
+--- @field resolutionAgent string The process ID of the resolution agent
 --- @field collateralToken string The process ID of the collateral token
---- @field outcomeSlotCount number The number of outcome slots
 --- @field positionIds table<string> The position IDs representing outcomes
 --- @field payoutNumerators table<number> The relative payouts for each outcome slot
 --- @field payoutDenominator number The sum of payout numerators, zero if unreported
@@ -2369,7 +2409,7 @@ local json = require("json")
 --- @param balancesById table<string, table<string, string>> The account token balances by ID
 --- @param totalSupplyById table<string, string> The total supply of the token by ID
 --- @param denomination number The number of decimals
---- @param conditionId string The condition ID
+--- @param resolutionAgent string The process ID of the resolution agent
 --- @param collateralToken string The process ID of the collateral token
 --- @param positionIds table<string> The position IDs representing outcomes
 --- @param creatorFee number The creator fee to be paid, in basis points
@@ -2384,7 +2424,7 @@ function ConditionalTokens:new(
   balancesById,
   totalSupplyById,
   denomination,
-  conditionId,
+  resolutionAgent,
   collateralToken,
   positionIds,
   creatorFee,
@@ -2394,9 +2434,8 @@ function ConditionalTokens:new(
 )
   ---@class ConditionalTokens : SemiFungibleTokens
   local conditionalTokens = SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)
-  conditionalTokens.conditionId = conditionId
+  conditionalTokens.resolutionAgent = resolutionAgent
   conditionalTokens.collateralToken = collateralToken
-  conditionalTokens.outcomeSlotCount = #positionIds
   conditionalTokens.positionIds = positionIds
   conditionalTokens.creatorFee = tonumber(creatorFee) or 0
   conditionalTokens.creatorFeeTarget = creatorFeeTarget
@@ -2443,7 +2482,7 @@ function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity,
   -- Mint the stake in the split target positions.
   self:batchMint(from, self.positionIds, quantities, msg)
   -- Send notice.
-  return self.positionSplitNotice(from, collateralToken, self.conditionId, quantity, msg)
+  return self.positionSplitNotice(from, collateralToken, quantity, msg)
 end
 
 --- Merge positions
@@ -2474,25 +2513,20 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     })
   end
   -- Send notice.
-  return self.positionsMergeNotice(self.conditionId, quantity, msg)
+  return self.positionsMergeNotice(quantity, msg)
 end
 
 --- Report payouts
---- @param questionId string The question ID the resolution agent is answering for (TODO: remove)
 --- @param payouts table<number> The resolution agent's answer
 --- @param msg Message The message received
 --- @return Message The condition resolution notice
-function ConditionalTokensMethods:reportPayouts(questionId, payouts, msg)
-  -- IMPORTANT, the payouts length accuracy is enforced because outcomeSlotCount is part of the hash.
-  local outcomeSlotCount = #payouts
-  assert(#payouts == self.outcomeSlotCount, "Payouts must match outcome slot count!")
-  -- IMPORTANT, the resolutionAgent is enforced to be the sender because it's part of the hash.
-  local conditionId = self.getConditionId(msg.From, questionId, tostring(outcomeSlotCount))
-  assert(conditionId == self.conditionId, "Sender not resolution agent!")
+function ConditionalTokensMethods:reportPayouts(payouts, msg)
+  assert(#payouts == #self.positionIds, "Payouts must match outcome slot count!")
+  assert(msg.From == self.resolutionAgent, "Sender not resolution agent!")
   assert(self.payoutDenominator == 0, "payout denominator already set")
   -- Set the payout vector for the condition.
   local den = 0
-  for i = 1, outcomeSlotCount do
+  for i = 1, #self.positionIds do
     local num = payouts[i]
     den = den + num
     assert(self.payoutNumerators[i] == 0, "payout numerator already set")
@@ -2501,7 +2535,7 @@ function ConditionalTokensMethods:reportPayouts(questionId, payouts, msg)
   assert(den > 0, "payout is all zeroes")
   self.payoutDenominator = den
   -- Send the condition resolution notice.
-  return self.conditionResolutionNotice(conditionId, msg.From, questionId, outcomeSlotCount, self.payoutNumerators, msg)
+  return self.conditionResolutionNotice(msg.From, self.payoutNumerators, msg)
 end
 
 --- Redeem positions
@@ -2531,26 +2565,7 @@ function ConditionalTokensMethods:redeemPositions(msg)
     self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)
   end
   -- Send notice.
-  return self.payoutRedemptionNotice(self.collateralToken, self.conditionId, totalPayout, msg)
-end
-
---- Get OutcomeSlotCount
---- Gets the number of outcome slots associated with a condition
----@param msg Message The message received
----@return number The number of outcome slots, zero if the condition has not been prepared
-function ConditionalTokensMethods:getOutcomeSlotCount(msg)
-  assert(msg.Tags.ConditionId, "ConditionId is required!")
-  return self.payoutNumerators and #self.payoutNumerators or 0
-end
-
---- Get ConditionId
---- Constructs a condition ID from a resolutionAgent, question ID, and the outcome slot count
---- @param resolutionAgent string The process ID assigned to report the result for the prepared condition
---- @param questionId string An identifier for the question to be answered by the resolutionAgent
---- @param outcomeSlotCount string The number of outcome slots used for this condition. Must not exceed 256.
---- @return string The condition ID
-function ConditionalTokensMethods.getConditionId(resolutionAgent, questionId, outcomeSlotCount)
-  return crypto.digest.keccak256(resolutionAgent .. questionId .. outcomeSlotCount).asHex()
+  return self.payoutRedemptionNotice(self.collateralToken, totalPayout, msg)
 end
 
 --- Return total payout minus take fee
@@ -2591,10 +2606,10 @@ return ConditionalTokens
 
 end
 
-_G.package.loaded["modules.conditionalTokens"] = _loaded_mod_modules_conditionalTokens()
+_G.package.loaded["marketModules.conditionalTokens"] = _loaded_mod_marketModules_conditionalTokens()
 
--- module: "modules.cpmm"
-local function _loaded_mod_modules_cpmm()
+-- module: "marketModules.cpmm"
+local function _loaded_mod_marketModules_cpmm()
 --[[
 ======================================================================================
 Outcome © 2025. All Rights Reserved.
@@ -2612,20 +2627,18 @@ without explicit written permission from Outcome.
 
 local CPMM = {}
 local CPMMMethods = {}
-local CPMMHelpers = require('modules.cpmmHelpers')
-local CPMMNotices = require('modules.cpmmNotices')
+local CPMMHelpers = require('marketModules.cpmmHelpers')
+local CPMMNotices = require('marketModules.cpmmNotices')
 local bint = require('.bint')(256)
 local ao = require('.ao')
 local utils = require(".utils")
-local token = require('modules.token')
-local constants = require("modules.constants")
-local conditionalTokens = require('modules.conditionalTokens')
+local token = require('marketModules.token')
+local constants = require("marketModules.constants")
+local conditionalTokens = require('marketModules.conditionalTokens')
 
 --- Represents a CPMM (Constant Product Market Maker)
 --- @class CPMM
---- @field incentives string The process ID of the incentives controller
 --- @field configurator string The process ID of the configurator
---- @field initialized boolean The flag that is set to true once initialized
 --- @field poolBalances table<string, ...> The pool balance for each respective position ID
 --- @field withdrawnFees table<string, string> The amount of fees withdrawn by an account
 --- @field feePoolWeight string The total amount of fees collected
@@ -2633,9 +2646,8 @@ local conditionalTokens = require('modules.conditionalTokens')
 
 --- Creates a new CPMM instance
 --- @param configurator string The process ID of the configurator
---- @param incentives string The process ID of the incentives controller
---- @param collateralToken string The address of the collateral token
---- @param conditionId string The condition ID
+--- @param collateralToken string The process ID of the collateral token
+--- @param resolutionAgent string The process ID of the resolution agent
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name 
 --- @param ticker string The CPMM token(s) ticker 
@@ -2646,16 +2658,14 @@ local conditionalTokens = require('modules.conditionalTokens')
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
 --- @return CPMM cpmm The new CPMM instance 
-function CPMM:new(configurator, incentives, collateralToken, conditionId, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
+function CPMM:new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
   local cpmm = {
     configurator = configurator,
-    incentives = incentives,
     poolBalances = {},
     withdrawnFees = {},
     feePoolWeight = "0",
     totalWithdrawnFees = "0",
-    lpFee = tonumber(lpFee),
-    initialized = true
+    lpFee = tonumber(lpFee)
   }
   cpmm.token = token:new(
     name .. " LP Token",
@@ -2666,13 +2676,13 @@ function CPMM:new(configurator, incentives, collateralToken, conditionId, positi
     constants.denomination
   )
   cpmm.tokens = conditionalTokens:new(
-    name .. " Conditional Token",
+    name .. " Conditional Tokens",
     ticker,
     logo,
     {}, -- balancesById
     {}, -- totalSupplyById
     constants.denomination,
-    conditionId,
+    resolutionAgent,
     collateralToken,
     positionIds,
     creatorFee,
@@ -2853,6 +2863,27 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
   return tostring(bint.ceil(returnAmountPlusFees + CPMMHelpers.ceildiv(endingOutcomeBalance, 1e4) - sellTokenPoolBalance))
 end
 
+--- Calc probabilities
+--- @return table<string, number> probabilities A table mapping each positionId to its probability (as a decimal percentage)
+function CPMMMethods:calcProbabilities()
+  local poolBalances = self:getPoolBalances()
+  local totalBalance = bint(0)
+  local probabilities = {}
+  -- Calculate total balance
+  for i = 1, #self.tokens.positionIds do
+    totalBalance = bint.__add(totalBalance, bint(poolBalances[i]))
+  end
+  assert(bint.__gt(totalBalance, bint(0)), 'Total pool balance must be greater than zero!')
+  -- Calculate probabilities for each positionId
+  for i = 1, #self.tokens.positionIds do
+    local positionId = self.tokens.positionIds[i]
+    local balance = bint(poolBalances[i])
+    local probability = bint.__div(bint.__mul(balance, bint(100)), totalBalance)
+    probabilities[positionId] = tonumber(probability)
+  end
+  return probabilities
+end
+
 --- Buy
 --- @param from string The process ID of the account that initiates the buy
 --- @param onBehalfOf string The process ID of the account to receive the tokens
@@ -2995,15 +3026,6 @@ function CPMMMethods:updateConfigurator(configurator, msg)
   return self.updateConfiguratorNotice(configurator, msg)
 end
 
---- Update incentives controller
---- @param incentives string The process ID of the new incentives controller
---- @param msg Message The message received
---- @return Message The update incentives notice
-function CPMMMethods:updateIncentives(incentives, msg)
-  self.incentives = incentives
-  return self.updateIncentivesNotice(incentives, msg)
-end
-
 --- Update take fee
 --- @param creatorFee string The new creator fee in basis points
 --- @param protocolFee string The new protocol fee in basis points
@@ -3037,10 +3059,10 @@ end
 return CPMM
 end
 
-_G.package.loaded["modules.cpmm"] = _loaded_mod_modules_cpmm()
+_G.package.loaded["marketModules.cpmm"] = _loaded_mod_marketModules_cpmm()
 
--- module: "modules.sharedUtils"
-local function _loaded_mod_modules_sharedUtils()
+-- module: "marketModules.sharedUtils"
+local function _loaded_mod_marketModules_sharedUtils()
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
@@ -3065,7 +3087,7 @@ local function isSimpleValue(value)
     return true
   end
   -- Check for boolean
-  if value == "true" or value == "false" then
+  if string.lower(value) == "true" or string.lower(value) == "false" then
     return true
   end
   return false
@@ -3124,46 +3146,52 @@ function sharedUtils.isValidArweaveAddress(address)
 	return type(address) == "string" and #address == 43 and string.match(address, "^[%w-_]+$") ~= nil
 end
 
+--- Verify if a valid boolean string
+--- @param value any
+--- @return boolean
+function sharedUtils.isValidBooleanString(value)
+  return type(value) == "string" and (string.lower(value) == "true" or string.lower(value) == "false")
+end
+
 return sharedUtils
 end
 
-_G.package.loaded["modules.sharedUtils"] = _loaded_mod_modules_sharedUtils()
+_G.package.loaded["marketModules.sharedUtils"] = _loaded_mod_marketModules_sharedUtils()
 
--- module: "modules.cpmmValidation"
-local function _loaded_mod_modules_cpmmValidation()
+-- module: "marketModules.sharedValidation"
+local function _loaded_mod_marketModules_sharedValidation()
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
-See cpmm.lua for full license details.
+See market.lua for full license details.
 =========================================================
 ]]
 
-local bint = require('.bint')(256)
+local sharedValidation = {}
+local sharedUtils = require('marketModules.sharedUtils')
 local utils = require('.utils')
-local sharedUtils = require('modules.sharedUtils')
-local json = require("json")
-local cpmmValidation = {}
 
 --- Validates address
 --- @param address any The address to be validated
 --- @param tagName string The name of the tag being validated
-local function validateAddress(address, tagName)
+function sharedValidation.validateAddress(address, tagName)
   assert(type(address) == 'string', tagName .. ' is required!')
   assert(sharedUtils.isValidArweaveAddress(address), tagName .. ' must be a valid Arweave address!')
 end
 
---- Validates position ID
---- @param positionId any The position ID to be validated
---- @param validPositionIds table<string> The array of valid position IDs
-local function validatePositionId(positionId, validPositionIds)
-  assert(type(positionId) == 'string', 'PositionId is required!')
-  assert(utils.includes(positionId, validPositionIds), 'Invalid positionId!')
+--- Validates array item
+--- @param item any The item to be validated
+--- @param validItems table<string> The array of valid items
+--- @param tagName string The name of the tag being validated
+function sharedValidation.validateItem(item, validItems, tagName)
+  assert(type(item) == 'string', tagName .. ' is required!')
+  assert(utils.includes(item, validItems), 'Invalid ' .. tagName .. '!')
 end
 
 --- Validates positive integer
 --- @param quantity any The quantity to be validated
 --- @param tagName string The name of the tag being validated
-local function validatePositiveInteger(quantity, tagName)
+function sharedValidation.validatePositiveInteger(quantity, tagName)
   assert(type(quantity) == 'string', tagName .. ' is required!')
   assert(tonumber(quantity), tagName .. ' must be a number!')
   assert(tonumber(quantity) > 0, tagName .. ' must be greater than zero!')
@@ -3173,17 +3201,36 @@ end
 --- Validates positive integer or zero
 --- @param quantity any The quantity to be validated
 --- @param tagName string The name of the tag being validated
-local function validatePositiveIntegerOrZero(quantity, tagName)
+function sharedValidation.validatePositiveIntegerOrZero(quantity, tagName)
   assert(type(quantity) == 'string', tagName .. ' is required!')
   assert(tonumber(quantity), tagName .. ' must be a number!')
   assert(tonumber(quantity) >= 0, tagName .. ' must be greater than or equal to zero!')
   assert(tonumber(quantity) % 1 == 0, tagName .. ' must be an integer!')
 end
 
+return sharedValidation
+end
+
+_G.package.loaded["marketModules.sharedValidation"] = _loaded_mod_marketModules_sharedValidation()
+
+-- module: "marketModules.cpmmValidation"
+local function _loaded_mod_marketModules_cpmmValidation()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See cpmm.lua for full license details.
+=========================================================
+]]
+
+local cpmmValidation = {}
+local sharedValidation = require('marketModules.sharedValidation')
+local sharedUtils = require('marketModules.sharedUtils')
+local bint = require('.bint')(256)
+
 --- Validates add funding
 --- @param msg Message The message to be validated
 function cpmmValidation.addFunding(msg)
-  validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
   assert(msg.Tags['X-Distribution'], 'X-Distribution is required!')
   assert(sharedUtils.isJSONArray(msg.Tags['X-Distribution']), 'X-Distribution must be valid JSON Array!')
   -- @dev TODO: remove requirement for X-Distribution
@@ -3192,41 +3239,41 @@ end
 --- Validates remove funding
 --- @param msg Message The message to be validated
 function cpmmValidation.removeFunding(msg)
-  validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
 end
 
 --- Validates buy
 --- @param msg Message The message to be validated
 --- @param validPositionIds table<string> The array of valid position IDs
 function cpmmValidation.buy(msg, validPositionIds)
-  validatePositionId(msg.Tags.PositionId, validPositionIds)
-  validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
 end
 
 --- Validates sell
 --- @param msg Message The message to be validated
 --- @param validPositionIds table<string> The array of valid position IDs
 function cpmmValidation.sell(msg, validPositionIds)
-  validatePositionId(msg.Tags.PositionId, validPositionIds)
-  validatePositiveInteger(msg.Tags.Quantity, "Quantity")
-  validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
-  validatePositiveInteger(msg.Tags.MaxOutcomeTokensToSell, "MaxOutcomeTokensToSell")
+  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  sharedValidation.validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
+  sharedValidation.validatePositiveInteger(msg.Tags.MaxOutcomeTokensToSell, "MaxOutcomeTokensToSell")
 end
 
 --- Validates calc buy amount
 --- @param msg Message The message to be validated
 --- @param validPositionIds table<string> The array of valid position IDs
 function cpmmValidation.calcBuyAmount(msg, validPositionIds)
-  validatePositionId(msg.Tags.PositionId, validPositionIds)
-  validatePositiveInteger(msg.Tags.InvestmentAmount, "InvestmentAmount")
+  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+  sharedValidation.validatePositiveInteger(msg.Tags.InvestmentAmount, "InvestmentAmount")
 end
 
 --- Validates calc sell amount
 --- @param msg Message The message to be validated
 --- @param validPositionIds table<string> The array of valid position IDs
 function cpmmValidation.calcSellAmount(msg, validPositionIds)
-  validatePositionId(msg.Tags.PositionId, validPositionIds)
-  validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
+  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+  sharedValidation.validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
 end
 
 --- Validates update configurator
@@ -3234,15 +3281,7 @@ end
 --- @param configurator string The configurator address
 function cpmmValidation.updateConfigurator(msg, configurator)
   assert(msg.From == configurator, 'Sender must be configurator!')
-  validateAddress(msg.Tags.Configurator, 'Configurator')
-end
-
---- Validates update incentives
---- @param msg Message The message to be validated
---- @param configurator string The configurator address
-function cpmmValidation.updateIncentives(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  validateAddress(msg.Tags.Incentives, 'Incentives')
+  sharedValidation.validateAddress(msg.Tags.Configurator, 'Configurator')
 end
 
 --- Validates update take fee
@@ -3250,8 +3289,8 @@ end
 --- @param configurator string The configurator address
 function cpmmValidation.updateTakeFee(msg, configurator)
   assert(msg.From == configurator, 'Sender must be configurator!')
-  validatePositiveIntegerOrZero(msg.Tags.CreatorFee, 'CreatorFee')
-  validatePositiveIntegerOrZero(msg.Tags.ProtocolFee, 'ProtocolFee')
+  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, 'CreatorFee')
+  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.ProtocolFee, 'ProtocolFee')
   assert(bint.__le(bint.__add(bint(msg.Tags.CreatorFee), bint(msg.Tags.ProtocolFee)), 1000), 'Net fee must be less than or equal to 1000 bps')
 end
 
@@ -3274,10 +3313,10 @@ end
 return cpmmValidation
 end
 
-_G.package.loaded["modules.cpmmValidation"] = _loaded_mod_modules_cpmmValidation()
+_G.package.loaded["marketModules.cpmmValidation"] = _loaded_mod_marketModules_cpmmValidation()
 
--- module: "modules.tokenValidation"
-local function _loaded_mod_modules_tokenValidation()
+-- module: "marketModules.tokenValidation"
+local function _loaded_mod_marketModules_tokenValidation()
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
@@ -3285,27 +3324,49 @@ See tokens.lua for full license details.
 =========================================================
 ]]
 
-local sharedUtils = require('modules.sharedUtils')
 local tokenValidation = {}
+local sharedValidation = require('marketModules.sharedValidation')
 
 --- Validates a transfer message
 --- @param msg Message The message received
 function tokenValidation.transfer(msg)
-  assert(type(msg.Tags.Recipient) == 'string', 'Recipient is required!')
-  assert(sharedUtils.isValidArweaveAddress(msg.Tags.Recipient), 'Recipient must be a valid Arweave address!')
-  assert(type(msg.Tags.Quantity) == 'string', 'Quantity is required!')
-  assert(tonumber(msg.Tags.Quantity), 'Quantity must be a number!')
-  assert(tonumber(msg.Tags.Quantity) > 0, 'Quantity must be greater than zero!')
-  assert(tonumber(msg.Tags.Quantity) % 1 == 0, 'Quantity must be an integer!')
+  sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
+  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
 end
 
 return tokenValidation
 end
 
-_G.package.loaded["modules.tokenValidation"] = _loaded_mod_modules_tokenValidation()
+_G.package.loaded["marketModules.tokenValidation"] = _loaded_mod_marketModules_tokenValidation()
 
--- module: "modules.semiFungibleTokensValidation"
-local function _loaded_mod_modules_semiFungibleTokensValidation()
+-- module: "marketModules.marketValidation"
+local function _loaded_mod_marketModules_marketValidation()
+local MarketValidation = {}
+local sharedValidation = require('marketModules.sharedValidation')
+
+--- Validates update data index
+--- @param msg Message The message to be validated
+--- @param configurator string The configurator address
+function MarketValidation.updateDataIndex(msg, configurator)
+  assert(msg.From == configurator, 'Sender must be configurator!')
+  sharedValidation.validateAddress(msg.Tags.DataIndex, 'DataIndex')
+end
+
+--- Validates update incentives
+--- @param msg Message The message to be validated
+--- @param configurator string The configurator address
+function MarketValidation.updateIncentives(msg, configurator)
+  assert(msg.From == configurator, 'Sender must be configurator!')
+  sharedValidation.validateAddress(msg.Tags.Incentives, 'Incentives')
+end
+
+return MarketValidation
+end
+
+_G.package.loaded["marketModules.marketValidation"] = _loaded_mod_marketModules_marketValidation()
+
+-- module: "marketModules.semiFungibleTokensValidation"
+local function _loaded_mod_marketModules_semiFungibleTokensValidation()
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
@@ -3313,51 +3374,24 @@ See semiFungibleTokens.lua for full license details.
 =========================================================
 ]]
 
-local json = require("json")
-local bint = require('.bint')(256)
-local utils = require('.utils')
-local sharedUtils = require('modules.sharedUtils')
-
 local semiFungibleTokensValidation = {}
-
---- Validates a recipient
---- @param recipient string The recipient address
-local function validateRecipient(recipient)
-  assert(type(recipient) == 'string', 'Recipient is required!')
-  assert(sharedUtils.isValidArweaveAddress(recipient), 'Recipient must be a valid Arweave address!')
-end
-
---- Validates a tokenId givent an array of valid token ids
---- @param tokenId string The ID to be be validated
---- @param validTokenIds table<string> The array of valid IDs
-local function validateTokenId(tokenId, validTokenIds)
-  assert(type(tokenId) == 'string', 'TokenId is required!')
-  assert(utils.includes(tokenId, validTokenIds), 'Invalid tokenId!')
-end
-
---- Validates a quantity
---- @param quantity string The quantity to be validated
-local function validateQuantity(quantity)
-  assert(type(quantity) == 'string', 'Quantity is required!')
-  assert(tonumber(quantity), 'Quantity must be a number!')
-  assert(tonumber(quantity) > 0, 'Quantity must be greater than zero!')
-  assert(tonumber(quantity) % 1 == 0, 'Quantity must be an integer!')
-end
+local sharedValidation = require('marketModules.sharedValidation')
+local json = require("json")
 
 --- Validates a transferSingle message
 --- @param msg Message The message received
 --- @param validTokenIds table<string> The array of valid token IDs
 function semiFungibleTokensValidation.transferSingle(msg, validTokenIds)
-  validateRecipient(msg.Tags.Recipient)
-  validateTokenId(msg.Tags.TokenId, validTokenIds)
-  validateQuantity(msg.Tags.Quantity)
+  sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
+  sharedValidation.validateItem(msg.Tags.TokenId, validTokenIds, "TokenId")
+  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
 end
 
 --- Validates a transferBatch message
 --- @param msg Message The message received
 --- @param validTokenIds table<string> The array of valid token IDs
 function semiFungibleTokensValidation.transferBatch(msg, validTokenIds)
-  validateRecipient(msg.Tags.Recipient)
+  sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
   assert(type(msg.Tags.TokenIds) == 'string', 'TokenIds is required!')
   local tokenIds = json.decode(msg.Tags.TokenIds)
   assert(type(msg.Tags.Quantities) == 'string', 'Quantities is required!')
@@ -3365,8 +3399,8 @@ function semiFungibleTokensValidation.transferBatch(msg, validTokenIds)
   assert(#tokenIds == #quantities, 'Input array lengths must match!')
   assert(#tokenIds > 0, "Input array length must be greater than zero!")
   for i = 1, #tokenIds do
-    validateTokenId(tokenIds[i], validTokenIds)
-    validateQuantity(quantities[i])
+    sharedValidation.validateItem(tokenIds[i], validTokenIds, "TokenId")
+    sharedValidation.validatePositiveInteger(quantities[i], "Quantity")
   end
 end
 
@@ -3374,14 +3408,14 @@ end
 --- @param msg Message The message received
 --- @param validTokenIds table<string> The array of valid token IDs
 function semiFungibleTokensValidation.balanceById(msg, validTokenIds)
-  validateTokenId(msg.Tags.TokenId, validTokenIds)
+  sharedValidation.validateItem(msg.Tags.TokenId, validTokenIds, "TokenId")
 end
 
 --- Validates a balancesById message
 --- @param msg Message The message received
 --- @param validTokenIds table<string> The array of valid token IDs
 function semiFungibleTokensValidation.balancesById(msg, validTokenIds)
-  validateTokenId(msg.Tags.TokenId, validTokenIds)
+  sharedValidation.validateItem(msg.Tags.TokenId, validTokenIds, "TokenId")
 end
 
 --- Validates a batchBalance message
@@ -3395,8 +3429,8 @@ function semiFungibleTokensValidation.batchBalance(msg, validTokenIds)
   assert(#recipients == #tokenIds, "Input array lengths must match!")
   assert(#recipients > 0, "Input array length must be greater than zero!")
   for i = 1, #tokenIds do
-    validateRecipient(recipients[i])
-    validateTokenId(tokenIds[i], validTokenIds)
+    sharedValidation.validateAddress(recipients[i], 'Recipient')
+    sharedValidation.validateItem(tokenIds[i], validTokenIds, "TokenId")
   end
 end
 
@@ -3408,17 +3442,17 @@ function semiFungibleTokensValidation.batchBalances(msg, validTokenIds)
   local tokenIds = json.decode(msg.Tags.TokenIds)
   assert(#tokenIds > 0, "Input array length must be greater than zero!")
   for i = 1, #tokenIds do
-    validateTokenId(tokenIds[i], validTokenIds)
+    sharedValidation.validateItem(tokenIds[i], validTokenIds, "TokenId")
   end
 end
 
 return semiFungibleTokensValidation
 end
 
-_G.package.loaded["modules.semiFungibleTokensValidation"] = _loaded_mod_modules_semiFungibleTokensValidation()
+_G.package.loaded["marketModules.semiFungibleTokensValidation"] = _loaded_mod_marketModules_semiFungibleTokensValidation()
 
--- module: "modules.conditionalTokensValidation"
-local function _loaded_mod_modules_conditionalTokensValidation()
+-- module: "marketModules.conditionalTokensValidation"
+local function _loaded_mod_marketModules_conditionalTokensValidation()
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
@@ -3427,7 +3461,7 @@ See conditionalTokens.lua for full license details.
 ]]
 
 local ConditionalTokensValidation = {}
-local sharedUtils = require('modules.sharedUtils')
+local sharedUtils = require('marketModules.sharedUtils')
 local json = require('json')
 
 --- Validates quantity
@@ -3457,18 +3491,19 @@ end
 
 --- Validates the reporrtPayouts message
 --- @param msg Message The message to be validated
-function ConditionalTokensValidation.reportPayouts(msg)
-  assert(msg.Tags.QuestionId, "QuestionId is required!")
+--- @param resolutionAgent string The resolution agent process ID
+function ConditionalTokensValidation.reportPayouts(msg, resolutionAgent)
+  assert(msg.From == resolutionAgent, "Sender must be resolution agent!")
   validatePayouts(msg.Tags.Payouts)
 end
 
 return ConditionalTokensValidation
 end
 
-_G.package.loaded["modules.conditionalTokensValidation"] = _loaded_mod_modules_conditionalTokensValidation()
+_G.package.loaded["marketModules.conditionalTokensValidation"] = _loaded_mod_marketModules_conditionalTokensValidation()
 
--- module: "modules.market"
-local function _loaded_mod_modules_market()
+-- module: "marketModules.market"
+local function _loaded_mod_marketModules_market()
 --[[
 ======================================================================================
 Outcome © 2025. All Rights Reserved.
@@ -3486,14 +3521,16 @@ without explicit written permission from Outcome.
 
 local Market = {}
 local MarketMethods = {}
+local MarketNotices = require('marketModules.marketNotices')
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
-local cpmm = require('modules.cpmm')
-local cpmmValidation = require('modules.cpmmValidation')
-local tokenValidation = require('modules.tokenValidation')
-local semiFungibleTokensValidation = require('modules.semiFungibleTokensValidation')
-local conditionalTokensValidation = require('modules.conditionalTokensValidation')
+local cpmm = require('marketModules.cpmm')
+local cpmmValidation = require('marketModules.cpmmValidation')
+local tokenValidation = require('marketModules.tokenValidation')
+local marketValidation = require('marketModules.marketValidation')
+local semiFungibleTokensValidation = require('marketModules.semiFungibleTokensValidation')
+local conditionalTokensValidation = require('marketModules.conditionalTokensValidation')
 
 --- Represents a Market
 --- @class Market
@@ -3502,8 +3539,11 @@ local conditionalTokensValidation = require('modules.conditionalTokensValidation
 --- Creates a new Market instance
 --- @param configurator string The process ID of the configurator
 --- @param incentives string The process ID of the incentives controller
---- @param collateralToken string The address of the collateral token
---- @param conditionId string The condition ID
+--- @param dataIndex string The process ID of the data index process
+--- @param collateralToken string The process ID of the collateral token
+--- @param resolutionAgent string The process ID of the resolution agent
+--- @param creator string The address of the market creator
+--- @param question string The market question
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name 
 --- @param ticker string The CPMM token(s) ticker 
@@ -3517,8 +3557,11 @@ local conditionalTokensValidation = require('modules.conditionalTokensValidation
 function Market:new(
   configurator,
   incentives,
+  dataIndex,
   collateralToken,
-  conditionId,
+  resolutionAgent,
+  creator,
+  question,
   positionIds,
   name,
   ticker,
@@ -3532,9 +3575,8 @@ function Market:new(
   local market = {
     cpmm = cpmm:new(
       configurator,
-      incentives,
       collateralToken,
-      conditionId,
+      resolutionAgent,
       positionIds,
       name,
       ticker,
@@ -3544,9 +3586,23 @@ function Market:new(
       creatorFeeTarget,
       protocolFee,
       protocolFeeTarget
-    )
+    ),
+    question = question,
+    creator = creator,
+    incentives = incentives,
+    dataIndex = dataIndex
   }
-  setmetatable(market, { __index = MarketMethods })
+  setmetatable(market, {
+    __index = function(_, k)
+      if MarketMethods[k] then
+        return MarketMethods[k]
+      elseif MarketNotices[k] then
+        return MarketNotices[k]
+      else
+        return nil
+      end
+    end
+  })
   return market
 end
 
@@ -3559,11 +3615,14 @@ function MarketMethods:info(msg)
     Ticker = self.cpmm.token.ticker,
     Logo = self.cpmm.token.logo,
     Denomination = tostring(self.cpmm.token.denomination),
-    ConditionId = self.cpmm.tokens.conditionId,
     PositionIds = json.encode(self.cpmm.tokens.positionIds),
     CollateralToken = self.cpmm.tokens.collateralToken,
     Configurator = self.cpmm.configurator,
-    Incentives = self.cpmm.incentives,
+    Incentives = self.incentives,
+    DataIndex = self.dataIndex,
+    ResolutionAgent = self.cpmm.resolutionAgent,
+    Question = self.question,
+    Creator = self.creator,
     LpFee = tostring(self.cpmm.lpFee),
     LpFeePoolWeight = self.cpmm.feePoolWeight,
     LpFeeTotalWithdrawn = self.cpmm.totalWithdrawnFees,
@@ -3571,6 +3630,62 @@ function MarketMethods:info(msg)
     CreatorFeeTarget = self.cpmm.tokens.creatorFeeTarget,
     ProtocolFee = tostring(self.cpmm.tokens.protocolFee),
     ProtocolFeeTarget = self.cpmm.tokens.protocolFeeTarget
+  })
+end
+
+--[[
+=============
+ACTIVITY LOGS
+=============
+]]
+
+local function logFunding(incentives, dataIndex, user, operation, collateral, quantity, msg)
+  -- log funding for incentives
+  ao.send({
+    Target = incentives,
+    Action = 'Log-Funding',
+    User = user,
+    Operation = operation,
+    Collateral = collateral,
+    Quantity = quantity
+  })
+  -- log funding for dataIndex
+  return msg.forward(dataIndex, {
+    Action = "Log-Funding",
+    User = user,
+    Operation = operation,
+    Collateral = collateral,
+    Quantity = quantity,
+  })
+end
+
+local function logPrediction(incentives, dataIndex, user, operation, collateral, quantity, outcome, shares, price, msg)
+  -- log prediction for incentives
+  ao.send({
+    Target = incentives,
+    Action = 'Log-Prediction',
+    User = user,
+    Operation = operation,
+    Collateral = collateral,
+    Quantity = quantity
+  })
+  -- log prediction for dataIndex
+  return msg.forward(dataIndex, {
+    Action = "Log-Prediction",
+    User = user,
+    Operation = operation,
+    Collateral = collateral,
+    Quantity = quantity,
+    Outcome = outcome,
+    Shares = shares,
+    Price = price
+  })
+end
+
+local function logProbabilities(dataIndex, probabilities, msg)
+  return msg.forward(dataIndex, {
+    Action = "Log-Probabilities",
+    Probabilities = json.encode(probabilities)
   })
 end
 
@@ -3591,6 +3706,8 @@ function MarketMethods:addFunding(msg)
   -- @dev returns collateral tokens if invalid
   if self.cpmm:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
     self.cpmm:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, distribution, msg)
+    -- log funding
+    logFunding(self.incentives, self.dataIndex, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
   end
 end
 
@@ -3603,6 +3720,8 @@ function MarketMethods:removeFunding(msg)
   -- @dev returns LP tokens if invalid
   if self.cpmm:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
     self.cpmm:removeFunding(msg.Tags.Sender, msg.Tags.Quantity, msg)
+    -- log funding
+    logFunding(self.incentives, self.dataIndex, msg.Tags.Sender, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
   end
 end
 
@@ -3643,7 +3762,12 @@ function MarketMethods:buy(msg)
     })
     assert(false, errorMessage)
   end
-  return self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
+  local notice = self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
+  -- log prediction and probabilities
+  local price = tostring.bint.__div(outcomeTokensToBuy, bint(msg.Tags.Quantity))
+  logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], outcomeTokensToBuy, price, msg)
+  logProbabilities(self.dataIndex, self.cpmm.calcProbabilities())
+  return notice
 end
 
 --- Sell
@@ -3653,7 +3777,12 @@ function MarketMethods:sell(msg)
   cpmmValidation.sell(msg, self.cpmm.positionIds)
   local outcomeTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   assert(bint.__le(bint(outcomeTokensToSell), bint(msg.Tags.MaxOutcomeTokensToSell)), 'Maximum sell amount not sufficient!')
-  return self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
+  local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
+  -- log prediction and probabilities
+  local price = tostring.bint.__div(outcomeTokensToSell, bint(msg.Tags.Quantity))
+  logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags.PositionId, outcomeTokensToSell, price, msg)
+  logProbabilities(self.dataIndex, self.cpmm.calcProbabilities())
+  return notice
 end
 
 --- Withdraw fees
@@ -3801,9 +3930,9 @@ end
 --- @return Message reportPayoutsNotice The condition resolution notice 
 -- TODO: sync on naming conventions
 function MarketMethods:reportPayouts(msg)
-  conditionalTokensValidation.reportPayouts(msg)
+  conditionalTokensValidation.reportPayouts(msg, self.cpmm.tokens.resolutionAgent)
   local payouts = json.decode(msg.Tags.Payouts)
-  return self.cpmm.tokens:reportPayouts(msg.Tags.QuestionId, payouts, msg)
+  return self.cpmm.tokens:reportPayouts(payouts, msg)
 end
 
 --- Redeem positions
@@ -3938,12 +4067,22 @@ function MarketMethods:updateConfigurator(msg)
   return self.cpmm:updateConfigurator(msg.Tags.Configurator, msg)
 end
 
+--- Update data index
+--- @param msg Message The message received
+--- @return Message dataIndexUpdateNotice The incentives update notice
+function MarketMethods:updateDataIndex(msg)
+  marketValidation.updateDataIndex(msg, self.cpmm.configurator)
+  self.dataIndex = msg.Tags.DataIndex
+  return self.updateDataIndexNotice(msg.Tags.DataIndex, msg)
+end
+
 --- Update incentives
 --- @param msg Message The message received
 --- @return Message incentivesUpdateNotice The incentives update notice
 function MarketMethods:updateIncentives(msg)
-  cpmmValidation.updateIncentives(msg, self.cpmm.configurator)
-  return self.cpmm:updateIncentives(msg.Tags.Incentives, msg)
+  marketValidation.updateIncentives(msg, self.cpmm.configurator)
+  self.incentives = msg.Tags.Incentives
+  return self.updateIncentivesNotice(msg.Tags.Incentives, msg)
 end
 
 --- Update take fee
@@ -3970,27 +4109,11 @@ function MarketMethods:updateLogo(msg)
   return self.cpmm:updateLogo(msg.Tags.Logo, msg)
 end
 
---[[
-==================
-EVAL WRITE METHODS
-==================
-]]
-
---- Eval
---- @param msg Message The message received
---- @return Message The eval complete notice
-function MarketMethods:completeEval(msg)
-  return msg.forward('NRKvM8X3TqjGGyrqyB677aVbxgONo5fBHkbxbUSa_Ug', {
-    Action = 'Eval-Completed',
-    Data = 'Eval-Completed'
-  })
-end
-
 return Market
 
 end
 
-_G.package.loaded["modules.market"] = _loaded_mod_modules_market()
+_G.package.loaded["marketModules.market"] = _loaded_mod_marketModules_market()
 
 --[[
 ======================================================================================
@@ -4007,8 +4130,8 @@ without explicit written permission from Outcome.
 ======================================================================================
 ]]
 
-local market = require('modules.market')
-local constants = require('modules.constants')
+local market = require('marketModules.market')
+local constants = require('marketModules.constants')
 local json = require('json')
 
 --[[
@@ -4020,13 +4143,15 @@ MARKET
 Env = "DEV"
 Version = "1.0.1"
 
---- Represents Market Configuration  
+--- Represents the Market Configuration  
 --- @class MarketConfiguration  
 --- @field configurator string The Configurator process ID  
 --- @field incentives string The Incentives process ID  
+--- @field dataIndex string The Data Index process ID
 --- @field collateralToken string The Collateral Token process ID  
---- @field marketId string The Market process ID  
---- @field conditionId string The Condition process ID  
+--- @field resolutionAgent string The Resolution Agent process ID
+--- @field creator string The Creator address
+--- @field question string The Market question 
 --- @field positionIds table<string> The Position process IDs  
 --- @field name string The Market name  
 --- @field ticker string The Market ticker  
@@ -4044,8 +4169,9 @@ local function retrieveMarketConfig()
   local config = {
     configurator = ao.env.Process.Tags.Configurator or '',
     incentives = ao.env.Process.Tags.Incentives or '',
+    dataIndex = ao.env.Process.Tags.DataIndex or '',
     collateralToken = ao.env.Process.Tags.CollateralToken or '',
-    conditionId = ao.env.Process.Tags.ConditionId or '',
+    question = ao.env.Process.Tags.Question or '',
     positionIds = json.decode(ao.env.Process.Tags.PositionIds or '[]'),
     name = ao.env.Process.Tags.Name or '',
     ticker = ao.env.Process.Tags.Ticker or '',
@@ -4070,8 +4196,11 @@ if not Market or Env == 'DEV' then
   Market = market:new(
     marketConfig.configurator,
     marketConfig.incentives,
+    marketConfig.dataIndex,
     marketConfig.collateralToken,
-    marketConfig.conditionId,
+    marketConfig.resolutionAgent,
+    marketConfig.creator,
+    marketConfig.question,
     marketConfig.positionIds,
     marketConfig.name,
     marketConfig.ticker,
@@ -4414,22 +4543,6 @@ end)
 Handlers.add('Update-Logo', {Action = "Update-Logo"}, function(msg)
   return Market:updateLogo(msg)
 end)
-
---[[
-=============
-EVAL HANDLERS
-=============
-]]
-
---- Eval 
---- @param msg Message The message received
---- @return Message The eval complete notice
-Handlers.once("Complete-Eval", {Action = "Complete-Eval"}, function(msg)
-  return Market:completeEval(msg)
-end)
-
--- @dev TODO: remove?
-ao.send({Target = ao.id, Action = 'Complete-Eval'})
 
 return "ok"
 

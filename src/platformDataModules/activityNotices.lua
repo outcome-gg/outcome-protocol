@@ -9,7 +9,7 @@ local ActivityNotices = {}
 local json = require('json')
 
 
-function ActivityNotices.logMarketNotice(marketFactory, market, creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, msg)
+function ActivityNotices.logMarketNotice(marketFactory, market, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, msg)
   return msg.reply({
     Action = "Log-Market-Notice",
     MarketFactory = marketFactory,
@@ -18,6 +18,7 @@ function ActivityNotices.logMarketNotice(marketFactory, market, creator, creator
     CreatorFee = tostring(creatorFee),
     CreatorFeeTarget = creatorFeeTarget,
     Question = question,
+    Rules = rules,
     OutcomeSlotCount = tostring(outcomeSlotCount),
     Collateral = collateral,
     ResolutionAgent = resolutionAgent,

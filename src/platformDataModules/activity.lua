@@ -57,6 +57,7 @@ WRITE METHODS
 --- @param creatorFee number The market creator fee
 --- @param creatorFeeTarget string The market creator fee target
 --- @param question string The market question
+--- @param rules string The market rules
 --- @param outcomeSlotCount number The market outcome slot count
 --- @param collateral string The market collateral
 --- @param resolutionAgent string The market resolution agent
@@ -67,17 +68,17 @@ WRITE METHODS
 --- @param cast boolean Whether to cast the message
 --- @param msg Message The message received
 --- @return Message|nil logMarketNotice The log market notice or nil if cast is false
-function ActivityMethods:logMarket(market, creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, timestamp, cast, msg)
+function ActivityMethods:logMarket(market, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, timestamp, cast, msg)
   -- Insert market
   self.dbAdmin:safeExec(
     [[
-      INSERT INTO Markets (id, status, creator, creator_fee, creator_fee_target, question, outcome_slot_count, collateral, resolution_agent, category, subcategory, logo, timestamp) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, timestamp
+      INSERT INTO Markets (id, status, creator, creator_fee, creator_fee_target, question, rules, outcome_slot_count, collateral, resolution_agent, category, subcategory, logo, timestamp) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, timestamp
   )
   -- Send notice if cast is true
   if cast then
-    return self.logMarketNotice(msg.From, market, creator, creatorFee, creatorFeeTarget, question, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, msg)
+    return self.logMarketNotice(msg.From, market, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, msg)
   end
 end
 

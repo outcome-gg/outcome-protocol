@@ -14,6 +14,7 @@ without explicit written permission from Outcome.
 ]]
 
 local platformData = require("platformDataModules.platformData")
+local platformDataValidation = require("platformDataModules.platformDataValidation")
 local activityValidation = require("platformDataModules.activityValidation")
 local chatroomValidation = require("platformDataModules.chatroomValidation")
 local constants = require("platformDataModules.constants")
@@ -42,6 +43,7 @@ MARKETS = [[
     creator_fee NUMBER NOT NULL,
     creator_fee_target TEXT NOT NULL,
     question TEXT NOT NULL,
+    rules TEXT NOT NULL,
     outcome_slot_count NUMBER NOT NULL,
     collateral TEXT NOT NULL,
     resolution_agent TEXT NOT NULL,
@@ -206,7 +208,7 @@ Handlers.add("Log-Market", {Action = "Log-Market"}, function(msg)
   local cast = msg.Tags.Cast == "true"
   local creatorFee = tonumber(msg.Tags.CreatorFee)
   local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
-  return PlatformData.activity:logMarket(msg.Tags.Market, msg.Tags.Creator, creatorFee, msg.Tags.CreatorFeeTarget, msg.Tags.Question, outcomeSlotCount, msg.Tags.Collateral, msg.Tags.ResolutionAgent, msg.Tags.Category, msg.Tags.Subcategory, msg.Tags.Logo, os.time(), cast, msg)
+  return PlatformData.activity:logMarket(msg.Tags.Market, msg.Tags.Creator, creatorFee, msg.Tags.CreatorFeeTarget, msg.Tags.Question, msg.Tags.Rules, outcomeSlotCount, msg.Tags.Collateral, msg.Tags.ResolutionAgent, msg.Tags.Category, msg.Tags.Subcategory, msg.Tags.Logo, os.time(), cast, msg)
 end)
 
 --- Log funding handler
@@ -264,8 +266,16 @@ READ HANDLERS
 --- @param msg Message The message received
 --- @return Message queryResults The query results
 Handlers.add("Query", {Action = "Query"}, function(msg)
-  local normalizedSql = activityValidation.validateQuery(PlatformData.readers, msg)
+  local normalizedSql = platformDataValidation.validateQuery(PlatformData.readers, msg)
   return PlatformData:query(normalizedSql, msg)
+end)
+
+--- Get market handler
+--- @param msg Message The message received
+--- @return Message market The market
+Handlers.add("Get-Market", {Action = "Get-Market"}, function(msg)
+  platformDataValidation.validateGetMarket(msg)
+  return PlatformData:getMarket(msg.Tags.Market, msg)
 end)
 
 
@@ -273,7 +283,7 @@ end)
 --- @param msg Message The message received
 --- @return Message markets The markets
 Handlers.add("Get-Markets", {Action = "Get-Markets"}, function(msg)
-  activityValidation.validateGetMarkets(msg)
+  platformDataValidation.validateGetMarkets(msg)
   local params = {
     status = msg.Tags.Status,
     collateral = msg.Tags.Collateral,
@@ -288,6 +298,20 @@ Handlers.add("Get-Markets", {Action = "Get-Markets"}, function(msg)
     offset = msg.Tags.Offset,
   }
   return PlatformData:getMarkets(params, msg)
+end)
+
+--- Get broadcasts handler
+--- @param msg Message The message received
+--- @return Message broadcasts The broadcasts
+Handlers.add("Get-Broadcasts", {Action = "Get-Broadcasts"}, function(msg)
+  chatroomValidation.validateGetBroadcasts(msg)
+  local params = {
+    market = msg.Tags.Market,
+    orderDirection =  msg.Tags.OrderDirection or "DESC",
+    limit = msg.Tags.Limit or "50",
+    offset = msg.Tags.Offset,
+  }
+  return PlatformData.chatroom:getBroadcasts(params, msg)
 end)
 
 --[[

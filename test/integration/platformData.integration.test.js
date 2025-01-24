@@ -95,7 +95,8 @@ describe("platformData.integration.test", function () {
           { name: "Creator", value: "test-this-is-valid-arweave-wallet-address-2" },
           { name: "CreatorFee", value: "200" },
           { name: "CreatorFeeTarget", value: "test-this-is-valid-arweave-wallet-address-3" },
-          { name: "Question", value: "who will win the US election?" },
+          { name: "Question", value: "Trump wins the US election" },
+          { name: "Rules", value: "This market will resolve to 'IN' if Trump wins the 2024 US Presidential Election. Otherwise, this market will resolve to 'No'.\n\nThe resolution source for this market is the New York Times: https://www.nytimes.com/." },
           { name: "OutcomeSlotCount", value: "2" },
           { name: "Collateral", value: "test-this-is-valid-arweave-wallet-address-4" },
           { name: "ResolutionAgent", value: "test-this-is-valid-arweave-wallet-address-5" },
@@ -142,7 +143,7 @@ describe("platformData.integration.test", function () {
       expect(creator).to.eql("test-this-is-valid-arweave-wallet-address-2")
       expect(creatorFee).to.eql("200")
       expect(creatorFeeTarget).to.eql("test-this-is-valid-arweave-wallet-address-3")
-      expect(question).to.eql("who will win the US election?")
+      expect(question).to.eql("Trump wins the US election")
       expect(outcomeSlotCount).to.eql("2")
       expect(collateral).to.eql("test-this-is-valid-arweave-wallet-address-4")
       expect(resolutionAgent).to.eql("test-this-is-valid-arweave-wallet-address-5")
@@ -160,7 +161,8 @@ describe("platformData.integration.test", function () {
           { name: "Creator", value: "test-this-is-valid-arweave-wallet-address-2" },
           { name: "CreatorFee", value: "200" },
           { name: "CreatorFeeTarget", value: "test-this-is-valid-arweave-wallet-address-3" },
-          { name: "Question", value: "who will win the US election?" },
+          { name: "Question", value: "Trump wins the US election" },
+          { name: "Rules", value: "This market will resolve to 'IN' if Trump wins the 2024 US Presidential Election. Otherwise, this market will resolve to 'No'.\n\nThe resolution source for this market is the New York Times: https://www.nytimes.com/." },
           { name: "OutcomeSlotCount", value: "2" },
           { name: "Collateral", value: "test-this-is-valid-arweave-wallet-address-4" },
           { name: "ResolutionAgent", value: "test-this-is-valid-arweave-wallet-address-5" },
@@ -198,7 +200,8 @@ describe("platformData.integration.test", function () {
           { name: "Creator", value: "test-this-is-valid-arweave-wallet-address-2" },
           { name: "CreatorFee", value: "200" },
           { name: "CreatorFeeTarget", value: "test-this-is-NOT-valid" },
-          { name: "Question", value: "who will win the US election?" },
+          { name: "Question", value: "Trump wins the US election" },
+          { name: "Rules", value: "This market will resolve to 'IN' if Trump wins the 2024 US Presidential Election. Otherwise, this market will resolve to 'No'.\n\nThe resolution source for this market is the New York Times: https://www.nytimes.com/." },
           { name: "OutcomeSlotCount", value: "2" },
           { name: "Collateral", value: "test-this-is-valid-arweave-wallet-address-4" },
           { name: "ResolutionAgent", value: "test-this-is-valid-arweave-wallet-address-5" },
@@ -271,7 +274,7 @@ describe("platformData.integration.test", function () {
         process: platformData,
         tags: [
           { name: "Action", value: "Log-Funding" },
-          { name: "User", value: "test-this-is-valid-arweave-wallet-address-1" },
+          { name: "User", value: walletAddress },
           { name: "Operation", value: "add" },
           { name: "Collateral", value: "test-this-is-valid-arweave-wallet-address-2" },
           { name: "Quantity", value: parseAmount(100, 12) }
@@ -381,11 +384,11 @@ describe("platformData.integration.test", function () {
         process: platformData,
         tags: [
           { name: "Action", value: "Log-Prediction" },
-          { name: "User", value: "test-this-is-valid-arweave-wallet-address-1" },
+          { name: "User", value: walletAddress2 },
           { name: "Operation", value: "buy" },
           { name: "Collateral", value: "test-this-is-valid-arweave-wallet-address-2" },
           { name: "Quantity", value: parseAmount(100, 12) },
-          { name: "Outcome", value: "1" },
+          { name: "Outcome", value: "2" },
           { name: "Shares", value: parseAmount(1, 12) },
           { name: "Price", value: "123.123" }
         ],
@@ -532,16 +535,16 @@ describe("platformData.integration.test", function () {
   * CHATROOM WRITE HANDLERS
   */
   describe("CHATROOM WRITE HANDLERS", function () {
-    it("+ve should broadcast message", async () => {
+    it("+ve should broadcast", async () => {
       await message({
         process: platformData,
         tags: [
           { name: "Action", value: "Broadcast" },
-          { name: "Market", value: "test-this-is-valid-arweave-wallet-address-1" },
+          { name: "Market", value: walletAddress },
           { name: "Cast", value: "true" },
         ],
         signer: createDataItemSigner(wallet),
-        data: "I'm IN!",
+        data: "Here is my message",
       })
       .then((id) => {
         messageId = id;
@@ -558,18 +561,63 @@ describe("platformData.integration.test", function () {
       }
 
       expect(Messages.length).to.equal(1)
-      
       const action = Messages[0].Tags.find(t => t.name === 'Action').value
       const market = Messages[0].Tags.find(t => t.name === 'Market').value
       const body = Messages[0].Data
 
-      expect(action).to.eql("Broadcast-Notice")
-      expect(market).to.eql("test-this-is-valid-arweave-wallet-address-1")
-      expect(body).to.eql("I'm IN!")
+      expect(action).to.equal("Broadcast-Notice")
+      expect(market).to.equal(walletAddress)
+      expect(body).to.equal("Here is my message")
+    })
+
+    it("+ve should broadcast w/o cast", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Broadcast" },
+          { name: "Market", value: walletAddress }
+        ],
+        signer: createDataItemSigner(wallet2),
+        data: "Another message",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(0)
+      // DbAdmin:exec("SELECT * FROM Messages") shows the message was inserted
     })
 
     it("-ve should fail broadcast message validation", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Broadcast" }
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "Here is my message",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
 
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      expect(Error).to.contain("Market is required!")
     })
   })
 
@@ -631,6 +679,80 @@ describe("platformData.integration.test", function () {
       expect(Error).to.contain("Forbidden keyword found in query!")
     })
 
+    it("+ve should get market", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Market" },
+          { name: "Market", value: walletAddress },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const market = JSON.parse(Messages[0].Data)
+      
+      expect(market["id"]).to.equal(walletAddress)
+      expect(market["creator"]).to.equal("test-this-is-valid-arweave-wallet-address-2")
+      expect(market["creator_fee"]).to.equal(200)
+      expect(market["creator_fee_target"]).to.equal("test-this-is-valid-arweave-wallet-address-3")
+      expect(market["question"]).to.equal("Trump wins the US election")
+      expect(market["outcome_slot_count"]).to.equal(2)
+      expect(market["collateral"]).to.equal("test-this-is-valid-arweave-wallet-address-4")
+      expect(market["resolution_agent"]).to.equal("test-this-is-valid-arweave-wallet-address-5")
+      expect(market["category"]).to.equal("politics")
+      expect(market["subcategory"]).to.equal("US election")
+      expect(market["logo"]).to.equal("https://www.arweave.net/123456")
+      expect(market["bet_volume"]).to.equal(2 * 100*10**12) // log prediction sent twice with 100*10**12
+      expect(market["net_funding"]).to.equal(2 * 100*10**12) // log funding sent twice with 100*10**12
+      expect(JSON.parse(market["probabilities"])["1"]).to.equal(0.2)
+      expect(JSON.parse(market["probabilities"])["2"]).to.equal(0.8)
+    })
+
+    it("+ve should get no market w/ non-existant-market", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Market" },
+          { name: "Market", value: "test-this-is-valid-arweave-wallet-address-0" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const market = JSON.parse(Messages[0].Data)
+      
+      expect(market).to.equal(null)
+    })
+
     it("+ve should get markets", async () => {
       await message({
         process: platformData,
@@ -662,7 +784,7 @@ describe("platformData.integration.test", function () {
       expect(markets[1]["creator"]).to.equal("test-this-is-valid-arweave-wallet-address-2")
       expect(markets[1]["creator_fee"]).to.equal(200)
       expect(markets[1]["creator_fee_target"]).to.equal("test-this-is-valid-arweave-wallet-address-3")
-      expect(markets[1]["question"]).to.equal("who will win the US election?")
+      expect(markets[1]["question"]).to.equal("Trump wins the US election")
       expect(markets[1]["outcome_slot_count"]).to.equal(2)
       expect(markets[1]["collateral"]).to.equal("test-this-is-valid-arweave-wallet-address-4")
       expect(markets[1]["resolution_agent"]).to.equal("test-this-is-valid-arweave-wallet-address-5")
@@ -670,7 +792,7 @@ describe("platformData.integration.test", function () {
       expect(markets[1]["subcategory"]).to.equal("US election")
       expect(markets[1]["logo"]).to.equal("https://www.arweave.net/123456")
       expect(markets[1]["bet_volume"]).to.equal(2 * 100*10**12) // log prediction sent twice with 100*10**12
-      expect(markets[1]["funding_amount"]).to.equal(2 * 100*10**12) // log funding sent twice with 100*10**12
+      expect(markets[1]["net_funding"]).to.equal(2 * 100*10**12) // log funding sent twice with 100*10**12
       expect(JSON.parse(markets[1]["probabilities"])["1"]).to.equal(0.2)
       expect(JSON.parse(markets[1]["probabilities"])["2"]).to.equal(0.8)
     })
@@ -1140,7 +1262,7 @@ describe("platformData.integration.test", function () {
       expect(markets[0]["creator"]).to.equal("test-this-is-valid-arweave-wallet-address-2")
       expect(markets[0]["creator_fee"]).to.equal(200)
       expect(markets[0]["creator_fee_target"]).to.equal("test-this-is-valid-arweave-wallet-address-3")
-      expect(markets[0]["question"]).to.equal("who will win the US election?")
+      expect(markets[0]["question"]).to.equal("Trump wins the US election")
       expect(markets[0]["outcome_slot_count"]).to.equal(2)
       expect(markets[0]["collateral"]).to.equal("test-this-is-valid-arweave-wallet-address-4")
       expect(markets[0]["resolution_agent"]).to.equal("test-this-is-valid-arweave-wallet-address-5")
@@ -1148,7 +1270,7 @@ describe("platformData.integration.test", function () {
       expect(markets[0]["subcategory"]).to.equal("US election")
       expect(markets[0]["logo"]).to.equal("https://www.arweave.net/123456")
       expect(markets[0]["bet_volume"]).to.equal(2 * 100*10**12) // log prediction sent twice with 100*10**12
-      expect(markets[0]["funding_amount"]).to.equal(2 * 100*10**12) // log funding sent twice with 100*10**12
+      expect(markets[0]["net_funding"]).to.equal(2 * 100*10**12) // log funding sent twice with 100*10**12
     })
 
     it("+ve should get no markets w/ limit and offset > num of results", async () => {
@@ -1180,6 +1302,82 @@ describe("platformData.integration.test", function () {
       const markets = JSON.parse(Messages[0].Data)
       
       expect(markets.length).to.be.equal(0)
+    })
+
+    it("+ve should get broadcasts", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Broadcasts" },
+          { name: "Market", value: walletAddress },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const broadcasts = JSON.parse(Messages[0].Data)
+      console.log("broadcasts: ", broadcasts)
+      expect(broadcasts.length).to.be.equal(2)
+      expect(broadcasts[0]["user"]).to.equal(walletAddress2)
+      expect(broadcasts[0]["message"]).to.equal("Another message")
+      expect(broadcasts[0]["net_funding"]).to.equal(0)
+      expect(broadcasts[0]["net_shares"]).to.equal('{"2":1000000000000}')
+      expect(broadcasts[1]["user"]).to.equal(walletAddress)
+      expect(broadcasts[1]["message"]).to.equal("Here is my message")
+      expect(broadcasts[1]["net_funding"]).to.equal(100000000000000)
+      expect(broadcasts[1]["net_shares"]).to.equal('{}')
+      expect(broadcasts[0]["timestamp"]).to.be.greaterThan(broadcasts[1]["timestamp"])
+    })
+
+    it("+ve should get broadcasts w/ offset", async () => {
+      await message({
+        process: platformData,
+        tags: [
+          { name: "Action", value: "Get-Broadcasts" },
+          { name: "Market", value: walletAddress },
+          { name: "OrderDirection", value: "ASC" },
+          { name: "Offset", value: "1" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: platformData,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      const broadcasts = JSON.parse(Messages[0].Data)
+      console.log("broadcasts: ", broadcasts)
+      expect(broadcasts.length).to.be.equal(1)
+      expect(broadcasts[0]["user"]).to.equal(walletAddress2)
+      expect(broadcasts[0]["message"]).to.equal("Another message")
+      expect(broadcasts[0]["net_funding"]).to.equal(0)
+      expect(broadcasts[0]["net_shares"]).to.equal('{"2":1000000000000}')
+
     })
   })
 

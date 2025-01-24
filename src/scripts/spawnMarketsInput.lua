@@ -2,6 +2,7 @@ local spawnMarketsInput = {}
 
 table.insert(spawnMarketsInput, {
   question = "Astro USD loses its peg in March",
+  rules = "Where we're going there are no rules",
   collateralToken = "WY-SBx8N4d4wJZB3o3h7Uk_zHPLUqBx2qFeh_CDkceQ",
   resolutionAgent = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
   outcomeSlotCount = "2",
@@ -14,6 +15,7 @@ table.insert(spawnMarketsInput, {
 })
 table.insert(spawnMarketsInput, {
   question = "Liquid Ops oUSDC interest reaches 8% in March",
+  rules = "Where we're going there are no rules",
   collateralToken = "WY-SBx8N4d4wJZB3o3h7Uk_zHPLUqBx2qFeh_CDkceQ",
   resolutionAgent = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
   outcomeSlotCount = "2",

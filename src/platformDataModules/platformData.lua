@@ -83,16 +83,17 @@ function PlatformDataMethods:query(sql, msg)
   return msg.reply({ Action = 'Query-Results', Data = json.encode(results) })
 end
 
---- Get markets
+--- Get market
+--- @param market string The market ID
 --- @param msg Message The message received
---- @return Message getMarkets The get markets results
-function PlatformDataMethods:getMarkets(params, msg)
+--- @return Message market The get market results
+function PlatformDataMethods:getMarket(market, msg)
   local query = [[
     SELECT 
       m.*, 
       m.timestamp AS timestamp,
       m.creator_fee AS creator_fee,
-      COALESCE(f.funding_amount, 0) AS funding_amount,
+      COALESCE(f.net_funding, 0) AS net_funding,
       COALESCE(p.bet_volume, 0) AS bet_volume,
       (
         SELECT 
@@ -121,7 +122,67 @@ function PlatformDataMethods:getMarkets(params, msg)
         market, 
         SUM(CASE WHEN operation = 'add' THEN amount
                  WHEN operation = 'remove' THEN -amount
-                 ELSE 0 END) AS funding_amount
+                 ELSE 0 END) AS net_funding
+      FROM 
+        Fundings
+      GROUP BY 
+        market
+    ) f ON m.id = f.market
+    LEFT JOIN (
+      SELECT 
+        market, 
+        SUM(amount) AS bet_volume
+      FROM 
+        Predictions
+      GROUP BY 
+        market
+    ) p ON m.id = p.market
+    WHERE m.id = ?;
+  ]]
+  local results = self.dbAdmin:safeExec(query, true, market)
+  local result = results[1] or nil
+  return msg.reply({ Data = json.encode(result) })
+end
+
+--- Get markets
+--- @param msg Message The message received
+--- @return Message getMarkets The get markets results
+function PlatformDataMethods:getMarkets(params, msg)
+  local query = [[
+    SELECT 
+      m.*, 
+      m.timestamp AS timestamp,
+      m.creator_fee AS creator_fee,
+      COALESCE(f.net_funding, 0) AS net_funding,
+      COALESCE(p.bet_volume, 0) AS bet_volume,
+      (
+        SELECT 
+          json_group_object(
+            pr.key, 
+            ROUND(pr.value, 2) -- Round to 2 decimal places
+          )
+        FROM 
+          ProbabilitySets ps
+        INNER JOIN (
+          SELECT 
+            market, 
+            MAX(timestamp) AS latest_timestamp
+          FROM 
+            ProbabilitySets
+          GROUP BY 
+            market
+        ) latest_ps ON ps.market = latest_ps.market AND ps.timestamp = latest_ps.latest_timestamp
+        CROSS JOIN json_each(ps.probabilities) pr
+        WHERE ps.market = m.id
+      ) AS probabilities
+    FROM 
+      Markets m
+    LEFT JOIN (
+      SELECT 
+        market, 
+        SUM(CASE WHEN operation = 'add' THEN amount
+                 WHEN operation = 'remove' THEN -amount
+                 ELSE 0 END) AS net_funding
       FROM 
         Fundings
       GROUP BY 
@@ -168,7 +229,7 @@ function PlatformDataMethods:getMarkets(params, msg)
       table.insert(bindings, params.keyword)
     end
     if params.minFunding then
-      table.insert(conditions, "COALESCE(f.funding_amount, 0) = ?")
+      table.insert(conditions, "COALESCE(f.net_funding, 0) = ?")
       table.insert(bindings, params.minFunding)
     end
     if #conditions > 0 then
@@ -192,11 +253,11 @@ function PlatformDataMethods:getMarkets(params, msg)
       query = query .. ' OFFSET ?'
       table.insert(bindings, params.offset)
     end
-    -- Finalize query
-    query = query .. ';'
   end
+  -- Finalize query
+  query = query .. ';'
   local results = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
-  return msg.reply({ Action = 'Get-Markets', Data = json.encode(results) })
+  return msg.reply({ Data = json.encode(results) })
 end
 
 --[[

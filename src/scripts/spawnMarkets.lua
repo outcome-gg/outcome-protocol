@@ -11,7 +11,6 @@ function SpawnMarkets:run(env, msg)
   local msgIds = {}
 
   for _, market in ipairs(spawnMarketsInput) do
-    print("market " .. json.encode(market))
     ao.send({
       Target = marketFactory,
       Action = "Spawn-Market",
@@ -19,6 +18,7 @@ function SpawnMarkets:run(env, msg)
         CollateralToken = market.collateralToken,
         ResolutionAgent = market.resolutionAgent,
         Question = market.question,
+        Rules = market.rules,
         OutcomeSlotCount = market.outcomeSlotCount,
         CreatorFee = market.creatorFee,
         CreatorFeeTarget = market.creatorFeeTarget,

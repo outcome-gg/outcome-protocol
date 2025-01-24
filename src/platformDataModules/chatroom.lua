@@ -16,6 +16,7 @@ without explicit written permission from Outcome.
 local Chatroom = {}
 local ChatroomMethods = {}
 local ChatroomNotices = require('platformDataModules.chatroomNotices')
+local json = require('json')
 
 --- Creates a new Chatroom instance
 function Chatroom:new(dbAdmin)
@@ -74,11 +75,90 @@ function ChatroomMethods:broadcast(market, user, body, timestamp, cast, msg)
   if cast then return self.broadcastNotice(body, market, msg) end
 end
 
--- --[[
--- ============
--- READ METHODS
--- ============
--- ]]
+--[[
+============
+READ METHODS
+============
+]]
+
+--- Get broadcasts
+--- @param params table The query parameters
+--- @param msg Message The message received
+--- @return Message broadcasts The broadcasts
+function ChatroomMethods:getBroadcasts(params, msg)
+  local query = [[
+    SELECT 
+      COALESCE(me.user, '') AS user,
+      COALESCE(me.body, '') AS message,
+      COALESCE(me.timestamp, 0) AS timestamp,
+      COALESCE(p.net_shares, '{}') AS net_shares,
+      COALESCE(f.net_funding, 0) AS net_funding
+    FROM 
+      Messages me
+    LEFT JOIN (
+      SELECT 
+        market, 
+        user,
+        SUM(CASE WHEN operation = 'add' THEN amount
+                 WHEN operation = 'remove' THEN -amount
+                 ELSE 0 END) AS net_funding
+      FROM 
+        Fundings
+      GROUP BY 
+        market, user
+    ) f ON me.market = f.market AND me.user = f.user
+    LEFT JOIN (
+      SELECT 
+        market, 
+        user,
+        json_group_object(outcome, net_shares) AS net_shares
+      FROM 
+        (
+          SELECT 
+            market, 
+            user,
+            outcome,
+            SUM(CASE 
+              WHEN operation = 'buy' THEN shares
+              WHEN operation = 'sell' THEN -shares
+              ELSE 0 END) AS net_shares
+          FROM 
+            Predictions
+          GROUP BY 
+            market, user, outcome
+        ) grouped_predictions
+      GROUP BY 
+        market, user
+    ) p ON me.market = p.market AND me.user = p.user
+    WHERE 
+      me.visible = 1
+    ORDER BY 
+      me.timestamp
+  ]]
+
+  local bindings = {}
+
+  if params then
+    -- Add ORDER DIRECTION clause
+    if params.orderDirection then
+      query = query .. ' ' .. params.orderDirection
+    end
+    -- Add LIMIT clause
+    if params.limit then
+      query = query .. ' LIMIT ?'
+      table.insert(bindings, params.limit)
+    end
+    -- Add OFFSET clause
+    if params.offset then
+      query = query .. ' OFFSET ?'
+      table.insert(bindings, params.offset)
+    end
+  end
+  -- Finalize query
+  query = query .. ';'
+  local results = self.dbAdmin:safeExec(query, true, table.unpack(bindings))
+  return msg.reply({ Data = json.encode(results) })
+end
 
 -- --- Get message
 -- --- @param id string The message ID
