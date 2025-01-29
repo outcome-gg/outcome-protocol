@@ -6,7 +6,7 @@ See cpmm.lua for full license details.
 ]]
 
 local bint = require('.bint')(256)
-local ao = require('.ao')
+-- local ao = require('.ao') @dev required for unit tests?
 
 local CPMMHelpers = {}
 
@@ -41,32 +41,41 @@ end
 function CPMMHelpers:validateAddFunding(from, quantity, distribution)
   local error = false
   local errorMessage = ''
-  -- Ensure distribution
-  if not distribution then
-    error = true
-    errorMessage = 'X-Distribution is required!'
-  elseif not error then
-    if bint.iszero(bint(self.token.totalSupply)) then
-      -- Ensure distribution is set across all position ids
-      if #distribution ~= #self.tokens.positionIds then
+
+  if distribution then
+    -- Ensure distribution set only for initial funding
+    if not bint.iszero(bint(self.token.totalSupply)) then
+      error = true
+      errorMessage = "Cannot specify distribution after initial funding"
+    end
+    -- Ensure distribution is set across all position ids
+    if #distribution ~= #self.tokens.positionIds then
+      error = true
+      errorMessage = "Distribution length mismatch"
+    end
+    -- Ensure distribution content is valid
+    local distributionSum = 0
+    for i = 1, #distribution do
+      if type(distribution[i]) ~= "number" then
         error = true
-        errorMessage = "Distribution length mismatch"
-      end
-    else
-      -- Ensure distribution set only for initial funding
-      if bint.__lt(0, #distribution) then
-        error = true
-        errorMessage = "Cannot specify distribution after initial funding"
+        errorMessage = "Distribution item must be number"
+      else
+        distributionSum = distributionSum + distribution[i]
       end
     end
+    if distributionSum == 0 then
+      error = true
+      errorMessage = "Distribution sum must be greater than zero"
+    end
   end
+
   if error then
     -- Return funds and assert error
     ao.send({
       Target = self.tokens.collateralToken,
       Action = 'Transfer',
       Recipient = from,
-      Quantity = quantity,
+      Quantity = tostring(quantity),
       Error = 'Add-Funding Error: ' .. errorMessage
     })
   end
@@ -97,7 +106,7 @@ function CPMMHelpers:validateRemoveFunding(from, quantity)
       Target = ao.id,
       Action = 'Transfer',
       Recipient = from,
-      Quantity = quantity,
+      Quantity = tostring(quantity),
       Error = errorMessage
     })
   end

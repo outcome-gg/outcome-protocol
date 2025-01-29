@@ -19,8 +19,8 @@ local ConditionalTokensNotices = require('marketModules.conditionalTokensNotices
 local SemiFungibleTokens = require('marketModules.semiFungibleTokens')
 local bint = require('.bint')(256)
 local crypto = require('.crypto')
-local ao = require('.ao')
 local json = require("json")
+local ao = ao or require('.ao')
 
 --- Represents ConditionalTokens
 --- @class ConditionalTokens
@@ -157,7 +157,7 @@ end
 --- Report payouts
 --- @param payouts table<number> The resolution agent's answer
 --- @param msg Message The message received
---- @return Message The condition resolution notice
+--- @return Message reportPayoutsNotice The report payouts notice
 function ConditionalTokensMethods:reportPayouts(payouts, msg)
   assert(#payouts == #self.positionIds, "Payouts must match outcome slot count!")
   assert(msg.From == self.resolutionAgent, "Sender not resolution agent!")
@@ -172,8 +172,8 @@ function ConditionalTokensMethods:reportPayouts(payouts, msg)
   end
   assert(den > 0, "payout is all zeroes")
   self.payoutDenominator = den
-  -- Send the condition resolution notice.
-  return self.conditionResolutionNotice(msg.From, self.payoutNumerators, msg)
+  -- Send notice.
+  return self.reportPayoutsNotice(msg.From, self.payoutNumerators, msg)
 end
 
 --- Redeem positions

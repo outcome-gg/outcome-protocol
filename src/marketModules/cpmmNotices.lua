@@ -5,7 +5,7 @@ See cpmm.lua for full license details.
 =========================================================
 ]]
 
-local ao = require('.ao')
+-- local ao = require('.ao') @dev required for unit tests?
 local json = require('json')
 
 local CPMMNotices = {}
@@ -44,15 +44,17 @@ end
 
 --- Sends a buy notice
 --- @param from string The address that bought
+--- @param onBehalfOf string The address that receives the outcome tokens
 --- @param investmentAmount number The investment amount
 --- @param feeAmount number The fee amount
 --- @param positionId string The position ID
 --- @param outcomeTokensToBuy number The outcome tokens to buy
 --- @return Message The buy notice
-function CPMMNotices.buyNotice(from, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
+function CPMMNotices.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
   return ao.send({
     Target = from,
     Action = "Buy-Notice",
+    OnBehalfOf = onBehalfOf,
     InvestmentAmount = tostring(investmentAmount),
     FeeAmount = tostring(feeAmount),
     PositionId = positionId,

@@ -14,7 +14,7 @@ without explicit written permission from Outcome.
 ]]
 
 local bint = require('.bint')(256)
-local ao = require('.ao')
+-- local ao = require('.ao') -- @dev required for unit tests?
 local json = require('json')
 local ocmToken = require('ocmTokenModules.ocmToken')
 

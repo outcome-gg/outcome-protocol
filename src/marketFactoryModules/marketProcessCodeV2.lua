@@ -835,267 +835,6 @@ end
 
 _G.package.loaded["json"] = _loaded_mod_json()
 
--- module: "marketModules.cpmmHelpers"
-local function _loaded_mod_marketModules_cpmmHelpers()
---[[
-=========================================================
-Part of the Outcome codebase © 2025. All Rights Reserved.
-See cpmm.lua for full license details.
-=========================================================
-]]
-
-local bint = require('.bint')(256)
-local ao = require('.ao')
-
-local CPMMHelpers = {}
-
---- Calculate the ceildiv of x / y
---- @param x number The numerator
---- @param y number The denominator
---- @return number The ceil div of x / y
-function CPMMHelpers.ceildiv(x, y)
-  if x > 0 then
-    return math.floor((x - 1) / y) + 1
-  end
-  return math.floor(x / y)
-end
-
---- Generate position IDs
---- @param outcomeSlotCount number The number of outcome slots
---- @return table<string> A basic partition based on outcomeSlotCount
-function CPMMHelpers.getPositionIds(outcomeSlotCount)
-  local positionIds = {}
-  for i = 1, outcomeSlotCount do
-    table.insert(positionIds, tostring(i))
-  end
-  return positionIds
-end
-
---- Validate add funding
---- Returns funding to sender on error
---- @param from string The address of the sender
---- @param quantity number The amount of funding to add
---- @param distribution table<number> The distribution of funding
---- @return boolean True if error
-function CPMMHelpers:validateAddFunding(from, quantity, distribution)
-  local error = false
-  local errorMessage = ''
-  -- Ensure distribution
-  if not distribution then
-    error = true
-    errorMessage = 'X-Distribution is required!'
-  elseif not error then
-    if bint.iszero(bint(self.token.totalSupply)) then
-      -- Ensure distribution is set across all position ids
-      if #distribution ~= #self.tokens.positionIds then
-        error = true
-        errorMessage = "Distribution length mismatch"
-      end
-    else
-      -- Ensure distribution set only for initial funding
-      if bint.__lt(0, #distribution) then
-        error = true
-        errorMessage = "Cannot specify distribution after initial funding"
-      end
-    end
-  end
-  if error then
-    -- Return funds and assert error
-    ao.send({
-      Target = self.tokens.collateralToken,
-      Action = 'Transfer',
-      Recipient = from,
-      Quantity = quantity,
-      Error = 'Add-Funding Error: ' .. errorMessage
-    })
-  end
-  return not error
-end
-
---- Validate remove funding
---- Returns LP tokens to sender on error
---- @param from string The address of the sender
---- @param quantity number The amount of funding to remove
---- @return boolean True if error
-function CPMMHelpers:validateRemoveFunding(from, quantity)
-  local error = false
-  local errorMessage = ''
-  -- Get balance
-  local balance = self.token.balances[from] or '0'
-  -- Check for errors
-  if from == self.creatorFeeTarget and self.payoutDenominator and self.payoutDenominator == 0 then
-    error = true
-    errorMessage = 'Creator liquidity locked until market resolution!'
-  elseif not bint.__le(bint(quantity), bint(balance)) then -- @dev TODO: remove as will never be called?
-    error = true
-    errorMessage = 'Quantity must be less than balance!'
-  end
-  -- Return funds on error.
-  if error then
-    ao.send({
-      Target = ao.id,
-      Action = 'Transfer',
-      Recipient = from,
-      Quantity = quantity,
-      Error = errorMessage
-    })
-  end
-  return not error
-end
-
---- Gets pool balances
---- @return table<string> Pool balances for each ID
-function CPMMHelpers:getPoolBalances()
-  -- Get poolBalances
-  local selves = {}
-  for _ = 1, #self.tokens.positionIds do
-    table.insert(selves, ao.id)
-  end
-  local poolBalances = self.tokens:getBatchBalance(selves, self.tokens.positionIds)
-  return poolBalances
-end
-
-return CPMMHelpers
-end
-
-_G.package.loaded["marketModules.cpmmHelpers"] = _loaded_mod_marketModules_cpmmHelpers()
-
--- module: "marketModules.cpmmNotices"
-local function _loaded_mod_marketModules_cpmmNotices()
---[[
-=========================================================
-Part of the Outcome codebase © 2025. All Rights Reserved.
-See cpmm.lua for full license details.
-=========================================================
-]]
-
-local ao = require('.ao')
-local json = require('json')
-
-local CPMMNotices = {}
-
---- Sends a funding added notice
---- @param from string The address that added funding
---- @param fundingAdded table The funding added
---- @param mintAmount number The mint amount
---- @return Message The funding added notice
-function CPMMNotices.fundingAddedNotice(from, fundingAdded, mintAmount)
-  return ao.send({
-    Target = from,
-    Action = "Funding-Added-Notice",
-    FundingAdded = json.encode(fundingAdded),
-    MintAmount = tostring(mintAmount),
-    Data = "Successfully added funding"
-  })
-end
-
---- Sends a funding removed notice
---- @param from string The address that removed funding
---- @param sendAmounts table The send amounts
---- @param collateralRemovedFromFeePool number The collateral removed from the fee pool
---- @param sharesToBurn number The shares to burn
---- @return Message The funding removed notice
-function CPMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
-  return ao.send({
-    Target = from,
-    Action = "Funding-Removed-Notice",
-    SendAmounts = json.encode(sendAmounts),
-    CollateralRemovedFromFeePool = tostring(collateralRemovedFromFeePool),
-    SharesToBurn = tostring(sharesToBurn),
-    Data = "Successfully removed funding"
-  })
-end
-
---- Sends a buy notice
---- @param from string The address that bought
---- @param investmentAmount number The investment amount
---- @param feeAmount number The fee amount
---- @param positionId string The position ID
---- @param outcomeTokensToBuy number The outcome tokens to buy
---- @return Message The buy notice
-function CPMMNotices.buyNotice(from, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
-  return ao.send({
-    Target = from,
-    Action = "Buy-Notice",
-    InvestmentAmount = tostring(investmentAmount),
-    FeeAmount = tostring(feeAmount),
-    PositionId = positionId,
-    OutcomeTokensToBuy = tostring(outcomeTokensToBuy),
-    Data = "Successful buy order"
-  })
-end
-
---- Sends a sell notice
---- @param from string The address that sold
---- @param returnAmount number The return amount
---- @param feeAmount number The fee amount
---- @param positionId string The position ID
---- @param outcomeTokensToSell number The outcome tokens to sell
---- @return Message The sell notice
-function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)
-  return ao.send({
-    Target = from,
-    Action = "Sell-Notice",
-    ReturnAmount = tostring(returnAmount),
-    FeeAmount = tostring(feeAmount),
-    PositionId = positionId,
-    OutcomeTokensToSell = tostring(outcomeTokensToSell),
-    Data = "Successful sell order"
-  })
-end
-
---- Sends an update configurator notice
---- @param configurator string The updated configurator address
---- @param msg Message The message received
---- @return Message The configurator updated notice
-function CPMMNotices.updateConfiguratorNotice(configurator, msg)
-  return msg.reply({
-    Action = "Configurator-Updated",
-    Data = configurator
-  })
-end
-
---- Sends an update take fee notice
---- @param creatorFee string The updated creator fee
---- @param protocolFee string The updated protocol fee
---- @param takeFee string The updated take fee
---- @param msg Message The message received
-function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)
-  return msg.reply({
-    Action = "Take-Fee-Updated",
-    CreatorFee = tostring(creatorFee),
-    ProtocolFee = tostring(protocolFee),
-    Data = tostring(takeFee)
-  })
-end
-
---- Sends an update protocol fee target notice
---- @param protocolFeeTarget string The updated protocol fee target
---- @param msg Message The message received
---- @return Message The protocol fee target updated notice
-function CPMMNotices.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)
-  return msg.reply({
-    Action = "Protocol-Fee-Target-Updated",
-    Data = protocolFeeTarget
-  })
-end
-
---- Sends an update logo notice
---- @param logo string The updated logo
---- @param msg Message The message received
---- @return Message The logo updated notice
-function CPMMNotices.updateLogoNotice(logo, msg)
-  return msg.reply({
-    Action = "Logo-Updated",
-    Data = logo
-  })
-end
-
-return CPMMNotices
-end
-
-_G.package.loaded["marketModules.cpmmNotices"] = _loaded_mod_marketModules_cpmmNotices()
-
 -- module: ".utils"
 local function _loaded_mod_utils()
 --- The Utils module provides a collection of utility functions for functional programming in Lua. It includes functions for array manipulation such as concatenation, mapping, reduction, filtering, and finding elements, as well as a property equality checker.
@@ -1468,6 +1207,267 @@ return utils
 end
 
 _G.package.loaded[".utils"] = _loaded_mod_utils()
+
+-- module: "marketModules.cpmmHelpers"
+local function _loaded_mod_marketModules_cpmmHelpers()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See cpmm.lua for full license details.
+=========================================================
+]]
+
+local bint = require('.bint')(256)
+local ao = require('.ao')
+
+local CPMMHelpers = {}
+
+--- Calculate the ceildiv of x / y
+--- @param x number The numerator
+--- @param y number The denominator
+--- @return number The ceil div of x / y
+function CPMMHelpers.ceildiv(x, y)
+  if x > 0 then
+    return math.floor((x - 1) / y) + 1
+  end
+  return math.floor(x / y)
+end
+
+--- Generate position IDs
+--- @param outcomeSlotCount number The number of outcome slots
+--- @return table<string> A basic partition based on outcomeSlotCount
+function CPMMHelpers.getPositionIds(outcomeSlotCount)
+  local positionIds = {}
+  for i = 1, outcomeSlotCount do
+    table.insert(positionIds, tostring(i))
+  end
+  return positionIds
+end
+
+--- Validate add funding
+--- Returns funding to sender on error
+--- @param from string The address of the sender
+--- @param quantity number The amount of funding to add
+--- @param distribution table<number> The distribution of funding
+--- @return boolean True if error
+function CPMMHelpers:validateAddFunding(from, quantity, distribution)
+  local error = false
+  local errorMessage = ''
+  -- Ensure distribution
+  if not distribution then
+    error = true
+    errorMessage = 'X-Distribution is required!'
+  elseif not error then
+    if bint.iszero(bint(self.token.totalSupply)) then
+      -- Ensure distribution is set across all position ids
+      if #distribution ~= #self.tokens.positionIds then
+        error = true
+        errorMessage = "Distribution length mismatch"
+      end
+    else
+      -- Ensure distribution set only for initial funding
+      if bint.__lt(0, #distribution) then
+        error = true
+        errorMessage = "Cannot specify distribution after initial funding"
+      end
+    end
+  end
+  if error then
+    -- Return funds and assert error
+    ao.send({
+      Target = self.tokens.collateralToken,
+      Action = 'Transfer',
+      Recipient = from,
+      Quantity = quantity,
+      Error = 'Add-Funding Error: ' .. errorMessage
+    })
+  end
+  return not error
+end
+
+--- Validate remove funding
+--- Returns LP tokens to sender on error
+--- @param from string The address of the sender
+--- @param quantity number The amount of funding to remove
+--- @return boolean True if error
+function CPMMHelpers:validateRemoveFunding(from, quantity)
+  local error = false
+  local errorMessage = ''
+  -- Get balance
+  local balance = self.token.balances[from] or '0'
+  -- Check for errors
+  if from == self.creatorFeeTarget and self.payoutDenominator and self.payoutDenominator == 0 then
+    error = true
+    errorMessage = 'Creator liquidity locked until market resolution!'
+  elseif not bint.__le(bint(quantity), bint(balance)) then -- @dev TODO: remove as will never be called?
+    error = true
+    errorMessage = 'Quantity must be less than balance!'
+  end
+  -- Return funds on error.
+  if error then
+    ao.send({
+      Target = ao.id,
+      Action = 'Transfer',
+      Recipient = from,
+      Quantity = quantity,
+      Error = errorMessage
+    })
+  end
+  return not error
+end
+
+--- Gets pool balances
+--- @return table<string> Pool balances for each ID
+function CPMMHelpers:getPoolBalances()
+  -- Get poolBalances
+  local selves = {}
+  for _ = 1, #self.tokens.positionIds do
+    table.insert(selves, ao.id)
+  end
+  local poolBalances = self.tokens:getBatchBalance(selves, self.tokens.positionIds)
+  return poolBalances
+end
+
+return CPMMHelpers
+end
+
+_G.package.loaded["marketModules.cpmmHelpers"] = _loaded_mod_marketModules_cpmmHelpers()
+
+-- module: "marketModules.cpmmNotices"
+local function _loaded_mod_marketModules_cpmmNotices()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See cpmm.lua for full license details.
+=========================================================
+]]
+
+local ao = require('.ao')
+local json = require('json')
+
+local CPMMNotices = {}
+
+--- Sends a funding added notice
+--- @param from string The address that added funding
+--- @param fundingAdded table The funding added
+--- @param mintAmount number The mint amount
+--- @return Message The funding added notice
+function CPMMNotices.fundingAddedNotice(from, fundingAdded, mintAmount)
+  return ao.send({
+    Target = from,
+    Action = "Funding-Added-Notice",
+    FundingAdded = json.encode(fundingAdded),
+    MintAmount = tostring(mintAmount),
+    Data = "Successfully added funding"
+  })
+end
+
+--- Sends a funding removed notice
+--- @param from string The address that removed funding
+--- @param sendAmounts table The send amounts
+--- @param collateralRemovedFromFeePool number The collateral removed from the fee pool
+--- @param sharesToBurn number The shares to burn
+--- @return Message The funding removed notice
+function CPMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
+  return ao.send({
+    Target = from,
+    Action = "Funding-Removed-Notice",
+    SendAmounts = json.encode(sendAmounts),
+    CollateralRemovedFromFeePool = tostring(collateralRemovedFromFeePool),
+    SharesToBurn = tostring(sharesToBurn),
+    Data = "Successfully removed funding"
+  })
+end
+
+--- Sends a buy notice
+--- @param from string The address that bought
+--- @param investmentAmount number The investment amount
+--- @param feeAmount number The fee amount
+--- @param positionId string The position ID
+--- @param outcomeTokensToBuy number The outcome tokens to buy
+--- @return Message The buy notice
+function CPMMNotices.buyNotice(from, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
+  return ao.send({
+    Target = from,
+    Action = "Buy-Notice",
+    InvestmentAmount = tostring(investmentAmount),
+    FeeAmount = tostring(feeAmount),
+    PositionId = positionId,
+    OutcomeTokensToBuy = tostring(outcomeTokensToBuy),
+    Data = "Successful buy order"
+  })
+end
+
+--- Sends a sell notice
+--- @param from string The address that sold
+--- @param returnAmount number The return amount
+--- @param feeAmount number The fee amount
+--- @param positionId string The position ID
+--- @param outcomeTokensToSell number The outcome tokens to sell
+--- @return Message The sell notice
+function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)
+  return ao.send({
+    Target = from,
+    Action = "Sell-Notice",
+    ReturnAmount = tostring(returnAmount),
+    FeeAmount = tostring(feeAmount),
+    PositionId = positionId,
+    OutcomeTokensToSell = tostring(outcomeTokensToSell),
+    Data = "Successful sell order"
+  })
+end
+
+--- Sends an update configurator notice
+--- @param configurator string The updated configurator address
+--- @param msg Message The message received
+--- @return Message The configurator updated notice
+function CPMMNotices.updateConfiguratorNotice(configurator, msg)
+  return msg.reply({
+    Action = "Configurator-Updated",
+    Data = configurator
+  })
+end
+
+--- Sends an update take fee notice
+--- @param creatorFee string The updated creator fee
+--- @param protocolFee string The updated protocol fee
+--- @param takeFee string The updated take fee
+--- @param msg Message The message received
+function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)
+  return msg.reply({
+    Action = "Take-Fee-Updated",
+    CreatorFee = tostring(creatorFee),
+    ProtocolFee = tostring(protocolFee),
+    Data = tostring(takeFee)
+  })
+end
+
+--- Sends an update protocol fee target notice
+--- @param protocolFeeTarget string The updated protocol fee target
+--- @param msg Message The message received
+--- @return Message The protocol fee target updated notice
+function CPMMNotices.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)
+  return msg.reply({
+    Action = "Protocol-Fee-Target-Updated",
+    Data = protocolFeeTarget
+  })
+end
+
+--- Sends an update logo notice
+--- @param logo string The updated logo
+--- @param msg Message The message received
+--- @return Message The logo updated notice
+function CPMMNotices.updateLogoNotice(logo, msg)
+  return msg.reply({
+    Action = "Logo-Updated",
+    Data = logo
+  })
+end
+
+return CPMMNotices
+end
+
+_G.package.loaded["marketModules.cpmmNotices"] = _loaded_mod_marketModules_cpmmNotices()
 
 -- module: "marketModules.tokenNotices"
 local function _loaded_mod_marketModules_tokenNotices()
@@ -3246,7 +3246,7 @@ end
 --- @param msg Message The message to be validated
 --- @param validPositionIds table<string> The array of valid position IDs
 function cpmmValidation.buy(msg, validPositionIds)
-  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "X-PositionId")
   sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
 end
 
@@ -3525,6 +3525,7 @@ local MarketNotices = require('marketModules.marketNotices')
 local ao = require('.ao')
 local json = require('json')
 local bint = require('.bint')(256)
+local utils = require('.utils')
 local cpmm = require('marketModules.cpmm')
 local cpmmValidation = require('marketModules.cpmmValidation')
 local tokenValidation = require('marketModules.tokenValidation')
@@ -3730,7 +3731,6 @@ end
 --- @param msg Message The message received
 --- @return Message buyNotice The buy notice
 function MarketMethods:buy(msg)
-  cpmmValidation.buy(msg, self.cpmm.positionIds)
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
 
   local error = false
@@ -3741,6 +3741,9 @@ function MarketMethods:buy(msg)
   if not msg.Tags['X-PositionId'] then
     error = true
     errorMessage = 'X-PositionId is required!'
+  elseif not utils.includes(msg.Tags['X-PositionId'], self.cpmm.tokens.positionIds) then
+    error = true
+    errorMessage = 'Invalid X-PositionId!'
   elseif not msg.Tags['X-MinOutcomeTokensToBuy'] then
     error = true
     errorMessage = 'X-MinOutcomeTokensToBuy is required!'
@@ -3764,7 +3767,7 @@ function MarketMethods:buy(msg)
   end
   local notice = self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
   -- log prediction and probabilities
-  local price = tostring.bint.__div(outcomeTokensToBuy, bint(msg.Tags.Quantity))
+  local price = tostring(bint.__div(bint(outcomeTokensToBuy), bint(msg.Tags.Quantity)))
   logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], outcomeTokensToBuy, price, msg)
   logProbabilities(self.dataIndex, self.cpmm.calcProbabilities())
   return notice
@@ -3774,12 +3777,12 @@ end
 --- @param msg Message The message received
 --- @return Message sellNotice The sell notice
 function MarketMethods:sell(msg)
-  cpmmValidation.sell(msg, self.cpmm.positionIds)
+  cpmmValidation.sell(msg, self.cpmm.tokens.positionIds)
   local outcomeTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   assert(bint.__le(bint(outcomeTokensToSell), bint(msg.Tags.MaxOutcomeTokensToSell)), 'Maximum sell amount not sufficient!')
   local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
   -- log prediction and probabilities
-  local price = tostring.bint.__div(outcomeTokensToSell, bint(msg.Tags.Quantity))
+  local price = tostring(bint.__div(outcomeTokensToSell, bint(msg.Tags.Quantity)))
   logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags.PositionId, outcomeTokensToSell, price, msg)
   logProbabilities(self.dataIndex, self.cpmm.calcProbabilities())
   return notice
@@ -3802,7 +3805,7 @@ CPMM READ METHODS
 --- @param msg Message The message received
 --- @return Message buyAmount The amount of tokens to be purchased
 function MarketMethods:calcBuyAmount(msg)
-  cpmmValidation.calcBuyAmount(msg, self.cpmm.positionIds)
+  cpmmValidation.calcBuyAmount(msg, self.cpmm.tokens.positionIds)
   local buyAmount = self.cpmm:calcBuyAmount(msg.Tags.InvestmentAmount, msg.Tags.PositionId)
   return msg.reply({ Data = buyAmount })
 end
@@ -3811,7 +3814,7 @@ end
 --- @param msg Message The message received
 --- @return Message sellAmount The amount of tokens to be sold
 function MarketMethods:calcSellAmount(msg)
-  cpmmValidation.calcSellAmount(msg, self.cpmm.positionIds)
+  cpmmValidation.calcSellAmount(msg, self.cpmm.tokens.positionIds)
   local sellAmount = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   return msg.reply({ Data = sellAmount })
 end
@@ -3907,15 +3910,15 @@ function MarketMethods:mergePositions(msg)
   for i = 1, #self.cpmm.tokens.positionIds do
     if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ] then
       error = true
-      errorMessage = "Invalid position! PositionId: " .. self.cpmm.positionIds[i]
+      errorMessage = "Invalid position! PositionId: " .. self.cpmm.tokens.positionIds[i]
     end
     if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From] then
       error = true
-      errorMessage = "Invalid user position! PositionId: " .. self.cpmm.positionIds[i]
+      errorMessage = "Invalid user position! PositionId: " .. self.cpmm.tokens.positionIds[i]
     end
     if bint.__lt(bint(self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From]), bint(msg.Tags.Quantity)) then
       error = true
-      errorMessage = "Insufficient tokens! PositionId: " .. self.cpmm.positionIds[i]
+      errorMessage = "Insufficient tokens! PositionId: " .. self.cpmm.tokens.positionIds[i]
     end
   end
   -- Revert on error

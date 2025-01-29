@@ -33,6 +33,7 @@ local Token = {}
 local TokenMethods = {}
 local TokenNotices = require('marketModules.tokenNotices')
 local bint = require('.bint')(256)
+local json = require("json")
 
 --- Represents a Token
 --- @class Token

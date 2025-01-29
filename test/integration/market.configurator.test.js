@@ -1165,7 +1165,7 @@ describe("market.configurator.test", function () {
         console.log(Error)
       }
 
-      expect(Messages.length).to.be.equal(2)
+      expect(Messages.length).to.equal(2)
 
       const target_0 = Messages[0].Target
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value

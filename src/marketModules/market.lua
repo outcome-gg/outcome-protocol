@@ -16,9 +16,10 @@ without explicit written permission from Outcome.
 local Market = {}
 local MarketMethods = {}
 local MarketNotices = require('marketModules.marketNotices')
-local ao = require('.ao')
+-- local ao = require('.ao') @dev required for unit tests?
 local json = require('json')
 local bint = require('.bint')(256)
+local utils = require('.utils')
 local cpmm = require('marketModules.cpmm')
 local cpmmValidation = require('marketModules.cpmmValidation')
 local tokenValidation = require('marketModules.tokenValidation')
@@ -194,8 +195,8 @@ CPMM WRITE METHODS
 --- @param msg Message The message received
 --- @return nil -- TODO: send/specify notice
 function MarketMethods:addFunding(msg)
-  cpmmValidation.addFunding(msg)
-  local distribution = json.decode(msg.Tags['X-Distribution'])
+  cpmmValidation.addFunding(#self.cpmm.tokens.positionIds, msg)
+  local distribution = msg.Tags['X-Distribution'] and json.decode(msg.Tags['X-Distribution']) or nil
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
   -- @dev returns collateral tokens if invalid
   if self.cpmm:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
@@ -224,7 +225,6 @@ end
 --- @param msg Message The message received
 --- @return Message buyNotice The buy notice
 function MarketMethods:buy(msg)
-  cpmmValidation.buy(msg, self.cpmm.positionIds)
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
 
   local error = false
@@ -235,6 +235,9 @@ function MarketMethods:buy(msg)
   if not msg.Tags['X-PositionId'] then
     error = true
     errorMessage = 'X-PositionId is required!'
+  elseif not utils.includes(msg.Tags['X-PositionId'], self.cpmm.tokens.positionIds) then
+    error = true
+    errorMessage = 'Invalid X-PositionId!'
   elseif not msg.Tags['X-MinOutcomeTokensToBuy'] then
     error = true
     errorMessage = 'X-MinOutcomeTokensToBuy is required!'
@@ -258,9 +261,9 @@ function MarketMethods:buy(msg)
   end
   local notice = self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
   -- log prediction and probabilities
-  local price = tostring.bint.__div(outcomeTokensToBuy, bint(msg.Tags.Quantity))
+  local price = tostring(bint.__div(bint(outcomeTokensToBuy), bint(msg.Tags.Quantity)))
   logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], outcomeTokensToBuy, price, msg)
-  logProbabilities(self.dataIndex, self.cpmm.calcProbabilities())
+  logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
   return notice
 end
 
@@ -268,14 +271,14 @@ end
 --- @param msg Message The message received
 --- @return Message sellNotice The sell notice
 function MarketMethods:sell(msg)
-  cpmmValidation.sell(msg, self.cpmm.positionIds)
+  cpmmValidation.sell(msg, self.cpmm.tokens.positionIds)
   local outcomeTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   assert(bint.__le(bint(outcomeTokensToSell), bint(msg.Tags.MaxOutcomeTokensToSell)), 'Maximum sell amount not sufficient!')
   local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
   -- log prediction and probabilities
-  local price = tostring.bint.__div(outcomeTokensToSell, bint(msg.Tags.Quantity))
+  local price = tostring(bint.__div(outcomeTokensToSell, bint(msg.Tags.Quantity)))
   logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags.PositionId, outcomeTokensToSell, price, msg)
-  logProbabilities(self.dataIndex, self.cpmm.calcProbabilities())
+  logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
   return notice
 end
 
@@ -296,7 +299,7 @@ CPMM READ METHODS
 --- @param msg Message The message received
 --- @return Message buyAmount The amount of tokens to be purchased
 function MarketMethods:calcBuyAmount(msg)
-  cpmmValidation.calcBuyAmount(msg, self.cpmm.positionIds)
+  cpmmValidation.calcBuyAmount(msg, self.cpmm.tokens.positionIds)
   local buyAmount = self.cpmm:calcBuyAmount(msg.Tags.InvestmentAmount, msg.Tags.PositionId)
   return msg.reply({ Data = buyAmount })
 end
@@ -305,7 +308,7 @@ end
 --- @param msg Message The message received
 --- @return Message sellAmount The amount of tokens to be sold
 function MarketMethods:calcSellAmount(msg)
-  cpmmValidation.calcSellAmount(msg, self.cpmm.positionIds)
+  cpmmValidation.calcSellAmount(msg, self.cpmm.tokens.positionIds)
   local sellAmount = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   return msg.reply({ Data = sellAmount })
 end
@@ -401,15 +404,15 @@ function MarketMethods:mergePositions(msg)
   for i = 1, #self.cpmm.tokens.positionIds do
     if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ] then
       error = true
-      errorMessage = "Invalid position! PositionId: " .. self.cpmm.positionIds[i]
+      errorMessage = "Invalid position! PositionId: " .. self.cpmm.tokens.positionIds[i]
     end
     if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From] then
       error = true
-      errorMessage = "Invalid user position! PositionId: " .. self.cpmm.positionIds[i]
+      errorMessage = "Invalid user position! PositionId: " .. self.cpmm.tokens.positionIds[i]
     end
     if bint.__lt(bint(self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From]), bint(msg.Tags.Quantity)) then
       error = true
-      errorMessage = "Insufficient tokens! PositionId: " .. self.cpmm.positionIds[i]
+      errorMessage = "Insufficient tokens! PositionId: " .. self.cpmm.tokens.positionIds[i]
     end
   end
   -- Revert on error

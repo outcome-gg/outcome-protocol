@@ -1,5 +1,5 @@
 local bint = require('.bint')(256)
-local ao = require('.ao')
+-- local ao = require('.ao') -- @dev required for unit tests
 --[[
   This module implements the ao Standard Token Specification.
 

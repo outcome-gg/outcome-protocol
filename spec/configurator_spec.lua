@@ -21,7 +21,7 @@ local staged = {}
 describe("#configurator", function()
   before_each(function()
     -- set admin
-    admin = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0"
+    admin = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I"
     -- set delay
     delay = 1
     -- create a message object

@@ -5,7 +5,7 @@ See semiFungibleTokens.lua for full license details.
 =========================================================
 ]]
 
-local ao = require('.ao')
+-- local ao = require('.ao')
 local json = require('json')
 
 local SemiFungibleTokensNotices = {}

@@ -10,14 +10,14 @@ local ao = ao or require('.ao')
 
 local ConditionalTokensNotices = {}
 
---- Condition resolution notice
+--- Report payouts notice
 --- @param resolutionAgent string The process assigned to report the result for the prepared condition
 --- @param payoutNumerators table<number> The payout numerators for each outcome slot
 --- @param msg Message The message received
---- @return Message The condition resolution notice
-function ConditionalTokensNotices.conditionResolutionNotice(resolutionAgent, payoutNumerators, msg)
+--- @return Message reportPayoutsNotice The report payouts notice
+function ConditionalTokensNotices.reportPayoutsNotice(resolutionAgent, payoutNumerators, msg)
   return msg.reply({
-    Action = "Condition-Resolution-Notice",
+    Action = "Report-Payouts-Notice",
     ResolutionAgent = resolutionAgent,
     PayoutNumerators = json.encode(payoutNumerators)
   })

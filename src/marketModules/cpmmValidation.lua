@@ -9,14 +9,12 @@ local cpmmValidation = {}
 local sharedValidation = require('marketModules.sharedValidation')
 local sharedUtils = require('marketModules.sharedUtils')
 local bint = require('.bint')(256)
+local json = require('json')
 
 --- Validates add funding
 --- @param msg Message The message to be validated
-function cpmmValidation.addFunding(msg)
+function cpmmValidation.addFunding(outcomeSlotCount, msg)
   sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
-  assert(msg.Tags['X-Distribution'], 'X-Distribution is required!')
-  assert(sharedUtils.isJSONArray(msg.Tags['X-Distribution']), 'X-Distribution must be valid JSON Array!')
-  -- @dev TODO: remove requirement for X-Distribution
 end
 
 --- Validates remove funding
@@ -29,7 +27,7 @@ end
 --- @param msg Message The message to be validated
 --- @param validPositionIds table<string> The array of valid position IDs
 function cpmmValidation.buy(msg, validPositionIds)
-  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "X-PositionId")
   sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
 end
 

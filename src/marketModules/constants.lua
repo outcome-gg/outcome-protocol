@@ -68,5 +68,41 @@ constants.activity = {
 }
 -- CPMM
 constants.denomination = 12
+-- Market Config
+constants.marketConfig = {}
+constants.marketConfig["DEV"] = {
+  configurator = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
+  incentives = "haUOiKKmYMGum59nWZx5TVFEkDgI5LakIEY7jgfQgAI",
+  dataIndex = "rXSAUKwZhJkIBTIEyBl1rf8Gtk_88RKQFsx5JvDOwlE",
+  collateralToken = "WY-SBx8N4d4wJZB3o3h7Uk_zHPLUqBx2qFeh_CDkceQ",
+  resolutionAgent = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0",
+  creator = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
+  question = "Liquid Ops oUSDC interest reaches 8% in March",
+  positionIds = json.encode({"1","2"}),
+  name = "Mock Spawn Market",
+  ticker = 'MSM',
+  logo = "https://test.com/logo.png",
+  lpFee = "100",
+  creatorFee = "250",
+  creatorFeeTarget = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0",
+  protocolFee = "250",
+  protocolFeeTarget = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0"
+}
+constants.marketConfig["PROD"] = {
+  configurator = '',
+  incentives = '',
+  dataIndex = '',
+  collateralToken = '',
+  question = '',
+  positionIds = {},
+  name = '',
+  ticker = '',
+  logo ='',
+  lpFee = 0,
+  creatorFee = 0,
+  creatorFeeTarget = '',
+  protocolFee = 0,
+  protocolFeeTarget = ''
+}
 
 return constants

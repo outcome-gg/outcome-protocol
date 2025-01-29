@@ -18,7 +18,8 @@ local CPMMMethods = {}
 local CPMMHelpers = require('marketModules.cpmmHelpers')
 local CPMMNotices = require('marketModules.cpmmNotices')
 local bint = require('.bint')(256)
-local ao = require('.ao')
+local json = require('json')
+-- local ao = require('.ao') @dev required for unit tests?
 local utils = require(".utils")
 local token = require('marketModules.token')
 local constants = require("marketModules.constants")
@@ -107,28 +108,7 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
   local poolShareSupply = self.token.totalSupply
   local mintAmount = '0'
 
-  if bint.__lt(0, bint(poolShareSupply)) then
-    -- Additional Liquidity 
-    assert(#distributionHint == 0, "cannot use distribution hint after initial funding")
-    -- Get poolBalances
-    local poolBalances = self:getPoolBalances()
-    -- Calculate poolWeight
-    local poolWeight = 0
-    for i = 1, #poolBalances do
-      local balance = poolBalances[i]
-      if bint.__lt(poolWeight, bint(balance)) then
-        poolWeight = bint(balance)
-      end
-    end
-    -- Calculate sendBackAmounts
-    for i = 1, #poolBalances do
-      local remaining = math.floor((addedFunds * poolBalances[i]) / poolWeight)
-      sendBackAmounts[i] = addedFunds - remaining
-    end
-    -- Calculate mintAmount
-    ---@diagnostic disable-next-line: param-type-mismatch
-    mintAmount = tostring(math.floor(tostring(bint.__div(bint.__mul(addedFunds, poolShareSupply), poolWeight))))
-  else
+  if bint.iszero(bint(poolShareSupply)) then
     -- Initial Liquidity
     if #distributionHint > 0 then
       local maxHint = 0
@@ -147,6 +127,27 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
     end
     -- Calculate mintAmount
     mintAmount = tostring(addedFunds)
+  else
+    -- Additional Liquidity 
+    assert(not distributionHint, "cannot use distribution hint after initial funding")
+    -- Get poolBalances
+    local poolBalances = self:getPoolBalances()
+    -- Calculate poolWeight
+    local poolWeight = 0
+    for i = 1, #poolBalances do
+      local balance = poolBalances[i]
+      if bint.__lt(poolWeight, bint(balance)) then
+        poolWeight = bint(balance)
+      end
+    end
+    -- Calculate sendBackAmounts
+    for i = 1, #poolBalances do
+      local remaining = math.floor((addedFunds * poolBalances[i]) / poolWeight)
+      sendBackAmounts[i] = addedFunds - remaining
+    end
+    -- Calculate mintAmount
+    ---@diagnostic disable-next-line: param-type-mismatch
+    mintAmount = tostring(math.floor(tostring(bint.__div(bint.__mul(addedFunds, poolShareSupply), poolWeight))))
   end
   -- Mint Conditional Positions
   self.tokens:splitPosition(ao.id, self.tokens.collateralToken, addedFunds, msg)
@@ -189,7 +190,7 @@ function CPMMMethods:removeFunding(from, sharesToBurn, msg)
   end
   -- Calculate collateralRemovedFromFeePool
   local collateralRemovedFromFeePool = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
-  self:burn(from, sharesToBurn, msg)
+  self:burn(ao.id, sharesToBurn, msg)
   local poolFeeBalance = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
   collateralRemovedFromFeePool = tostring(math.floor(poolFeeBalance - collateralRemovedFromFeePool))
   -- Send collateralRemovedFromFeePool
@@ -261,13 +262,13 @@ function CPMMMethods:calcProbabilities()
   for i = 1, #self.tokens.positionIds do
     totalBalance = bint.__add(totalBalance, bint(poolBalances[i]))
   end
-  assert(bint.__gt(totalBalance, bint(0)), 'Total pool balance must be greater than zero!')
+  assert(bint.__lt(bint(0), totalBalance), 'Total pool balance must be greater than zero!')
   -- Calculate probabilities for each positionId
   for i = 1, #self.tokens.positionIds do
     local positionId = self.tokens.positionIds[i]
     local balance = bint(poolBalances[i])
-    local probability = bint.__div(bint.__mul(balance, bint(100)), totalBalance)
-    probabilities[positionId] = tonumber(probability)
+    local probability = tostring(bint.__div(balance, totalBalance))
+    probabilities[positionId] = probability
   end
   return probabilities
 end
@@ -291,8 +292,8 @@ function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minOutc
   self.tokens:splitPosition(ao.id, self.tokens.collateralToken, investmentAmountMinusFees, msg)
   -- Transfer buy position to onBehalfOf
   self.tokens:transferSingle(ao.id, onBehalfOf, positionId, outcomeTokensToBuy, false, msg)
-  -- Send notice.
-  return self.buyNotice(from, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
+  -- -- Send notice.
+  return self.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
 end
 
 --- Sell
@@ -337,7 +338,7 @@ end
 --- Colleced fees
 --- @return string The total unwithdrawn fees collected by the CPMM
 function CPMMMethods:collectedFees()
-  return tostring(self.feePoolWeight - self.totalWithdrawnFees)
+  return tostring(math.ceil(self.feePoolWeight - self.totalWithdrawnFees))
 end
 
 --- Fees withdrawable 
