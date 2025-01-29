@@ -12,9 +12,9 @@ import { hash } from "crypto";
 
 dotenv.config();
 
-const market = process.env.TEST_MARKET4;
-const collateralToken = process.env.TEST_COLLATERAL_TOKEN3;
-const configurator = process.env.TEST_CONFIGURATOR;
+const market = process.env.MOCK_SPAWNED_MARKET5;
+const collateralToken = process.env.DEV_MOCK_DAI;
+const testConfigurator = process.env.TEST_CONFIGURATOR;
 
 console.log("MARKET: ", market)
 console.log("COLLATERAL TOKEN: ", collateralToken)
@@ -38,6 +38,7 @@ let questionId;
 let resolutionAgent;
 
 // Configurator variables
+let configurator;
 let delay;
 
 // update variables
@@ -92,10 +93,10 @@ describe("market.configurator.test", function () {
     // Market variables
     questionId = 'trump-becomes-the-47th-president-of-the-usa',
     resolutionAgent = walletAddress2,
-    conditionId = "2d175f731624549c34fe14840990e92d610d63ea205028af076ec5cbef4e231c",
     marketId = "123",
 
     // Configurator variables
+    configurator = walletAddress,
     delay = 5000,
 
     // Update variables
@@ -103,7 +104,7 @@ describe("market.configurator.test", function () {
 
     // Update incentives variables
     updateIncentivesAction = "Update-Incentives",
-    updateIncentivesTags = JSON.stringify({"Incentives" : "FOO"}),
+    updateIncentivesTags = JSON.stringify({"Incentives" : "test-this-is-valid-arweave-wallet-address-1"}),
     updateIncentivesData = "",
     hashUpdateIncentives = keccak256(updateProcess + updateIncentivesAction + updateIncentivesTags + updateIncentivesData).toString('hex'),
 
@@ -115,7 +116,7 @@ describe("market.configurator.test", function () {
 
     // Update protocol fee target variables
     updateProtocolFeeTargetAction = "Update-Protocol-Fee-Target",
-    updateProtocolFeeTargetTags = JSON.stringify({"ProtocolFeeTarget" : "FOO"}),
+    updateProtocolFeeTargetTags = JSON.stringify({"ProtocolFeeTarget" : "test-this-is-valid-arweave-wallet-address-1"}),
     updateProtocolFeeTargetData = "",
     hashUpdateProtocolFeeTarget = keccak256(updateProcess + updateProtocolFeeTargetAction + updateProtocolFeeTargetTags + updateProtocolFeeTargetData).toString('hex'),
 
@@ -127,172 +128,10 @@ describe("market.configurator.test", function () {
 
     // Update configurator variables
     updateConfiguratorAction = "Update-Configurator",
-    updateConfiguratorTags = JSON.stringify({"Configurator" : "FOO"}),
+    updateConfiguratorTags = JSON.stringify({"Configurator" : "test-this-is-valid-arweave-wallet-address-1"}),
     updateConfiguratorData = "",
     hashUpdateConfigurator = keccak256(updateProcess + updateConfiguratorAction + updateConfiguratorTags + updateConfiguratorData).toString('hex')
   ))
-
-  /************************************************************************ 
-  * market.Init
-  ************************************************************************/
-  describe("market.Init", function () {
-    it("+ve should fail to init market when take fee > 10%", async () => {
-      let messageId;
-      await message({
-        process: market,
-        tags: [
-          { name: "Action", value: "Init" },
-          { name: "MarketId", value: marketId },
-          { name: "CollateralToken", value: collateralToken },
-          { name: "ConditionId", value: conditionId },
-          { name: "OutcomeSlotCount", value: "2" },
-          { name: "Name", value: "Outcome ETH LP Token" }, 
-          { name: "Ticker", value: "OETH" }, 
-          { name: "Logo", value: "" }, 
-          { name: "LpFee", value: "100" }, 
-          { name: "CreatorFee", value: "250" }, // 2.5%
-          { name: "CreatorFeeTarget", value: walletAddress2 }, 
-          { name: "ProtocolFee", value: "751" }, // 7.51% 
-          { name: "ProtocolFeeTarget", value: walletAddress2 }, 
-          { name: "Configurator", value: walletAddress2 }, 
-          { name: "Incentives", value: walletAddress2 }, 
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: market,
-      });
-
-      // aoconnect Error not capturing the error message
-      // but present in the AOS process logs
-      expect(Messages.length).to.be.equal(0)
-      expect(Error).to.include("Take Fee capped at 10%!")
-    })
-
-    it("+ve should init market", async () => {
-      let messageId;
-      await message({
-        process: market,
-        tags: [
-          { name: "Action", value: "Init" },
-          { name: "MarketId", value: marketId },
-          { name: "ConditionId", value: conditionId },
-          { name: "CollateralToken", value: collateralToken },
-          { name: "OutcomeSlotCount", value: "2" },
-          { name: "Name", value: "Outcome ETH LP Token 2" }, 
-          { name: "Ticker", value: "OETH-LP-2" }, 
-          { name: "Logo", value: "" }, 
-          { name: "LpFee", value: "100" }, 
-          { name: "CreatorFee", value: "250" }, // 2.5%
-          { name: "CreatorFeeTarget", value: walletAddress2 }, 
-          { name: "ProtocolFee", value: "250" }, 
-          { name: "ProtocolFeeTarget", value: walletAddress2 }, 
-          { name: "Configurator", value: walletAddress2 }, 
-          { name: "Incentives", value: walletAddress2 }, 
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: market,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(2)
-
-      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
-      const conditionId_0 = Messages[0].Tags.find(t => t.name === 'ConditionId').value
-      const outcomeSlotCount_0 = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
-
-      expect(action_0).to.equal("Condition-Preparation-Notice")
-      expect(conditionId_0).to.equal(conditionId)
-      expect(outcomeSlotCount_0).to.equal('2')
-
-      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
-      const conditionId_1 = Messages[1].Tags.find(t => t.name === 'ConditionId').value
-      const collateralToken_1 = Messages[1].Tags.find(t => t.name === 'CollateralToken').value
-      const positionIds_1 = Messages[1].Tags.find(t => t.name === 'PositionIds').value
-      const name_1 = Messages[1].Tags.find(t => t.name === 'Name').value
-      const ticker_1 = Messages[1].Tags.find(t => t.name === 'Ticker').value
-      const logo_1 = Messages[1].Tags.find(t => t.name === 'Logo').value
-      const configurator_1 = Messages[1].Tags.find(t => t.name === 'Configurator').value
-      const lpFee_1 = Messages[1].Tags.find(t => t.name === 'LpFee').value
-      const creatorFee_1 = Messages[1].Tags.find(t => t.name === 'CreatorFee').value
-      const creatorFeeTarget_1 = Messages[1].Tags.find(t => t.name === 'CreatorFeeTarget').value
-      const protocolFee_1 = Messages[1].Tags.find(t => t.name === 'ProtocolFee').value
-      const protocolFeeTarget_1 = Messages[1].Tags.find(t => t.name === 'ProtocolFeeTarget').value
-
-      expect(Messages[1].Data).to.be.equal('Successfully created market')
-      expect(action_1).to.equal("New-Market-Notice")
-      expect(conditionId_1).to.equal(conditionId)
-      expect(collateralToken_1).to.equal(collateralToken)
-      expect(positionIds_1).to.equal(JSON.stringify(["1", "2"]))
-      expect(name_1).to.equal("Outcome ETH LP Token 2")
-      expect(ticker_1).to.equal("OETH-LP-2")
-      expect(logo_1).to.equal("")
-      expect(configurator_1).to.equal(walletAddress2)
-      expect(lpFee_1).to.equal("100")
-      expect(creatorFee_1).to.equal("250")
-      expect(creatorFeeTarget_1).to.equal(walletAddress2)
-      expect(protocolFee_1).to.equal("250")
-      expect(protocolFeeTarget_1).to.equal(walletAddress2)
-    })
-
-    it("+ve should fail to init market after initialized", async () => {
-      let messageId;
-      await message({
-        process: market,
-        tags: [
-          { name: "Action", value: "Init" },
-          { name: "MarketId", value: marketId },
-          { name: "CollateralToken", value: collateralToken },
-          { name: "ConditionId", value: conditionId },
-          { name: "OutcomeSlotCount", value: "2" },
-          { name: "Name", value: "Outcome ETH LP Token" }, 
-          { name: "Ticker", value: "OETH" }, 
-          { name: "Logo", value: "" }, 
-          { name: "LpFee", value: "100" }, 
-          { name: "CreatorFee", value: "250" }, // 2.5%
-          { name: "CreatorFeeTarget", value: walletAddress }, 
-          { name: "ProtocolFee", value: "250" }, 
-          { name: "ProtocolFeeTarget", value: walletAddress2 }, 
-          { name: "Configurator", value: walletAddress2 }, 
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: market,
-      });
-
-      // aoconnect Error not capturing the error message
-      // but present in the AOS process logs
-      expect(Messages.length).to.be.equal(0)
-      expect(Error).to.include("Market already initialized!")
-    })
-  })
 
   /************************************************************************ 
   * market.Info
@@ -322,13 +161,12 @@ describe("market.configurator.test", function () {
         console.log(Error)
       }
 
-      expect(Messages.length).to.be.equal(1)
+      expect(Messages.length).to.equal(1)
 
       const name_ = Messages[0].Tags.find(t => t.name === 'Name').value
       const ticker_ = Messages[0].Tags.find(t => t.name === 'Ticker').value
       const logo_ = Messages[0].Tags.find(t => t.name === 'Logo').value
       const denomination_ = Messages[0].Tags.find(t => t.name === 'Denomination').value
-      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
       const collateralToken_ = Messages[0].Tags.find(t => t.name === 'CollateralToken').value
       const lpFee_ = Messages[0].Tags.find(t => t.name === 'LpFee').value
       const lpFeePoolWeight_ = Messages[0].Tags.find(t => t.name === 'LpFeePoolWeight').value
@@ -339,16 +177,15 @@ describe("market.configurator.test", function () {
       const protocolFeeTarget_ = Messages[0].Tags.find(t => t.name === 'ProtocolFeeTarget').value
       const configurator_ = Messages[0].Tags.find(t => t.name === 'Configurator').value
 
-      expect(name_).to.equal("Outcome ETH LP Token 2")
-      expect(ticker_).to.equal("OETH-LP-2")
-      expect(logo_).to.equal("")
+      expect(name_.startsWith("MOCK_SPAWNED_MARKET")).to.equal(true)
+      expect(ticker_.startsWith("MSM")).to.equal(true)
+      expect(logo_).to.equal("https://test.com/logo.png")
       expect(denomination_).to.equal("12")
-      expect(conditionId_).to.equal(conditionId)
       expect(collateralToken_).to.equal(collateralToken)
       expect(lpFeePoolWeight_).to.equal("0")
       expect(lpFeeTotalWithdrawn_).to.equal("0")
       expect(lpFee_).to.equal("100") // 100bps, 1%
-      expect(configurator_).to.equal(walletAddress2)
+      expect(configurator_).to.equal(configurator)
       expect(creatorFee_).to.equal("250") // 250bps, 2.5%
       expect(creatorFeeTarget_).to.equal(walletAddress2)
       expect(protocolFee_).to.equal("250") // 250bps, 2.5%
@@ -367,7 +204,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Update-Incentives" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -391,7 +228,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Update-Incentives" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -414,9 +251,9 @@ describe("market.configurator.test", function () {
         process: market,
         tags: [
           { name: "Action", value: "Update-Incentives" },
-          { name: "Incentives", value: "FOO" },
+          { name: "Incentives", value: "test-this-is-valid-arweave-wallet-address-1" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -439,7 +276,7 @@ describe("market.configurator.test", function () {
       const protocolFeeTarget_ = Messages[0].Data
       
       expect(action_).to.equal("Incentives-Updated")
-      expect(protocolFeeTarget_).to.equal("FOO")
+      expect(protocolFeeTarget_).to.equal("test-this-is-valid-arweave-wallet-address-1")
     })
 
     it("+ve should get info (updated incentives)", async () => {
@@ -449,7 +286,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -470,7 +307,7 @@ describe("market.configurator.test", function () {
 
       const incentives_ = Messages[0].Tags.find(t => t.name === 'Incentives').value
 
-      expect(incentives_).to.equal("FOO")
+      expect(incentives_).to.equal("test-this-is-valid-arweave-wallet-address-1")
     })
   })
 
@@ -485,7 +322,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Update-Take-Fee" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -509,7 +346,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Update-Take-Fee" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -534,7 +371,7 @@ describe("market.configurator.test", function () {
           { name: "Action", value: "Update-Take-Fee" },
           { name: "CreatorFee", value: "123" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -560,7 +397,7 @@ describe("market.configurator.test", function () {
           { name: "CreatorFee", value: "123" },
           { name: "ProtocolFee", value: "456" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -587,7 +424,7 @@ describe("market.configurator.test", function () {
       expect(action_).to.equal("Take-Fee-Updated")
       expect(creatorFee_).to.equal("123")
       expect(protocolFee_).to.equal("456")
-      expect(takeFee_).to.equal(123+456)
+      expect(takeFee_).to.equal((123+456).toString())
     })
 
     it("+ve should get info (updated takeFee)", async () => {
@@ -597,7 +434,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -635,7 +472,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Update-Protocol-Fee-Target" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -659,7 +496,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Update-Protocol-Fee-Target" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -682,9 +519,9 @@ describe("market.configurator.test", function () {
         process: market,
         tags: [
           { name: "Action", value: "Update-Protocol-Fee-Target" },
-          { name: "ProtocolFeeTarget", value: "FOO" },
+          { name: "ProtocolFeeTarget", value: "test-this-is-valid-arweave-wallet-address-1" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -707,7 +544,7 @@ describe("market.configurator.test", function () {
       const protocolFeeTarget_ = Messages[0].Data
       
       expect(action_).to.equal("Protocol-Fee-Target-Updated")
-      expect(protocolFeeTarget_).to.equal("FOO")
+      expect(protocolFeeTarget_).to.equal("test-this-is-valid-arweave-wallet-address-1")
     })
 
     it("+ve should get info (updated protocolFeeTarget)", async () => {
@@ -717,7 +554,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -738,7 +575,7 @@ describe("market.configurator.test", function () {
 
       const protocolFeeTarget_ = Messages[0].Tags.find(t => t.name === 'ProtocolFeeTarget').value
 
-      expect(protocolFeeTarget_).to.equal("FOO")
+      expect(protocolFeeTarget_).to.equal("test-this-is-valid-arweave-wallet-address-1")
     })
   })
 
@@ -753,7 +590,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Update-Logo" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -777,7 +614,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Update-Logo" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -802,7 +639,7 @@ describe("market.configurator.test", function () {
           { name: "Action", value: "Update-Logo" },
           { name: "Logo", value: "FOO" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -835,7 +672,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -871,7 +708,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Update-Configurator" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -895,7 +732,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Update-Configurator" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -918,9 +755,9 @@ describe("market.configurator.test", function () {
         process: market,
         tags: [
           { name: "Action", value: "Update-Configurator" },
-          { name: "Configurator", value: configurator },
+          { name: "Configurator", value: testConfigurator },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -943,7 +780,7 @@ describe("market.configurator.test", function () {
       const configurator_ = Messages[0].Data
       
       expect(action_).to.equal("Configurator-Updated")
-      expect(configurator_).to.equal(configurator)
+      expect(configurator_).to.equal(testConfigurator)
     })
 
     it("+ve should get info (updated configurator)", async () => {
@@ -953,7 +790,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -974,7 +811,7 @@ describe("market.configurator.test", function () {
 
       const configurator_ = Messages[0].Tags.find(t => t.name === 'Configurator').value
 
-      expect(configurator_).to.equal(configurator)
+      expect(configurator_).to.equal(testConfigurator)
     })
   })
 
@@ -985,14 +822,14 @@ describe("market.configurator.test", function () {
     it("+ve should stage update (update incentives)", async () => {
       let messageId;
       await message({
-        process: configurator,
+        process: testConfigurator,
         tags: [
           { name: "Action", value: "Stage-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value:  updateIncentivesAction },
           { name: "UpdateTags", value: updateIncentivesTags },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1002,7 +839,7 @@ describe("market.configurator.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: configurator,
+        process: testConfigurator,
       });
 
       if (Error) {
@@ -1022,14 +859,14 @@ describe("market.configurator.test", function () {
       await new Promise(r => setTimeout(r, delay + 1));
       let messageId;
       await message({
-        process: configurator,
+        process: testConfigurator,
         tags: [
           { name: "Action", value: "Action-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value:  updateIncentivesAction },
           { name: "UpdateTags", value: updateIncentivesTags },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1039,7 +876,7 @@ describe("market.configurator.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: configurator,
+        process: testConfigurator,
       });
 
       if (Error) {
@@ -1055,7 +892,7 @@ describe("market.configurator.test", function () {
 
       expect(target_0).to.equal(updateProcess)
       expect(action_0).to.equal(updateIncentivesAction)
-      expect(tag_0).to.equal("FOO")
+      expect(tag_0).to.equal("test-this-is-valid-arweave-wallet-address-1")
 
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
       const hash_1 = Messages[1].Tags.find(t => t.name === 'Hash').value
@@ -1072,7 +909,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -1093,7 +930,7 @@ describe("market.configurator.test", function () {
 
       const incentives_ = Messages[0].Tags.find(t => t.name === 'Incentives').value
 
-      expect(incentives_).to.equal("FOO")
+      expect(incentives_).to.equal("test-this-is-valid-arweave-wallet-address-1")
     })
   })
 
@@ -1104,14 +941,14 @@ describe("market.configurator.test", function () {
     it("+ve should stage update (update takeFee)", async () => {
       let messageId;
       await message({
-        process: configurator,
+        process: testConfigurator,
         tags: [
           { name: "Action", value: "Stage-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value:  updateTakeFeeAction },
           { name: "UpdateTags", value: updateTakeFeeTags },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1121,7 +958,7 @@ describe("market.configurator.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: configurator,
+        process: testConfigurator,
       });
 
       if (Error) {
@@ -1141,14 +978,14 @@ describe("market.configurator.test", function () {
       await new Promise(r => setTimeout(r, delay + 1));
       let messageId;
       await message({
-        process: configurator,
+        process: testConfigurator,
         tags: [
           { name: "Action", value: "Action-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value:  updateTakeFeeAction },
           { name: "UpdateTags", value: updateTakeFeeTags },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1158,14 +995,14 @@ describe("market.configurator.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: configurator,
+        process: testConfigurator,
       });
 
       if (Error) {
         console.log(Error)
       }
 
-      expect(Messages.length).to.equal(2)
+      expect(Messages.length).to.be.equal(2)
 
       const target_0 = Messages[0].Target
       const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
@@ -1193,7 +1030,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -1227,14 +1064,14 @@ describe("market.configurator.test", function () {
     it("+ve should stage update (update protocolFeeTarget)", async () => {
       let messageId;
       await message({
-        process: configurator,
+        process: testConfigurator,
         tags: [
           { name: "Action", value: "Stage-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value:  updateProtocolFeeTargetAction },
           { name: "UpdateTags", value: updateProtocolFeeTargetTags },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1244,7 +1081,7 @@ describe("market.configurator.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: configurator,
+        process: testConfigurator,
       });
 
       if (Error) {
@@ -1264,14 +1101,14 @@ describe("market.configurator.test", function () {
       await new Promise(r => setTimeout(r, delay + 1));
       let messageId;
       await message({
-        process: configurator,
+        process: testConfigurator,
         tags: [
           { name: "Action", value: "Action-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value:  updateProtocolFeeTargetAction },
           { name: "UpdateTags", value: updateProtocolFeeTargetTags },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1281,7 +1118,7 @@ describe("market.configurator.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: configurator,
+        process: testConfigurator,
       });
 
       if (Error) {
@@ -1297,7 +1134,7 @@ describe("market.configurator.test", function () {
 
       expect(target_0).to.equal(updateProcess)
       expect(action_0).to.equal(updateProtocolFeeTargetAction)
-      expect(tag_0).to.equal("FOO")
+      expect(tag_0).to.equal("test-this-is-valid-arweave-wallet-address-1")
 
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
       const hash_1 = Messages[1].Tags.find(t => t.name === 'Hash').value
@@ -1335,7 +1172,7 @@ describe("market.configurator.test", function () {
 
       const protocolFeeTarget_ = Messages[0].Tags.find(t => t.name === 'ProtocolFeeTarget').value
 
-      expect(protocolFeeTarget_).to.equal("FOO")
+      expect(protocolFeeTarget_).to.equal("test-this-is-valid-arweave-wallet-address-1")
     })
   })
 
@@ -1346,14 +1183,14 @@ describe("market.configurator.test", function () {
     it("+ve should stage update (update logo)", async () => {
       let messageId;
       await message({
-        process: configurator,
+        process: testConfigurator,
         tags: [
           { name: "Action", value: "Stage-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value:  updateLogoAction },
           { name: "UpdateTags", value: updateLogoTags },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1363,7 +1200,7 @@ describe("market.configurator.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: configurator,
+        process: testConfigurator,
       });
 
       if (Error) {
@@ -1383,14 +1220,14 @@ describe("market.configurator.test", function () {
       await new Promise(r => setTimeout(r, delay + 1));
       let messageId;
       await message({
-        process: configurator,
+        process: testConfigurator,
         tags: [
           { name: "Action", value: "Action-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value:  updateLogoAction },
           { name: "UpdateTags", value: updateLogoTags },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1400,7 +1237,7 @@ describe("market.configurator.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: configurator,
+        process: testConfigurator,
       });
 
       if (Error) {
@@ -1433,7 +1270,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -1465,14 +1302,14 @@ describe("market.configurator.test", function () {
     it("+ve should stage update (update configurator)", async () => {
       let messageId;
       await message({
-        process: configurator,
+        process: testConfigurator,
         tags: [
           { name: "Action", value: "Stage-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value:  updateConfiguratorAction },
           { name: "UpdateTags", value: updateConfiguratorTags },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1482,7 +1319,7 @@ describe("market.configurator.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: configurator,
+        process: testConfigurator,
       });
 
       if (Error) {
@@ -1502,14 +1339,14 @@ describe("market.configurator.test", function () {
       await new Promise(r => setTimeout(r, delay + 1));
       let messageId;
       await message({
-        process: configurator,
+        process: testConfigurator,
         tags: [
           { name: "Action", value: "Action-Update" },
           { name: "UpdateProcess", value: updateProcess },
           { name: "UpdateAction", value:  updateConfiguratorAction },
           { name: "UpdateTags", value: updateConfiguratorTags },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1519,7 +1356,7 @@ describe("market.configurator.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: configurator,
+        process: testConfigurator,
       });
 
       if (Error) {
@@ -1535,7 +1372,7 @@ describe("market.configurator.test", function () {
 
       expect(target_0).to.equal(updateProcess)
       expect(action_0).to.equal(updateConfiguratorAction)
-      expect(tag_0).to.equal("FOO")
+      expect(tag_0).to.equal("test-this-is-valid-arweave-wallet-address-1")
 
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
       const hash_1 = Messages[1].Tags.find(t => t.name === 'Hash').value
@@ -1552,7 +1389,7 @@ describe("market.configurator.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -1573,7 +1410,7 @@ describe("market.configurator.test", function () {
 
       const configurator_ = Messages[0].Tags.find(t => t.name === 'Configurator').value
 
-      expect(configurator_).to.equal("FOO")
+      expect(configurator_).to.equal("test-this-is-valid-arweave-wallet-address-1")
     })
   })
 

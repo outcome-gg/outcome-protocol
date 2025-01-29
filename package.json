@@ -22,7 +22,7 @@
     "test:integration:platformData": "yarn && mocha 'test/integration/platformData*.js' --timeout 30000",
     "test:integration:platformData:clean": "yarn && yarn test:deploy && mocha 'test/integration/platformData*.js' --timeout 30000",
     "test:integration:configurator": "yarn && mocha 'test/integration/configurator.*.js' --timeout 90000",
-    "test:market:configurator": "yarn && mocha 'test/integration/market.configurator.*.js' --timeout 90000",
+    "test:integration:market-configurator": "yarn && mocha 'test/integration/market-configurator.integration.*.js' --timeout 90000",
     "test:sqlite": "FORMAT=wasm32-unknown-emscripten2 WASM=./AOS-SQLITE.wasm node --test test/**/*.test.js",
     "test:deploy": "scripts/deploy.sh test",
     "prod:deploy": "scripts/deploy.sh prod"
