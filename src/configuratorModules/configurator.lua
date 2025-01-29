@@ -22,8 +22,8 @@ local crypto = require('.crypto')
 
 -- Default Configurator delay
 ConfiguratorDelay = {
-  DEV = 1,                -- 1 second
-  PROD = 3 * 24 * 60 * 60 -- 3 days in seconds
+  DEV = 3 * 1000,                -- 3 seconds in milliseconds
+  PROD = 3 * 24 * 60 * 60 * 1000 -- 3 days in milliseconds
 }
 
 --- Represents a Configurator

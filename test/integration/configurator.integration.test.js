@@ -59,17 +59,17 @@ describe("cpmm.integration.test", function () {
     walletAddress2 = 'm6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0',
 
     // Configurator variables
-    admin = walletAddress2,
-    delay = 5000, 
+    admin = walletAddress,
+    delay = 3000, // 3 seconds
     staged = {},
     updateProcess = "test-this-is-valid-arweave-wallet-address-1",
     updateAction = "UPDATE_ACTION",
     updateTags = JSON.stringify({"TAG1": "FOO", "TAG2": "BAR"}),
     updateData = JSON.stringify({"DATA": 123}),
-    updateAdmin = walletAddress,
-    updateDelay = 4000,
+    updateAdmin = walletAddress2,
+    updateDelay = 4000, // 4 seconds
     hash = keccak256(updateProcess + updateAction + updateTags + updateData).toString('hex'),
-    hashAdmin = keccak256(walletAddress).toString('hex'),
+    hashAdmin = keccak256(walletAddress2).toString('hex'),
     hashDelay = keccak256(updateDelay.toString()).toString('hex'),
     hashNoTags = keccak256(updateProcess + updateAction + "" + updateData).toString('hex'),
     hashNoData = keccak256(updateProcess + updateAction + updateTags + "").toString('hex')
@@ -126,7 +126,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Stage-Update" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -150,7 +150,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Stage-Update" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -175,7 +175,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Stage-Update" },
           { name: "UpdateProcess", value: updateProcess},
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -202,7 +202,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateAction", value: updateAction },
           { name: "UpdateTags", value: "FOO" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -230,7 +230,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateTags", value: updateTags },
           { name: "UpdateData", value: "FOO" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -257,7 +257,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateAction", value: updateAction },
           { name: "UpdateData", value: updateData },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -303,7 +303,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateAction", value: updateAction },
           { name: "UpdateTags", value: updateTags },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -350,7 +350,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateTags", value: updateTags },
           { name: "UpdateData", value: updateData },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -393,7 +393,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -428,7 +428,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Unstage-Update" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -452,7 +452,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Unstage-Update" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -477,7 +477,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Unstage-Update" },
           { name: "UpdateProcess", value: updateProcess },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -504,7 +504,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateAction", value: updateAction },
           { name: "UpdateTags", value: "FOO" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -532,7 +532,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateTags", value: updateTags },
           { name: "UpdateData", value: "FOO" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -560,7 +560,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateTags", value: updateTags },
           { name: "UpdateData", value: updateData },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -588,7 +588,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateTags", value: updateTags },
           { name: "UpdateData", value: updateData },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -621,7 +621,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -656,7 +656,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Action-Update" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -680,7 +680,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Action-Update" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -705,7 +705,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Action-Update" },
           { name: "UpdateProcess", value: updateProcess },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -732,7 +732,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateAction", value: updateAction },
           { name: "UpdateTags", value: "FOO" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -760,7 +760,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateTags", value: updateTags },
           { name: "UpdateData", value: "FOO" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -788,7 +788,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateTags", value: updateTags },
           { name: "UpdateData", value: updateData },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -816,7 +816,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateTags", value: updateTags },
           { name: "UpdateData", value: updateData },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -853,7 +853,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateTags", value: updateTags },
           { name: "UpdateData", value: updateData },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -882,7 +882,7 @@ describe("cpmm.integration.test", function () {
           { name: "UpdateTags", value: updateTags },
           { name: "UpdateData", value: updateData },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -927,7 +927,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -962,7 +962,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Stage-Update-Admin" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -986,7 +986,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Stage-Update-Admin" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1009,9 +1009,9 @@ describe("cpmm.integration.test", function () {
         process: configurator,
         tags: [
           { name: "Action", value: "Stage-Update-Admin" },
-          { name: "UpdateAdmin", value: walletAddress },
+          { name: "UpdateAdmin", value: walletAddress2 },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1049,7 +1049,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Unstage-Update-Admin" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -1074,7 +1074,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Unstage-Update-Admin" },
           { name: "UpdateAdmin", value: "test-this-is-valid-arweave-wallet-address-2" }, 
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1099,7 +1099,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Unstage-Update-Admin" },
           { name: "UpdateAdmin", value: updateAdmin },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1138,7 +1138,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Stage-Update-Admin" },
           { name: "UpdateAdmin", value: updateAdmin },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1171,7 +1171,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Action-Update-Admin" },
         ],
-        signer: createDataItemSigner(wallet),
+        signer: createDataItemSigner(wallet2),
         data: "",
       })
       .then((id) => {
@@ -1196,7 +1196,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Action-Update-Admin" },
           { name: "UpdateAdmin", value: "test-this-is-valid-arweave-wallet-address-2" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1221,7 +1221,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Action-Update-Admin" },
           { name: "UpdateAdmin", value: updateAdmin },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1247,7 +1247,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Action-Update-Admin" },
           { name: "UpdateAdmin", value: updateAdmin },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1280,7 +1280,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet2),
+        signer: createDataItemSigner(wallet),
         data: "",
       })
       .then((id) => {
@@ -1320,7 +1320,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Stage-Update-Delay" },
         ],
-        signer: createDataItemSigner(wallet2), // no longer admin
+        signer: createDataItemSigner(wallet), // no longer admin
         data: "",
       })
       .then((id) => {
@@ -1344,7 +1344,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Stage-Update-Delay" },
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
@@ -1369,7 +1369,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Stage-Update-Delay" },
           { name: "UpdateDelay", value: "FOO" },
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
@@ -1394,7 +1394,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Stage-Update-Delay" },
           { name: "UpdateDelay", value: "-123" },
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
@@ -1419,7 +1419,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Stage-Update-Delay" },
           { name: "UpdateDelay", value: "0" },
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
@@ -1444,7 +1444,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Stage-Update-Delay" },
           { name: "UpdateDelay", value: "1.1" },
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
@@ -1469,7 +1469,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Stage-Update-Delay" },
           { name: "UpdateDelay", value: updateDelay.toString() },
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
@@ -1511,7 +1511,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Unstage-Update-Delay" },
         ],
-        signer: createDataItemSigner(wallet2), // no longer admin
+        signer: createDataItemSigner(wallet), // no longer admin
         data: "",
       })
       .then((id) => {
@@ -1536,7 +1536,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Unstage-Update-Delay" },
           { name: "UpdateDelay", value: "123" }, 
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
@@ -1561,7 +1561,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Unstage-Update-Delay" },
           { name: "UpdateDelay", value: updateDelay.toString() },
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
@@ -1600,7 +1600,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Stage-Update-Delay" },
           { name: "UpdateDelay", value: updateDelay.toString() },
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
@@ -1633,7 +1633,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Action-Update-Delay" },
         ],
-        signer: createDataItemSigner(wallet2), // no longer admin
+        signer: createDataItemSigner(wallet), // no longer admin
         data: "",
       })
       .then((id) => {
@@ -1658,7 +1658,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Action-Update-Delay" },
           { name: "UpdateDelay", value: "123" },
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
@@ -1683,7 +1683,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Action-Update-Delay" },
           { name: "UpdateDelay", value: updateDelay.toString() },
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
@@ -1709,7 +1709,7 @@ describe("cpmm.integration.test", function () {
           { name: "Action", value: "Action-Update-Delay" },
           { name: "UpdateDelay", value: updateDelay.toString() },
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
@@ -1742,7 +1742,7 @@ describe("cpmm.integration.test", function () {
         tags: [
           { name: "Action", value: "Info" },
         ],
-        signer: createDataItemSigner(wallet), // new admin
+        signer: createDataItemSigner(wallet2), // new admin
         data: "",
       })
       .then((id) => {
