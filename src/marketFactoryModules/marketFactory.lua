@@ -199,10 +199,11 @@ function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, ques
     ["LpFee"] = tostring(self.lpFee),
     ["Configurator"] = self.configurator,
     ["Incentives"] = self.incentives,
+    ["DataIndex"] = self.dataIndex,
     ["ProtocolFee"] = tostring(self.protocolFee),
     ["ProtocolFeeTarget"] = self.protocolFeeTarget,
     -- Creator-controlled parameters
-    ["ResolutionAgent "] = resolutionAgent,
+    ["ResolutionAgent"] = resolutionAgent,
     ["CollateralToken"] = collateralToken,
     ["Creator"] = creator,
     ["CreatorFee"] = tostring(creatorFee),
@@ -226,7 +227,7 @@ function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, ques
   }
   self.messageToMarketConfigMapping[msg.Id] = marketConfig
   -- send notice
-  return self.spawnMarketNotice(resolutionAgent, collateralToken, msg.Sender, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, msg)
+  return self.spawnMarketNotice(resolutionAgent, collateralToken, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
 end
 
 function MarketFactoryMethods:initMarket(msg)
@@ -267,7 +268,7 @@ function MarketFactoryMethods:marketsInitialized(msg)
   return msg.reply({Data = json.encode(self.marketsInit)})
 end
 
-function MarketFactoryMethods:marketsByCreator(msg)
+function MarketFactoryMethods:marketsSpawnedByCreator(msg)
   local creatorMarkets = self.marketsSpawnedByCreator[msg.Tags.Creator] or {}
   return msg.reply({Data = json.encode(creatorMarkets)})
 end
@@ -388,6 +389,11 @@ function MarketFactoryMethods:spawnedMarket(msg)
   self.processToMessageMapping[processId] = originalMsgId
   -- add to pending init
   table.insert(self.marketsPendingInit, processId)
+  -- add to spawned by creator
+  if not self.marketsSpawnedByCreator[creator] then
+    self.marketsSpawnedByCreator[creator] = {}
+  end
+  table.insert(self.marketsSpawnedByCreator[creator], processId)
   return true
 end
 

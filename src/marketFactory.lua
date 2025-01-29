@@ -147,10 +147,10 @@ end)
 
 --- Markets by creator handler
 --- @param msg Message The message to handle
---- @return Message marketsByCreator The markets by creator
-Handlers.add("Markets-By-Creator", {Action = "Markets-By-Creator"}, function(msg)
-  marketFactoryValidation.validateMarketsByCreator(msg)
-  return MarketFactory:marketsByCreator(msg)
+--- @return Message marketsSpawnedByCreator The markets by creator
+Handlers.add("Markets-By-Creator", {Action = "Markets-Spawned-By-Creator"}, function(msg)
+  marketFactoryValidation.validateMarketsSpawnedByCreator(msg)
+  return MarketFactory:marketsSpawnedByCreator(msg)
 end)
 
 --- Get process ID handler
@@ -233,7 +233,7 @@ end)
 --- Update utilityToken handler
 --- @param msg Message The message to handle
 --- @return Message updateUtilityTokenNotice The update utility token notice
-Handlers.add("Update-Utility-Token", {Action = "Update-UtilityToken"}, function(msg)
+Handlers.add("Update-UtilityToken", {Action = "Update-UtilityToken"}, function(msg)
   marketFactoryValidation.validateUpdateUtilityToken(msg, MarketFactory.configurator)
   return MarketFactory:updateUtilityToken(msg.Tags.UpdateToken, msg)
 end)
@@ -241,7 +241,7 @@ end)
 --- Approve collateralToken handler
 --- @param msg Message The message to handle
 --- @return Message approveCollateralTokenNotice The approve collateral token notice
-Handlers.add("Approve-Collateral-Token", {Action = "Approve-Collateral-Token"}, function(msg)
+Handlers.add("Approve-CollateralToken", {Action = "Approve-CollateralToken"}, function(msg)
   marketFactoryValidation.validateApproveCollateralToken(msg, MarketFactory.configurator)
   local isApprove = string.lower(msg.Tags.IsApprove) == "true"
   return MarketFactory:approveCollateralToken(msg.Tags.CollateralToken, isApprove, msg)

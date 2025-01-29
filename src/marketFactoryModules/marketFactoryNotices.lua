@@ -17,9 +17,12 @@ local json = require('json')
 --- @param question string The market question
 --- @param rules string The market rules
 --- @param outcomeSlotCount number The number of outcome slots
+--- @param category string The market category
+--- @param subcategory string The market subcategory
+--- @param logo string The market logo
 --- @param msg Message The message received
 --- @return Message spawnMarketNotice The spawn market notice
-function MarketFactoryNotices.spawnMarketNotice(resolutionAgent, collateralToken, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, msg)
+function MarketFactoryNotices.spawnMarketNotice(resolutionAgent, collateralToken, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
   return msg.reply({
     Action = "Spawn-Market-Notice",
     ResolutionAgent = resolutionAgent,
@@ -30,6 +33,9 @@ function MarketFactoryNotices.spawnMarketNotice(resolutionAgent, collateralToken
     Question = question,
     Rules = rules,
     OutcomeSlotCount = tostring(outcomeSlotCount),
+    Category = category,
+    Subcategory = subcategory,
+    Logo = logo,
     ["Original-Msg-Id"] = msg.Id
   })
 end

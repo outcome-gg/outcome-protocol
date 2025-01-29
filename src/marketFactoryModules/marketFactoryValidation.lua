@@ -40,9 +40,9 @@ READ METHODS
 ============
 ]]
 
---- Validates a marketsByCreator message
+--- Validates a marketsSpawnedByCreator message
 --- @param msg Message The message received
-function marketFactoryValidation.validateMarketsByCreator(msg)
+function marketFactoryValidation.validateMarketsSpawnedByCreator(msg)
   sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
 end
 

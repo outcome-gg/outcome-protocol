@@ -115,7 +115,7 @@ function MarketMethods:info(msg)
     Configurator = self.cpmm.configurator,
     Incentives = self.incentives,
     DataIndex = self.dataIndex,
-    ResolutionAgent = self.cpmm.resolutionAgent,
+    ResolutionAgent = self.cpmm.tokens.resolutionAgent,
     Question = self.question,
     Creator = self.creator,
     LpFee = tostring(self.cpmm.lpFee),

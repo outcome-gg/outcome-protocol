@@ -7,11 +7,12 @@ import path from "path";
 import { error } from "console";
 import dotenv from 'dotenv';
 import keccak256 from 'keccak256'
+import exp from "constants";
 
 dotenv.config();
 
-const marketFactory = process.env.TEST_MARKET_FACTORY7;
-const collateralToken = process.env.TEST_COLLATERAL_TOKEN3;
+const marketFactory = process.env.TEST_MARKET_FACTORY8;
+const collateralToken = process.env.DEV_MOCK_DAI;
 
 console.log("MARKET_FACTORY: ", marketFactory)
 console.log("COLLATERAL_TOKEN: ", collateralToken)
@@ -23,8 +24,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 //Global variables
-let processId
-let messageId
+let processId;
+let messageId;
+let originalMessageId;
+let spawnedMarketProcessId;
 
 // Txn execution variables
 let wallet;
@@ -33,36 +36,16 @@ let walletAddress;
 let walletAddress2;
 
 // Market variables
-let question;
-let questionId;
 let resolutionAgent;
-let conditionId;
+let question;
+let rules;
 let outcomeSlotCount;
-let parentCollectionId;
-let marketId;
-let partition;
-let distribution;
-let marketProcessId;
-let collateralTokenTicker;
-let lpTokenLogo;
-let payoutNumerators;
-// Parlay variables
-// -- market 2
-let question2;
-let questionId2;
-let conditionaId2;
-let marketId2;
-let marketProcessId2;
-let resolutionAgent2;
-let payoutNumerators2;
-// -- market 3
-let question3;
-let questionId3;
-let conditionaId3;
-let marketId3;
-let marketProcessId3;
-let resolutionAgent3;
-let payoutNumerators3;
+let creatorFee;
+let creatorFeeTarget;
+let category;
+let subcategory;
+let logo;
+
 
 /* 
 * Tests
@@ -80,51 +63,36 @@ describe("marketFactory.integration.test", function () {
     walletAddress = 'XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I',
     walletAddress2 = 'm6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0',
     // market variables
-    question = "Trump becomes the 47th US President",
-    questionId = keccak256(question + marketFactory).toString('hex'),
     resolutionAgent = walletAddress2,
+    question = "Trump becomes the 47th US President",
+    rules = "Where we're going we don't need rules",
     outcomeSlotCount = '2',
-    parentCollectionId = "",
-    conditionId = keccak256(resolutionAgent + questionId + outcomeSlotCount).toString('hex'),
-    marketId = keccak256(collateralToken + parentCollectionId + conditionId + walletAddress).toString('hex'),
-    partition = JSON.stringify([1,1]),
-    distribution = JSON.stringify([50,50]),
-    payoutNumerators = JSON.stringify([1,0]),
-    // collateral token ticker
-    collateralTokenTicker = 'DAI',
-    // lp token logo
-    lpTokenLogo = '',
-    // parlay variables
-    // -- market 2
-    question2 = "Bitcoin breaks $100k in 2024",
-    questionId2 = keccak256(question2 + marketFactory).toString('hex'),
-    resolutionAgent2= walletAddress,
-    conditionaId2 = keccak256(resolutionAgent2 + questionId2 + outcomeSlotCount).toString('hex'),
-    marketId2 = keccak256(collateralToken + parentCollectionId + conditionaId2 + walletAddress).toString('hex'),
-    payoutNumerators2 = JSON.stringify([1,0]),
-    // -- market 3
-    question3 = "World War 3 in 2025",
-    questionId3 = keccak256(question3 + marketFactory).toString('hex'),
-    resolutionAgent3 = walletAddress2,
-    conditionaId3 = keccak256(resolutionAgent3 + questionId3 + outcomeSlotCount).toString('hex'),
-    marketId3 = keccak256(collateralToken + parentCollectionId + conditionaId3 + walletAddress).toString('hex'),
-    payoutNumerators3 = JSON.stringify([1,0])
-    
+    creatorFee = "250",
+    creatorFeeTarget = "test-this-is-valid-arweave-wallet-address-1",
+    category = "Politics",
+    subcategory = "US Politics",
+    logo = "https://www.ao.market/logo.png"
   ))
 
-  /************************************************************************ 
-  * ConditionalTokens.Setup
+  /***********************************************************************
+  * MarketFactory: SPAWN MARKET
   ************************************************************************/
-  describe("cpmm.ConditionalTokens.Setup", function () {
-    it("+ve should get conditionId", async () => {
-      let messageId;
+  describe("MarketFactory.Spawn-Market", function () {
+    it("+ve should spawn a market", async () => {
       await message({
-        process: conditionalTokens,
+        process: marketFactory,
         tags: [
-          { name: "Action", value: "Get-Condition-Id" },
+          { name: "Action", value: "Spawn-Market" },
+          { name: "CollateralToken", value: collateralToken },
           { name: "ResolutionAgent", value: resolutionAgent },
-          { name: "QuestionId", value: questionId },
-          { name: "OutcomeSlotCount", value: "2" }, 
+          { name: "Question", value: question },
+          { name: "Rules", value: rules },
+          { name: "OutcomeSlotCount", value: outcomeSlotCount },
+          { name: "CreatorFee", value: creatorFee },
+          { name: "CreatorFeeTarget", value: creatorFeeTarget },
+          { name: "Category", value: category },
+          { name: "Subcategory", value: subcategory },
+          { name: "Logo", value: logo }
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -136,7 +104,122 @@ describe("marketFactory.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: conditionalTokens,
+        process: marketFactory,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+
+      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
+      const resolutionAgent_ = Messages[0].Tags.find(t => t.name === 'ResolutionAgent').value
+      const collateralToken_ = Messages[0].Tags.find(t => t.name === 'CollateralToken').value
+      const creator_ = Messages[0].Tags.find(t => t.name === 'Creator').value
+      const creatorFee_ = Messages[0].Tags.find(t => t.name === 'CreatorFee').value
+      const creatorFeeTarget_ = Messages[0].Tags.find(t => t.name === 'CreatorFeeTarget').value
+      const question_ = Messages[0].Tags.find(t => t.name === 'Question').value
+      const rules_ = Messages[0].Tags.find(t => t.name === 'Rules').value
+      const outcomeSlotCount_ = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
+      const category_ = Messages[0].Tags.find(t => t.name === 'Category').value
+      const subcategory_ = Messages[0].Tags.find(t => t.name === 'Subcategory').value
+      const logo_ = Messages[0].Tags.find(t => t.name === 'Logo').value
+      const originalMessageId_ = Messages[0].Tags.find(t => t.name === 'Original-Msg-Id').value
+
+      expect(action_).to.equal("Spawn-Market-Notice")
+      expect(resolutionAgent_).to.equal(resolutionAgent)
+      expect(collateralToken_).to.equal(collateralToken)
+      expect(creator_).to.equal(walletAddress)
+      expect(creatorFee_).to.equal(creatorFee)
+      expect(creatorFeeTarget_).to.equal(creatorFeeTarget)
+      expect(question_).to.equal(question)
+      expect(rules_).to.equal(rules)
+      expect(outcomeSlotCount_).to.equal(outcomeSlotCount)
+      expect(category_).to.equal(category)
+      expect(subcategory_).to.equal(subcategory)
+      expect(logo_).to.equal(logo)
+      expect(originalMessageId_).to.equal(messageId)
+      originalMessageId = originalMessageId_
+    })
+
+    it("+ve should get spawned market process id", async () => {
+      console.log("Waiting 8s for market process to spawn...")
+      await new Promise(resolve => setTimeout(resolve, 8000)); 
+      await message({
+        process: marketFactory,
+        tags: [
+          { name: "Action", value: "Get-Process-Id" },
+          { name: "Original-Msg-Id", value: originalMessageId },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: marketFactory,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+      spawnedMarketProcessId = Messages[0].Data
+    })
+
+    it("+ve should get markets pending", async () => {
+      await message({
+        process: marketFactory,
+        tags: [
+          { name: "Action", value: "Markets-Pending" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: marketFactory,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+
+      const data_ = JSON.parse(Messages[0].Data)
+      expect(data_[0]).to.equal(spawnedMarketProcessId)
+    })
+
+    it("+ve should get latest process id for creator", async () => {
+      await message({
+        process: marketFactory,
+        tags: [
+          { name: "Action", value: "Get-Latest-Process-Id-For-Creator" },
+          { name: "Creator", value: walletAddress },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: marketFactory,
       });
 
       if (Error) {
@@ -145,143 +228,79 @@ describe("marketFactory.integration.test", function () {
 
       expect(Messages.length).to.be.equal(1)
 
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const conditionId_ = Messages[0].Tags.find(t => t.name === 'ConditionId').value
-      const questionId_ = Messages[0].Tags.find(t => t.name === 'QuestionId').value
-      const resolutionAgent_ = Messages[0].Tags.find(t => t.name === 'ResolutionAgent').value
-      const outcomeSlotCount_ = Messages[0].Tags.find(t => t.name === 'OutcomeSlotCount').value
+      const latestPositionIdForCreator = Messages[0].Data
+      expect(latestPositionIdForCreator).to.equal(spawnedMarketProcessId)
+    })
 
-      expect(action_).to.equal("Condition-Id")
-      expect(conditionId_).to.equal(conditionId)
-      expect(questionId_).to.equal(questionId)
-      expect(resolutionAgent_).to.equal(resolutionAgent)
-      expect(outcomeSlotCount_).to.equal("2")
+    it("+ve should get markets pending", async () => {
+      await message({
+        process: marketFactory,
+        tags: [
+          { name: "Action", value: "Markets-Pending" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: marketFactory,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+
+      const marketsPending = JSON.parse(Messages[0].Data)
+      expect(marketsPending.length).to.equal(1)
+      expect(marketsPending[0]).to.equal(spawnedMarketProcessId)
+    })
+
+    it("+ve should get no markets init", async () => {
+      await message({
+        process: marketFactory,
+        tags: [
+          { name: "Action", value: "Markets-Init" },
+        ],
+        signer: createDataItemSigner(wallet),
+        data: "",
+      })
+      .then((id) => {
+        messageId = id;
+      })
+      .catch(console.error);
+
+      let { Messages, Error } = await result({
+        message: messageId,
+        process: marketFactory,
+      });
+
+      if (Error) {
+        console.log(Error)
+      }
+
+      expect(Messages.length).to.equal(1)
+
+      const marketsInit = JSON.parse(Messages[0].Data)
+      expect(marketsInit.length).to.equal(0)
     })
   })
 
   /***********************************************************************
-  * MarketFactory: CREATE MARKET
+  * MarketFactory: INIT MARKET
   ************************************************************************/
-  describe("MarketFactory.Create-Market", function () {
-    it("+ve should approve a collateral", async () => {
-      await message({
-        process: marketFactory,
-        tags: [
-          { name: "Action", value: "Update-Lookup" },
-          { name: "CollateralToken", value: collateralToken },
-          { name: "CollateralTokenTicker", value: collateralTokenTicker },
-          { name: "LpTokenLogo", value: lpTokenLogo },
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketFactory,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const data_ = JSON.parse(Messages[0].Data)
-      
-      expect(action_).to.equal("Lookup-Updated")
-      expect(data_.ticker).to.equal(collateralTokenTicker)
-      expect(data_.logo).to.equal(lpTokenLogo)
-    })
-
-    it("+ve should create a market", async () => {
-      await message({
-        process: collateralToken,
-        tags: [
-          { name: "Action", value: "Transfer" },
-          { name: "Quantity", value: parseAmount(100, 12) },
-          { name: "Recipient", value: marketFactory },
-          { name: "X-Action", value: "Create-Market" },
-          { name: "X-Question", value: question },
-          { name: "X-ResolutionAgent", value: resolutionAgent },
-          { name: "X-OutcomeSlotCount", value: outcomeSlotCount },
-          { name: "X-ParentCollectionId", value: "" },
-          { name: "X-Partition", value: partition },
-          { name: "X-Distribution", value: distribution },
-
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: collateralToken,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      // credit + debit notices
-      expect(Messages.length).to.be.equal(2)
-    })
-
-    it("+ve should get market data (status==created)", async () => {
-      console.log("Waiting 15s for market to be created...")
-      await new Promise(resolve => setTimeout(resolve, 15000)); 
-      await message({
-        process: marketFactory,
-        tags: [
-          { name: "Action", value: "Get-Market-Data" },
-          { name: "MarketId", value: marketId },
-
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketFactory,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const data_ = JSON.parse(Messages[0].Data)
-
-      // @dev set marketProcessId for later tests
-      marketProcessId = data_.process_id
-      console.log("marketProcessId: ", marketProcessId)
-      
-      expect(action_).to.equal("Market-Data")
-      expect(data_.status).to.equal("created")
-    })
-
+  describe("MarketFactory.Init-Market", function () {
     it("+ve should init a market", async () => {
       await message({
         process: marketFactory,
         tags: [
           { name: "Action", value: "Init-Market" },
-          { name: "MarketId", value: marketId }
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -300,209 +319,24 @@ describe("marketFactory.integration.test", function () {
         console.log(Error)
       }
 
-      // init notices?
-      expect(Messages.length).to.be.equal(1)
+      expect(Messages.length).to.be.equal(4)
 
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const marketId_ = Messages[0].Tags.find(t => t.name === 'MarketId').value
-
-      // @dev Market-Init-Notice is returned later as shown via this message:
-      // https://www.ao.link/#/message/g2osUv9Ocpotip_JY9TO11JGoUxyWEEBeJqiopdU-vM
-      // expect(action_).to.equal("Market-Init-Notice")
-      expect(action_).to.equal("Init")
-      expect(marketId_).to.equal(marketId)
-    })
-
-    it("+ve should get market data (status==init)", async () => {
-      console.log("Waiting 5s for market to be init...")
-      await new Promise(resolve => setTimeout(resolve, 5000)); 
-      await message({
-        process: marketFactory,
-        tags: [
-          { name: "Action", value: "Get-Market-Data" },
-          { name: "MarketId", value: marketId },
-
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketFactory,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const data_ = JSON.parse(Messages[0].Data)
-
-      expect(action_).to.equal("Market-Data")
-      expect(data_.status).to.equal("init")
-    })
-
-    it("+ve should get market data (status==funded)", async () => {
-      console.log("Waiting 5s for market to be funded...")
-      await new Promise(resolve => setTimeout(resolve, 5000)); 
-      await message({
-        process: marketFactory,
-        tags: [
-          { name: "Action", value: "Get-Market-Data" },
-          { name: "MarketId", value: marketId },
-
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketFactory,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const data_ = JSON.parse(Messages[0].Data)
-
-      expect(action_).to.equal("Market-Data")
-      expect(data_.status).to.equal("funded")
-    })
-
-    it("+ve should have sent LP Tokens", async () => {
-      await message({
-        process: marketProcessId,
-        tags: [
-          { name: "Action", value: "Balances" },
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketProcessId,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const data_ = JSON.parse(Messages[0].Data)
-
-      expect(data_[walletAddress]).to.equal('100000000000000')
-    })
-  })
-
-  /***********************************************************************
-  * MarketFactory: CREATE MARKET 2
-  ************************************************************************/
-  describe("MarketFactory.Create-Market.2", function () {
-    it("+ve should create market 2", async () => {
-      await message({
-        process: collateralToken,
-        tags: [
-          { name: "Action", value: "Transfer" },
-          { name: "Quantity", value: parseAmount(100, 12) },
-          { name: "Recipient", value: marketFactory },
-          { name: "X-Action", value: "Create-Market" },
-          { name: "X-Question", value: question2 },
-          { name: "X-ResolutionAgent", value: resolutionAgent2 },
-          { name: "X-OutcomeSlotCount", value: outcomeSlotCount },
-          { name: "X-ParentCollectionId", value: "" },
-          { name: "X-Partition", value: partition },
-          { name: "X-Distribution", value: distribution },
-
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: collateralToken,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      // credit + debit notices
-      expect(Messages.length).to.be.equal(2)
-    })
-
-    it("+ve should get market 2 data (status==created)", async () => {
-      console.log("Waiting 15s for market to be created...")
-      await new Promise(resolve => setTimeout(resolve, 15000)); 
-      await message({
-        process: marketFactory,
-        tags: [
-          { name: "Action", value: "Get-Market-Data" },
-          { name: "MarketId", value: marketId2 },
-
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketFactory,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const data_ = JSON.parse(Messages[0].Data)
-
-      // @dev set marketProcessId for later tests
-      marketProcessId2 = data_.process_id
-      console.log("marketProcessId2: ", marketProcessId2)
+      const action_0 = Messages[0].Tags.find(t => t.name === 'Action').value
+      const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
+      const action_2 = Messages[2].Tags.find(t => t.name === 'Action').value
+      const action_3 = Messages[3].Tags.find(t => t.name === 'Action').value
       
-      expect(action_).to.equal("Market-Data")
-      expect(data_.status).to.equal("created")
+      expect(action_0).to.equal("Eval")
+      expect(action_1).to.equal("Log-Market")
+      expect(action_2).to.equal("Log-Market")
+      expect(action_3).to.equal("Init-Market-Notice")
     })
 
-    it("+ve should init market 2", async () => {
+    it("+ve should get markets init", async () => {
       await message({
         process: marketFactory,
         tags: [
-          { name: "Action", value: "Init-Market" },
-          { name: "MarketId", value: marketId2 }
+          { name: "Action", value: "Markets-Init" },
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -521,141 +355,26 @@ describe("marketFactory.integration.test", function () {
         console.log(Error)
       }
 
-      // init notices?
-      expect(Messages.length).to.be.equal(1)
+      expect(Messages.length).to.equal(1)
 
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const marketId_ = Messages[0].Tags.find(t => t.name === 'MarketId').value
-
-      // @dev Market-Init-Notice is returned later as shown via this message:
-      // https://www.ao.link/#/message/g2osUv9Ocpotip_JY9TO11JGoUxyWEEBeJqiopdU-vM
-      // expect(action_).to.equal("Market-Init-Notice")
-      expect(action_).to.equal("Init")
-      expect(marketId_).to.equal(marketId2)
-    })
-
-    it("+ve should get market 2 data (status==init)", async () => {
-      console.log("Waiting 5s for market to be init...")
-      await new Promise(resolve => setTimeout(resolve, 5000)); 
-      await message({
-        process: marketFactory,
-        tags: [
-          { name: "Action", value: "Get-Market-Data" },
-          { name: "MarketId", value: marketId2 },
-
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketFactory,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const data_ = JSON.parse(Messages[0].Data)
-
-      expect(action_).to.equal("Market-Data")
-      expect(data_.status).to.equal("init")
-    })
-
-    it("+ve should get market 2 data (status==funded)", async () => {
-      console.log("Waiting 5s for market to be funded...")
-      await new Promise(resolve => setTimeout(resolve, 5000)); 
-      await message({
-        process: marketFactory,
-        tags: [
-          { name: "Action", value: "Get-Market-Data" },
-          { name: "MarketId", value: marketId2 },
-
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketFactory,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const data_ = JSON.parse(Messages[0].Data)
-
-      expect(action_).to.equal("Market-Data")
-      expect(data_.status).to.equal("funded")
-    })
-
-    it("+ve should have sent market 2 LP Tokens", async () => {
-      await message({
-        process: marketProcessId2,
-        tags: [
-          { name: "Action", value: "Balances" },
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketProcessId2,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const data_ = JSON.parse(Messages[0].Data)
-
-      expect(data_[walletAddress]).to.equal('100000000000000')
+      const marketsInit = JSON.parse(Messages[0].Data)
+      expect(marketsInit.length).to.equal(1)
+      expect(marketsInit[0]).to.equal(spawnedMarketProcessId)
     })
   })
 
   /***********************************************************************
-  * MarketFactory: CREATE MARKET 3
+  * MarketFactory: SPAWNED MARKET
   ************************************************************************/
-  describe("MarketFactory.Create-Market.3", function () {
-    it("+ve should create market 3", async () => {
+  describe("MarketFactory.Spawned-Market", function () {
+    it("+ve should get spawned market info", async () => {
+      console.log("Waiting 10s for market process to init...")
+      await new Promise(resolve => setTimeout(resolve, 10000)); 
+      console.log("spawnedMarketProcessId: ", spawnedMarketProcessId)
       await message({
-        process: collateralToken,
+        process: spawnedMarketProcessId,
         tags: [
-          { name: "Action", value: "Transfer" },
-          { name: "Quantity", value: parseAmount(100, 12) },
-          { name: "Recipient", value: marketFactory },
-          { name: "X-Action", value: "Create-Market" },
-          { name: "X-Question", value: question3 },
-          { name: "X-ResolutionAgent", value: resolutionAgent3 },
-          { name: "X-OutcomeSlotCount", value: outcomeSlotCount },
-          { name: "X-ParentCollectionId", value: "" },
-          { name: "X-Partition", value: partition },
-          { name: "X-Distribution", value: distribution },
-
+          { name: "Action", value: "Info" },
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -667,367 +386,62 @@ describe("marketFactory.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: collateralToken,
+        process: spawnedMarketProcessId,
       });
 
       if (Error) {
         console.log(Error)
       }
 
-      // credit + debit notices
-      expect(Messages.length).to.be.equal(2)
-    })
+      expect(Messages.length).to.equal(1)
 
-    it("+ve should get market 3 data (status==created)", async () => {
-      console.log("Waiting 15s for market to be created...")
-      await new Promise(resolve => setTimeout(resolve, 15000)); 
-      await message({
-        process: marketFactory,
-        tags: [
-          { name: "Action", value: "Get-Market-Data" },
-          { name: "MarketId", value: marketId3 },
-
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketFactory,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const data_ = JSON.parse(Messages[0].Data)
-
-      // @dev set marketProcessId for later tests
-      marketProcessId3 = data_.process_id
-      console.log("marketProcessId3: ", marketProcessId3)
+      const configurator_ = Messages[0].Tags.find(t => t.name === 'Configurator').value
+      const resolutionAgent_ = Messages[0].Tags.find(t => t.name === 'ResolutionAgent').value
+      const collateralToken_ = Messages[0].Tags.find(t => t.name === 'CollateralToken').value
+      const dataIndex_ = Messages[0].Tags.find(t => t.name === 'DataIndex').value
       
-      expect(action_).to.equal("Market-Data")
-      expect(data_.status).to.equal("created")
-    })
+      expect(configurator_).to.equal("8hKbJUFUGnLlxK5_j7kVnH40tcvXQPsYEuBZ0fwke1U")
+      expect(resolutionAgent_).to.equal(resolutionAgent)
+      expect(collateralToken_).to.equal(collateralToken)
+      expect(dataIndex_).to.equal("odLEQRm_H6ZqUejiTbkS1Zuq3YfCDz5dcYFLy0gm-eM")
+      
+      const name_ = Messages[0].Tags.find(t => t.name === 'Name').value
+      const ticker_ = Messages[0].Tags.find(t => t.name === 'Ticker').value
+      const denomination_ = Messages[0].Tags.find(t => t.name === 'Denomination').value
+      const logo_ = Messages[0].Tags.find(t => t.name === 'Logo').value
+      
+      expect(name_.split("-")[0]).to.equal("Outcome")
+      expect(ticker_.split("-")[0]).to.equal("OUTCOME")
+      expect(denomination_).to.equal("12")
+      expect(logo_).to.equal(logo)
 
-    it("+ve should init market A", async () => {
-      await message({
-        process: marketFactory,
-        tags: [
-          { name: "Action", value: "Init-Market" },
-          { name: "MarketId", value: marketId3 }
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
+      const creator_ = Messages[0].Tags.find(t => t.name === 'Creator').value
+      const creatorFee_ = Messages[0].Tags.find(t => t.name === 'CreatorFee').value
+      const creatorFeeTarget_ = Messages[0].Tags.find(t => t.name === 'CreatorFeeTarget').value
+      
+      expect(creator_).to.equal(walletAddress)
+      expect(creatorFee_).to.equal(creatorFee)
+      expect(creatorFeeTarget_).to.equal(creatorFeeTarget)
+      
+      const protocolFee_ = Messages[0].Tags.find(t => t.name === 'ProtocolFee').value
+      const protocolFeeTarget_ = Messages[0].Tags.find(t => t.name === 'ProtocolFeeTarget').value
+      
+      expect(protocolFee_).to.equal("250")
+      expect(protocolFeeTarget_).to.equal("m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0")
 
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketFactory,
-      });
+      const lpFee = Messages[0].Tags.find(t => t.name === 'LpFee').value
+      const lpFeePoolWeight = Messages[0].Tags.find(t => t.name === 'LpFeePoolWeight').value
+      const lpFeeTotalWithdrawn = Messages[0].Tags.find(t => t.name === 'LpFeeTotalWithdrawn').value
+      
+      expect(lpFee).to.equal("100")
+      expect(lpFeePoolWeight).to.equal("0")
+      expect(lpFeeTotalWithdrawn).to.equal("0")
 
-      if (Error) {
-        console.log(Error)
-      }
-
-      // init notices?
-      expect(Messages.length).to.be.equal(1)
-
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const marketId_ = Messages[0].Tags.find(t => t.name === 'MarketId').value
-
-      // @dev Market-Init-Notice is returned later as shown via this message:
-      // https://www.ao.link/#/message/g2osUv9Ocpotip_JY9TO11JGoUxyWEEBeJqiopdU-vM
-      // expect(action_).to.equal("Market-Init-Notice")
-      expect(action_).to.equal("Init")
-      expect(marketId_).to.equal(marketId3)
-    })
-
-    it("+ve should get market 3 data (status==init)", async () => {
-      console.log("Waiting 5s for market to be init...")
-      await new Promise(resolve => setTimeout(resolve, 5000)); 
-      await message({
-        process: marketFactory,
-        tags: [
-          { name: "Action", value: "Get-Market-Data" },
-          { name: "MarketId", value: marketId3 },
-
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketFactory,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const data_ = JSON.parse(Messages[0].Data)
-
-      expect(action_).to.equal("Market-Data")
-      expect(data_.status).to.equal("init")
-    })
-
-    it("+ve should get market A data (status==funded)", async () => {
-      console.log("Waiting 5s for market to be funded...")
-      await new Promise(resolve => setTimeout(resolve, 5000)); 
-      await message({
-        process: marketFactory,
-        tags: [
-          { name: "Action", value: "Get-Market-Data" },
-          { name: "MarketId", value: marketId3 },
-
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketFactory,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-      const data_ = JSON.parse(Messages[0].Data)
-
-      expect(action_).to.equal("Market-Data")
-      expect(data_.status).to.equal("funded")
-    })
-
-    it("+ve should have sent market 3 LP Tokens", async () => {
-      await message({
-        process: marketProcessId3,
-        tags: [
-          { name: "Action", value: "Balances" },
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketProcessId3,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-
-      const data_ = JSON.parse(Messages[0].Data)
-
-      expect(data_[walletAddress]).to.equal('100000000000000')
+      const question_ = Messages[0].Tags.find(t => t.name === 'Question').value
+      const positionIds_ = Messages[0].Tags.find(t => t.name === 'PositionIds').value
+      
+      expect(question_).to.equal(question)
+      expect(positionIds_).to.equal('["1","2"]')
     })
   })
-  
-  /***********************************************************************
-  * MarketFactory: CREATE PARLAY
-  ************************************************************************/
-  describe("MarketFactory.Parlay-Market", function () {
-    it("+ve should create parlay", async () => {
-      let marketId_1 = "435fc0cde62808b14fad4bf210a587ab9740d6a927e7d7030d49e57dc5e88df5"
-      let marketId_2 = "f958f828483eb87d78a524181ccee4cf047af0f1b9cc77ce050e813e13d75b85"
-      let marketId_3 = "7dffa283a47067c40a8b35437db5782a326d7681c6acfb5af1caadce8cefb3bd"
-      await message({
-        process: marketFactory,
-        tags: [
-          { name: "Action", value: "Create-Parlay" },
-          { name: "MarketIds", value: JSON.stringify([marketId_1, marketId_2, marketId_3]) },
-          { name: "IndexSets", value: JSON.stringify(["1", "1", "1"]) },
-          { name: "Distribution", value: distribution },
-        ],
-        signer: createDataItemSigner(wallet),
-        data: "",
-      })
-      .then((id) => {
-        messageId = id;
-      })
-      .catch(console.error);
-
-      let { Messages, Error } = await result({
-        message: messageId,
-        process: marketFactory,
-      });
-
-      if (Error) {
-        console.log(Error)
-      }
-
-      expect(Messages.length).to.be.equal(1)
-    })
-  })
-
-  /***********************************************************************
-  * MarketFactory: REPORT PAYOUTS
-  ************************************************************************/
-  // describe("MarketFactory.Report-Payouts", function () {
-  //   it("+ve should report payouts for market 1", async () => {
-  //     await message({
-  //       process: marketFactory,
-  //       tags: [
-  //         { name: "Action", value: "Report-Payouts" },
-  //         { name: "MarketId", value: marketId },
-  //         { name: "PayoutNumerators", value: payoutNumerators },
-  //       ],
-  //       signer: createDataItemSigner(wallet2),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: marketFactory,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-
-  //     expect(action_).to.equal("Payouts-Reported")
-  //   })
-  //   it("+ve should report payouts for market 2", async () => {
-  //     await message({
-  //       process: marketFactory,
-  //       tags: [
-  //         { name: "Action", value: "Report-Payouts" },
-  //         { name: "MarketId", value: marketId2 },
-  //         { name: "PayoutNumerators", value: payoutNumerators2 },
-  //       ],
-  //       signer: createDataItemSigner(wallet),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: marketFactory,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-
-  //     expect(action_).to.equal("Payouts-Reported")
-  //   })
-  //   it("+ve should report payouts for market 3", async () => {
-  //     await message({
-  //       process: marketFactory,
-  //       tags: [
-  //         { name: "Action", value: "Report-Payouts" },
-  //         { name: "MarketId", value: marketId3 },
-  //         { name: "PayoutNumerators", value: payoutNumerators3 },
-  //       ],
-  //       signer: createDataItemSigner(wallet2),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: marketFactory,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-
-  //     const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
-
-  //     expect(action_).to.equal("Payouts-Reported")
-  //   })
-  // })
-
-  /***********************************************************************
-  * MarketFactory: DERIVE PAYOUTS FOR PARLAY
-  ************************************************************************/
-  // describe("MarketFactory.Parlay-Market", function () {
-  //   it("+ve should create a parlay market", async () => {
-  //     let marketId_1 = "435fc0cde62808b14fad4bf210a587ab9740d6a927e7d7030d49e57dc5e88df5"
-  //     let marketId_2 = "f958f828483eb87d78a524181ccee4cf047af0f1b9cc77ce050e813e13d75b85"
-  //     let marketId_3 = "7dffa283a47067c40a8b35437db5782a326d7681c6acfb5af1caadce8cefb3bd"
-  //     await message({
-  //       process: marketFactory,
-  //       tags: [
-  //         { name: "Action", value: "Derive-Payout" },
-  //         { name: "MarketIds", value: JSON.stringify([marketId_1, marketId_2, marketId_3]) },
-  //         { name: "IndexSets", value: JSON.stringify(["1", "1", "1"]) },
-  //         { name: "Distribution", value: distribution },
-  //       ],
-  //       signer: createDataItemSigner(wallet2),
-  //       data: "",
-  //     })
-  //     .then((id) => {
-  //       messageId = id;
-  //     })
-  //     .catch(console.error);
-
-  //     let { Messages, Error } = await result({
-  //       message: messageId,
-  //       process: marketFactory,
-  //     });
-
-  //     if (Error) {
-  //       console.log(Error)
-  //     }
-
-  //     expect(Messages.length).to.be.equal(1)
-  //   })
-  // })
 })
