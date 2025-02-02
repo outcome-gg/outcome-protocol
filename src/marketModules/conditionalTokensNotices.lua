@@ -49,25 +49,26 @@ function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, qua
 end
 
 --- Positions merge notice
+--- @param collateralToken string The address of the collateral token
 --- @param quantity string The quantity
 --- @param msg Message The message received
 --- @return Message The positions merge notice
-function ConditionalTokensNotices.positionsMergeNotice(quantity, msg)
+function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, msg)
   return msg.reply({
     Action = "Merge-Positions-Notice",
+    CollateralToken = collateralToken,
     Quantity = quantity
   })
 end
 
---- Payout redemption notice
+--- Redeem positions notice
 --- @param collateralToken string The address of the collateral token
 --- @param payout string The payout amount
 --- @param msg Message The message received
 --- @return Message The payout redemption notice
-function ConditionalTokensNotices.payoutRedemptionNotice(collateralToken, payout, msg)
+function ConditionalTokensNotices.redeemPositionsNotice(collateralToken, payout, msg)
   return msg.reply({
-    Action = "Payout-Redemption-Notice",
-    Process = ao.id,
+    Action = "Redeem-Positions-Notice",
     CollateralToken = collateralToken,
     Payout = tostring(payout)
   })

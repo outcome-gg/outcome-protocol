@@ -30,7 +30,7 @@ ConfiguratorDelay = {
 --- @class Configurator
 --- @field admin string The admin process ID
 --- @field delay number The update delay in seconds
---- @field staged table<number> The staged update timestamps
+--- @field Staged table<string, number> A mapping of update hashes to their staged timestamps
 
 --- Creates a new Constructor instance 
 --- @param admin string The admin process ID
@@ -70,7 +70,7 @@ function ConfiguratorMethods:stageUpdate(process, action, tags, data, msg)
   -- stage
   self.staged[hash] = os.time()
   -- stage notice
-  return self.stageUpdateNotice(process, action, tags, data, hash, self.staged[hash], msg)
+  return self.stageUpdateNotice(process, action, tags, data, hash, msg)
 end
 
 --- Unstages an update
@@ -107,8 +107,10 @@ function ConfiguratorMethods:actionUpdate(process, action, tags, data, msg)
     Action = action,
     Data = data ~= '' and json.decode(data) or nil
   }
-  for tagName, tagValue in pairs(json.decode(tags)) do
-    message[tagName] = tagValue
+  if tags ~= '' then
+    for tagName, tagValue in pairs(json.decode(tags)) do
+      message[tagName] = tagValue
+    end
   end
   ao.send(message)
   -- unstage
@@ -126,7 +128,7 @@ function ConfiguratorMethods:stageUpdateAdmin(updateAdmin, msg)
   -- stage
   self.staged[hash] = os.time()
   -- stage notice
-  return self.stageUpdateAdminNotice(updateAdmin, hash, self.staged[hash], msg)
+  return self.stageUpdateAdminNotice(updateAdmin, hash, msg)
 end
 
 --- Unstages an update for the admin
@@ -167,7 +169,7 @@ function ConfiguratorMethods:stageUpdateDelay(delayInSeconds, msg)
   local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()
   self.staged[hash] = os.time()
   -- stage notice
-  return self.stageUpdateDelayNotice(delayInSeconds, hash, self.staged[hash], msg)
+  return self.stageUpdateDelayNotice(delayInSeconds, hash, msg)
 end
 
 --- Unstages an update for the delay time

@@ -47,7 +47,7 @@ end
 function MarketFactoryNotices.initMarketNotice(marketProcessIds, msg)
   return msg.reply({
     Action = "Init-Market-Notice",
-    MarketProcessIds = json.encode(marketProcessIds)
+    Data = json.encode(marketProcessIds)
   })
 end
 

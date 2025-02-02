@@ -22,7 +22,7 @@ local incentives = ""
 local quantity = ""
 local returnAmount = ""
 local investmentAmount = ""
-local maxOutcomeTokensToSell = ""
+local maxPositionTokensToSell = ""
 local distribution = {}
 local msgInit = {}
 local msgAddFunding = {}
@@ -56,7 +56,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     quantity = "100"
     returnAmount = "100"
     investmentAmount = "100"
-    maxOutcomeTokensToSell = "100"
+    maxPositionTokensToSell = "100"
     distribution = {50, 50}
     -- Mock the CPMM object
     ---@diagnostic disable-next-line: missing-fields
@@ -111,7 +111,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         PositionId = "1",
         Quantity = quantity,
         ReturnAmount = returnAmount,
-        MaxOutcomeTokensToSell = maxOutcomeTokensToSell
+        MaxPositionTokensToSell = maxPositionTokensToSell
       }
     }
     -- create a message object
@@ -288,20 +288,20 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     end, "ReturnAmount must be a number!")
 	end)
 
-  it("should fail sell validation when missing maxOutcomeTokensToSell", function()
-    msgSell.Tags.MaxOutcomeTokensToSell = nil
+  it("should fail sell validation when missing maxPositionTokensToSell", function()
+    msgSell.Tags.MaxPositionTokensToSell = nil
     -- should not throw an error
 		assert.has.error(function()
       cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
-    end, "MaxOutcomeTokensToSell is required!")
+    end, "MaxPositionTokensToSell is required!")
 	end)
 
-  it("should fail sell validation when invalid maxOutcomeTokensToSell", function()
-    msgSell.Tags.MaxOutcomeTokensToSell = "not-a-number"
+  it("should fail sell validation when invalid maxPositionTokensToSell", function()
+    msgSell.Tags.MaxPositionTokensToSell = "not-a-number"
     -- should not throw an error
 		assert.has.error(function()
       cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
-    end, "MaxOutcomeTokensToSell must be a number!")
+    end, "MaxPositionTokensToSell must be a number!")
 	end)
 
   it("should pass calcBuyAmount validation", function()

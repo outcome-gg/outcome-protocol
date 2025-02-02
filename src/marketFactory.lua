@@ -148,7 +148,7 @@ end)
 --- Markets by creator handler
 --- @param msg Message The message to handle
 --- @return Message marketsSpawnedByCreator The markets by creator
-Handlers.add("Markets-By-Creator", {Action = "Markets-Spawned-By-Creator"}, function(msg)
+Handlers.add("Markets-Spawned-By-Creator", {Action = "Markets-Spawned-By-Creator"}, function(msg)
   marketFactoryValidation.validateMarketsSpawnedByCreator(msg)
   return MarketFactory:marketsSpawnedByCreator(msg)
 end)
@@ -220,14 +220,6 @@ end)
 Handlers.add("Update-MaximumTakeFee", {Action = "Update-MaximumTakeFee"}, function(msg)
   marketFactoryValidation.validateUpdateMaximumTakeFee(msg, MarketFactory.configurator)
   return MarketFactory:updateMaximumTakeFee(msg.Tags.UpdateMaximumTakeFee, msg)
-end)
-
---- Update minimumPayment handler
---- @param msg Message The message to handle
---- @return Message updateMinimumPaymentNotice The update minimum payment notice
-Handlers.add("Update-MinimumPayment", {Action = "Update-MinimumPayment"}, function(msg)
-  marketFactoryValidation.validateUpdateMinimumPayment(msg, MarketFactory.configurator)
-  return MarketFactory:updateMinimumPayment(msg.Tags.UpdateMinimumPayment, msg)
 end)
 
 --- Update utilityToken handler

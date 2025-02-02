@@ -34,7 +34,7 @@ local quantity = ""
 local burnQuantity = ""
 local returnAmount = ""
 local investmentAmount = ""
-local maxOutcomeTokensToSell = ""
+local maxPositionTokensToSell = ""
 local positionIds = {}
 local distribution = {}
 local msgInit = {}
@@ -95,7 +95,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     burnQuantity = "50"
     returnAmount = "90"
     investmentAmount = "100"
-    maxOutcomeTokensToSell = "140"
+    maxPositionTokensToSell = "140"
     positionIds = {"1", "2"}
     distribution = {50, 50}
     -- Instantiate objects
@@ -171,7 +171,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         PositionId = "1",
         Quantity = quantity,
         ReturnAmount = returnAmount,
-        MaxOutcomeTokensToSell = maxOutcomeTokensToSell
+        MaxPositionTokensToSell = maxPositionTokensToSell
       },
       reply = function(message) return message end
     }
@@ -715,11 +715,11 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.are.same(msgBuy.Tags.InvestmentAmount, getTagValue(notice.Tags, "InvestmentAmount"))
     assert.are.same(tostring(feeAmount), getTagValue(notice.Tags, "FeeAmount"))
     assert.are.same(msgBuy.Tags.PositionId, getTagValue(notice.Tags, "PositionId"))
-    assert.are.same(buyAmount, getTagValue(notice.Tags, "OutcomeTokensToBuy"))
+    assert.are.same(buyAmount, getTagValue(notice.Tags, "PositionTokensToBuy"))
     assert.are.same("Successful buy order", notice.Data)
 	end)
 
-  it("should not buy when minimumOutcomeTokens not reached", function()
+  it("should not buy when minimumPositionTokens not reached", function()
     -- add funding
     CPMM:addFunding(
       msgAddFunding.Tags.Sender,
@@ -800,7 +800,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgSell.Tags.ReturnAmount,
       msgSell.Tags.PositionId,
       msgSell.Tags.Quantity,
-      msgSell.Tags.MaxOutcomeTokensToSell,
+      msgSell.Tags.MaxPositionTokensToSell,
       msgSell
       )
     end)
@@ -833,7 +833,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.are.same(msgSell.Tags.ReturnAmount, getTagValue(notice.Tags, "ReturnAmount"))
     assert.are.same(tostring(feeAmount), getTagValue(notice.Tags, "FeeAmount"))
     assert.are.same(msgBuy.Tags.PositionId, getTagValue(notice.Tags, "PositionId"))
-    assert.are.same(sellAmount, getTagValue(notice.Tags, "OutcomeTokensToSell"))
+    assert.are.same(sellAmount, getTagValue(notice.Tags, "PositionTokensToSell"))
     assert.are.same("Successful sell order", notice.Data)
   end)
 
@@ -858,14 +858,14 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       )
     end)
     -- sell
-    msgSell.Tags.MaxOutcomeTokensToSell = "100"
+    msgSell.Tags.MaxPositionTokensToSell = "100"
     assert.has.error(function()
       CPMM:sell(
       msgSell.From,
       msgSell.Tags.ReturnAmount,
       msgSell.Tags.PositionId,
       msgSell.Tags.Quantity,
-      msgSell.Tags.MaxOutcomeTokensToSell,
+      msgSell.Tags.MaxPositionTokensToSell,
       msgSell
       )
     end, "Maximum sell amount exceeded!")
@@ -897,14 +897,14 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     end)
     -- sell
     msgSell.Tags.ReturnAmount = "1000"
-    msgSell.Tags.MaxOutcomeTokensToSell = "100"
+    msgSell.Tags.MaxPositionTokensToSell = "100"
     assert.has.error(function()
       CPMM:sell(
       msgSell.From,
       msgSell.Tags.ReturnAmount,
       msgSell.Tags.PositionId,
       msgSell.Tags.Quantity,
-      msgSell.Tags.MaxOutcomeTokensToSell,
+      msgSell.Tags.MaxPositionTokensToSell,
       msgSell
       )
     end, "Insufficient liquidity!")
@@ -946,7 +946,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgSell.Tags.ReturnAmount,
       msgSell.Tags.PositionId,
       msgSell.Tags.Quantity,
-      msgSell.Tags.MaxOutcomeTokensToSell,
+      msgSell.Tags.MaxPositionTokensToSell,
       msgSell
       )
     end, "Insufficient balance!")

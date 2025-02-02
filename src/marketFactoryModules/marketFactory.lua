@@ -209,6 +209,9 @@ function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, ques
     ["CreatorFee"] = tostring(creatorFee),
     ["CreatorFeeTarget"] = creatorFeeTarget,
     ["Question"] = question,
+    ["Rules"] = rules,
+    ["Category"] = category,
+    ["Subcategory"] = subcategory,
     ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount))
   })
   -- add mapping

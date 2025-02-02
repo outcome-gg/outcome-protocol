@@ -148,23 +148,8 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)
     self.totalSupplyById[ ids[i] ] = tostring(bint.__sub(self.totalSupplyById[ ids[i] ], quantities[i]))
     remainingBalances[i] = self.balancesById[ ids[i] ][from]
   end
-  -- draft notice
-  local notice = {
-    Recipient = from,
-    TokenIds = json.encode(ids),
-    Quantities = json.encode(quantities),
-    RemainingBalances = json.encode(remainingBalances),
-    Action = 'Burn-Batch-Notice',
-    Data = "Successfully burned batch"
-  }
-  -- forward x-tags
-  for tagName, tagValue in pairs(msg) do
-    if string.sub(tagName, 1, 2) == "X-" then
-      notice[tagName] = tagValue
-    end
-  end
   -- send notice
-  return self.burnBatchNotice(notice, msg)
+  return self.burnBatchNotice(from, ids, quantities, remainingBalances, msg)
 end
 
 --- Transfer a quantity of tokens with the given ID
@@ -284,15 +269,15 @@ function SemiFungibleTokensMethods:getBalances(id)
 end
 
 --- Get accounts' balances of tokens with the given IDs
---- @param tokenIds table<string> The IDs of the tokens
+--- @param positionIds table<string> The IDs of the tokens
 --- @return table<string, table<string, string>> The account balances for each respective ID
-function SemiFungibleTokensMethods:getBatchBalances(tokenIds)
+function SemiFungibleTokensMethods:getBatchBalances(positionIds)
   local bals = {}
 
-  for i = 1, #tokenIds do
-    bals[ tokenIds[i] ] = {}
-    if self.balancesById[ tokenIds[i] ] then
-      bals[ tokenIds[i] ] = self.balancesById[ tokenIds[i] ]
+  for i = 1, #positionIds do
+    bals[ positionIds[i] ] = {}
+    if self.balancesById[ positionIds[i] ] then
+      bals[ positionIds[i] ] = self.balancesById[ positionIds[i] ]
     end
   end
   -- return balances

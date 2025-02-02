@@ -39,6 +39,9 @@ local conditionalTokensValidation = require('marketModules.conditionalTokensVali
 --- @param resolutionAgent string The process ID of the resolution agent
 --- @param creator string The address of the market creator
 --- @param question string The market question
+--- @param rules string The market rules
+--- @param category string The market category
+--- @param subcategory string The market subcategory
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name 
 --- @param ticker string The CPMM token(s) ticker 
@@ -57,6 +60,9 @@ function Market:new(
   resolutionAgent,
   creator,
   question,
+  rules,
+  category,
+  subcategory,
   positionIds,
   name,
   ticker,
@@ -83,6 +89,9 @@ function Market:new(
       protocolFeeTarget
     ),
     question = question,
+    rules = rules,
+    category = category,
+    subcategory = subcategory,
     creator = creator,
     incentives = incentives,
     dataIndex = dataIndex
@@ -117,6 +126,9 @@ function MarketMethods:info(msg)
     DataIndex = self.dataIndex,
     ResolutionAgent = self.cpmm.tokens.resolutionAgent,
     Question = self.question,
+    Rules = self.rules,
+    Category = self.category,
+    Subcategory = self.subcategory,
     Creator = self.creator,
     LpFee = tostring(self.cpmm.lpFee),
     LpFeePoolWeight = self.cpmm.feePoolWeight,
@@ -230,7 +242,7 @@ function MarketMethods:buy(msg)
   local error = false
   local errorMessage = ''
 
-  local outcomeTokensToBuy = '0'
+  local positionTokensToBuy = '0'
 
   if not msg.Tags['X-PositionId'] then
     error = true
@@ -238,12 +250,12 @@ function MarketMethods:buy(msg)
   elseif not utils.includes(msg.Tags['X-PositionId'], self.cpmm.tokens.positionIds) then
     error = true
     errorMessage = 'Invalid X-PositionId!'
-  elseif not msg.Tags['X-MinOutcomeTokensToBuy'] then
+  elseif not msg.Tags['X-MinPositionTokensToBuy'] then
     error = true
-    errorMessage = 'X-MinOutcomeTokensToBuy is required!'
+    errorMessage = 'X-MinPositionTokensToBuy is required!'
   else
-    outcomeTokensToBuy = self.cpmm:calcBuyAmount(msg.Tags.Quantity, msg.Tags['X-PositionId'])
-    if not bint.__le(bint(msg.Tags['X-MinOutcomeTokensToBuy']), bint(outcomeTokensToBuy)) then
+    positionTokensToBuy = self.cpmm:calcBuyAmount(msg.Tags.Quantity, msg.Tags['X-PositionId'])
+    if not bint.__le(bint(msg.Tags['X-MinPositionTokensToBuy']), bint(positionTokensToBuy)) then
       error = true
       errorMessage = 'minimum buy amount not reached'
     end
@@ -259,10 +271,10 @@ function MarketMethods:buy(msg)
     })
     assert(false, errorMessage)
   end
-  local notice = self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
+  local notice = self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinPositionTokensToBuy']), msg)
   -- log prediction and probabilities
-  local price = tostring(bint.__div(bint(outcomeTokensToBuy), bint(msg.Tags.Quantity)))
-  logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], outcomeTokensToBuy, price, msg)
+  local price = tostring(bint.__div(bint(positionTokensToBuy), bint(msg.Tags.Quantity)))
+  logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], positionTokensToBuy, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
   return notice
 end
@@ -272,12 +284,12 @@ end
 --- @return Message sellNotice The sell notice
 function MarketMethods:sell(msg)
   cpmmValidation.sell(msg, self.cpmm.tokens.positionIds)
-  local outcomeTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
-  assert(bint.__le(bint(outcomeTokensToSell), bint(msg.Tags.MaxOutcomeTokensToSell)), 'Maximum sell amount not sufficient!')
-  local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
+  local positionTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
+  assert(bint.__le(bint(positionTokensToSell), bint(msg.Tags.Quantity)), 'Maximum sell amount not sufficient! positionTokensToSell: ' .. tostring(positionTokensToSell) .. " msg.Tags.Quantity: " .. msg.Tags.Quantity)
+  local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, msg)
   -- log prediction and probabilities
-  local price = tostring(bint.__div(outcomeTokensToSell, bint(msg.Tags.Quantity)))
-  logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags.PositionId, outcomeTokensToSell, price, msg)
+  local price = tostring(bint.__div(positionTokensToSell, bint(msg.Tags.Quantity)))
+  logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags.PositionId, positionTokensToSell, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
   return notice
 end
@@ -286,7 +298,7 @@ end
 --- @param msg Message The message received
 --- @return Message withdrawFees The amount withdrawn
 function MarketMethods:withdrawFees(msg)
-  return msg.reply({ Data = self.cpmm:withdrawFees(msg.From) })
+  return self.cpmm:withdrawFees(msg.From, msg)
 end
 
 --[[
@@ -297,26 +309,40 @@ CPMM READ METHODS
 
 --- Calc buy amount
 --- @param msg Message The message received
---- @return Message buyAmount The amount of tokens to be purchased
+--- @return Message calcBuyAmountNotice The calc buy amount notice
 function MarketMethods:calcBuyAmount(msg)
   cpmmValidation.calcBuyAmount(msg, self.cpmm.tokens.positionIds)
   local buyAmount = self.cpmm:calcBuyAmount(msg.Tags.InvestmentAmount, msg.Tags.PositionId)
-  return msg.reply({ Data = buyAmount })
+  return msg.reply({
+    BuyAmount = buyAmount,
+    PositionId =  msg.Tags.PositionId,
+    InvestmentAmount = msg.Tags.InvestmentAmount,
+    Data = buyAmount
+  })
 end
 
 --- Calc sell amount
 --- @param msg Message The message received
---- @return Message sellAmount The amount of tokens to be sold
+--- @return Message calcSellAmountNotice The calc sell amount notice
 function MarketMethods:calcSellAmount(msg)
   cpmmValidation.calcSellAmount(msg, self.cpmm.tokens.positionIds)
   local sellAmount = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
-  return msg.reply({ Data = sellAmount })
+  return msg.reply({
+    SellAmount = sellAmount,
+    PositionId = msg.Tags.PositionId,
+    ReturnAmount = msg.Tags.ReturnAmount,
+    Data = sellAmount
+  })
 end
 
 --- Colleced fees
 --- @return Message collectedFees The total unwithdrawn fees collected by the CPMM
 function MarketMethods:collectedFees(msg)
-  return msg.reply({ Data = self.cpmm:collectedFees() })
+  local fees = self.cpmm:collectedFees()
+  return msg.reply({
+    CollectedFees = fees,
+    Data = fees
+  })
 end
 
 --- Fees withdrawable 
@@ -324,7 +350,12 @@ end
 --- @return Message feesWithdrawable The fees withdrawable by the account
 function MarketMethods:feesWithdrawable(msg)
   local account = msg.Tags['Recipient'] or msg.From
-  return msg.reply({ Data = self.cpmm:feesWithdrawableBy(account) })
+  local fees = self.cpmm:feesWithdrawableBy(account)
+  return msg.reply({
+    FeesWithdrawable = fees,
+    Account = account,
+    Data = fees
+  })
 end
 
 --[[
@@ -397,27 +428,31 @@ CONDITIONAL TOKENS WRITE METHODS
 --- @return Message mergePositionsNotice The positions merge notice or error message
 function MarketMethods:mergePositions(msg)
   conditionalTokensValidation.mergePositions(msg)
-  local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.From
+  local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
   -- Check user balances
   local error = false
   local errorMessage = ''
   for i = 1, #self.cpmm.tokens.positionIds do
-    if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ] then
-      error = true
-      errorMessage = "Invalid position! PositionId: " .. self.cpmm.tokens.positionIds[i]
-    end
-    if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From] then
-      error = true
-      errorMessage = "Invalid user position! PositionId: " .. self.cpmm.tokens.positionIds[i]
-    end
-    if bint.__lt(bint(self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From]), bint(msg.Tags.Quantity)) then
-      error = true
-      errorMessage = "Insufficient tokens! PositionId: " .. self.cpmm.tokens.positionIds[i]
+    if not error then
+      if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ] then
+        error = true
+        errorMessage = "Invalid position! PositionId: " .. self.cpmm.tokens.positionIds[i]
+      elseif not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From] then
+        error = true
+        errorMessage = "Invalid user position! PositionId: " .. self.cpmm.tokens.positionIds[i]
+      elseif bint.__lt(bint(self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From]), bint(msg.Tags.Quantity)) then
+        error = true
+        errorMessage = "Insufficient tokens! PositionId: " .. self.cpmm.tokens.positionIds[i]
+      end
     end
   end
   -- Revert on error
   if error then
-    return msg.reply({ Action = 'Error', Data = errorMessage })
+    return msg.reply({
+      Action = 'Merge-Positions-Error',
+      Error = errorMessage,
+      Data = errorMessage
+    })
   end
   return self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg)
 end
@@ -449,22 +484,14 @@ CONDITIONAL TOKENS READ METHODS
 --- @param msg Message The message received
 --- @return Message payoutNumerators payout numerators for the condition
 function MarketMethods:getPayoutNumerators(msg)
-  return msg.reply({
-    Action = "Payout-Numerators",
-    ConditionId = self.cpmm.tokens.conditionId,
-    Data = json.encode(self.cpmm.tokens.payoutNumerators)
-  })
+  return msg.reply({ Data = json.encode(self.cpmm.tokens.payoutNumerators) })
 end
 
 --- Get payout denominator
 --- @param msg Message The message received
 --- @return Message payoutDenominator The payout denominator for the condition
 function MarketMethods:getPayoutDenominator(msg)
-  return msg.reply({
-    Action = "Payout-Denominator",
-    ConditionId = self.cpmm.tokens.conditionId,
-    Data = self.cpmm.tokens.payoutDenominator
-  })
+  return msg.reply({ Data = tostring(self.cpmm.tokens.payoutDenominator) })
 end
 
 --[[
@@ -478,7 +505,7 @@ SEMI-FUNGIBLE TOKENS WRITE METHODS
 --- @return table<Message>|Message|nil transferSingleNotices The transfer notices, error notice or nothing
 function MarketMethods:transferSingle(msg)
   semiFungibleTokensValidation.transferSingle(msg, self.cpmm.tokens.positionIds)
-  return self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.TokenId, msg.Tags.Quantity, msg.Tags.Cast, msg)
+  return self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.PositionId, msg.Tags.Quantity, msg.Tags.Cast, msg)
 end
 
 --- Transfer batch
@@ -486,9 +513,9 @@ end
 --- @return table<Message>|Message|nil transferBatchNotices The transfer notices, error notice or nothing
 function MarketMethods:transferBatch(msg)
   semiFungibleTokensValidation.transferBatch(msg, self.cpmm.tokens.positionIds)
-  local tokenIds = json.decode(msg.Tags.TokenIds)
+  local positionIds = json.decode(msg.Tags.PositionIds)
   local quantities = json.decode(msg.Tags.Quantities)
-  return self.cpmm.tokens:transferBatch(msg.From, msg.Tags.Recipient, tokenIds, quantities, msg.Tags.Cast, msg)
+  return self.cpmm.tokens:transferBatch(msg.From, msg.Tags.Recipient, positionIds, quantities, msg.Tags.Cast, msg)
 end
 
 --[[
@@ -503,11 +530,10 @@ SEMI-FUNGIBLE TOKENS READ METHODS
 function MarketMethods:balanceById(msg)
   semiFungibleTokensValidation.balanceById(msg, self.cpmm.tokens.positionIds)
   local account = msg.Tags.Recipient or msg.From
-  local bal = self.cpmm.tokens:getBalance(msg.From, account, msg.Tags.TokenId)
+  local bal = self.cpmm.tokens:getBalance(msg.From, account, msg.Tags.PositionId)
   return msg.reply({
     Balance = bal,
-    TokenId = msg.Tags.TokenId,
-    Ticker = Ticker,
+    PositionId = msg.Tags.PositionId,
     Account = account,
     Data = bal
   })
@@ -518,8 +544,11 @@ end
 --- @return Message balancesById The balances of all accounts filtered by ID
 function MarketMethods:balancesById(msg)
   semiFungibleTokensValidation.balancesById(msg, self.cpmm.tokens.positionIds)
-  local bals = self.cpmm.tokens:getBalances(msg.Tags.TokenId)
-  return msg.reply({ Data = bals })
+  local bals = self.cpmm.tokens:getBalances(msg.Tags.PositionId)
+  return msg.reply({
+    PositionId = msg.Tags.PositionId,
+    Data = json.encode(bals)
+  })
 end
 
 --- Batch balance
@@ -528,9 +557,13 @@ end
 function MarketMethods:batchBalance(msg)
   semiFungibleTokensValidation.batchBalance(msg, self.cpmm.tokens.positionIds)
   local recipients = json.decode(msg.Tags.Recipients)
-  local tokenIds = json.decode(msg.Tags.TokenIds)
-  local bals = self.cpmm.tokens:getBatchBalance(recipients, tokenIds)
-  return msg.reply({ Data = bals })
+  local positionIds = json.decode(msg.Tags.PositionIds)
+  local bals = self.cpmm.tokens:getBatchBalance(recipients, positionIds)
+  return msg.reply({
+    PositionIds = msg.Tags.PositionIds,
+    Accounts = msg.Tags.Recipients,
+    Data = json.encode(bals)
+  })
 end
 
 --- Batch balances
@@ -538,16 +571,16 @@ end
 --- @return Message batchBalances The balances of all accounts filtered by IDs
 function MarketMethods:batchBalances(msg)
   semiFungibleTokensValidation.batchBalances(msg, self.cpmm.tokens.positionIds)
-  local tokenIds = json.decode(msg.Tags.TokenIds)
-  local bals = self.cpmm.tokens:getBatchBalances(tokenIds)
-  return msg.reply({ Data = bals })
+  local positionIds = json.decode(msg.Tags.PositionIds)
+  local bals = self.cpmm.tokens:getBatchBalances(positionIds)
+  return msg.reply({ Data = json.encode(bals) })
 end
 
 --- Balances all
 --- @param msg Message The message received
 --- @return Message balances The balances of all accounts
 function MarketMethods:balancesAll(msg)
-  return msg.reply({ Data = self.cpmm.tokens.balancesById })
+  return msg.reply({ Data = json.encode(self.cpmm.tokens.balancesById) })
 end
 
 --[[

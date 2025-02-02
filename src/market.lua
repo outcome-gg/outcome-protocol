@@ -35,6 +35,9 @@ Version = "1.0.1"
 --- @field resolutionAgent string The Resolution Agent process ID
 --- @field creator string The Creator address
 --- @field question string The Market question 
+--- @field rules string The Market rules
+--- @field category string The Market category
+--- @field subcategory string The Market subcategory
 --- @field positionIds table<string> The Position process IDs  
 --- @field name string The Market name  
 --- @field ticker string The Market ticker  
@@ -57,6 +60,9 @@ local function retrieveMarketConfig()
     resolutionAgent = ao.env.Process.Tags.ResolutionAgent or constants.marketConfig[Env].resolutionAgent,
     creator = ao.env.Process.Tags.Creator or constants.marketConfig[Env].creator,
     question = ao.env.Process.Tags.Question or constants.marketConfig[Env].question,
+    rules = ao.env.Process.Tags.Rules or constants.marketConfig[Env].rules,
+    category = ao.env.Process.Tags.Category or constants.marketConfig[Env].category,
+    subcategory = ao.env.Process.Tags.Subcategory or constants.marketConfig[Env].subcategory,
     positionIds = json.decode(ao.env.Process.Tags.PositionIds or constants.marketConfig[Env].positionIds),
     name = ao.env.Process.Tags.Name or constants.marketConfig[Env].name,
     ticker = ao.env.Process.Tags.Ticker or constants.marketConfig[Env].ticker,
@@ -86,6 +92,9 @@ if not Market or Env == 'DEV' then
     marketConfig.resolutionAgent,
     marketConfig.creator,
     marketConfig.question,
+    marketConfig.rules,
+    marketConfig.category,
+    marketConfig.subcategory,
     marketConfig.positionIds,
     marketConfig.name,
     marketConfig.ticker,

@@ -13,18 +13,16 @@ local ConfiguratorNotices = {}
 --- @param tags string The JSON string of tags
 --- @param data string The JSON string of data
 --- @param hash string The hash of the update
---- @param timestamp number The timestamp of the update
 --- @param msg Message The message received
 --- @return Message The stage update notice
-function ConfiguratorNotices.stageUpdateNotice(process, action, tags, data, hash, timestamp, msg)
+function ConfiguratorNotices.stageUpdateNotice(process, action, tags, data, hash, msg)
   return msg.reply({
-    Action = 'Update-Staged',
+    Action = 'Stage-Update-Notice',
     UpdateProcess = process,
     UpdateAction = action,
     UpdateTags = tags,
     UpdateData = data,
-    Hash = hash,
-    Timestamp = timestamp,
+    Hash = hash
   })
 end
 
@@ -34,7 +32,7 @@ end
 --- @return Message The unstage update notice
 function ConfiguratorNotices.unstageUpdateNotice(hash, msg)
   return msg.reply({
-    Action = 'Update-Unstaged',
+    Action = 'Unstage-Update-Notice',
     Hash = hash
   })
 end
@@ -45,7 +43,7 @@ end
 --- @return Message The action update notice
 function ConfiguratorNotices.actionUpdateNotice(hash, msg)
   return msg.reply({
-    Action = 'Update-Actioned',
+    Action = 'Action-Update-Notice',
     Hash = hash
   })
 end
@@ -53,15 +51,13 @@ end
 --- Sends a stage update admin notice
 --- @param admin string The admin address
 --- @param hash string The hash of the update
---- @param timestamp number The timestamp of the update
 --- @param msg Message The message received
 --- @return Message The stage update admin notice
-function ConfiguratorNotices.stageUpdateAdminNotice(admin, hash, timestamp, msg)
+function ConfiguratorNotices.stageUpdateAdminNotice(admin, hash, msg)
   return msg.reply({
-    Action = 'Update-Admin-Staged',
+    Action = 'Stage-Update-Admin-Notice',
     UpdateAdmin = admin,
-    Hash = hash,
-    Timestamp = timestamp,
+    Hash = hash
   })
 end
 
@@ -71,7 +67,7 @@ end
 --- @return Message The unstage update admin notice
 function ConfiguratorNotices.unstageUpdateAdminNotice(hash, msg)
   return msg.reply({
-    Action = 'Update-Admin-Unstaged',
+    Action = 'Unstage-Update-Admin-Notice',
     Hash = hash
   })
 end
@@ -82,7 +78,7 @@ end
 --- @return Message The action update admin notice
 function ConfiguratorNotices.actionUpdateAdminNotice(hash, msg)
   return msg.reply({
-    Action = 'Update-Admin-Actioned',
+    Action = 'Action-Update-Admin-Notice',
     Hash = hash
   })
 end
@@ -90,15 +86,13 @@ end
 --- Sends a stage update delay notice
 --- @param delay number The delay time in seconds
 --- @param hash string The hash of the update
---- @param timestamp number The timestamp of the update
 --- @param msg Message The message received
 --- @return Message The stage update delay notice
-function ConfiguratorNotices.stageUpdateDelayNotice(delay, hash, timestamp, msg)
+function ConfiguratorNotices.stageUpdateDelayNotice(delay, hash, msg)
   return msg.reply({
     Action = 'Update-Delay-Staged',
     UpdateDelay = delay,
-    Hash = hash,
-    Timestamp = timestamp,
+    Hash = hash
   })
 end
 

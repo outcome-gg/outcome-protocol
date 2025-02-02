@@ -10,31 +10,31 @@ local json = require('json')
 
 local CPMMNotices = {}
 
---- Sends a funding added notice
+--- Sends an add funding notice
 --- @param from string The address that added funding
 --- @param fundingAdded table The funding added
 --- @param mintAmount number The mint amount
 --- @return Message The funding added notice
-function CPMMNotices.fundingAddedNotice(from, fundingAdded, mintAmount)
+function CPMMNotices.addFundingNotice(from, fundingAdded, mintAmount)
   return ao.send({
     Target = from,
-    Action = "Funding-Added-Notice",
+    Action = "Add-Funding-Notice",
     FundingAdded = json.encode(fundingAdded),
     MintAmount = tostring(mintAmount),
     Data = "Successfully added funding"
   })
 end
 
---- Sends a funding removed notice
+--- Sends a remove funding notice
 --- @param from string The address that removed funding
 --- @param sendAmounts table The send amounts
 --- @param collateralRemovedFromFeePool number The collateral removed from the fee pool
 --- @param sharesToBurn number The shares to burn
 --- @return Message The funding removed notice
-function CPMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
+function CPMMNotices.removeFundingNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
   return ao.send({
     Target = from,
-    Action = "Funding-Removed-Notice",
+    Action = "Remove-Funding-Notice",
     SendAmounts = json.encode(sendAmounts),
     CollateralRemovedFromFeePool = tostring(collateralRemovedFromFeePool),
     SharesToBurn = tostring(sharesToBurn),
@@ -48,9 +48,9 @@ end
 --- @param investmentAmount number The investment amount
 --- @param feeAmount number The fee amount
 --- @param positionId string The position ID
---- @param outcomeTokensToBuy number The outcome tokens to buy
+--- @param positionTokensBought number The outcome position tokens bought
 --- @return Message The buy notice
-function CPMMNotices.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
+function CPMMNotices.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, positionTokensBought)
   return ao.send({
     Target = from,
     Action = "Buy-Notice",
@@ -58,7 +58,7 @@ function CPMMNotices.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, po
     InvestmentAmount = tostring(investmentAmount),
     FeeAmount = tostring(feeAmount),
     PositionId = positionId,
-    OutcomeTokensToBuy = tostring(outcomeTokensToBuy),
+    PositionTokensBought = tostring(positionTokensBought),
     Data = "Successful buy order"
   })
 end
@@ -68,17 +68,30 @@ end
 --- @param returnAmount number The return amount
 --- @param feeAmount number The fee amount
 --- @param positionId string The position ID
---- @param outcomeTokensToSell number The outcome tokens to sell
+--- @param positionTokensSold number The outcome position tokens sold
 --- @return Message The sell notice
-function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)
+function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, positionTokensSold)
   return ao.send({
     Target = from,
     Action = "Sell-Notice",
     ReturnAmount = tostring(returnAmount),
     FeeAmount = tostring(feeAmount),
     PositionId = positionId,
-    OutcomeTokensToSell = tostring(outcomeTokensToSell),
+    PositionTokensSold = tostring(positionTokensSold),
     Data = "Successful sell order"
+  })
+end
+
+--- Sends a withdraw fees notice
+--- @param feeAmount number The fee amount
+--- @param msg Message The message received
+--- @return Message The withdraw fees notice
+function CPMMNotices.withdrawFeesNotice(feeAmount, msg)
+  return ao.send({
+    Target = msg.From,
+    Action = "Withdraw-Fees-Notice",
+    FeeAmount = tostring(feeAmount),
+    Data = "Successfully withdrew fees"
   })
 end
 

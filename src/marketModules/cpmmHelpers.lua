@@ -44,28 +44,35 @@ function CPMMHelpers:validateAddFunding(from, quantity, distribution)
 
   if distribution then
     -- Ensure distribution set only for initial funding
-    if not bint.iszero(bint(self.token.totalSupply)) then
+    if not error and not bint.iszero(bint(self.token.totalSupply)) then
       error = true
       errorMessage = "Cannot specify distribution after initial funding"
     end
     -- Ensure distribution is set across all position ids
-    if #distribution ~= #self.tokens.positionIds then
+    if not error and #distribution ~= #self.tokens.positionIds then
       error = true
       errorMessage = "Distribution length mismatch"
     end
-    -- Ensure distribution content is valid
-    local distributionSum = 0
-    for i = 1, #distribution do
-      if type(distribution[i]) ~= "number" then
+    if not error then
+      -- Ensure distribution content is valid
+      local distributionSum = 0
+      for i = 1, #distribution do
+        if not error and type(distribution[i]) ~= "number" then
+          error = true
+          errorMessage = "Distribution item must be number"
+        else
+          distributionSum = distributionSum + distribution[i]
+        end
+      end
+      if not error and distributionSum == 0 then
         error = true
-        errorMessage = "Distribution item must be number"
-      else
-        distributionSum = distributionSum + distribution[i]
+        errorMessage = "Distribution sum must be greater than zero"
       end
     end
-    if distributionSum == 0 then
+  else
+    if not error and bint.iszero(bint(self.token.totalSupply)) then
       error = true
-      errorMessage = "Distribution sum must be greater than zero"
+      errorMessage = "Must specify distribution for inititial funding"
     end
   end
 
@@ -76,7 +83,7 @@ function CPMMHelpers:validateAddFunding(from, quantity, distribution)
       Action = 'Transfer',
       Recipient = from,
       Quantity = tostring(quantity),
-      Error = 'Add-Funding Error: ' .. errorMessage
+      ['X-Error'] = 'Add-Funding Error: ' .. errorMessage
     })
   end
   return not error
@@ -107,7 +114,7 @@ function CPMMHelpers:validateRemoveFunding(from, quantity)
       Action = 'Transfer',
       Recipient = from,
       Quantity = tostring(quantity),
-      Error = errorMessage
+      ['X-Error'] = errorMessage
     })
   end
   return not error

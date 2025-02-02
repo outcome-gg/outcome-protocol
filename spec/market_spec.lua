@@ -37,7 +37,7 @@ local quantity = ""
 local tokenId = ""
 local returnAmount = ""
 local investmentAmount = ""
-local maxOutcomeTokensToSell = ""
+local maxPositionTokensToSell = ""
 local resolutionAgent = ""
 local tokenIds = {}
 local quantities = {}
@@ -121,7 +121,7 @@ describe("#market", function()
     tokenId = "1"
     returnAmount = "90"
     investmentAmount = "100"
-    maxOutcomeTokensToSell = "140"
+    maxPositionTokensToSell = "140"
     positionIds = {"1", "2"}
     distribution = {50, 50}
     resolutionAgent = "test-this-is-valid-arweave-wallet-address-10"
@@ -208,7 +208,7 @@ describe("#market", function()
         PositionId = "1",
         Quantity = quantity,
         ReturnAmount = returnAmount,
-        MaxOutcomeTokensToSell = maxOutcomeTokensToSell
+        MaxPositionTokensToSell = maxPositionTokensToSell
       },
       reply = function(message) return message end
     }
@@ -685,7 +685,7 @@ describe("#market", function()
    assert.are.same(msgBuy.Tags.InvestmentAmount, getTagValue(notice.Tags, "InvestmentAmount"))
    assert.are.same(tostring(feeAmount), getTagValue(notice.Tags, "FeeAmount"))
    assert.are.same(msgBuy.Tags.PositionId, getTagValue(notice.Tags, "PositionId"))
-   assert.are.same(buyAmount, getTagValue(notice.Tags, "OutcomeTokensToBuy"))
+   assert.are.same(buyAmount, getTagValue(notice.Tags, "PositionTokensToBuy"))
    assert.are.same("Successful buy order", notice.Data)
  end)
 
@@ -745,7 +745,7 @@ describe("#market", function()
       msgSell.Tags.ReturnAmount,
       msgSell.Tags.PositionId,
       msgSell.Tags.Quantity,
-      msgSell.Tags.MaxOutcomeTokensToSell,
+      msgSell.Tags.MaxPositionTokensToSell,
       msgSell
       )
     end)
@@ -778,7 +778,7 @@ describe("#market", function()
     assert.are.same(msgSell.Tags.ReturnAmount, getTagValue(notice.Tags, "ReturnAmount"))
     assert.are.same(tostring(feeAmount), getTagValue(notice.Tags, "FeeAmount"))
     assert.are.same(msgBuy.Tags.PositionId, getTagValue(notice.Tags, "PositionId"))
-    assert.are.same(sellAmount, getTagValue(notice.Tags, "OutcomeTokensToSell"))
+    assert.are.same(sellAmount, getTagValue(notice.Tags, "PositionTokensToSell"))
     assert.are.same("Successful sell order", notice.Data)
   end)
 

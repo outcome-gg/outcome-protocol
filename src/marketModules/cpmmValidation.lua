@@ -38,7 +38,6 @@ function cpmmValidation.sell(msg, validPositionIds)
   sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
   sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
   sharedValidation.validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
-  sharedValidation.validatePositiveInteger(msg.Tags.MaxOutcomeTokensToSell, "MaxOutcomeTokensToSell")
 end
 
 --- Validates calc buy amount

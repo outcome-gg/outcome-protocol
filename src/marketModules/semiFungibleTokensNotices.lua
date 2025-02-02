@@ -19,7 +19,7 @@ local SemiFungibleTokensNotices = {}
 function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, msg)
   return msg.reply({
     Recipient = to,
-    TokenId = tostring(id),
+    PositionId = tostring(id),
     Quantity = tostring(quantity),
     Action = 'Mint-Single-Notice',
     Data = Colors.gray .. "Successfully minted " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.reset
@@ -35,7 +35,7 @@ end
 function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)
   return msg.reply({
     Recipient = to,
-    TokenIds = json.encode(ids),
+    PositionIds = json.encode(ids),
     Quantities = json.encode(quantities),
     Action = 'Mint-Batch-Notice',
     Data = "Successfully minted batch"
@@ -51,8 +51,9 @@ end
 function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)
   -- Prepare notice
   local notice = {
+    Target = from,
     Recipient = from,
-    TokenId = tostring(id),
+    PositionId = tostring(id),
     Quantity = tostring(quantity),
     Action = 'Burn-Single-Notice',
     Data = Colors.gray .. "Successfully burned " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.reset
@@ -65,14 +66,27 @@ function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)
     end
   end
   -- Send notice
-  return msg.reply(notice)
+  return ao.send(notice)
 end
 
 --- Burn batch notice
---- @param notice Message The prepared notice to be sent
+--- @param from string The address that will burn the tokens
+--- @param positionIds table<string> The IDs of the positions to be burned
+--- @param quantities table<string> The quantities of the tokens to be burned
+--- @param remainingBalances table<string> The remaining balances of unburned tokens
 --- @param msg Message The message received
 --- @return Message The burn notice
-function SemiFungibleTokensNotices.burnBatchNotice(notice, msg)
+function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities, remainingBalances, msg)
+  -- Prepare notice
+  local notice = {
+    Target = from,
+    Recipient = from,
+    PositionIds = json.encode(positionIds),
+    Quantities = json.encode(quantities),
+    RemainingBalances = json.encode(remainingBalances),
+    Action = 'Burn-Batch-Notice',
+    Data = "Successfully burned batch"
+  }
   -- Forward X-Tags
   for tagName, tagValue in pairs(msg) do
     -- Tags beginning with "X-" are forwarded
@@ -81,7 +95,7 @@ function SemiFungibleTokensNotices.burnBatchNotice(notice, msg)
     end
   end
   -- Send notice
-  return msg.reply(notice)
+  return ao.send(notice)
 end
 
 --- Transfer single token notices
@@ -96,7 +110,7 @@ function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity,
   local debitNotice = {
     Action = 'Debit-Single-Notice',
     Recipient = to,
-    TokenId = tostring(id),
+    PostionId = tostring(id),
     Quantity = tostring(quantity),
     Data = Colors.gray .. "You transferred " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.gray .. " to " .. Colors.green .. to .. Colors.reset
   }
@@ -105,7 +119,7 @@ function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity,
     Target = to,
     Action = 'Credit-Single-Notice',
     Sender = from,
-    TokenId = tostring(id),
+    PositionId = tostring(id),
     Quantity = tostring(quantity),
     Data = Colors.gray .. "You received " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.gray .. " from " .. Colors.green .. from .. Colors.reset
   }
@@ -133,7 +147,7 @@ function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantitie
   local debitNotice = {
     Action = 'Debit-Batch-Notice',
     Recipient = to,
-    TokenIds = json.encode(ids),
+    PositionIds = json.encode(ids),
     Quantities = json.encode(quantities),
     Data = Colors.gray .. "You transferred batch to " .. Colors.green .. to .. Colors.reset
   }
@@ -142,7 +156,7 @@ function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantitie
     Target = to,
     Action = 'Credit-Batch-Notice',
     Sender = from,
-    TokenIds = json.encode(ids),
+    PositionIds = json.encode(ids),
     Quantities = json.encode(quantities),
     Data = Colors.gray .. "You received batch from " .. Colors.green .. from .. Colors.reset
   }

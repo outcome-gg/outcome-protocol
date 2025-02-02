@@ -151,7 +151,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     })
   end
   -- Send notice.
-  return self.positionsMergeNotice(quantity, msg)
+  return self.positionsMergeNotice(self.collateralToken, quantity, msg)
 end
 
 --- Report payouts
@@ -182,8 +182,8 @@ end
 --- @return Message The payout redemption notice
 function ConditionalTokensMethods:redeemPositions(msg)
   local den = self.payoutDenominator
-  assert(den > 0, "result for condition not received yet")
-  assert(self.payoutNumerators and #self.payoutNumerators > 0, "condition not prepared yet")
+  assert(den > 0, "market not yet resolved")
+  assert(self.payoutNumerators and #self.payoutNumerators > 0, "market not yet initialized")
   local totalPayout = 0
   for i = 1, #self.positionIds do
     local positionId = self.positionIds[i]
@@ -192,10 +192,11 @@ function ConditionalTokensMethods:redeemPositions(msg)
     if not self.balancesById[positionId] then self.balancesById[positionId] = {} end
     if not self.balancesById[positionId][msg.From] then self.balancesById[positionId][msg.From] = "0" end
     local payoutStake = self.balancesById[positionId][msg.From]
-    assert(bint.__lt(0, bint(payoutStake)), "no stake to redeem")
-    -- Calculate the payout and burn position.
-    totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
-    self:burn(msg.From, positionId, payoutStake, msg)
+    if bint.__lt(0, bint(payoutStake)) then
+      -- Calculate the payout and burn position.
+      totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
+      self:burn(msg.From, positionId, payoutStake, msg)
+    end
   end
   -- Return total payout minus take fee.
   if totalPayout > 0 then
@@ -203,7 +204,7 @@ function ConditionalTokensMethods:redeemPositions(msg)
     self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)
   end
   -- Send notice.
-  return self.payoutRedemptionNotice(self.collateralToken, totalPayout, msg)
+  return self.redeemPositionsNotice(self.collateralToken, totalPayout, msg)
 end
 
 --- Return total payout minus take fee

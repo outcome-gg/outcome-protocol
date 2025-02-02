@@ -22,7 +22,7 @@ local incentives = ""
 local quantity = ""
 local returnAmount = ""
 local investmentAmount = ""
-local maxOutcomeTokensToSell = ""
+local maxPositionTokensToSell = ""
 local distribution = {}
 local msgInit = {}
 local msgAddFunding = {}
@@ -68,7 +68,7 @@ describe("#market #conditionalTokens #cpmmNotices", function()
     quantity = "100"
     returnAmount = "100"
     investmentAmount = "100"
-    maxOutcomeTokensToSell = "100"
+    maxPositionTokensToSell = "100"
     distribution = {50, 50}
     -- Mock the CPMM object
     ---@diagnostic disable-next-line: missing-fields
@@ -128,7 +128,7 @@ describe("#market #conditionalTokens #cpmmNotices", function()
         PositionId = "1",
         Quantity = quantity,
         ReturnAmount = returnAmount,
-        MaxOutcomeTokensToSell = maxOutcomeTokensToSell
+        MaxPositionTokensToSell = maxPositionTokensToSell
       },
       reply = function(message) return message end
     }
@@ -224,7 +224,7 @@ describe("#market #conditionalTokens #cpmmNotices", function()
     assert.are.same(msgBuy.Tags.InvestmentAmount, getTagValue(notice.Tags, "InvestmentAmount"))
     assert.are.same(feeAmount, getTagValue(notice.Tags, "FeeAmount"))
     assert.are.same(msgBuy.Tags.PositionId, getTagValue(notice.Tags, "PositionId"))
-    assert.are.same(msgBuy.Tags.Quantity, getTagValue(notice.Tags, "OutcomeTokensToBuy"))
+    assert.are.same(msgBuy.Tags.Quantity, getTagValue(notice.Tags, "PositionTokensToBuy"))
     assert.are.same("Successful buy order", notice.Data)
 	end)
 
@@ -243,7 +243,7 @@ describe("#market #conditionalTokens #cpmmNotices", function()
     assert.are.same(msgSell.Tags.ReturnAmount, getTagValue(notice.Tags, "ReturnAmount"))
     assert.are.same(feeAmount, getTagValue(notice.Tags, "FeeAmount"))
     assert.are.same(msgSell.Tags.PositionId, getTagValue(notice.Tags, "PositionId"))
-    assert.are.same(msgSell.Tags.Quantity, getTagValue(notice.Tags, "OutcomeTokensToSell"))
+    assert.are.same(msgSell.Tags.Quantity, getTagValue(notice.Tags, "PositionTokensToSell"))
     assert.are.same("Successful sell order", notice.Data)
 	end)
 
