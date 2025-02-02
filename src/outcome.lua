@@ -354,7 +354,7 @@ MARKET: CPMM WRITE
 --- @warning The `distribution` must be a numeric table matching the outcome slot count, with a total sum greater than zero, or `nil`
 --- @param market string The market process ID
 --- @param collateral string The collateral token process ID
---- @param quantity number The quantity of collateral tokens to transfer, a.k.a. the funding amount
+--- @param quantity string The quantity of collateral tokens to transfer, a.k.a. the funding amount
 --- @param distribution table<number> The initial probability distribution
 --- @param onBehalfOf string? The recipient of the outcome position tokens (optional)
 function Outcome.marketAddFunding(market, collateral, quantity, distribution, onBehalfOf)
@@ -406,7 +406,7 @@ end
 --- Market remove funding
 --- @notice Calling `marketRemoveFunding` will simultaneously return the liquidity provider's share of accrued fees
 --- @param market string The market process ID
---- @param quantity number The quantity of LP tokens to transfer, i.e. the amount of shares to burn
+--- @param quantity string The quantity of LP tokens to transfer, i.e. the amount of shares to burn
 --- @return MarketRemoveFundingDebitNotice marketRemoveFundingDebitNotice The market remove funding debit notice
 function Outcome.marketRemoveFunding(market, quantity)
   local notice = ao.send({
@@ -457,9 +457,9 @@ end
 --- @use Call `marketCalcBuyAmount` to verify liquidity and the number of outcome position tokens to be purchased
 --- @param market string The market process ID
 --- @param collateral string The collateral token process ID
---- @param quantity number The quantity of collateral tokens to transfer, a.k.a. the investment amount
+--- @param quantity string The quantity of collateral tokens to transfer, a.k.a. the investment amount
 --- @param positionId string The outcome position token position ID
---- @param minPositionTokensToBuy number The minimum outcome position tokens to buy
+--- @param minPositionTokensToBuy string The minimum outcome position tokens to buy
 --- @param onBehalfOf string? The recipient of the outcome position tokens (optional)
 --- @return MarketBuyDebitNotice marketBuyDebitNotice The market buy debit notice
 function Outcome.marketBuy(market, collateral, quantity, positionId, minPositionTokensToBuy, onBehalfOf)
@@ -500,9 +500,9 @@ end
 --- @warning Ensure sufficient liquidity exists before calling `marketSell`, or the transaction may fail
 --- @use Call `marketCalcSellAmount` to verify liquidity and the number of outcome position tokens to be sold
 --- @param market string The market process ID
---- @param quantity number The quantity of outcome position tokens to transfer, a.k.a. the max outcome position tokens to sell
+--- @param quantity string The quantity of outcome position tokens to transfer, a.k.a. the max outcome position tokens to sell
 --- @param positionId string The outcome position token position ID
---- @param returnAmount number The quantity of collateral tokens to receive
+--- @param returnAmount string The quantity of collateral tokens to receive
 --- @return MarketSellNotice marketSellNotice The market sell notice
 function Outcome.marketSell(market, quantity, positionId, returnAmount)
   local notice = ao.send({
@@ -566,7 +566,7 @@ MARKET: CPMM READ
 --- Market calc buy amount
 --- @warning Ensure sufficient liquidity exists before calling `marketCalcBuyAmount`, or the transaction may fail
 --- @param market string The market process ID
---- @param investmentAmount number The investment amount
+--- @param investmentAmount string The investment amount
 --- @param positionId string The outcome position token position ID
 --- @return MarketCalcBuyAmountResponse marketCalcBuyAmountResponse The market calc buy amount response message
 function Outcome.marketCalcBuyAmount(market, investmentAmount, positionId)
@@ -594,7 +594,7 @@ end
 --- Market calc sell amount
 --- @warning Ensure sufficient liquidity exists before calling `marketCalcSellAmount`, or the transaction may fail
 --- @param market string The market process ID
---- @param returnAmount number The return amount
+--- @param returnAmount string The return amount
 --- @param positionId string The outcome position token position ID
 --- @return MarketCalcSellAmountResponse marketCalcSellAmountResponse The market calc sell amount response message
 function Outcome.marketCalcSellAmount(market, returnAmount, positionId)
@@ -673,7 +673,7 @@ MARKET: LP TOKEN WRITE
 --- Market LP token transfer
 --- @param market string The market process ID
 --- @param recipient string The recipient process ID
---- @param quantity number The quantity of LP tokens to transfer
+--- @param quantity string The quantity of LP tokens to transfer
 --- @return MarketLpTokenDebitNotice marketLpTokenDebitNotice The market LP token debit notice
 function Outcome.marketLpTokenTransfer(market, recipient, quantity)
   local notice = ao.send({
@@ -783,7 +783,7 @@ MARKET: OP TOKENS WRITE
 --- @warning User must have stated quantity of outcome position tokens from each position ID, 
 --- and their must be sufficient liquidity to merge for collateral, or the transaction will fail
 --- @param market string The market process ID
---- @param quantity number The quantity of outcome position tokens from each position ID to merge for collataral
+--- @param quantity string The quantity of outcome position tokens from each position ID to merge for collataral
 --- @param onBehalfOf string The recipient of the collateral tokens, or `nil` for the sender
 --- @return MarketMergePositionsNotice marketMergePositionsNotice The market merge positions notice
 function Outcome.marketMergePositions(market, quantity, onBehalfOf)
@@ -866,7 +866,7 @@ end
 
 --- Market outcome position token transfer
 --- @param market string The market process ID
---- @param quantity number The quantity of outcome position tokens to transfer
+--- @param quantity string The quantity of outcome position tokens to transfer
 --- @param positionId string The outcome position token position ID
 --- @param recipient string The recipient of the outcome position tokens
 --- @return MarketOpTokensDebitSingleNotice marketOpTokensDebitSingleNotice The market outcome position token debit single notice
