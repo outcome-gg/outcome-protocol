@@ -10,12 +10,12 @@ local constants = {
   namePrefix = "Outcome Market",
   tickerPrefix = "OUTCOME",
   logo = "https://test.com/logo.png",
-  lpFee = "100",
-  protocolFee = "250",
-  maximumTakeFee = "500",
+  lpFee = 100,
+  protocolFee = 250,
+  maximumTakeFee = 500,
 }
 constants.dev = {
-  configurator = "8hKbJUFUGnLlxK5_j7kVnH40tcvXQPsYEuBZ0fwke1U",
+  configurator = "zpeP5Z3L2DfuDyvwymWoBWNz7zgC5CswhQTiBDRSljg",
   incentives = "haUOiKKmYMGum59nWZx5TVFEkDgI5LakIEY7jgfQgAI",
   dataIndex = "odLEQRm_H6ZqUejiTbkS1Zuq3YfCDz5dcYFLy0gm-eM", --<-TEST_PLATFORM_DATA2 for work on the UI --"rXSAUKwZhJkIBTIEyBl1rf8Gtk_88RKQFsx5JvDOwlE",
   protocolFeeTarget = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0",

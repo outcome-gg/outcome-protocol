@@ -40,9 +40,9 @@ READ METHODS
 ============
 ]]
 
---- Validates a marketsSpawnedByCreator message
+--- Validates a marketsByCreator message
 --- @param msg Message The message received
-function marketFactoryValidation.validateMarketsSpawnedByCreator(msg)
+function marketFactoryValidation.validateMarketsByCreator(msg)
   sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
 end
 
@@ -62,7 +62,7 @@ CONFIGURATOR METHODS
 --- @param msg Message The message received
 function marketFactoryValidation.validateUpdateConfigurator(msg, configurator)
   assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.UpdateConfigurator, "UpdateConfigurator")
+  sharedValidation.validateAddress(msg.Tags.Configurator, "Configurator")
 end
 
 --- Validates an update incentives message
@@ -70,7 +70,7 @@ end
 --- @param configurator string The configurator address
 function marketFactoryValidation.validateUpdateIncentives(msg, configurator)
   assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.UpdateIncentives, "UpdateIncentives")
+  sharedValidation.validateAddress(msg.Tags.Incentives, "Incentives")
 end
 
 --- Validates an update lpFee message
@@ -78,7 +78,7 @@ end
 --- @param configurator string The configurator address
 function marketFactoryValidation.validateUpdateLpFee(msg, configurator)
   assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.UpdateLpFee, "UpdateLpFee")
+  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.LpFee, "LpFee")
 end
 
 --- Validates an update protocolFee message
@@ -86,7 +86,7 @@ end
 --- @param configurator string The configurator address
 function marketFactoryValidation.validateUpdateProtocolFee(msg, configurator)
   assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.UpdateProtocolFee, "UpdateProtocolFee")
+  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.ProtocolFee, "ProtocolFee")
 end
 
 --- Validates an update protocolFeeTarget message
@@ -94,7 +94,7 @@ end
 --- @param configurator string The configurator address
 function marketFactoryValidation.validateUpdateProtocolFeeTarget(msg, configurator)
   assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.UpdateProtocolFeeTarget, "UpdateProtocolFeeTarget")
+  sharedValidation.validateAddress(msg.Tags.ProtocolFeeTarget, "ProtocolFeeTarget")
 end
 
 --- Validates an update maximumTakeFee message
@@ -102,7 +102,7 @@ end
 --- @param configurator string The configurator address
 function marketFactoryValidation.validateUpdateMaximumTakeFee(msg, configurator)
   assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.UpdateMaximumTakeFee, "UpdateMaximumTakeFee")
+  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.MaximumTakeFee, "MaximumTakeFee")
 end
 
 --- Validates an approve collateralToken message
@@ -110,7 +110,7 @@ end
 --- @param configurator string The configurator address
 function marketFactoryValidation.validateApproveCollateralToken(msg, configurator)
   assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.ApproveCollateralToken, "ApproveCollateralToken")
+  sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
   assert(sharedUtils.isValidBooleanString(msg.Tags.Approved), "Approved must be a boolean!")
 end
 
@@ -122,6 +122,12 @@ function marketFactoryValidation.validateTransfer(msg, configurator)
   sharedValidation.validateAddress(msg.Tags.Token, "Token")
   sharedValidation.validateAddress(msg.Tags.Recipient, "Recipient")
   sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+end
+
+--- Validates a debit notice
+--- @param msg Message The message received
+function marketFactoryValidation.validateDebitNotice(msg)
+  sharedValidation.validateAddress(msg.Tags["X-Sender"], "X-Sender")
 end
 
 return marketFactoryValidation

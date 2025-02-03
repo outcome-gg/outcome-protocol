@@ -52,81 +52,81 @@ function MarketFactoryNotices.initMarketNotice(marketProcessIds, msg)
 end
 
 --- Update configurator notice
---- @param updateConfigurator string The new configurator address
+--- @param configurator string The new configurator address
 --- @param msg Message The message received
 --- @return Message updateConfiguratorNotice The update configurator notice
-function MarketFactoryNotices.updateConfiguratorNotice(updateConfigurator, msg)
+function MarketFactoryNotices.updateConfiguratorNotice(configurator, msg)
   return msg.reply({
     Action = "Update-Configurator-Notice",
-    UpdateConfigurator = updateConfigurator
+    Data = configurator
   })
 end
 
 --- Update incentives notice
---- @param updateIncentives string The new incentives address
+--- @param incentives string The new incentives address
 --- @param msg Message The message received
 --- @return Message updateIncentivesNotice The update incentives notice
-function MarketFactoryNotices.updateIncentivesNotice(updateIncentives, msg)
+function MarketFactoryNotices.updateIncentivesNotice(incentives, msg)
   return msg.reply({
     Action = "Update-Incentives-Notice",
-    UpdateIncentives = updateIncentives
+    Data = incentives
   })
 end
 
 --- Update lpFee notice
---- @param updateLpFee string The new lp fee
+--- @param lpFee number The new lp fee
 --- @param msg Message The message received
 --- @return Message updateLpFeeNotice The update lp fee notice
-function MarketFactoryNotices.updateLpFeeNotice(updateLpFee, msg)
+function MarketFactoryNotices.updateLpFeeNotice(lpFee, msg)
   return msg.reply({
-    Action = "Update-LpFee-Notice",
-    UpdateLpFee = updateLpFee
+    Action = "Update-Lp-Fee-Notice",
+    Data = tostring(lpFee)
   })
 end
 
 --- Update protocolFee notice
---- @param updateProtocolFee string The new protocol fee
+--- @param protocolFee number The new protocol fee
 --- @param msg Message The message received
 --- @return Message updateProtocolFeeNotice The update protocol fee notice
-function MarketFactoryNotices.updateProtocolFeeNotice(updateProtocolFee, msg)
+function MarketFactoryNotices.updateProtocolFeeNotice(protocolFee, msg)
   return msg.reply({
-    Action = "Update-ProtocolFee-Notice",
-    UpdateProtocolFee = updateProtocolFee
+    Action = "Update-Protocol-Fee-Notice",
+    Data = tostring(protocolFee)
   })
 end
 
 --- Update protocolFeeTarget notice
---- @param updateProtocolFeeTarget string The new protocol fee target
+--- @param protocolFeeTarget string The new protocol fee target
 --- @param msg Message The message received
 --- @return Message updateProtocolFeeTargetNotice The update protocol fee target notice
-function MarketFactoryNotices.updateProtocolFeeTargetNotice(updateProtocolFeeTarget, msg)
+function MarketFactoryNotices.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)
   return msg.reply({
-    Action = "Update-ProtocolFeeTarget-Notice",
-    UpdateProtocolFeeTarget = updateProtocolFeeTarget
+    Action = "Update-Protocol-Fee-Target-Notice",
+    Data = protocolFeeTarget
   })
 end
 
 --- Update maximumTakeFee notice
---- @param updateMaximumTakeFee string The new maximum take fee
+--- @param maximumTakeFee number The new maximum take fee
 --- @param msg Message The message received
 --- @return Message updateMaximumTakeFeeNotice The update maximum take fee notice
-function MarketFactoryNotices.updateMaximumTakeFeeNotice(updateMaximumTakeFee, msg)
+function MarketFactoryNotices.updateMaximumTakeFeeNotice(maximumTakeFee, msg)
   return msg.reply({
-    Action = "Update-MaximumTakeFee-Notice",
-    UpdateMaximumTakeFee = updateMaximumTakeFee
+    Action = "Update-Maximum-Take-Fee-Notice",
+    Data = tostring(maximumTakeFee)
   })
 end
 
 --- Approve collateral token notice
 --- @param collateralToken string The collateral token address
---- @param isApprove boolean The approval status, true if approved, false otherwise
+--- @param approved boolean The approval status, true if approved, false otherwise
 --- @param msg Message The message received
 --- @return Message approveCollateralTokenNotice The approve collateral token notice
-function MarketFactoryNotices.approveCollateralTokenNotice(collateralToken, isApprove, msg)
+function MarketFactoryNotices.approveCollateralTokenNotice(collateralToken, approved, msg)
   return msg.reply({
-    Action = "Approve-CollateralToken-Notice",
+    Action = "Approve-Collateral-Token-Notice",
     CollateralToken = collateralToken,
-    IsApprove = tostring(isApprove)
+    Approved = tostring(approved),
   })
 end
 

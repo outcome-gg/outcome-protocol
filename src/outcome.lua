@@ -75,7 +75,7 @@ CONFIGURATOR: INFO
 ==================
 ]]
 
----@class ConfiguratorInfo
+---@class ConfiguratorInfo: AOMessage
 ---@field Admin string The configurator admin process ID
 ---@field Delay number The update delay in seconds
 ---@field Staged table<string, number> A mapping of update hashes to their staged timestamps
@@ -90,7 +90,10 @@ function Outcome.configuratorInfo()
   return {
     Admin = info.Tags.Admin,
     Delay = tonumber(info.Tags.Delay),
-    Staged = json.decode(info.Tags.Staged)
+    Staged = json.decode(info.Tags.Staged),
+    MessageId = info.Id,
+    Timestamp = info.Timestamp,
+    ["Block-Height"] = info["Block-Height"]
   }
 end
 
@@ -1067,9 +1070,9 @@ function Outcome.marketOpTokensBatchBalances(market, positionIds)
 end
 
 --[[
-==========================
-MARKET: CONFIGURATOR WRITE
-==========================
+====================
+MARKET: CONFIGURATOR
+====================
 ]]
 
 --- @class MarketUpdateConfiguratorNotice: BaseNotice
@@ -1194,63 +1197,436 @@ function Outcome.marketUpdateLogo(market, logo)
 end
 
 --[[
-==============
-MARKET FACTORY
-==============
+====================
+MARKET FACTORY: INFO
+====================
 ]]
 
-function Outcome.marketFactory()
-end
+--- @class MarketFactoryInfo: AOMessage
+--- @field Configurator string The market factory configurator process ID
+--- @field Incentives string The market factory incentives process ID
+--- @field DataIndex string The market factory data index process ID
+--- @field LpFee number The market factory LP fee
+--- @field ProtocolFee number The market factory protocol fee
+--- @field ProtocolFeeTarget string The market factory protocol fee target
+--- @field MaximumTakeFee number The market factory maximum take fee
+--- @field ApprovedCollateralTokens table<string> The market factory approved collateral tokens
 
+--- Market factory info
+--- @return MarketFactoryInfo marketFactoryInfo The market factory info
 function Outcome.marketFactoryInfo()
+  local info = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Info"
+  }).receive()
+  return {
+    Configurator = info.Tags.Configurator,
+    Incentives = info.Tags.Incentives,
+    DataIndex = info.Tags.DataIndex,
+    LpFee = tonumber(info.Tags.LpFee),
+    ProtocolFee = tonumber(info.Tags.ProtocolFee),
+    ProtocolFeeTarget = info.Tags.ProtocolFeeTarget,
+    MaximumTakeFee = tonumber(info.Tags.MaximumTakeFee),
+    ApprovedCollateralTokens = json.decode(info.Tags.ApprovedCollateralTokens),
+    MessageId = info.Id,
+    Timestamp = info.Timestamp,
+    ["Block-Height"] = info["Block-Height"]
+  }
 end
 
-function Outcome.marketFactorySpawnMarket()
+--[[
+=====================
+MARKET FACTORY: WRITE
+=====================
+]]
+
+--- @class MarketFactorySpawnNotice: BaseNotice
+--- @field ResolutionAgent string The resolution agent process ID
+--- @field CollateralToken string The collateral token process ID
+--- @field Question string The market question
+--- @field OutcomeSlotCount number The number of outcome slots
+--- @field Category string The market category
+--- @field Subcategory string The market subcategory
+--- @field Logo string The market logo URL
+--- @field Rules string The market rules
+--- @field Creator string The creator process ID
+--- @field CreatorFee number The creator fee in basis points
+--- @field CreatorFeeTarget string The creator fee target process ID
+--- @field Original-Msg-Id string The message ID of the spawn request
+
+--- Market factory spawn market
+--- @warning Only callable by utility token stakers with sufficient stake, or the transaction will fail
+function Outcome.marketFactorySpawnMarket(
+  resolutionAgent,
+  collateralToken,
+  question,
+  outcomeSlotCount,
+  category,
+  subcategory,
+  logo,
+  rules,
+  creatorFee,
+  creatorFeeTarget
+)
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Spawn-Market",
+    ResolutionAgent = resolutionAgent,
+    CollateralToken = collateralToken,
+    Question = question,
+    OutcomeSlotCount = tostring(outcomeSlotCount),
+    Category = category,
+    Subcategory = subcategory,
+    Logo = logo,
+    Rules = rules,
+    CreatorFee = tostring(creatorFee),
+    CreatorFeeTarget = creatorFeeTarget
+  }).receive()
+  return {
+    Action = notice.Tags.Action,
+    ResolutionAgent = notice.Tags.ResolutionAgent,
+    CollateralToken = notice.Tags.CollateralToken,
+    Question = notice.Tags.Question,
+    OutcomeSlotCount = tonumber(notice.Tags.OutcomeSlotCount),
+    Category = notice.Tags.Category,
+    Subcategory = notice.Tags.Subcategory,
+    Logo = notice.Tags.Logo,
+    Rules = notice.Tags.Rules,
+    Creator = notice.Tags.Creator,
+    CreatorFee = tonumber(notice.Tags.CreatorFee),
+    CreatorFeeTarget = notice.Tags.CreatorFeeTarget,
+    OriginalMsgId = notice.Tags["Original-Msg-Id"],
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
 end
 
+--- @class MarketFactoryInitMarketNotice: BaseNotice
+--- @field MarketProcessIds table<string> The init market process IDs
+
+--- Market factory init market
+--- @return MarketFactoryInitMarketNotice marketFactoryInitMarketNotice The market factory init market notice
 function Outcome.marketFactoryInitMarket()
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Init-Market"
+  }).receive()
+  return {
+    Action = notice.Tags.Action,
+    MarketProcessIds = json.decode(notice.Data),
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
 end
 
+--[[
+====================
+MARKET FACTORY: READ
+====================
+]]
+
+--- @class MarketFactoryMarketsPendingResponse: AOMessage
+--- @field MarketsPending table<string> The pending market process IDs
+
+--- Market factory markets pending
+--- @return MarketFactoryMarketsPendingResponse marketFactoryMarketsPendingResponse The market factory markets pending response message
 function Outcome.marketFactoryMarketsPending()
+  local response = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Markets-Pending"
+  }).receive()
+  return {
+    MarketsPending = json.decode(response.Data),
+    MessageId = response.Id,
+    Timestamp = response.Timestamp,
+    ["Block-Height"] = response["Block-Height"]
+  }
 end
 
+--- @class MarketFactoryMarketsInitResponse: AOMessage
+--- @field MarketsInit table<string> The initialized market process IDs
+
+--- Market factory markets init
+--- @return MarketFactoryMarketsInitResponse marketFactoryMarketsInitResponse The market factory markets init response message
 function Outcome.marketFactoryMarketsInit()
+  local response = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Markets-Init"
+  }).receive()
+  return {
+    MarketsInit = json.decode(response.Data),
+    MessageId = response.Id,
+    Timestamp = response.Timestamp,
+    ["Block-Height"] = response["Block-Height"]
+  }
 end
 
-function Outcome.marketFactoryMarketsSpawnedByCreator()
+--- @class MarketFactoryMarketsByCreatorResponse: AOMessage
+--- @field MarketsByCreator table<string> The market process IDs spawned by the creator
+--- @field Creator string The creator process ID
+
+--- Market factory markets by creator
+--- @param creator string The creator process ID or `nil` for the sender
+function Outcome.marketFactoryMarketsByCreator(creator)
+  local response = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Markets-By-Creator",
+    Creator = creator or ao.id
+  }).receive()
+  return {
+    MarketsByCreator = json.decode(response.Data),
+    Creator = response.Tags.Creator,
+    MessageId = response.Id,
+    Timestamp = response.Timestamp,
+    ["Block-Height"] = response["Block-Height"]
+  }
 end
 
-function Outcome.marketFactoryGetProcessId()
+--- @class MarketFactoryGetProcessIdResponse: AOMessage
+--- @field ProcessId string The market factory process ID
+--- @field Original-Msg-Id string The original message ID of the spawn market request
+
+--- Market factory get process ID
+--- @param originalMsgId string The original message ID of the spawn market request
+--- @return MarketFactoryGetProcessIdResponse marketFactoryGetProcessIdResponse The market factory get process ID response message
+function Outcome.marketFactoryGetProcessId(originalMsgId)
+  local response = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Get-Process-Id",
+    ["Original-Msg-Id"] = originalMsgId
+  }).receive()
+  return {
+    ProcessId = response.Data,
+    ["Original-Msg-Id"] = response.Tags["Original-Msg-Id"],
+    MessageId = response.Id,
+    Timestamp = response.Timestamp,
+    ["Block-Height"] = response["Block-Height"]
+  }
 end
 
-function Outcome.marketFactoryGetLatestProcessIdForCreator()
+--- @class MarketFactoryGetLatestProcessIdForCreatorResponse: AOMessage
+--- @field ProcessId string The latest market process ID spawned by the creator
+--- @field Creator string The creator process ID
+
+--- Market factory get latest process ID for creator
+--- @param creator string The creator process ID or `nil` for the sender
+function Outcome.marketFactoryGetLatestProcessIdForCreator(creator)
+  local response = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Get-Latest-Process-Id-For-Creator",
+    Creator = creator
+  }).receive()
+  return {
+    ProcessId = response.Data,
+    Creator = response.Tags.Creator,
+    MessageId = response.Id,
+    Timestamp = response.Timestamp,
+    ["Block-Height"] = response["Block-Height"]
+  }
 end
 
-function Outcome.marketFactoryUpdateConfigurator()
+--[[
+============================
+MARKET FACTORY: CONFIGURATOR
+============================
+]]
+
+--- @class MarketFactoryUpdateConfiguratorNotice: BaseNotice
+--- @field Configurator string The new configurator process ID
+
+--- Market factory update configurator
+--- @warning Only callable by the market factory configurator, or the transaction will fail
+--- @param configurator string The new configurator process ID
+--- @return MarketFactoryUpdateConfiguratorNotice marketFactoryUpdateConfiguratorNotice The market factory update configurator notice
+function Outcome.marketFactoryUpdateConfigurator(configurator)
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Update-Configurator",
+    Configurator = configurator
+  }).receive()
+  return {
+    Action = notice.Tags.Action,
+    Configurator = notice.Data,
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
 end
 
-function Outcome.marketFactoryUpdateIncentives()
+--- @class MarketFactoryUpdateIncentivesNotice: BaseNotice
+--- @field Incentives string The new incentives process ID
+
+--- Market factory update incentives
+--- @warning Only callable by the market factory configurator, or the transaction will fail
+--- @param incentives string The new incentives process ID
+--- @return MarketFactoryUpdateIncentivesNotice marketFactoryUpdateIncentivesNotice The market factory update incentives notice
+function Outcome.marketFactoryUpdateIncentives(incentives)
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Update-Incentives",
+    Incentives = incentives
+  }).receive()
+  return {
+    Action = notice.Tags.Action,
+    Incentives = notice.Data,
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
 end
 
-function Outcome.marketFactoryUpdateLpFee()
+--- @class MarketFactoryUpdateLpFeeNotice: BaseNotice
+--- @field LpFee number The new LP fee
+
+--- Market factory update LP fee
+--- @warning Only callable by the market factory configurator, or the transaction will fail
+--- @param lpFee number The new LP fee, in basis points
+--- @return MarketFactoryUpdateLpFeeNotice marketFactoryUpdateLpFeeNotice The market factory update LP fee notice
+function Outcome.marketFactoryUpdateLpFee(lpFee)
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Update-Lp-Fee",
+    LpFee = tostring(lpFee)
+  }).receive()
+  return {
+    Action = notice.Tags.Action,
+    LpFee = tonumber(notice.Data),
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
 end
 
-function Outcome.marketFactoryUpdateProtocolFee()
+--- @class MarketFactoryUpdateProtocolFeeNotice: BaseNotice
+--- @field ProtocolFee number The new protocol fee
+
+--- Market factory update protocol fee
+--- @warning Only callable by the market factory configurator, or the transaction will fail
+--- @param protocolFee number The new protocol fee, in basis points
+--- @return MarketFactoryUpdateProtocolFeeNotice marketFactoryUpdateProtocolFeeNotice The market factory update protocol fee notice
+function Outcome.marketFactoryUpdateProtocolFee(protocolFee)
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Update-Protocol-Fee",
+    ProtocolFee = tostring(protocolFee)
+  }).receive()
+  return {
+    Action = notice.Tags.Action,
+    ProtocolFee = tonumber(notice.Data),
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
 end
 
-function Outcome.marketFactoryUpdateProtocolFeeTarget()
+--- @class MarketFactoryUpdateProtocolFeeTargetNotice: BaseNotice
+--- @field ProtocolFeeTarget string The new protocol fee target
+
+--- Market factory update protocol fee target
+--- @warning Only callable by the market factory configurator, or the transaction will fail
+--- @param protocolFeeTarget string The new protocol fee target
+--- @return MarketFactoryUpdateProtocolFeeTargetNotice marketFactoryUpdateProtocolFeeTargetNotice The market factory update protocol fee target notice
+function Outcome.marketFactoryUpdateProtocolFeeTarget(protocolFeeTarget)
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Update-Protocol-Fee-Target",
+    ProtocolFeeTarget = protocolFeeTarget
+  }).receive()
+  return {
+    Action = notice.Tags.Action,
+    ProtocolFeeTarget = notice.Data,
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
 end
 
-function Outcome.marketFactoryUpdateMaximumTakeFee()
+--- @class MarketFactoryUpdateMaximumTakeFeeNotice: BaseNotice
+--- @field MaximumTakeFee number The new maximum take fee
+
+--- Market factory update maximum take fee
+--- @warning Only callable by the market factory configurator, or the transaction will fail
+--- @param maximumTakeFee number The new maximum take fee, in basis points
+--- @return MarketFactoryUpdateMaximumTakeFeeNotice marketFactoryUpdateMaximumTakeFeeNotice The market factory update maximum take fee notice
+function Outcome.marketFactoryUpdateMaximumTakeFee(maximumTakeFee)
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Update-Maximum-Take-Fee",
+    MaximumTakeFee = tostring(maximumTakeFee)
+  }).receive()
+  return {
+    Action = notice.Tags.Action,
+    MaximumTakeFee = tonumber(notice.Data),
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
 end
 
-function Outcome.marketFactoryUpdateUtilityToken()
+--- @class MarketFactoryApproveCollateralNotice: BaseNotice
+--- @field Collateral string The collateral token process ID
+--- @field Approved boolean The approval status
+
+--- Market factory approve collateral token
+--- @warning Only callable by the market factory configurator, or the transaction will fail
+--- @param collateral string The collateral token process ID
+--- @param approved boolean The approval status
+--- @return MarketFactoryApproveCollateralNotice marketFactoryApproveCollateralNotice The market factory approve collateral token notice
+function Outcome.marketFactoryApproveCollateral(collateral, approved)
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Approve-Collateral-Token",
+    CollateralToken = collateral,
+    Approved = tostring(approved)
+  }).receive()
+  return {
+    Action = notice.Tags.Action,
+    Collateral = notice.Tags.CollateralToken,
+    Approved = notice.Tags.Approved == "true",
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
 end
 
-function Outcome.marketFactoryApproveCollateralToken()
-end
+--- @class MarketFactoryTransferNotice: BaseNotice
+--- @field Token string The token process ID
+--- @field Quantity string The quantity of tokens to transfer
+--- @field Recipient string The recipient process ID
 
-function Outcome.marketFactoryTransfer()
+--- @dev Emitted when tokens are successfully transferred
+--- @class MarketFactoryDebitSuccessNotice: BaseNotice
+--- @field Token string The token process ID
+--- @field Quantity string The quantity of tokens debited
+--- @field Recipient string The recipient process ID
+
+--- Market factory transfer
+--- @notice Used as a fallback to retrieve any tokens sent in error
+--- @warning Only callable by the market factory configurator, or the transaction will fail
+--- @param token string The token process ID
+--- @param quantity string The quantity of tokens to transfer
+--- @param recipient string The recipient process ID
+--- @return MarketFactoryTransferNotice marketFactoryTransferNotice The market factory transfer notice
+function Outcome.marketFactoryTransfer(token, quantity, recipient)
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Transfer",
+    Token = token,
+    Quantity = tostring(quantity),
+    Recipient = recipient
+  }).receive()
+  return {
+    Action = notice.Tags.Action,
+    Token = notice.From,
+    Quantity = notice.Tags.Quantity,
+    Recipient = notice.Tags.Recipient,
+    Error = notice.Tags.Error or nil,
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
 end
 
 --[[

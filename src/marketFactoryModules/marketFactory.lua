@@ -94,10 +94,10 @@ function MarketFactoryMethods:info(msg)
     Configurator = self.configurator,
     Incentives = self.incentives,
     DataIndex = self.dataIndex,
-    LpFee = self.lpFee,
-    ProtocolFee = self.protocolFee,
+    LpFee = tostring(self.lpFee),
+    ProtocolFee = tostring(self.protocolFee),
     ProtocolFeeTarget = self.protocolFeeTarget,
-    MaximumTakeFee = self.maximumTakeFee,
+    MaximumTakeFee = tostring(self.maximumTakeFee),
     ApprovedCollateralTokens = json.encode(self.approvedCollateralTokens),
   })
 end
@@ -271,89 +271,98 @@ function MarketFactoryMethods:marketsInitialized(msg)
   return msg.reply({Data = json.encode(self.marketsInit)})
 end
 
-function MarketFactoryMethods:marketsSpawnedByCreator(msg)
+function MarketFactoryMethods:marketsByCreator(msg)
   local creatorMarkets = self.marketsSpawnedByCreator[msg.Tags.Creator] or {}
-  return msg.reply({Data = json.encode(creatorMarkets)})
+  return msg.reply({
+    Creator = msg.Tags.Creator or msg.From,
+    Data = json.encode(creatorMarkets)
+  })
 end
 
 function MarketFactoryMethods:getProcessId(msg)
   local originalMsgId = msg.Tags["Original-Msg-Id"]
-  return msg.reply({Data = self.messageToProcessMapping[originalMsgId]})
+  return msg.reply({
+    ["Original-Msg-Id"] = originalMsgId,
+    Data = self.messageToProcessMapping[originalMsgId]
+  })
 end
 
 function MarketFactoryMethods:getLatestProcessIdForCreator(creator, msg)
   local creatorMarkets = self.marketsSpawnedByCreator[creator] or {}
-  return msg.reply({Data = creatorMarkets[#creatorMarkets]})
+  return msg.reply({
+    Creator = creator,
+    Data = creatorMarkets[#creatorMarkets]
+  })
 end
 
---[[
+--[[ce
 ====================
 CONFIGURATOR METHODS
 ====================
 ]]
 
 --- Update configurator
---- @param updateConfigurator string The new configurator address
+--- @param configurator string The new configurator address
 --- @param msg Message The message received
 --- @return Message updateConfiguratorNotice The update configurator notice
-function MarketFactoryMethods:updateConfigurator(updateConfigurator, msg)
-  self.configurator = updateConfigurator
-  return self.updateConfiguratorNotice(updateConfigurator, msg)
+function MarketFactoryMethods:updateConfigurator(configurator, msg)
+  self.configurator = configurator
+  return self.updateConfiguratorNotice(configurator, msg)
 end
 
 --- Update incentives
---- @param updateIncentives string The new incentives address
+--- @param incentives string The new incentives address
 --- @param msg Message The message received
 --- @return Message updateIncentivesNotice The update incentives notice
-function MarketFactoryMethods:updateIncentives(updateIncentives, msg)
-  self.incentives = updateIncentives
-  return self.updateIncentivesNotice(updateIncentives, msg)
+function MarketFactoryMethods:updateIncentives(incentives, msg)
+  self.incentives = incentives
+  return self.updateIncentivesNotice(incentives, msg)
 end
 
 --- Update lpFee
---- @param updateLpFee string The new lpFee
+--- @param lpFee number The new lpFee
 --- @param msg Message The message received
 --- @return Message updateLpFeeNotice The update lpFee notice
-function MarketFactoryMethods:updateLpFee(updateLpFee, msg)
-  self.lpFee = updateLpFee
-  return self.updateLpFeeNotice(updateLpFee, msg)
+function MarketFactoryMethods:updateLpFee(lpFee, msg)
+  self.lpFee = lpFee
+  return self.updateLpFeeNotice(lpFee, msg)
 end
 
 --- Update protocolFee
---- @param updateProtocolFee string The new protocolFee
+--- @param protocolFee number The new protocolFee
 --- @param msg Message The message received
 --- @return Message updateProtocolFeeNotice The update protocolFee notice
-function MarketFactoryMethods:updateProtocolFee(updateProtocolFee, msg)
-  self.protocolFee = updateProtocolFee
-  return self.updateProtocolFeeNotice(updateProtocolFee, msg)
+function MarketFactoryMethods:updateProtocolFee(protocolFee, msg)
+  self.protocolFee = protocolFee
+  return self.updateProtocolFeeNotice(protocolFee, msg)
 end
 
 --- Update protocolFeeTarget
---- @param updateProtocolFeeTarget string The new protocolFeeTarget
+--- @param protocolFeeTarget string The new protocolFeeTarget
 --- @param msg Message The message received
 --- @return Message updateProtocolFeeTargetNotice The update protocolFeeTarget notice
-function MarketFactoryMethods:updateProtocolFeeTarget(updateProtocolFeeTarget, msg)
-  self.protocolFeeTarget = updateProtocolFeeTarget
-  return self.updateProtocolFeeTargetNotice(updateProtocolFeeTarget, msg)
+function MarketFactoryMethods:updateProtocolFeeTarget(protocolFeeTarget, msg)
+  self.protocolFeeTarget = protocolFeeTarget
+  return self.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)
 end
 
 --- Update maximumTakeFee
---- @param updateMaximumTakeFee string The new maximumTakeFee
+--- @param maximumTakeFee number The new maximumTakeFee
 --- @param msg Message The message received
 --- @return Message updateMaximumTakeFeeNotice The update maximumTakeFee notice
-function MarketFactoryMethods:updateMaximumTakeFee(updateMaximumTakeFee, msg)
-  self.maximumTakeFee = updateMaximumTakeFee
-  return self.updateMaximumTakeFeeNotice(updateMaximumTakeFee, msg)
+function MarketFactoryMethods:updateMaximumTakeFee(maximumTakeFee, msg)
+  self.maximumTakeFee = maximumTakeFee
+  return self.updateMaximumTakeFeeNotice(maximumTakeFee, msg)
 end
 
 --- Approve collateralToken
 --- @param collateralToken string The approved collateral token address
---- @param isApprove boolean True to approve, false to disapprove
+--- @param approved boolean True to approve, false to disapprove
 --- @param msg Message The message received
 --- @return Message approveCollateralTokenNotice The approveCollateralToken notice
-function MarketFactoryMethods:approveCollateralToken(collateralToken, isApprove, msg)
-  self.approvedCollateralTokens[collateralToken] = isApprove
-  return self.approveCollateralTokenNotice(collateralToken, isApprove, msg)
+function MarketFactoryMethods:approveCollateralToken(collateralToken, approved, msg)
+  self.approvedCollateralTokens[collateralToken] = approved
+  return self.approveCollateralTokenNotice(collateralToken, approved, msg)
 end
 
 --- Transfer
@@ -369,6 +378,7 @@ function MarketFactoryMethods:transfer(token, recipient, quantity, msg)
     Action = "Transfer",
     Recipient = recipient,
     Quantity = quantity,
+    ["X-Sender"] = msg.From
   })
   return self.transferNotice(token, recipient, quantity, msg)
 end

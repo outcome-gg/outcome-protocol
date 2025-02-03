@@ -55,6 +55,7 @@ local function retrieveMarketFactoryConfig()
     lpFee = constants.lpFee,
     protocolFee = constants.protocolFee,
     protocolFeeTarget = Env == 'DEV' and constants.dev.protocolFeeTarget or constants.prod.protocolFeeTarget,
+    maximumTakeFee = constants.maximumTakeFee,
     approvedCollateralTokens = Env == 'DEV' and constants.dev.approvedCollateralTokens or constants.prod.approvedCollateralTokens
   }
   return config
@@ -147,10 +148,10 @@ end)
 
 --- Markets by creator handler
 --- @param msg Message The message to handle
---- @return Message marketsSpawnedByCreator The markets by creator
-Handlers.add("Markets-Spawned-By-Creator", {Action = "Markets-Spawned-By-Creator"}, function(msg)
-  marketFactoryValidation.validateMarketsSpawnedByCreator(msg)
-  return MarketFactory:marketsSpawnedByCreator(msg)
+--- @return Message marketsByCreator The markets by creator
+Handlers.add("Markets-By-Creator", {Action = "Markets-By-Creator"}, function(msg)
+  marketFactoryValidation.validateMarketsByCreator(msg)
+  return MarketFactory:marketsByCreator(msg)
 end)
 
 --- Get process ID handler
@@ -193,50 +194,45 @@ end)
 --- Update LpFee handler
 --- @param msg Message The message to handle
 --- @return Message updateLpFeeNotice The update LP fee notice
-Handlers.add("Update-LpFee", {Action = "Update-LpFee"}, function(msg)
+Handlers.add("Update-Lp-Fee", {Action = "Update-Lp-Fee"}, function(msg)
   marketFactoryValidation.validateUpdateLpFee(msg, MarketFactory.configurator)
-  return MarketFactory:updateLpFee(msg.Tags.UpdateLpFee, msg)
+  local lpFee = tonumber(msg.Tags.LpFee)
+  return MarketFactory:updateLpFee(lpFee, msg)
 end)
 
 --- Update protocolFee handler
 --- @param msg Message The message to handle
 --- @return Message updateProtocolFeeNotice The update protocol fee notice
-Handlers.add("Update-ProtocolFee", {Action = "Update-ProtocolFee"}, function(msg)
+Handlers.add("Update-Protocol-Fee", {Action = "Update-Protocol-Fee"}, function(msg)
   marketFactoryValidation.validateUpdateProtocolFee(msg, MarketFactory.configurator)
-  return MarketFactory:updateProtocolFee(msg.Tags.UpdateProtocolFee, msg)
+  local protocolFee = tonumber(msg.Tags.ProtocolFee)
+  return MarketFactory:updateProtocolFee(protocolFee, msg)
 end)
 
 --- Update protocolFeeTarget handler
 --- @param msg Message The message to handle
 --- @return Message updateProtocolFeeTargetNotice The update protocol fee target notice
-Handlers.add("Update-ProtocolFeeTarget", {Action = "Update-ProtocolFeeTarget"}, function(msg)
+Handlers.add("Update-Protocol-Fee-Target", {Action = "Update-Protocol-Fee-Target"}, function(msg)
   marketFactoryValidation.validateUpdateProtocolFeeTarget(msg, MarketFactory.configurator)
-  return MarketFactory:updateProtocolFeeTarget(msg.Tags.UpdateProtocolFeeTarget, msg)
+  return MarketFactory:updateProtocolFeeTarget(msg.Tags.ProtocolFeeTarget, msg)
 end)
 
 --- Update maximumTakeFee handler
 --- @param msg Message The message to handle
 --- @return Message updateMaximumTakeFeeNotice The update maximum take fee notice
-Handlers.add("Update-MaximumTakeFee", {Action = "Update-MaximumTakeFee"}, function(msg)
+Handlers.add("Update-Maximum-Take-Fee", {Action = "Update-Maximum-Take-Fee"}, function(msg)
   marketFactoryValidation.validateUpdateMaximumTakeFee(msg, MarketFactory.configurator)
-  return MarketFactory:updateMaximumTakeFee(msg.Tags.UpdateMaximumTakeFee, msg)
-end)
-
---- Update utilityToken handler
---- @param msg Message The message to handle
---- @return Message updateUtilityTokenNotice The update utility token notice
-Handlers.add("Update-UtilityToken", {Action = "Update-UtilityToken"}, function(msg)
-  marketFactoryValidation.validateUpdateUtilityToken(msg, MarketFactory.configurator)
-  return MarketFactory:updateUtilityToken(msg.Tags.UpdateToken, msg)
+  local maximumTakeFee = tonumber(msg.Tags.MaximumTakeFee)
+  return MarketFactory:updateMaximumTakeFee(maximumTakeFee, msg)
 end)
 
 --- Approve collateralToken handler
 --- @param msg Message The message to handle
 --- @return Message approveCollateralTokenNotice The approve collateral token notice
-Handlers.add("Approve-CollateralToken", {Action = "Approve-CollateralToken"}, function(msg)
+Handlers.add("Approve-Collateral-Token", {Action = "Approve-Collateral-Token"}, function(msg)
   marketFactoryValidation.validateApproveCollateralToken(msg, MarketFactory.configurator)
-  local isApprove = string.lower(msg.Tags.IsApprove) == "true"
-  return MarketFactory:approveCollateralToken(msg.Tags.CollateralToken, isApprove, msg)
+  local approved = string.lower(msg.Tags.Approved) == "true"
+  return MarketFactory:approveCollateralToken(msg.Tags.CollateralToken, approved, msg)
 end)
 
 --- Transfer handler
@@ -258,4 +254,16 @@ CALLBACK HANDLERS
 --- @return boolean success True if successful, false otherwise
 Handlers.add("Market-Spawned", {Action = "Spawned", From = ao.id}, function(msg)
   return MarketFactory:spawnedMarket(msg)
+end)
+
+--- Debit notice handler
+--- @param msg Message The message to handle
+Handlers.add("Debit-Notice", {Action = "Debit-Notice"}, function(msg)
+  marketFactoryValidation.validateDebitNotice(msg)
+  return msg.forward( msg.Tags["X-Sender"], {
+    Action = "Debit-Success-Notice",
+    Token = msg.From,
+    Quantity = msg.Tags.Quantity,
+    Recipient = msg.Tags.Recipient
+  })
 end)
