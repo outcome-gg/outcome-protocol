@@ -153,40 +153,40 @@ CONFIGURATOR HANDLERS
 =====================
 ]]
 
-Handlers.add("Set-LP-Holder-Ratio", {Action = "Set-LP-Holder-Ratio"}, function(msg)
+Handlers.add("Update-Configurator", {Action = "Update-Configurator"}, function(msg)
   assert(msg.From == OcmToken.incentives.configurator, 'Sender must be configurator!')
-  assert(type(msg.Tags.Ratio) == 'string', 'Ratio is required!')
-  OcmToken.incentives:setLpToHolderRatio(msg.Tags.Ratio, msg)
+  assert(type(msg.Tags.Configurator) == 'string', 'Configurator is required!')
+  OcmToken:updateConfigurator(msg.Tags.Configurator, msg)
 end)
 
-Handlers.add("Set-Collateral-Prices", {Action = "Set-Collateral-Prices"}, function(msg)
+Handlers.add("Update-LP-To-Holder-Ratio", {Action = "Update-LP-To-Holder-Ratio"}, function(msg)
+  assert(msg.From == OcmToken.incentives.configurator, 'Sender must be configurator!')
+  assert(type(msg.Tags.Ratio) == 'string', 'Ratio is required!')
+  OcmToken.incentives:updateLpToHolderRatio(msg.Tags.Ratio, msg)
+end)
+
+Handlers.add("Update-Collateral-Prices", {Action = "Update-Collateral-Prices"}, function(msg)
   assert(msg.From == OcmToken.incentives.configurator, 'Sender must be configurator!')
   assert(type(msg.Tags.CollateralPrices) == 'string', 'CollateralPrices is required!')
   -- TODO validate table
   local collateralPrices = json.decode(msg.Tags.CollateralPrices)
-  OcmToken.incentives:setCollateralPrices(collateralPrices, msg)
+  OcmToken.incentives:updateCollateralPrices(collateralPrices, msg)
 end)
 
-Handlers.add("Set-Collateral-Factors", {Action = "Set-Collateral-Factors"}, function(msg)
+Handlers.add("Update-Collateral-Factors", {Action = "Update-Collateral-Factors"}, function(msg)
   assert(msg.From == OcmToken.incentives.configurator, 'Sender must be configurator!')
   assert(type(msg.Tags.CollateralFactors) == 'string', 'CollateralFactors is required!')
   -- TODO validate table
   local collateralFactors = json.decode(msg.Tags.CollateralFactors)
-  OcmToken.incentives:setCollateralFactors(collateralFactors, msg)
+  OcmToken.incentives:updateCollateralFactors(collateralFactors, msg)
 end)
 
-Handlers.add("Set-Collateral-Denominations", {Action = "Set-Collateral-Denominations"}, function(msg)
+Handlers.add("Update-Collateral-Denominations", {Action = "Update-Collateral-Denominations"}, function(msg)
   assert(msg.From == OcmToken.incentives.configurator, 'Sender must be configurator!')
   assert(type(msg.Tags.CollateralDenominations) == 'string', 'CollateralDenominations is required!')
   -- TODO validate table
   local collateralDenominations = json.decode(msg.Tags.CollateralDenominations)
-  OcmToken.incentives:setCollateralDenominations(collateralDenominations, msg)
-end)
-
-Handlers.add("Set-Configurator", {Action = "Set-Configurator"}, function(msg)
-  assert(msg.From == OcmToken.incentives.configurator, 'Sender must be configurator!')
-  assert(type(msg.Tags.Configurator) == 'string', 'Configurator is required!')
-  OcmToken:setConfigurator(msg.Tags.Configurator, msg)
+  OcmToken.incentives:updateCollateralDenominations(collateralDenominations, msg)
 end)
 
 --[[

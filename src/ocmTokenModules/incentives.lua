@@ -168,29 +168,29 @@ CONFIGURATOR METHODS
 ====================
 ]]
 
-function IncentivesMethods:setLpToHolderRatio(lpToHolderRatio, msg)
-  self.lpToHolderRatio = lpToHolderRatio
-  self.setLpToHolderRatioNotice(lpToHolderRatio, msg)
-end
-
-function IncentivesMethods:setCollateralPrices(collateralPrices, msg)
-  self.collateralPrices = collateralPrices
-  self.setCollateralPricesNotice(collateralPrices, msg)
-end
-
-function IncentivesMethods:setCollateralFactors(collateralFactors, msg)
-  self.collateralFactors = collateralFactors
-  self.setCollateralFactorsNotice(collateralFactors, msg)
-end
-
-function IncentivesMethods:setCollateralDenominations(collateralDenominations, msg)
-  self.collateralDenominations = collateralDenominations
-  self.setCollateralDenominationsNotice(collateralDenominations, msg)
-end
-
-function IncentivesMethods:setConfigurator(configurator, msg)
+function IncentivesMethods:updateConfigurator(configurator, msg)
   self.configurator = configurator
-  self.setConfiguratorNotice(configurator, msg)
+  self.updateConfiguratorNotice(configurator, msg)
+end
+
+function IncentivesMethods:updateLpToHolderRatio(lpToHolderRatio, msg)
+  self.lpToHolderRatio = tonumber(lpToHolderRatio)
+  self.updateLpToHolderRatioNotice(lpToHolderRatio, msg)
+end
+
+function IncentivesMethods:updateCollateralPrices(collateralPrices, msg)
+  self.collateralPrices = collateralPrices
+  self.updateCollateralPricesNotice(collateralPrices, msg)
+end
+
+function IncentivesMethods:updateCollateralFactors(collateralFactors, msg)
+  self.collateralFactors = collateralFactors
+  self.updateCollateralFactorsNotice(collateralFactors, msg)
+end
+
+function IncentivesMethods:updateCollateralDenominations(collateralDenominations, msg)
+  self.collateralDenominations = collateralDenominations
+  self.updateCollateralDenominationsNotice(collateralDenominations, msg)
 end
 
 return Incentives

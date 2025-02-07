@@ -29,6 +29,7 @@ end
 function cpmmValidation.buy(msg, validPositionIds)
   sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "X-PositionId")
   sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  sharedValidation.validatePositiveInteger(msg.Tags["X-MinPositionTokensToBuy"], "X-MinPositionTokensToBuy")
 end
 
 --- Validates sell

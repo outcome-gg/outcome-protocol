@@ -109,7 +109,7 @@ function ConfiguratorMethods:actionUpdate(process, action, tags, data, msg)
   }
   if tags ~= '' then
     for tagName, tagValue in pairs(json.decode(tags)) do
-      message[tagName] = tagValue
+      message[tostring(tagName)] = tostring(tagValue)
     end
   end
   ao.send(message)
@@ -195,7 +195,7 @@ function ConfiguratorMethods:actionUpdateDelay(delayInSeconds, msg)
   local remaining = self.staged[hash] + self.delay - os.time()
   assert(remaining <= 0, 'Update not staged long enough! Remaining: ' .. remaining .. 's.')
   -- action update
-  self.delay = delayInSeconds
+  self.delay = tonumber(delayInSeconds)
   -- unstage
   self.staged[hash] = nil
   -- action notice

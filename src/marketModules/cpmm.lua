@@ -153,7 +153,6 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
   -- Mint Conditional Positions
   self.tokens:splitPosition(ao.id, self.tokens.collateralToken, addedFunds, msg)
   -- Mint LP Tokens
-  print("addFunding mint lp tokens onBehalfOf: " .. tostring(onBehalfOf))
   self:mint(onBehalfOf, mintAmount, msg)
   -- Remove non-zero items before transfer-batch
   local nonZeroAmounts = {}
@@ -357,7 +356,7 @@ end
 --- Withdraw fees
 --- @param sender string The process ID of the sender
 --- @param msg Message The message received
---- @return string The amount of fees withdrawn to the sender
+--- @return Message The withdraw fees message
 function CPMMMethods:withdrawFees(sender, msg)
   local feeAmount = self:feesWithdrawableBy(sender)
   if bint.__lt(0, bint(feeAmount)) then
@@ -375,13 +374,13 @@ end
 --- @param amount string The amount transferred
 --- @param msg Message The message received
 function CPMMMethods:_beforeTokenTransfer(from, to, amount, msg)
-  if from ~= nil then
+  if from ~= nil and from ~= ao.id then
     self:withdrawFees(from, msg)
   end
   local totalSupply = self.token.totalSupply
   local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self:collectedFees()), bint(amount)), totalSupply)))
 
-  if from ~= nil and to ~= nil then
+  if from ~= nil and to ~= nil and from ~= ao.id then
     self.withdrawnFees[from] = tostring(bint.__sub(bint(self.withdrawnFees[from] or '0'), bint(withdrawnFeesTransfer)))
     self.withdrawnFees[to] = tostring(bint.__add(bint(self.withdrawnFees[to] or '0'), bint(withdrawnFeesTransfer)))
   end

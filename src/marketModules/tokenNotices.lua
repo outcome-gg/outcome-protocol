@@ -14,7 +14,7 @@ local TokenNotices = {}
 --- @param msg Message The message received
 --- @return Message The mint notice
 function TokenNotices.mintNotice(recipient, quantity, msg)
-  return msg.reply({
+  return msg.forward(recipient, {
     Recipient = recipient,
     Quantity = tostring(quantity),
     Action = 'Mint-Notice',

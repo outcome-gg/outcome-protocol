@@ -235,7 +235,10 @@ end
 
 function MarketFactoryMethods:initMarket(msg)
   local processIds = self.marketsPendingInit
-  if #processIds == 0 then return end
+  if #processIds == 0 then
+    -- send notice
+    return self.initMarketNotice(processIds, msg)
+   end
   -- init pending markets
   for i = 1, #processIds do
     local processId = processIds[i]
@@ -283,7 +286,7 @@ function MarketFactoryMethods:getProcessId(msg)
   local originalMsgId = msg.Tags["Original-Msg-Id"]
   return msg.reply({
     ["Original-Msg-Id"] = originalMsgId,
-    Data = self.messageToProcessMapping[originalMsgId]
+    Data = self.messageToProcessMapping[originalMsgId] or nil
   })
 end
 

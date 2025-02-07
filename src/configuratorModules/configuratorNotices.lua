@@ -90,7 +90,7 @@ end
 --- @return Message The stage update delay notice
 function ConfiguratorNotices.stageUpdateDelayNotice(delay, hash, msg)
   return msg.reply({
-    Action = 'Update-Delay-Staged',
+    Action = 'Stage-Update-Delay-Notice',
     UpdateDelay = delay,
     Hash = hash
   })
@@ -102,7 +102,7 @@ end
 --- @return Message The unstage update delay notice
 function ConfiguratorNotices.unstageUpdateDelayNotice(hash, msg)
   return msg.reply({
-    Action = 'Update-Delay-Unstaged',
+    Action = 'Unstage-Update-Delay-Notice',
     Hash = hash
   })
 end
@@ -113,7 +113,7 @@ end
 --- @return Message The action update delay notice
 function ConfiguratorNotices.actionUpdateDelayNotice(hash, msg)
   return msg.reply({
-    Action = 'Update-Delay-Actioned',
+    Action = 'Action-Update-Delay-Notice',
     Hash = hash
   })
 end

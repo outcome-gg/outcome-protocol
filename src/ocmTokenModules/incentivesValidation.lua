@@ -24,4 +24,10 @@ function incentivesValidation.logPrediction(msg)
   sharedValidation.validateAddress(msg.Tags.Token, "Token")
 end
 
+--- Validate updateLpToHolderRatio
+--- @param msg Message The message to be validated
+function incentivesValidation.updateLpToHolderRatio(msg)
+  sharedValidation.validatePositiveNumber(msg.Tags.LpToHolderRatio, "LpToHolderRatio")
+end
+
 return incentivesValidation

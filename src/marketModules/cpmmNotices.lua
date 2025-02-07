@@ -101,7 +101,7 @@ end
 --- @return Message The configurator updated notice
 function CPMMNotices.updateConfiguratorNotice(configurator, msg)
   return msg.reply({
-    Action = "Configurator-Updated",
+    Action = "Update-Configurator-Notice",
     Data = configurator
   })
 end
@@ -113,7 +113,7 @@ end
 --- @param msg Message The message received
 function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)
   return msg.reply({
-    Action = "Take-Fee-Updated",
+    Action = "Update-Take-Fee-Notice",
     CreatorFee = tostring(creatorFee),
     ProtocolFee = tostring(protocolFee),
     Data = tostring(takeFee)
@@ -126,7 +126,7 @@ end
 --- @return Message The protocol fee target updated notice
 function CPMMNotices.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)
   return msg.reply({
-    Action = "Protocol-Fee-Target-Updated",
+    Action = "Update-Protocol-Fee-Target-Notice",
     Data = protocolFeeTarget
   })
 end
@@ -137,7 +137,7 @@ end
 --- @return Message The logo updated notice
 function CPMMNotices.updateLogoNotice(logo, msg)
   return msg.reply({
-    Action = "Logo-Updated",
+    Action = "Update-Logo-Notice",
     Data = logo
   })
 end

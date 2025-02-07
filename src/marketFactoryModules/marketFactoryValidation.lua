@@ -31,7 +31,6 @@ function marketFactoryValidation.validateSpawnMarket(msg, approvedCollateralToke
   assert(type(msg.Tags.Category) == "string", "Category is required!")
   assert(type(msg.Tags.Subcategory) == "string", "Subcategory is required!")
   assert(type(msg.Tags.Logo) == "string", "Logo is required!")
-
 end
 
 --[[

@@ -33,7 +33,7 @@ end
 --- @param msg Message The message received
 --- @return Message The batch mint notice
 function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)
-  return msg.reply({
+  return msg.forward(to, {
     Recipient = to,
     PositionIds = json.encode(ids),
     Quantities = json.encode(quantities),

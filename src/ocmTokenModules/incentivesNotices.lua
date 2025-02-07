@@ -28,38 +28,38 @@ function IncentivesNotices.logPredictionNotice(user, operation, collateral, quan
   })
 end
 
-function IncentivesNotices.setLpToHolderRatioNotice(lpToHolderRatio, msg)
+function IncentivesNotices.updateConfiguratorNotice(configurator, msg)
   return msg.reply({
-    Action = "Set-LP-to-Holder-Ratio-Notice",
+    Action = "Update-Configurator-Notice",
+    Data = configurator
+  })
+end
+
+function IncentivesNotices.updateLpToHolderRatioNotice(lpToHolderRatio, msg)
+  return msg.reply({
+    Action = "Update-LP-To-Holder-Ratio-Notice",
     Data = lpToHolderRatio
   })
 end
 
-function IncentivesNotices.setCollateralPrices(collateralPrices, msg)
+function IncentivesNotices.updateCollateralPrices(collateralPrices, msg)
   return msg.reply({
-    Action = "Set-Collateral-Prices-Notice",
+    Action = "Update-Collateral-Prices-Notice",
     Data = json.encode(collateralPrices)
   })
 end
 
-function IncentivesNotices.setCollateralFactors(collateralFactors, msg)
+function IncentivesNotices.updateCollateralFactors(collateralFactors, msg)
   return msg.reply({
-    Action = "Set-Collateral-Factors-Notice",
+    Action = "Update-Collateral-Factors-Notice",
     Data = json.encode(collateralFactors)
   })
 end
 
-function IncentivesNotices.setCollateralDenominations(collateralDenominations, msg)
+function IncentivesNotices.updateCollateralDenominations(collateralDenominations, msg)
   return msg.reply({
-    Action = "Set-Collateral-Denominations-Notice",
+    Action = "Update-Collateral-Denominations-Notice",
     Data = json.encode(collateralDenominations)
-  })
-end
-
-function IncentivesNotices.setConfiguratorNotice(configurator, msg)
-  return msg.reply({
-    Action = "Set-Configurator-Notice",
-    Data = configurator
   })
 end
 

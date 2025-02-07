@@ -68,8 +68,8 @@ if not Balances or ResetState then Balances = {
   ['m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0'] = utils.toBalanceValue(20000 * 10 ^ Denomination),
 } end
 
-if Name ~= 'Points Coin' or ResetState then Name = 'Points Coin' end
-if Ticker ~= 'Points' or ResetState then Ticker = 'PNTS' end
+if Name ~= 'Mock DAI' or ResetState then Name = 'Mock DAI' end
+if Ticker ~= 'mDAI' or ResetState then Ticker = 'mDAI' end
 if not Logo or ResetState then Logo = 'SBCCXwwecBlDqRLUjb8dYABExTJXLieawf7m2aBJ-KY' end
 if not TotalSupply or ResetState then TotalSupply = utils.toBalanceValue(30000 * 10 ^ Denomination) end
 
@@ -199,14 +199,17 @@ Handlers.add('mint', Handlers.utils.hasMatchingTag('Action', 'Mint'), function(m
   assert(type(msg.Quantity) == 'string', 'Quantity is required!')
   assert(bint(0) < bint(msg.Quantity), 'Quantity must be greater than zero!')
 
-  if not Balances[ao.id] then Balances[ao.id] = "0" end
+  if not Balances[msg.From] then Balances[msg.From] = "0" end -- @dev updated from Balances[ao.id] to enable external minting
 
-  if msg.From == ao.id then
+  if true then -- @dev updated from msg.From == ao.id to enable external minting
     -- Add tokens to the token pool, according to Quantity
     Balances[msg.From] = utils.add(Balances[msg.From], msg.Quantity)
     TotalSupply = utils.add(TotalSupply, msg.Quantity)
-    ao.send({
-      Target = msg.From,
+    -- @dev updated from ao.send({Target = msg.From, Data = ...})
+    msg.reply({
+      Action = "Mint-Notice",
+      Quantity = msg.Quantity,
+      Recipient = msg.From,
       Data = Colors.gray .. "Successfully minted " .. Colors.blue .. msg.Quantity .. Colors.reset
     })
   else

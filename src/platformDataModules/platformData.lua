@@ -80,7 +80,7 @@ READ METHODS
 --- @return Message queryResults The query results
 function PlatformDataMethods:query(sql, msg)
   local results = self.dbAdmin:exec(sql)
-  return msg.reply({ Action = 'Query-Results', Data = json.encode(results) })
+  return msg.reply({ Data = json.encode(results) })
 end
 
 --- Get market

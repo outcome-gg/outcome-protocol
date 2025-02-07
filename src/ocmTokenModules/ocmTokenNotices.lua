@@ -18,7 +18,7 @@ function OcmTokenNotices.claimNotice(quantity, onBehalfOf, msg)
   return msg.reply({
     Action = "Claim-Notice",
     Quantity = tostring(quantity),
-    OnBehalfOf = onBehalfOf,
+    Recipient = onBehalfOf,
     Data = "Successfully claimed tokens"
   })
 end
