@@ -1,6 +1,6 @@
 Scenarios = { _version = "0.0.1"}
+Outcome = require("outcome")
 
-local Outcome = require("outcome")  -- Import the Outcome module
 local json = require("json")
 
 --[[
@@ -56,10 +56,10 @@ HELPERS: ASYNC
 ]]
 
 --- Retry helper function
-local function retry(fn, retries)
+local function retry(fn, retries, ...)
   local lastError = nil
   for attempt = 1, retries do
-    local result, errorMsg = fn()
+    local result, errorMsg = fn(...)
     if result then return result end
     lastError = errorMsg or "Unknown error"
     logAction("🔄 Retry", "Attempt " .. tostring(attempt) .. " failed.")
@@ -81,7 +81,7 @@ end
 --- Tries to init market
 --- @notice tries to get process ID first, then initializes the market
 local function tryInitMarket(originalMsgId)
-  retry(tryGetProcessId, 100)
+  retry(tryGetProcessId, 100, originalMsgId)
   local res = Outcome.marketFactoryInitMarket()
   if not res or not res.MarketProcessIds or #res.MarketProcessIds == 0 then
     return nil, "MarketProcessIds is nil or empty"
@@ -98,7 +98,7 @@ HELPERS: SCENARIOS
 --- Create a market with the specified number of outcome slots
 --- @warning The outcomeSlotCount must be between 2 and 256, inclusive
 --- @param outcomeSlotCount number The number of outcome slots
-local function createMarket(outcomeSlotCount)
+function Scenarios.createMarket(outcomeSlotCount)
   -- Step 1: Spawn Market
   logAction("Spawn Market", "`outcomeSlotCount` is 2 for binary market")
   local res1 = Outcome.marketFactorySpawnMarket(
@@ -124,7 +124,7 @@ local function createMarket(outcomeSlotCount)
 
   -- Step 2: Initialize Market
   logAction("Init Market", "Initializing pending markets")
-  local res2, error2 = retry(tryInitMarket, 25)
+  local res2, error2 = retry(tryInitMarket, 25, originalMsgId)
   -- Error handling
   if not res2 or error2 then
     logResult("Init Market", error2, false)
@@ -176,7 +176,7 @@ SCENARIOS: CREATE BINARY MARKET
 --- @note `outcomeSlotCount` is set to 2
 function Scenarios.createBinaryMarket()
   logScenario("Create Binary Market", true)
-  local marketId = createMarket(2)
+  local marketId = Scenarios.createMarket(2)
   logScenario("Create Binary Market", false, marketId)
   return marketId
 end
@@ -191,7 +191,7 @@ SCENARIOS: CREATE CATEGORICAL MARKET
 --- @note `outcomeSlotCount` is set to 3
 function Scenarios.createCategoricalMarket()
   logScenario("Create Categorical Market", true)
-  local marketId = createMarket(3)
+  local marketId = Scenarios.createMarket(3)
   logScenario("Create Categorical Market", false, marketId)
   return marketId
 end
@@ -206,7 +206,7 @@ SCENARIOS: CREATE LARGE CATEGORICAL MARKET
 --- @note `outcomeSlotCount` is set to 256
 function Scenarios.createLargeCategoricalMarket()
   logScenario("Create Large Categorical Market", true)
-  local marketId = createMarket(256)
+  local marketId = Scenarios.createMarket(256)
   logScenario("Create Large Categorical Market", false, marketId)
   return marketId
 end
@@ -227,9 +227,9 @@ function Scenarios.mintTestCollateral()
 end
 
 --[[
-=========================================================
-SCENARIOS: SET PROBABILITY DISTRIBUITON FOR BINARY MARKET
-=========================================================
+==============================
+SCENARIOS: ADD INITIAL FUNDING
+==============================
 ]]
 
 -- -- Create a binary market
