@@ -201,30 +201,30 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 | Action                | Required Role                    | Required Tags                          | Optional Tags                   | Result                 | 
 | --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 
 | `Info`      || | | `Info-Response` |
-| `Add-Funding(*)`        || `Quantity`: Integer greater than 0<br>`Recipient`: Valid Arweave address<br>`X-Distribution`: Valid JSON Array of Integers greater than 0 (**exclude after initial funding or the transaction will fail**) | `X-OnBehalfOf`: Valid Arweave address | `Add-Funding-Notice` |
-| `Remove-Funding(**)`      || `Quantity`: Integer greater than 0 | | `Remove-Funding-Notice` |
-| `Buy(*)`       || `Quantity`: Integer greater than 0s<br>`X-PositionId`: Integer greater than 0<br>`X-MinPositionTokensToBuy`: Integer greater than 0 |  `X-OnBehalfOf`: Valid Arweave address | `Buy-Notice` |
-| `Sell`  || `Quantity`: Integer greater than 0s<br>`PositionId`: Integer greater than 0<br>`ReturnAmount`: Integer greater than 0  |  | `Sell-Notice` |
+| `Add-Funding(*)`        || `Quantity`: Integer greater than 0<br>`Recipient`: Valid Arweave address<br>`X-Distribution`: Valid JSON Array of Integers greater than 0 (**exclude after initial funding or the transaction will fail**) | `X-OnBehalfOf`: Valid Arweave address | `Debit-Notice`<br>`Credit-Notice`<br>`Mint-Batch-Notice`<br>`Split-Position-Notice`<br>`Mint-Notice`<br>`Add-Funding-Notice`<br>`Log-Funding-Notice` |
+| `Remove-Funding(**)`      || `Quantity`: Integer greater than 0 | | `Debit-Notice`<br>`Credit-Notice`<br>`Withdraw-Fees-Notice`<br>`Burn-Notice`<br>`Debit-Batch-Notice`<br>`Credit-Batch-Notice`<br>`Remove-Funding-Notice`<br>`Log-Funding-Notice`  |
+| `Buy(*)`       || `Quantity`: Integer greater than 0s<br>`X-PositionId`: Integer greater than 0<br>`X-MinPositionTokensToBuy`: Integer greater than 0 |  `X-OnBehalfOf`: Valid Arweave address | `Debit-Notice`<br>`Credit-Notice`<br>`Mint-Batch-Notice`<br>`Split-Position-Notice`<br>`Debit-Single-Notice`<br>`Credit-Single-Notice`<br>`Buy-Notice`<br>`Log-Prediction-Notice`<br>`Log-Probabilities-Notice` |
+| `Sell`  || `Quantity`: Integer greater than 0s<br>`PositionId`: Integer greater than 0<br>`ReturnAmount`: Integer greater than 0  |  | `Debit-Single-Notice`<br>`Credit-Single-Notice`<br>`Batch-Burn-Notice`<br>`Merge-Positions-Notice`<br>`Debit-Notice`<br>`Credit-Notice`<br>`Debit-Single-Notice`<br>`Credit-Single-Notice`<br>`Sell-Notice`<br>`Log-Prediction-Notice`<br>`Log-Probabilities-Notice` |
 | `Withdraw-Fees`|| | | `Withdraw-Fees-Notice` |
 | `Calc-Buy-Amount` || `InvestmentAmount`: Integer greater than 0s<br>`PositionId`: Integer greater than 0 | | `Calc-Buy-Amount-Response` |
 | `Calc-Sell-Amount` || `ReturnAmount`: Integer greater than 0s<br>`PositionId`: Integer greater than 0 | | `Calc-Sell-Amount-Response` |
 | `Collected-Fees`|| | | `Collected-Fees-Response` |
 | `Fees-Withdrawable` || | | `Fees-Withdrawable-Response` |
-| `Transfer` || `Quantity`: Integer greater than 0<br>`Recipient`: Valid Arweave address | `X-*`: Tags beginning with "X-" | `Debit-Notice`, `Credit-Notice` |
+| `Transfer` || `Quantity`: Integer greater than 0<br>`Recipient`: Valid Arweave address | `X-*`: Tags beginning with "X-" | `Debit-Notice`<br>`Credit-Notice` |
 | `Balance` || | `Recipient`: Valid Arweave address | `Balance-Response` |
 | `Balances` || | | `Balances-Response` |
 | `Total-Supply`  || | | `Total-Supply-Response` |
-| `Merge-Positions` || `Quantity`: Integer greater than 0 | | `Merge-Positions-Notice` |
+| `Merge-Positions` || `Quantity`: Integer greater than 0 | | `Burn-Batch-Notice`<br>`Debit-Notice`<br>`Credit-Notice`<br>`Merge-Positions-Notice` |
 | `Report-Payouts` | `R` | `Payouts`: Valid JSON Array of Integers greater than 0 | | `Report-Payouts-Notice` |
-| `Redeem-Positions` || | | `Redeem-Positions-Notice` |
+| `Redeem-Positions` || | | `Burn-Single-Notice`<br>`Debit-Notice`<br>`Credit-Notice`<br>`Redeem-Positions-Notice` |
 | `Get-Payout-Numerators` || | | `Get-Payout-Numerators-Response` |
 | `Get-Payout-Denominator` || | | `Get-Payout-Denominator-Response` |
-| `Transfer-Single` || `Quantity`: Integer greater than 0<br>`PositionId`: Integer greater than 0<br>`Recipient`: Valid Arweave address | `X-*`: Tags beginning with "X-" | `Debit-Single-Notice`, `Credit-Single-Notice` |
-| `Transfer-Batch` || `Quantities`: Valid JSON Array of Integers greater than 0<br>`PositionIds`: Valid JSON Array of Integers greater than 0<br>`Recipient`: Valid Arweave address | `X-*`: Tags beginning with "X-" | `Debit-Batch-Notice`, `Credit-Batch-Notice` |
-| `Balance-By-Id` || `PositionId`: Integer greater than 0 | `Recipient`: Valid Arweave address | `Balance-By-Id-Response` |
-| `Balances-By-Id` || `PositionId`: Integer greater than 0 | | `Balances-By-Id-Response` |
-| `Batch-Balance` || `PositionIds`: Valid JSON Array of Integers greater than 0<br>`Recipients`: Valid JSON Array of Arweave addresses | | `Batch-Balance-Response` |
-| `Batch-Balances` || `PositionIds`: Valid JSON Array of Integers greater than 0 | | `Batch-Balances-Response` |
+| `Transfer-Single` || `Quantity`: Integer greater than 0<br>`PositionId`: Integer greater than 0<br>`Recipient`: Valid Arweave address | `X-*`: Tags beginning with "X-" | `Debit-Single-Notice`<br>`Credit-Single-Notice` |
+| `Transfer-Batch` || `Quantities`: Valid JSON Array of Integers greater than 0<br>`PositionIds`: Valid JSON Array of Integers greater than 0<br>`Recipient`: Valid Arweave address | `X-*`: Tags beginning with "X-" | `Debit-Batch-Notice`<br>`Credit-Batch-Notice` |
+| `Position-Balance` || `PositionId`: Integer greater than 0 | `Recipient`: Valid Arweave address | `Position-Balance-Response` |
+| `Position-Balances` || `PositionId`: Integer greater than 0 | | `Balances-By-Id-Response` |
+| `Position-Batch-Balance` || `PositionIds`: Valid JSON Array of Integers greater than 0<br>`Recipients`: Valid JSON Array of Arweave addresses | | `Position-Batch-Balance-Response` |
+| `Position-Batch-Balances` || `PositionIds`: Valid JSON Array of Integers greater than 0 | | `Position-Batch-Balances-Response` |
 | `Update-Configurator` | `C` | `Configurator`: Valid Arweave address | | `Update-Configurator-Notice` |
 | `Update-Incentives` | `C` | `Incentives`: Valid Arweave address | | `Update-Incentives-Notice` |
 | `Update-Take-Fee` | `C` | `CreatorFee`: Integer greater than 0<br> `ProtocolFee`: Integer greater than 0 | | `Update-Take-Fee-Notice` |
@@ -236,7 +236,7 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 | Action                | Required Role                    | Required Tags                          | Optional Tags                   | Result                 | 
 | --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 
 | `Info`      || | | `Info-Response` |
-| `Spawn-Market`        || `ResolutionAgent`: Valid Arweave address<br>`CollateralToken`: Valid Arweave address<br>`Question`: String<br>`OutcomeSlotCount`: Integer greater or equal to 2<br>`Category`: String<br>`Subcategory`: String<br>`Logo`: String<br>`Rules`: String<br>`CreatorFee`: Integer greater than or equal to 0<br>`CreatorFeeTarget`: Valid Arweave address<br> | | `Spawn-Market-Notice` |
+| `Spawn-Market`        || `ResolutionAgent`: Valid Arweave address<br>`CollateralToken`: Valid Arweave address<br>`Question`: String<br>`OutcomeSlotCount`: Integer greater or equal to 2<br>`Category`: String<br>`Subcategory`: String<br>`Logo`: String<br>`Rules`: String<br>`CreatorFee`: Integer greater than or equal to 0<br>`CreatorFeeTarget`: Valid Arweave address<br> | | `Spawned`<br>`Spawn-Market-Notice` |
 | `Init-Market`      || | | `Init-Market-Notice` |
 | `Markets-Pending`       || | | `Markets-Pending-Response` |
 | `Markets-Init`  || | | `Markets-Init-Response` |
@@ -258,7 +258,7 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 | --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 
 | `Info`      || | | `Info-Response` |
 | `Claim`        ||  | `OnBehalfOf`: Valid Arweave address | `Claim-Notice` |
-| `Transfer`      || `Quantity`: Integer greater than 0<br>`Recipient`: Valid Arweave address | `X-*`: Tags beginning with "X-"| `Debit-Notice`, `Credit-Notice` |
+| `Transfer`      || `Quantity`: Integer greater than 0<br>`Recipient`: Valid Arweave address | `X-*`: Tags beginning with "X-"| `Debit-Notice`<br>`Credit-Notice` |
 | `Burn`       || `Quantity`: Integer greater than 0 | | `Burn-Notice` |
 | `Claim-Balance` || | `Recipient`: Valid Arweave address | `Claim-Balance-Response` |
 | `Claim-Balances` || | | `Claim-Balances-Response` |
@@ -266,10 +266,10 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 | `Balances` || | | `Balances-Response` |
 | `Total-Supply` || | | `Total-Supply-Response` |
 | `Update-Configurator` | `C` | `Configurator`: Valid Arweave address | | `Update-Configurator-Notice` |
-| `Update-LP-Holder-Ratio`| `C` | `UpdateDelay`: Integer greater than 0 | | `Unstage-Update-Delay-Notice` |
-| `Update-Collateral-Prices` | `C` | `UpdateDelay`: Integer greater than 0 | | `Action-Update-Delay-Notice` |
-| `Update-Collateral-Factors` | `C` | `UpdateDelay`: Integer greater than 0 | | `Action-Update-Delay-Notice` |
-| `Update-Collateral-Denominations` | `C` | `UpdateDelay`: Integer greater than 0 | | `Action-Update-Delay-Notice` |
+| `Update-LP-Holder-Ratio`| `C` | `UpdateDelay`: Integer greater than 0 | | `Update-Lp-To-Holder-Ratio-Notice` |
+| `Update-Collateral-Prices` | `C` | `UpdateDelay`: Integer greater than 0 | | `Update-Collateral-Prices-Notice` |
+| `Update-Collateral-Factors` | `C` | `UpdateDelay`: Integer greater than 0 | | `Update-Collateral-Factors-Notice` |
+| `Update-Collateral-Denominations` | `C` | `UpdateDelay`: Integer greater than 0 | | `Update-Collateral-Denominations-Notice` |
 
 ### Platform Data
 
@@ -278,14 +278,14 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 | Action                | Required Role                    | Required Tags                          | Optional Tags                   | Result                | 
 | --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 
 | `Info`      || | | `Info-Response` |
-| `Log-Market` || `Market`: Valid Arweave address<br>`Creator`: Valid Arweave address<br>`CreatorFee`: Integer greater than or equal to 0`CreatorFeeTarget`: Valid Arweave address<br>`Question`: String<br>`Rules`: String<br>`OutcomeSlotCount`: Integer greater than or equal to 2<br>`Collateral`: Valid Arweave address<br>`ResolutionAgent`: Valid Arweave address<br>`Category`: String<br>`Subcategory`: String<br>`Logo`: String | | `Log-Market-Notice` |
+| `Log-Market` || `Market`: Valid Arweave address<br>`Creator`: Valid Arweave address<br>`CreatorFee`: Integer greater than or equal to 0<br>`CreatorFeeTarget`: Valid Arweave address<br>`Question`: String<br>`Rules`: String<br>`OutcomeSlotCount`: Integer greater than or equal to 2<br>`Collateral`: Valid Arweave address<br>`ResolutionAgent`: Valid Arweave address<br>`Category`: String<br>`Subcategory`: String<br>`Logo`: String | | `Log-Market-Notice` |
 | `Log-Funding` || `User`: Valid Arweave address<br>`Operation`: String ("add" or "remove")<br>`Collateral`: Valid Arweave address<br>`Quantity`: Integer greater than 0 | | `Log-Funding-Notice` |
 | `Log-Prediction`|| `User`: Valid Arweave address<br>`Operation`: String ("buy" or "sell")<br>`Collateral`: Valid Arweave address<br>`Quantity`: Integer greater than 0<br>`Outcome`: Integer greater than 0<br>`Shares`: Integer greater than 0<br>`Price`: Decimal greater than 0 | | `Log-Prediction-Notice` |
 | `Log-Probabilities` || `Probabilities`: Valid JSON Array of decimals greater than or equal to 0 | | `Log-Probabilities-Notice` |
 | `Broadcast`|| `Market`: Valid Arweave address<br>`Data`: String | | `Broadcast-Notice` |
 | `Query` | `V` | `Data`: Valid SQL Query | | `Query-Response` |
 | `Get-Market` || `Market`: Valid Arweave address | | `Get-Market-Response` |
-| `Get-Markets`|| | `Status`: String ("open", "resolved" or "closed")<br>`Collateral`: Valid Arweave address<br>`MinFunding`: Integer greater than or equal to 0<br>`Creator`: Valid Arweave address<br>`Category`: String<br>`Subcategory`: String<br>`Keyword`: String<br>`OrderBy`: String ("timestamp" or "question", default: "timestamp")<br>`OrderDirections`: Valid Arweave address ("ASC" or "DESC")<br>`Limit`: Integer greater than 0 (default: 12)<br>`Offset`: Integer greater than or equal to 0 (default: 0) | `Get-Market-Response` |
+| `Get-Markets`|| | `Status`: String ("open", "resolved" or "closed")<br>`Collateral`: Valid Arweave address<br>`MinFunding`: Integer greater than or equal to 0<br>`Creator`: Valid Arweave address<br>`Category`: String<br>`Subcategory`: String<br>`Keyword`: String<br>`OrderBy`: String ("timestamp" or "question", default: "timestamp")<br>`OrderDirections`: Valid Arweave address ("ASC" or "DESC")<br>`Limit`: Integer greater than 0 (default: 12)<br>`Offset`: Integer greater than or equal to 0 (default: 0) | `Get-Markets-Response` |
 | `Get-Broadcasts` || `Market`: Valid Arweave address | `OrderDirections`: Valid Arweave address ("ASC" or "DESC")<br>`Limit`: Integer greater than 0 (default: 50)<br>`Offset`: Integer greater than or equal to 0 (default: 0) | `Get-Broadcasts-Response` |
 | `Set-User-Silence` | `M` | `User`: Valid Arweave address<br>`Silenced`: Boolean ("true" or "false") | | `Set-User-Silence-Notice` |
 | `Set-Message-Visibility` | `M` | `Entity`: String ("message" or "user")<br>`EntityId`: Valid Arweave address<br>`Visible`: Boolean ("true" or "false") | | `Set-Message-Visibility-Notice` |
