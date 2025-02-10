@@ -31,7 +31,7 @@ local constants = {
     "test-this-is-valid-arweave-wallet-address-3",
     "test-this-is-valid-arweave-wallet-address-4",
   },
-  readers = {
+  viewers = {
     "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
   },
 }

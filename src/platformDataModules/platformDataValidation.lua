@@ -27,10 +27,10 @@ end
 
 --- Validate query
 --- @param msg Message The message received
---- @param readers table<string> The list of approved readers
+--- @param viewers table<string> The list of approved viewers
 --- @return string The normalized SQL query
-function PlatformDataValidation.validateQuery(readers, msg)
-  assert(utils.includes(msg.From, readers), "Sender must be reader!")
+function PlatformDataValidation.validateQuery(viewers, msg)
+  assert(utils.includes(msg.From, viewers), "Sender must be viewer!")
   local sql = tostring(msg.Data)
   assert(sql and type(sql) == "string", "SQL query is required!")
   -- normalize query to remove comments and spaces
@@ -92,13 +92,13 @@ function PlatformDataValidation.validateUpdateModerators(configurator, msg)
   end
 end
 
---- Validate updateReaders
+--- Validate updateViewers
 --- @param msg Message The message received
-function PlatformDataValidation.validateUpdateReaders(configurator, msg)
+function PlatformDataValidation.validateUpdateViewers(configurator, msg)
   assert(msg.From == configurator, "Sender must be the configurator!")
-  local readers = json.decode(msg.tags.Readers)
-  for _, reader in ipairs(readers) do
-    sharedValidation.validateAddress(reader, "Reader")
+  local viewers = json.decode(msg.tags.Viewers)
+  for _, viewer in ipairs(viewers) do
+    sharedValidation.validateAddress(viewer, "Viewer")
   end
 end
 

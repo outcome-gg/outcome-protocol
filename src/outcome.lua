@@ -56,9 +56,9 @@ end
 --- @param value string The value to validate
 --- @param name string The name of the value
 local function validatePositiveNumberOrZero(value, name)
-  assert(value, string.format("`%s` is required.", name))
+  assert(type(value) == "string", string.format("`%s` must be a string.", name))
   assert(tonumber(value), string.format("`%s` must be a number.", name))
-  assert(tonumber(value) >= 0, string.format("`%s`  must be greater than or equal to zero.", name))
+  assert(tonumber(value) >= 0, string.format("`%s` must be greater than or equal to zero.", name))
 end
 
 --- Validates a positive number greater than zero
@@ -66,7 +66,7 @@ end
 --- @param name string The name of the value
 local function validatePositiveNumberGreaterThanZero(value, name)
   validatePositiveNumberOrZero(value, name)
-  assert(tonumber(value) > 0, string.format("`%s`  must be greater than zero.", name))
+  assert(tonumber(value) > 0, string.format("`%s` must be greater than zero.", name))
 end
 
 --- Validates a positive integer or zero
@@ -74,7 +74,7 @@ end
 --- @param name string The name of the value
 local function validatePositiveIntegerOrZero(value, name)
   validatePositiveNumberOrZero(value, name)
-  assert(tonumber(value) % 1 == 0, string.format("`%s`  must be an integer.", name))
+  assert(tonumber(value) % 1 == 0, string.format("`%s` must be an integer.", name))
 end
 
 --- Validates a positive integer greater than zero
@@ -82,7 +82,7 @@ end
 --- @param name string The name of the value
 local function validatePositiveIntegerGreaterThanZero(value, name)
   validatePositiveNumberGreaterThanZero(value, name)
-  assert(tonumber(value) % 1 == 0, string.format("`%s`  must be an integer.", name))
+  assert(tonumber(value) % 1 == 0, string.format("`%s` must be an integer.", name))
 end
 
 --- Validates a non-empty numeric table

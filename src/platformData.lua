@@ -156,7 +156,7 @@ print("tables: " .. json.encode(tables))
 --- @class PlatformDataConfiguration
 --- @field configurator string The configurator
 --- @field moderators table<string> The moderators
---- @field readers table<string> The readers
+--- @field viewers table<string> The viwers
 
 --- Retrieve PlatformData Configuration
 --- Fetches configuration parameters from constants
@@ -165,7 +165,7 @@ local function retrievePlatformDataConfig()
   local config = {
     configurator = constants.configurator,
     moderators = constants.moderators,
-    readers = constants.readers
+    viewers = constants.viewers
   }
   return config
 end
@@ -177,7 +177,7 @@ if not PlatformData or Env == 'DEV' then
     DbAdmin,
     platformDataConfig.configurator,
     platformDataConfig.moderators,
-    platformDataConfig.readers
+    platformDataConfig.viewers
   )
 end
 
@@ -266,7 +266,7 @@ READ HANDLERS
 --- @param msg Message The message received
 --- @return Message queryResults The query results
 Handlers.add("Query", {Action = "Query"}, function(msg)
-  local normalizedSql = platformDataValidation.validateQuery(PlatformData.readers, msg)
+  local normalizedSql = platformDataValidation.validateQuery(PlatformData.viewers, msg)
   return PlatformData:query(normalizedSql, msg)
 end)
 
@@ -375,11 +375,11 @@ Handlers.add("Update-Moderators", {Action = "Update-Moderators"}, function(msg)
   return PlatformData.chatroom:updateModerators(moderators, msg)
 end)
 
---- Update readers handler
+--- Update viewers handler
 --- @param msg Message The message received
---- @return Message updateReadersNotice The update readers notice
-Handlers.add("Update-Readers", {Action = "Update-Readers"}, function(msg)
-  chatroomValidation.validateUpdateReaders(PlatformData.chatroom.configurator, msg)
-  local readers = json.decode(msg.Tags.Readers)
-  return PlatformData.chatroom:updateReaders(readers, msg)
+--- @return Message updateViewersNotice The update viewers notice
+Handlers.add("Update-Viewers", {Action = "Update-Viewers"}, function(msg)
+  chatroomValidation.validateUpdateViewers(PlatformData.chatroom.configurator, msg)
+  local viewers = json.decode(msg.Tags.Viewers)
+  return PlatformData.chatroom:updateViewers(viewers, msg)
 end)

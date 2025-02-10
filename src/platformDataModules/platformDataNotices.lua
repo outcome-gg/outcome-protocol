@@ -22,10 +22,10 @@ function PlatformDataNotices.updateModeratorsNotice(moderators, msg)
   })
 end
 
-function PlatformDataNotices.updateReadersNotice(updateReaders, msg)
+function PlatformDataNotices.updateViewersNotice(updateViewers, msg)
   return msg.reply({
-    Action = "Update-Readers-Notice",
-    UpdateReaders = updateReaders
+    Action = "Update-Viewers-Notice",
+    UpdateViewers = updateViewers
   })
 end
 

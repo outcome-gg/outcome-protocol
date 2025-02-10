@@ -1,4 +1,9 @@
-Scenarios = { _version = "0.0.1"}
+Scenarios = { 
+  _version = "0.0.1",
+  binraryMarket = nil,
+  categoricalMarket = nil,
+  largeCategoricalMarket = nil,
+}
 Outcome = require("outcome")
 
 local json = require("json")
@@ -62,7 +67,7 @@ local function retry(fn, retries, ...)
     local result, errorMsg = fn(...)
     if result then return result end
     lastError = errorMsg or "Unknown error"
-    logAction("🔄 Retry", "Attempt " .. tostring(attempt) .. " failed.")
+    logAction("🔄 Retry", "Attempt " .. tostring(attempt) .. " failed. Retrying ...")
   end
   return nil, lastError
 end
@@ -81,7 +86,7 @@ end
 --- Tries to init market
 --- @notice tries to get process ID first, then initializes the market
 local function tryInitMarket(originalMsgId)
-  retry(tryGetProcessId, 100, originalMsgId)
+  retry(tryGetProcessId, 25, originalMsgId)
   local res = Outcome.marketFactoryInitMarket()
   if not res or not res.MarketProcessIds or #res.MarketProcessIds == 0 then
     return nil, "MarketProcessIds is nil or empty"
@@ -98,7 +103,7 @@ HELPERS: SCENARIOS
 --- Create a market with the specified number of outcome slots
 --- @warning The outcomeSlotCount must be between 2 and 256, inclusive
 --- @param outcomeSlotCount number The number of outcome slots
-function Scenarios.createMarket(outcomeSlotCount)
+local function createMarket(outcomeSlotCount)
   -- Step 1: Spawn Market
   logAction("Spawn Market", "`outcomeSlotCount` is 2 for binary market")
   local res1 = Outcome.marketFactorySpawnMarket(
@@ -166,6 +171,45 @@ local function mintTestCollateral()
   return quantity
 end
 
+-- Add funding to a market
+local function addFunding(market, collateral, quantity, distribution)
+  -- Step 1: Add Funding
+  local distributionString = distribution and json.encode(distribution) or "N/A"
+  logAction("Add Funding", "Add funding to a market with distribution: " .. distributionString)
+  local res = Outcome.marketAddFunding(
+    market,
+    collateral,
+    quantity,
+    distribution
+  )
+  -- Error handling
+  if not res or not res.Quantity then
+    logResult("Add Funding", "Failed to add funding", false)
+    return
+  end
+  -- Success
+  logResult("Add Funding", "Funding added successfully", true)
+  return res.Quantity
+end
+
+-- Remove funding from a market
+local function removeFunding(market, quantity)
+  -- Step 1: Remove Funding
+  logAction("Remove Funding", "Remove funding from a market")
+  local res = Outcome.marketRemoveFunding(
+    market,
+    quantity
+  )
+  -- Error handling
+  if not res or not res.Quantity then
+    logResult("Remove Funding", "Failed to remove funding", false)
+    return
+  end
+  -- Success
+  logResult("Remove Funding", "Funding removed successfully", true)
+  return res.Quantity
+end
+
 --[[
 ===============================
 SCENARIOS: CREATE BINARY MARKET
@@ -176,9 +220,11 @@ SCENARIOS: CREATE BINARY MARKET
 --- @note `outcomeSlotCount` is set to 2
 function Scenarios.createBinaryMarket()
   logScenario("Create Binary Market", true)
-  local marketId = Scenarios.createMarket(2)
-  logScenario("Create Binary Market", false, marketId)
-  return marketId
+  local market = createMarket(2)
+  logScenario("Create Binary Market", false, market)
+  -- Store the market for later use
+  Scenarios.binaryMarket = market
+  return market
 end
 
 --[[
@@ -191,9 +237,11 @@ SCENARIOS: CREATE CATEGORICAL MARKET
 --- @note `outcomeSlotCount` is set to 3
 function Scenarios.createCategoricalMarket()
   logScenario("Create Categorical Market", true)
-  local marketId = Scenarios.createMarket(3)
-  logScenario("Create Categorical Market", false, marketId)
-  return marketId
+  local market = createMarket(3)
+  logScenario("Create Categorical Market", false, market)
+  -- Store the market for later use
+  Scenarios.categoricalMarket = market
+  return market
 end
 
 --[[
@@ -206,9 +254,11 @@ SCENARIOS: CREATE LARGE CATEGORICAL MARKET
 --- @note `outcomeSlotCount` is set to 256
 function Scenarios.createLargeCategoricalMarket()
   logScenario("Create Large Categorical Market", true)
-  local marketId = Scenarios.createMarket(256)
-  logScenario("Create Large Categorical Market", false, marketId)
-  return marketId
+  local market = createMarket(256)
+  logScenario("Create Large Categorical Market", false, market)
+  -- Store the market for later use
+  Scenarios.largeCategoricalMarket = market
+  return market
 end
 
 --[[
@@ -232,13 +282,57 @@ SCENARIOS: ADD INITIAL FUNDING
 ==============================
 ]]
 
--- -- Create a binary market
--- --- @note `outcomeSlotCount` is set to 2
--- function Scenarios.setProbabilityDistributionForBinaryMarket()
---   local marketId = Scenarios.createBinaryMarket()
---   local res = Outcome.marketAddFunding(market, )
---   return marketId
--- end
+-- Create a binary market
+--- @note Setup:
+--- - `quantity` of test tokens minted: 1000, with 12 decimal places
+--- - `market` created with 2 outcome slots
+--- - `distribution` set to {70,30}; 70% to outcome 1, 30% to outcome 2
+--- @note 
+function Scenarios.addInitialFunding()
+  logScenario("Add Initial Funding", true)
+  -- Mint test collateral
+  local quantity = mintTestCollateral()
+  -- Create binary market if not already created
+  local market = Scenarios.binaryMarket
+  if not market then
+    market = createMarket(2)
+    Scenarios.binaryMarket = market
+  end
+  -- Add initial funding
+  local distribution = {70, 30}
+  local quantity_ = addFunding(market, Outcome.testCollateral, quantity, distribution)
+  logScenario("Add Initial Funding", false, quantity_)
+  return market
+end
+
+--[[
+======================
+SCENARIOS: ADD FUNDING
+======================
+]]
+
+-- Create a binary market
+--- @note Setup:
+--- - `quantity` of test tokens minted: 1000, with 12 decimal places
+--- - `market` created with 2 outcome slots
+--- - `distribution` set to {70,30}; 70% to outcome 1, 30% to outcome 2
+--- @note 
+function Scenarios.addFunding()
+  logScenario("Add Funding", true)
+  -- Mint test collateral
+  local quantity = mintTestCollateral()
+  -- Create binary market if not already created
+  local market = Scenarios.binaryMarket
+  if not market then
+    market = createMarket(2)
+    Scenarios.binaryMarket = market
+  end
+  -- Add (additional) funding
+  local distribution = nil
+  local quantity_ = addFunding(market, Outcome.testCollateral, quantity, distribution)
+  logScenario("Add Funding", false, quantity_)
+  return market
+end
 
 --[[
 ==============================
@@ -252,6 +346,15 @@ Scenarios.ScenarioIDs = {
   CREATE_CATEGORICAL_MARKET = 2,
   CREATE_LARGE_CATEGORICAL_MARKET = 3,
   MINT_TEST_COLLATERAL = 4,
+  ADD_INITIAL_FUNDING = 5,
+  ADD_FUNDING = 6,
+  REMOVE_FUNDING = 7,
+  MERGE_POSITIONS = 8,
+  BUY = 9,
+  SELL = 10,
+  TRANSFER_POSITION = 11,
+  REPORT_PAYOUTS = 12,
+  REDEEM_WINNINGS = 13,
 }
 
 --[[
@@ -266,6 +369,7 @@ Scenarios.scenarios = {
   [Scenarios.ScenarioIDs.CREATE_CATEGORICAL_MARKET] = { name = "Create Categorical Market", func = Scenarios.createCategoricalMarket },
   [Scenarios.ScenarioIDs.CREATE_LARGE_CATEGORICAL_MARKET] = { name = "Create Large Categorical Market", func = Scenarios.createLargeCategoricalMarket },
   [Scenarios.ScenarioIDs.MINT_TEST_COLLATERAL] = { name = "Mint Test Collateral", func = Scenarios.mintTestCollateral },
+  [Scenarios.ScenarioIDs.ADD_INITIAL_FUNDING] = { name = "Add Initial Funding", func = Scenarios.addInitialFunding },
 }
 
 --[[
@@ -277,7 +381,7 @@ MAIN: HELP
 -- Function to list available scenarios
 function Scenarios.help()
   print("\n📖 Available Scenarios:")
-  for id, scenario in pairs(Scenarios.scenarios) do
+  for id, scenario in ipairs(Scenarios.scenarios) do
     print("- " .. id .. ": " .. scenario.name)
   end
 end
@@ -317,7 +421,7 @@ MAIN: RUN ALL
 function Scenarios.runAll()
   logScenarios(true)
   local allSuccess = true
-  for _, scenario in pairs(Scenarios.scenarios) do
+  for _, scenario in ipairs(Scenarios.scenarios) do
     local success = scenario.func()
     if not success then
       allSuccess = false
