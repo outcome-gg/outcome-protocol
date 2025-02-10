@@ -117,6 +117,8 @@ Outcome.marketBuy(
 ### 9. Resolve Market
 Finalize the market outcome by reporting the payout distribution.
 
+**Note**: This function is callable in Quickstart because we set the resolution agent to `ao.id`.
+
 #### Parameters
 - `market`: Market process ID (variable set to market above).
 - `payout`: Payout distribution, where each value represents the fraction of the total payout assigned to each outcome (e.g., `{1, 0}` means 100% to IN and 0% to OUT).
