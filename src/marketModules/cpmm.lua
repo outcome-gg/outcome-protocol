@@ -172,15 +172,15 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
     sendBackAmounts[i] = addedFunds - sendBackAmounts[i]
   end
   -- Send notice with amounts added
-  return self.addFundingNotice(from, sendBackAmounts, mintAmount)
+  return self.addFundingNotice(sendBackAmounts, mintAmount, msg)
 end
 
 --- Remove funding
---- @param sender string The process ID of the account that removed the funding
+--- @param from string The process ID of the account that removed the funding
 --- @param sharesToBurn string The amount of shares to burn
 --- @param msg Message The message received
 --- @return Message The funding removed notice
-function CPMMMethods:removeFunding(sender, sharesToBurn, msg)
+function CPMMMethods:removeFunding(from, sharesToBurn, msg)
   assert(bint.__lt(0, bint(sharesToBurn)), "funding must be non-zero")
   -- Get poolBalances
   local poolBalances = self:getPoolBalances()
@@ -191,17 +191,17 @@ function CPMMMethods:removeFunding(sender, sharesToBurn, msg)
   end
   -- Calculate collateralRemovedFromFeePool
   local collateralRemovedFromFeePool = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
-  self:burn(ao.id, sharesToBurn, msg)
+  self:burn(from, sharesToBurn, msg)
   local poolFeeBalance = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
   collateralRemovedFromFeePool = tostring(math.floor(poolFeeBalance - collateralRemovedFromFeePool))
   -- Send collateralRemovedFromFeePool
   if bint(collateralRemovedFromFeePool) > 0 then
-    ao.send({ Target = self.tokens.collateralToken, Action = "Transfer", Recipient=sender, Quantity=collateralRemovedFromFeePool})
+    ao.send({ Target = self.tokens.collateralToken, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
   end
   -- Send conditionalTokens amounts
-  self.tokens:transferBatch(ao.id, sender, self.tokens.positionIds, sendAmounts, false, msg)
+  self.tokens:transferBatch(ao.id, from, self.tokens.positionIds, sendAmounts, false, msg)
   -- Send notice
-  return self.removeFundingNotice(sender, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
+  return self.removeFundingNotice(sendAmounts, collateralRemovedFromFeePool, sharesToBurn, msg)
 end
 
 --- Calc buy amount
@@ -244,7 +244,7 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
   for i = 1, #poolBalances do
     if not bint.__eq(bint(i), bint(positionId)) then
       local poolBalance = poolBalances[i]
-      assert(poolBalance - returnAmountPlusFees > 0, "PoolBalance must be greater than return amount plus fees! poolBalance: " .. tostring(poolBalance) .. " returnAmountPlusFees: " .. tostring(returnAmountPlusFees))
+      assert(poolBalance - returnAmountPlusFees > 0, "PoolBalance must be greater than return amount plus fees!")
       endingOutcomeBalance = CPMMHelpers.ceildiv(endingOutcomeBalance * poolBalance, poolBalance - returnAmountPlusFees)
     end
   end
@@ -294,20 +294,19 @@ function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minPosi
   -- Transfer buy position to onBehalfOf
   self.tokens:transferSingle(ao.id, onBehalfOf, positionId, positionTokensToBuy, false, msg)
   -- Send notice.
-  return self.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, positionTokensToBuy)
+  return self.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, positionTokensToBuy, msg)
 end
 
 --- Sell
---- Returns collateral and excess outcome tokens to the sender
 --- @param from string The process ID of the account that initiates the sell
 --- @param returnAmount number The amount to unstake from an outcome
 --- @param positionId string The position ID of the outcome
---- @param quantity number The quantity of tokens sent for this transaction, a.k.a. the max outcome tokens to sell
+--- @param maxPositionTokensToSell number The max outcome tokens to sell
 --- @return Message The sell notice
-function CPMMMethods:sell(from, returnAmount, positionId, quantity, msg)
+function CPMMMethods:sell(from, returnAmount, positionId, maxPositionTokensToSell, msg)
   -- Calculate outcome tokens to sell.
   local positionTokensToSell = self:calcSellAmount(returnAmount, positionId)
-  assert(bint.__le(bint(positionTokensToSell), bint(quantity)), "Maximum sell amount exceeded!")
+  assert(bint.__le(bint(positionTokensToSell), bint(maxPositionTokensToSell)), "Maximum sell amount exceeded!")
   -- Calculate returnAmountPlusFees.
   local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(returnAmount, self.lpFee), bint.__sub(1e4, self.lpFee))))
   self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
@@ -317,7 +316,7 @@ function CPMMMethods:sell(from, returnAmount, positionId, quantity, msg)
   assert(bint.__le(bint(returnAmountPlusFees), bint(collataralBalance)), "Insufficient liquidity!")
   -- Check user balance and transfer positionTokensToSell to process before merge.
   local balance = self.tokens:getBalance(from, nil, positionId)
-  assert(bint.__le(bint(quantity), bint(balance)), 'Insufficient balance!')
+  assert(bint.__le(bint(positionTokensToSell), bint(balance)), 'Insufficient balance!')
   self.tokens:transferSingle(from, ao.id, positionId, positionTokensToSell, true, msg)
   -- Merge positions through all conditions (burns returnAmountPlusFees).
   self.tokens:mergePositions(ao.id, '', returnAmountPlusFees, true, msg)
@@ -328,11 +327,8 @@ function CPMMMethods:sell(from, returnAmount, positionId, quantity, msg)
     Quantity = tostring(returnAmount),
     Recipient = from
   }).receive()
-  -- Returns unburned conditional tokens to user 
-  local unburned = tostring(bint.__sub(bint(quantity), bint(returnAmountPlusFees)))
-  self.tokens:transferSingle(ao.id, from, positionId, unburned, true, msg)
   -- Send notice (Process continued via "SellOrderCompletionCollateralToken" and "SellOrderCompletionConditionalTokens" handlers)
-  return self.sellNotice(from, returnAmount, feeAmount, positionId, positionTokensToSell)
+  return self.sellNotice(from, returnAmount, feeAmount, positionId, positionTokensToSell, msg)
 end
 
 --- Colleced fees

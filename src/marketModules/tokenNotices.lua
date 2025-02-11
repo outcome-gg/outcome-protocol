@@ -37,10 +37,11 @@ end
 --- Transfer notices
 --- @param debitNotice Message The notice to send the spender
 --- @param creditNotice Message The notice to send the receiver
+--- @param recipient string The address that will receive the tokens
 --- @param msg Message The mesage received
 --- @return table<Message> The transfer notices
-function TokenNotices.transferNotices(debitNotice, creditNotice, msg)
-  return { msg.reply(debitNotice), ao.send(creditNotice) }
+function TokenNotices.transferNotices(debitNotice, creditNotice, recipient, msg)
+  return { msg.reply(debitNotice), msg.forward(recipient, creditNotice) }
 end
 
 --- Transfer error notice

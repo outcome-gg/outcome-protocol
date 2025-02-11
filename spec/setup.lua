@@ -9,7 +9,7 @@ _G.ao = {
 		local obj = {}
 		-- Explicitly bind a proper 'receive' function
 		function obj.receive()
-				return { Data = val }
+			return { Data = val }
 		end
 		return obj
 	end,
@@ -22,13 +22,13 @@ _G.ao = {
   end,
   env = {
     Module = {
-      Id = "test"
+      Id = "test-this-is-valid-arweave-wallet-address-0"
     }
   },
   authorities = {
-    "test"
+    "test-this-is-valid-arweave-wallet-address-0"
   },
-	id = "test"
+	id = "test-this-is-valid-arweave-wallet-address-0"
 }
 
 _G.Handlers = {
@@ -63,7 +63,6 @@ _G.Handlers = {
     end
   },
 	receive = function(val)
-		print("RECEIVE CALLED!")
 		return { Data = val }
 	end
 }

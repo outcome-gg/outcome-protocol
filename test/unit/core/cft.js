@@ -1139,7 +1139,7 @@ test('Transferring: should not allow single transfer by more than split balance'
 
   const action_ = result.Messages[0].Tags.find(t => t.name === 'Action').value
   const error_ = result.Messages[0].Tags.find(t => t.name === 'Error').value
-  const tokenId_ = result.Messages[0].Tags.find(t => t.name === 'Token-Id').value
+  const tokenId_ = result.Messages[0].Tags.find(t => t.name === 'PositionId').value
 
   assert.equal(action_, "Transfer-Error")
   assert.equal(error_, "Insufficient Balance!")
@@ -1187,7 +1187,7 @@ test('Transferring: should not allow batch transfer by more than split balance',
 
   const action_ = result.Messages[0].Tags.find(t => t.name === 'Action').value
   const error_ = result.Messages[0].Tags.find(t => t.name === 'Error').value
-  const tokenId_ = result.Messages[0].Tags.find(t => t.name === 'Token-Id').value
+  const tokenId_ = result.Messages[0].Tags.find(t => t.name === 'PositionId').value
 
   assert.equal(action_, "Transfer-Error")
   assert.equal(error_, "Insufficient Balance!")

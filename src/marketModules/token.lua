@@ -130,7 +130,6 @@ function TokenMethods:transfer(from, recipient, quantity, cast, msg)
     if not cast then
       -- Debit-Notice message template, that is sent to the Sender of the transfer
       local debitNotice = {
-        Target = from,
         Action = 'Debit-Notice',
         Recipient = recipient,
         Quantity = quantity,
@@ -140,7 +139,6 @@ function TokenMethods:transfer(from, recipient, quantity, cast, msg)
       }
       -- Credit-Notice message template, that is sent to the Recipient of the transfer
       local creditNotice = {
-        Target = recipient,
         Action = 'Credit-Notice',
         Sender = from,
         Quantity = quantity,
@@ -159,7 +157,7 @@ function TokenMethods:transfer(from, recipient, quantity, cast, msg)
       end
 
       -- Send Debit-Notice and Credit-Notice
-      return self.transferNotices(debitNotice, creditNotice, msg)
+      return self.transferNotices(debitNotice, creditNotice, recipient, msg)
     end
   else
     return self.transferErrorNotice(msg)

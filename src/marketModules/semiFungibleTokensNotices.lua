@@ -51,7 +51,6 @@ end
 function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)
   -- Prepare notice
   local notice = {
-    Target = from,
     Recipient = from,
     PositionId = tostring(id),
     Quantity = tostring(quantity),
@@ -66,7 +65,7 @@ function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)
     end
   end
   -- Send notice
-  return ao.send(notice)
+  return msg.forward(from, notice)
 end
 
 --- Burn batch notice
@@ -79,7 +78,6 @@ end
 function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities, remainingBalances, msg)
   -- Prepare notice
   local notice = {
-    Target = from,
     Recipient = from,
     PositionIds = json.encode(positionIds),
     Quantities = json.encode(quantities),
@@ -95,7 +93,7 @@ function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities
     end
   end
   -- Send notice
-  return ao.send(notice)
+  return msg.forward(from, notice)
 end
 
 --- Transfer single token notices
@@ -110,13 +108,12 @@ function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity,
   local debitNotice = {
     Action = 'Debit-Single-Notice',
     Recipient = to,
-    PostionId = tostring(id),
+    PositionId = tostring(id),
     Quantity = tostring(quantity),
     Data = Colors.gray .. "You transferred " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.gray .. " to " .. Colors.green .. to .. Colors.reset
   }
   -- Prepare credit notice
   local creditNotice = {
-    Target = to,
     Action = 'Credit-Single-Notice',
     Sender = from,
     PositionId = tostring(id),
@@ -132,7 +129,7 @@ function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity,
     end
   end
   -- Send notices
-  return { msg.reply(debitNotice), ao.send(creditNotice) }
+  return { msg.reply(debitNotice), msg.forward(to, creditNotice) }
 end
 
 --- Transfer batch tokens notices
@@ -153,7 +150,6 @@ function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantitie
   }
   -- Prepare credit notice
   local creditNotice = {
-    Target = to,
     Action = 'Credit-Batch-Notice',
     Sender = from,
     PositionIds = json.encode(ids),
@@ -169,7 +165,7 @@ function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantitie
     end
   end
   -- Send notice
-  return {msg.reply(debitNotice), ao.send(creditNotice)}
+  return {msg.reply(debitNotice), msg.forward(to, creditNotice)}
 end
 
 --- Transfer error notice
@@ -180,7 +176,7 @@ function SemiFungibleTokensNotices.transferErrorNotice(id, msg)
   return msg.reply({
     Action = 'Transfer-Error',
     ['Message-Id'] = msg.Id,
-    ['Token-Id'] = id,
+    ['PositionId'] = id,
     Error = 'Insufficient Balance!'
   })
 end

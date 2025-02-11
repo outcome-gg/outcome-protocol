@@ -66,7 +66,8 @@ describe("#market #token #tokenInternal", function()
         Recipient = recipient,
         Quantity = quantity
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgBurn = {
@@ -74,7 +75,8 @@ describe("#market #token #tokenInternal", function()
       Tags = {
         Quantity = burnQuantity
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgTransfer = {
@@ -86,7 +88,8 @@ describe("#market #token #tokenInternal", function()
         ["X-Action"] = "FOO"
       },
       Id = "test-message-id",
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     msgTransferError = {
       From = recipient,
@@ -100,7 +103,6 @@ describe("#market #token #tokenInternal", function()
     }
     -- create a notice object
     noticeDebit = {
-      Target = sender,
       Action = "Debit-Notice",
       Recipient = recipient,
       Quantity = "100",
@@ -109,7 +111,6 @@ describe("#market #token #tokenInternal", function()
     }
     -- create a notice object
     noticeCredit = {
-      Target = recipient,
       Action = "Credit-Notice",
       Sender = sender,
       Quantity = "100",
@@ -205,11 +206,7 @@ describe("#market #token #tokenInternal", function()
     assert.are.same(msgMint.Tags.Quantity, Token.totalSupply)
     -- assert notices
     assert.are.same(noticeDebit, notices[1])
-    assert.are.same(noticeCredit.Target, notices[2].Target)
-    assert.are.same(noticeCredit.Action, getTagValue(notices[2].Tags, "Action"))
-    assert.are.same(noticeCredit.Sender, getTagValue(notices[2].Tags, "Sender"))
-    assert.are.same(noticeCredit.Quantity, getTagValue(notices[2].Tags, "Quantity"))
-    assert.are.same(noticeCredit["X-Action"], getTagValue(notices[2].Tags, "X-Action"))
+    assert.are.same(noticeCredit, notices[2])
 	end)
 
   it("should fail to transfer tokens with insufficient balance", function()

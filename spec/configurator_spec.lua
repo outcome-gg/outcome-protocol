@@ -23,7 +23,7 @@ describe("#configurator", function()
     -- set admin
     admin = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I"
     -- set delay
-    delay = 1
+    delay = 3000
     -- create a message object
     msgInfo = {
       From = admin,
@@ -77,7 +77,7 @@ describe("#configurator", function()
     -- assert correct response
     assert.are.same({
       Admin = admin,
-      Delay = delay,
+      Delay = tostring(delay),
       Staged = json.encode(staged)
     }, info)
   end)
@@ -89,13 +89,12 @@ describe("#configurator", function()
     local notice = Handlers.process(msgUpdate)
     -- assert correct response
     assert.are.same({
-      Action = 'Update-Staged',
+      Action = 'Stage-Update-Notice',
       UpdateProcess = msgUpdate.Tags.UpdateProcess,
       UpdateAction = msgUpdate.Tags.UpdateAction,
       UpdateTags = msgUpdate.Tags.UpdateTags,
       UpdateData = msgUpdate.Tags.UpdateData,
       Hash = hashUpdate,
-      Timestamp = timestamp,
     }, notice)
   end)
 
@@ -110,7 +109,7 @@ describe("#configurator", function()
     local notice = Handlers.process(msgUpdate)
     -- assert correct response
     assert.are.same({
-      Action = 'Update-Unstaged',
+      Action = 'Unstage-Update-Notice',
       Hash = hashUpdate,
     }, notice)
   end)
@@ -121,14 +120,14 @@ describe("#configurator", function()
     -- stage update
     Handlers.process(msgUpdate)
     -- stub os.time to mock delay
-    stub(os, "time", function() return timestamp + 2 end)
+    stub(os, "time", function() return timestamp + delay end)
     -- update action
     msgUpdate.Tags.Action = "Action-Update"
     -- action update
     local notice = Handlers.process(msgUpdate)
     -- assert correct response
     assert.are.same({
-      Action = 'Update-Actioned',
+      Action = 'Action-Update-Notice',
       Hash = hashUpdate,
     }, notice)
     -- restore the original os.time
@@ -142,10 +141,9 @@ describe("#configurator", function()
     local notice = Handlers.process(msgUpdateDelay)
     -- assert correct response
     assert.are.same({
-      Action = 'Update-Delay-Staged',
+      Action = 'Stage-Update-Delay-Notice',
       UpdateDelay = msgUpdateDelay.Tags.UpdateDelay,
       Hash = hashUpdateDelay,
-      Timestamp = timestamp,
     }, notice)
   end)
 
@@ -160,11 +158,10 @@ describe("#configurator", function()
     local notice = Handlers.process(msgUpdateDelay)
     -- assert correct response
     assert.are.same({
-      Action = 'Update-Delay-Unstaged',
+      Action = 'Unstage-Update-Delay-Notice',
       Hash = hashUpdateDelay,
     }, notice)
   end)
-
 
   it("should action update delay", function()
     -- add action
@@ -172,14 +169,14 @@ describe("#configurator", function()
     -- stage update
     Handlers.process(msgUpdateDelay)
     -- stub os.time to mock delay
-    stub(os, "time", function() return timestamp + 2 end)
+    stub(os, "time", function() return timestamp + delay end)
     -- update action
     msgUpdateDelay.Tags.Action = "Action-Update-Delay"
     -- action update
     local notice = Handlers.process(msgUpdateDelay)
     -- assert correct response
     assert.are.same({
-      Action = 'Update-Delay-Actioned',
+      Action = 'Action-Update-Delay-Notice',
       Hash = hashUpdateDelay,
     }, notice)
     -- restore the original os.time
@@ -193,10 +190,9 @@ describe("#configurator", function()
     local notice = Handlers.process(msgUpdateAdmin)
     -- assert correct response
     assert.are.same({
-      Action = 'Update-Admin-Staged',
+      Action = 'Stage-Update-Admin-Notice',
       UpdateAdmin = msgUpdateAdmin.Tags.UpdateAdmin,
-      Hash = hashUpdateAdmin,
-      Timestamp = timestamp,
+      Hash = hashUpdateAdmin
     }, notice)
   end)
 
@@ -211,7 +207,7 @@ describe("#configurator", function()
     local notice = Handlers.process(msgUpdateAdmin)
     -- assert correct response
     assert.are.same({
-      Action = 'Update-Admin-Unstaged',
+      Action = 'Unstage-Update-Admin-Notice',
       Hash = hashUpdateAdmin,
     }, notice)
   end)
@@ -223,14 +219,14 @@ describe("#configurator", function()
     Handlers.process(msgUpdateAdmin)
     -- stub os.time to mock delay 
     -- @dev delay updated by previous test
-    stub(os, "time", function() return timestamp + updateDelay + 1 end)
+    stub(os, "time", function() return timestamp + updateDelay end)
     -- update action
     msgUpdateAdmin.Tags.Action = "Action-Update-Admin"
     -- action update
     local notice = Handlers.process(msgUpdateAdmin)
     -- assert correct response
     assert.are.same({
-      Action = 'Update-Admin-Actioned',
+      Action = 'Action-Update-Admin-Notice',
       Hash = hashUpdateAdmin,
     }, notice)
     -- restore the original os.time

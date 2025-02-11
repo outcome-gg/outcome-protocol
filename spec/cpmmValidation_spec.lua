@@ -102,6 +102,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       Tags = {
         PositionId = "1",
         Quantity = quantity,
+        ["X-MinPositionTokensToBuy"] = "100"
       }
     }
     -- create a message object
@@ -153,22 +154,6 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 		assert.has.error(function()
       cpmmValidation.addFunding(msgAddFunding)
     end, "Quantity must be a number!")
-	end)
-
-  it("should fail addFunding validation when missing X-Distribution", function()
-    msgAddFunding.Tags["X-Distribution"] = nil
-    -- should not throw an error
-		assert.has.error(function()
-      cpmmValidation.addFunding(msgAddFunding)
-    end, "X-Distribution is required!")
-	end)
-
-  it("should fail addFunding validation when invalid X-Distribution", function()
-    msgAddFunding.Tags["X-Distribution"] = "invalid-distribution"
-    -- should not throw an error
-		assert.has.error(function()
-      cpmmValidation.addFunding(msgAddFunding)
-    end, "X-Distribution must be valid JSON Array!")
 	end)
 
   it("should pass removeFunding validation", function()
@@ -256,20 +241,20 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     end, "Invalid PositionId!")
 	end)
 
-  it("should fail sell validation when missing quantity", function()
-    msgSell.Tags.Quantity = nil
+  it("should fail sell validation when missing maxPositionTokensToSell", function()
+    msgSell.Tags.MaxPositionTokensToSell = nil
     -- should not throw an error
 		assert.has.error(function()
       cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
-    end, "Quantity is required!")
+    end, "MaxPositionTokensToSell is required!")
 	end)
 
-  it("should fail sell validation when invalid quantity", function()
+  it("should fail sell validation when invalid maxPositionTokensToSell", function()
     msgSell.Tags.Quantity = "not-a-number"
     -- should not throw an error
 		assert.has.error(function()
       cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)
-    end, "Quantity must be a number!")
+    end, "MaxPositionTokensToSell must be a number!")
 	end)
 
   it("should fail sell validation when missing returnAmount", function()

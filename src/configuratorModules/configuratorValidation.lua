@@ -15,7 +15,7 @@ function ConfiguratorValidation.updateProcess(msg)
   assert(type(msg.Tags.UpdateProcess) == 'string', 'UpdateProcess is required!')
   assert(sharedUtils.isValidArweaveAddress(msg.Tags.UpdateProcess), 'UpdateProcess must be a valid Arweave address!')
   assert(type(msg.Tags.UpdateAction) == 'string', 'UpdateAction is required!')
-  assert(sharedUtils.isValidKeyValueJSON(msg.Tags.UpdateTags) or msg.Tags.UpdateTags == nil, 'UpdateTags must be valid JSON! => ' .. tostring(msg.Tags.UpdateTags))
+  assert(sharedUtils.isValidKeyValueJSON(msg.Tags.UpdateTags) or msg.Tags.UpdateTags == nil, 'UpdateTags must be valid JSON!')
   assert(sharedUtils.isValidKeyValueJSON(msg.Tags.UpdateData) or msg.Tags.UpdateData == nil, 'UpdateData must be valid JSON!')
 end
 

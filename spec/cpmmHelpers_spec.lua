@@ -2,28 +2,18 @@ require("luacov")
 local cpmmHelpers = require("marketModules.cpmmHelpers")
 local json = require("json")
 
-local x = 0
-local y = 0
-local sender = ""
-local collateralToken = ""
-local quantity = ""
-local distribution = {}
-local outcomeSlotCount = nil
+local x
+local y
+local sender
+local quantity
+local distribution
+local outcomeSlotCount
 
-local function getTagValue(tags, targetName)
-  for _, tag in ipairs(tags) do
-      if tag.name == targetName then
-          return tag.value
-      end
-  end
-  return nil -- Return nil if the name is not found
-end
 
 describe("#market #conditionalTokens #cpmmHelpers", function()
   before_each(function()
     -- set variables
     sender = "test-this-is-valid-arweave-wallet-address-1"
-    collateralToken = "test-this-is-valid-arweave-wallet-address-2"
     x = 10
     y = 3
     outcomeSlotCount = 3
@@ -75,35 +65,15 @@ describe("#market #conditionalTokens #cpmmHelpers", function()
     assert.is_false(result)
 	end)
 
-  it("should validate addFunding when totalSupply ~= 0 and #distribution == 0", function()
+  it("should validate addFunding when totalSupply ~= 0 and distribution == `nil`", function()
     cpmmHelpers.token = { totalSupply = "100" }
     distribution = {}
     local result = cpmmHelpers:validateAddFunding(
       sender,
       quantity,
-      distribution
-    )
-    assert.is_true(result)
-	end)
-
-  it("should not validate when addFunding when totalSupply ~= 0 and #distribution ~= 0", function()
-    cpmmHelpers.token = { totalSupply = "100" }
-    local result = cpmmHelpers:validateAddFunding(
-      sender,
-      quantity,
-      distribution
-    )
-    assert.is_false(result)
-	end)
-
-  it("should not validate when distribution is nil", function()
-    cpmmHelpers.token = { totalSupply = "100" }
-    local result = cpmmHelpers:validateAddFunding(
-      sender,
-      quantity,
       nil
     )
-    assert.is_false(result)
+    assert.is_true(result)
 	end)
 
   it("should validate removeFunding when quanlity <= balance", function()

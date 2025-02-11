@@ -376,79 +376,79 @@ Outcome.configuratorInfo()
 
 > **All methods below are accessed via the `Outcome` package.**
 
-| Method                | Required Role  | Required Parameters                    | Optional Parameters             | Result                 |
-| --------------------- | -------------- | -------------------------------------- | ------------------------------- | ---------------------- |
-| `configuratorInfo()`        ||  |  | `Info-Response` |
-| `configuratorStageUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String | `updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Stage-Update-Notice` |
-| `configuratorUnstageUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String | `updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Unstage-Update-Notice` |
-| `configuratorActionUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String | `updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Action-Update-Notice` |
-| `configuratorStageUpdateAdmin(...)` |`A`| `updateAdmin`: Valid Arweave address | | `Stage-Update-Admin-Notice` |
-| `configuratorUnstageUpdateAdmin(...)` |`A`| `updateAdmin`: Valid Arweave address | | `Unstage-Update-Admin-Notice` |
-| `configuratorActionUpdateAdmin(...)` |`A`| `updateAdmin`: Valid Arweave address | | `Action-Update-Admin-Notice` |
-| `configuratorStageUpdateDelay(...)` |`A`| `updateDelay`: Integer greater than or equal to 0 | | `Stage-Update-Delay-Notice` |
-| `configuratorUnstageUpdateDelay(...)` |`A`| `updateDelay`: Integer greater than or equal to 0 | | `Unstage-Update-Delay-Notice` |
-| `configuratorActionUpdateDelay(...)` |`A`| `updateDelay`: Integer greater than or equal to 0 | | `Action-Update-Delay-Notice` |
-| `marketInfo()`        || |  | `Info-Response` |
-| `marketAddFunding(...)` || `market`: Valid Arweave address<br>`collateral`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`distribution`: Table of integers greater than or equal to 0 | `onBehalfOf`: Valid Arweave address or `nil` | `Debit-Notice`<br>`Credit-Notice`<br>`Mint-Batch-Notice`<br>`Split-Position-Notice`<br>`Mint-Notice`<br>`Add-Funding-Notice`<br>`Log-Funding-Notice`<br> |
-| `marketRemoveFunding(...)`  ||  `market`: Valid Arweave address<br>`quantity`: Integer greater than 0 |  | `Debit-Notice`<br>`Credit-Notice`<br>`Withdraw-Fees-Notice`<br>`Burn-Notice`<br>`Debit-Batch-Notice`<br>`Credit-Batch-Notice`<br>`Remove-Funding-Notice`<br>`Log-Funding-Notice` |
-| `marketBuy(...)` || `market`: Valid Arweave address<br>`collateral`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`positionId`: Integer greater than 0<br>`minPositionTokensToBuy`: Integer greater than or equal to 0 | `onBehalfOf`: Valid Arweave address or `nil` | `Debit-Notice`<br>`Credit-Notice`<br>`Mint-Batch-Notice`<br>`Split-Position-Notice`<br>`Debit-Single-Notice`<br>`Credit-Single-Notice`<br>`Buy-Notice`<br>`Log-Prediction-Notice`<br>`Log-Probabilities-Notice` |
-| `marketSell(...)`  ||  `market`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`positionId`: Integer greater than 0<br>`returnAmount`: Integer greater than 0 |  | `Debit-Single-Notice`<br>`Credit-Single-Notice`<br>`Batch-Burn-Notice`<br>`Merge-Positions-Notice`<br>`Debit-Notice`<br>`Credit-Notice`<br>`Debit-Single-Notice`<br>`Credit-Single-Notice`<br>`Sell-Notice`<br>`Log-Prediction-Notice`<br>`Log-Probabilities-Notice` |
-| `marketWithdrawFees(...)` || `market`: Valid Arweave address |  | `Withdraw-Fees-Notice` |
-| `marketCalcBuyAmount(...)`  || `market`: Valid Arweave address<br>`investmentAmount`: Integer greater than 0<br>`positionId`: Integer greater than 0 |  | `Calc-Buy-Amount-Response` |
-| `marketCalcSellAmount(...)`|| `market`: Valid Arweave address<br>`returnAmount`: Integer greater than 0<br>`positionId`: Integer greater than 0 |  | `Calc-Sell-Amount-Response` |
-| `marketCollectedFees(...)` || `market`: Valid Arweave address |  | `Collected-Fees-Response` |
-| `marketFeesWithdrawable(...)` ||  `market`: Valid Arweave address<br>`account`: Valid Arweave address |  | `Fees-Withdrawable-Response` |
-| `marketLpTokenTransfer(...)`  || `market`: Valid Arweave address<br>`recipient`: Valid Arweave address<br>`quantity`: Integer greater than 0 | `X-*`: Tags beginning with "X-" | `Debit-Notice`, `Credit-Notice`, `Withdraw-Fees-Notice` |
-| `marketLpTokenBalance(...)` || `market`: Valid Arweave address | `recipient`: Valid Arweave address or `nil` | `Balance-Response` |
-| `marketLpTokenBalances(...)`||  `market`: Valid Arweave address |  | `Balances-Response` |
-| `marketLpTokenTotalSupply(...)` ||  `market`: Valid Arweave address |  | `Total-Supply-Response` |
-| `marketMergePositions(...)` || `market`: Valid Arweave address<br>`quantity`: Integer greater than 0  | `onBehalfOf`: Valid Arweave address or `nil` | `Burn-Batch-Notice`<br>`Debit-Notice`<br>`Credit-Notice`<br>`Merge-Positions-Notice`|
-| `marketReportPayouts(...)`  |`R`| `market`: Valid Arweave address<br>`payouts`: Valid table of integers greater than or equal to 0 |  | `Report-Payouts-Notice` |
+| Method                | Required Role  | Required Parameters                    | Result                 |
+| --------------------- | -------------- | -------------------------------------- | ---------------------- |
+| `configuratorInfo()`        ||  | `Info-Response` |
+| `configuratorStageUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Stage-Update-Notice` |
+| `configuratorUnstageUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Unstage-Update-Notice` |
+| `configuratorActionUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Action-Update-Notice` |
+| `configuratorStageUpdateAdmin(...)` |`A`| `updateAdmin`: Valid Arweave address | `Stage-Update-Admin-Notice` |
+| `configuratorUnstageUpdateAdmin(...)` |`A`| `updateAdmin`: Valid Arweave address | `Unstage-Update-Admin-Notice` |
+| `configuratorActionUpdateAdmin(...)` |`A`| `updateAdmin`: Valid Arweave address | `Action-Update-Admin-Notice` |
+| `configuratorStageUpdateDelay(...)` |`A`| `updateDelay`: Integer greater than or equal to 0 | `Stage-Update-Delay-Notice` |
+| `configuratorUnstageUpdateDelay(...)` |`A`| `updateDelay`: Integer greater than or equal to 0 | `Unstage-Update-Delay-Notice` |
+| `configuratorActionUpdateDelay(...)` |`A`| `updateDelay`: Integer greater than or equal to 0 | `Action-Update-Delay-Notice` |
+| `marketInfo()`        || | `Info-Response` |
+| `marketAddFunding(...)` || `market`: Valid Arweave address<br>`collateral`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`distribution`: Table of integers greater than or equal to 0<br>`onBehalfOf`: Valid Arweave address or `nil` | `Debit-Notice`<br>`Credit-Notice`<br>`Mint-Batch-Notice`<br>`Split-Position-Notice`<br>`Mint-Notice`<br>`Add-Funding-Notice`<br>`Log-Funding-Notice`<br> |
+| `marketRemoveFunding(...)`  ||  `market`: Valid Arweave address<br>`quantity`: Integer greater than 0 | `Debit-Notice`<br>`Credit-Notice`<br>`Withdraw-Fees-Notice`<br>`Burn-Notice`<br>`Debit-Batch-Notice`<br>`Credit-Batch-Notice`<br>`Remove-Funding-Notice`<br>`Log-Funding-Notice` |
+| `marketBuy(...)` || `market`: Valid Arweave address<br>`collateral`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`positionId`: Integer greater than 0<br>`minPositionTokensToBuy`: Integer greater than or equal to 0<br>`onBehalfOf`: Valid Arweave address or `nil` | `Debit-Notice`<br>`Credit-Notice`<br>`Mint-Batch-Notice`<br>`Split-Position-Notice`<br>`Debit-Single-Notice`<br>`Credit-Single-Notice`<br>`Buy-Notice`<br>`Log-Prediction-Notice`<br>`Log-Probabilities-Notice` |
+| `marketSell(...)`  ||  `market`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`positionId`: Integer greater than 0<br>`returnAmount`: Integer greater than 0 | `Debit-Single-Notice`<br>`Credit-Single-Notice`<br>`Batch-Burn-Notice`<br>`Merge-Positions-Notice`<br>`Debit-Notice`<br>`Credit-Notice`<br>`Debit-Single-Notice`<br>`Credit-Single-Notice`<br>`Sell-Notice`<br>`Log-Prediction-Notice`<br>`Log-Probabilities-Notice` |
+| `marketWithdrawFees(...)` || `market`: Valid Arweave address | `Withdraw-Fees-Notice` |
+| `marketCalcBuyAmount(...)`  || `market`: Valid Arweave address<br>`investmentAmount`: Integer greater than 0<br>`positionId`: Integer greater than 0 | `Calc-Buy-Amount-Response` |
+| `marketCalcSellAmount(...)`|| `market`: Valid Arweave address<br>`returnAmount`: Integer greater than 0<br>`positionId`: Integer greater than 0 | `Calc-Sell-Amount-Response` |
+| `marketCollectedFees(...)` || `market`: Valid Arweave address | `Collected-Fees-Response` |
+| `marketFeesWithdrawable(...)` ||  `market`: Valid Arweave address<br>`account`: Valid Arweave address | `Fees-Withdrawable-Response` |
+| `marketLpTokenTransfer(...)`  || `market`: Valid Arweave address<br>`recipient`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`X-*`: Tags beginning with "X-" or `nil` | `Debit-Notice`, `Credit-Notice`, `Withdraw-Fees-Notice` |
+| `marketLpTokenBalance(...)` || `market`: Valid Arweave address<br>`recipient`: Valid Arweave address or `nil` | `Balance-Response` |
+| `marketLpTokenBalances(...)`||  `market`: Valid Arweave address |  `Balances-Response` |
+| `marketLpTokenTotalSupply(...)` ||  `market`: Valid Arweave address | `Total-Supply-Response` |
+| `marketMergePositions(...)` || `market`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`onBehalfOf`: Valid Arweave address or `nil` | `Burn-Batch-Notice`<br>`Debit-Notice`<br>`Credit-Notice`<br>`Merge-Positions-Notice`|
+| `marketReportPayouts(...)`  |`R`| `market`: Valid Arweave address<br>`payouts`: Valid table of integers greater than or equal to 0 | `Report-Payouts-Notice` |
 | `marketRedeemPositions()` ||  |  | `Burn-Single-Notice`<br>`Debit-Notice`<br>`Credit-Notice`<br>`Redeem-Positions-Notice` |
-| `marketPositionTransfer(...)`  ||  `market`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`positionId`: Integer greater than 0<br>`recipient`: Valid Arweave address<br> | `X-*`: Tags beginning with "X-" | `Debit-Single-Notice`<br>`Credit-Single-Notice`|
-| `marketPositionTransferBatch(...)` || `market`: Valid Arweave address<br>`quantities`: Valid JSON Array of integers greater than 0<br>`positionId`: Valid JSON Array of integers greater than 0<br>`recipient`: Valid Arweave address<br> | `X-*`: Tags beginning with "X-" | `Debit-Batch-Notice`<br>`Credit-Batch-Notice`|
-| `marketGetPayoutNumerators(...)` || `market`: Valid Arweave address |  | `Get-Numerators-Response` |
-| `marketGetPayoutDenominator(...)` || `market`: Valid Arweave address |  | `Get-Denominator-Response` |
-| `marketPositionBalance(...)` ||  `market`: Valid Arweave address<br>`positionId`: Integer greater than 0 |  `recipient`: Valid Arweave address or `nil` | `Position-Balance-Response` |
-| `marketPositionBalances(...)`||  `market`: Valid Arweave address<br>`positionId`: Integer greater than 0 |  | `Position-Balances-Response` |
-| `marketPositionBatchBalance(...)` || `market`: Valid Arweave address<br>`positionIds`: Valid JSON Array of integers greater than 0<br>`recipient`: Valid JSON Array of Arweave addresses | | `Position-Batch-Balance-Response` |
-| `marketPositionBatchBalances(...)` || `market`: Valid Arweave address<br>`positionIds`: Valid JSON Array of integers greater than 0 | | `Position-Batch-Balances-Response` |
-| `marketUpdateConfigurator(...)` |`C`| `market`: Valid Arweave address<br>`configurator`: Valid Arweave address |  | `Update-Configurator-Notice` |
-| `marketUpdateIncentives(...)`  |`C`| `market`: Valid Arweave address<br>`incentives`: Valid Arweave address |  | `Update-Incentives-Notice` |
-| `marketUpdateTakeFee(...)` |`C`| `market`: Valid Arweave address<br>`creatorFee`: Integer greater than or equal to 0<br>`protocolFee`: Integer greater than or equal to 0 |  | `Update-Take-Fee-Notice` |
-| `marketUpdateProtocolFeeTarget(...)` |`C`| `market`: Valid Arweave address<br>`protocolFeeTarget`: Valid Arweave address |  | `Update-Protocol-Fee-Target-Notice` |
-| `marketUpdateLogo(...)` |`C`| `market`: Valid Arweave address<br>`logo`: String |  | `Update-Logo-Notice` |
+| `marketPositionTransfer(...)`  ||  `market`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`positionId`: Integer greater than 0<br>`recipient`: Valid Arweave address<br><br>`X-*`: Tags beginning with "X-" or `nil` | `Debit-Single-Notice`<br>`Credit-Single-Notice`|
+| `marketPositionTransferBatch(...)` || `market`: Valid Arweave address<br>`quantities`: Valid JSON Array of integers greater than 0<br>`positionId`: Valid JSON Array of integers greater than 0<br>`recipient`: Valid Arweave address<br>`X-*`: Tags beginning with "X-" or `nil` | `Debit-Batch-Notice`<br>`Credit-Batch-Notice`|
+| `marketGetPayoutNumerators(...)` || `market`: Valid Arweave address | `Get-Numerators-Response` |
+| `marketGetPayoutDenominator(...)` || `market`: Valid Arweave address | `Get-Denominator-Response` |
+| `marketPositionBalance(...)` ||  `market`: Valid Arweave address<br>`positionId`: Integer greater than 0<br>`recipient`: Valid Arweave address or `nil` | `Position-Balance-Response` |
+| `marketPositionBalances(...)`||  `market`: Valid Arweave address<br>`positionId`: Integer greater than 0 | `Position-Balances-Response` |
+| `marketPositionBatchBalance(...)` || `market`: Valid Arweave address<br>`positionIds`: Valid JSON Array of integers greater than 0<br>`recipient`: Valid JSON Array of Arweave addresses | `Position-Batch-Balance-Response` |
+| `marketPositionBatchBalances(...)` || `market`: Valid Arweave address<br>`positionIds`: Valid JSON Array of integers greater than 0 | `Position-Batch-Balances-Response` |
+| `marketUpdateConfigurator(...)` |`C`| `market`: Valid Arweave address<br>`configurator`: Valid Arweave address |  `Update-Configurator-Notice` |
+| `marketUpdateIncentives(...)`  |`C`| `market`: Valid Arweave address<br>`incentives`: Valid Arweave address |  `Update-Incentives-Notice` |
+| `marketUpdateTakeFee(...)` |`C`| `market`: Valid Arweave address<br>`creatorFee`: Integer greater than or equal to 0<br>`protocolFee`: Integer greater than or equal to 0 | `Update-Take-Fee-Notice` |
+| `marketUpdateProtocolFeeTarget(...)` |`C`| `market`: Valid Arweave address<br>`protocolFeeTarget`: Valid Arweave address | `Update-Protocol-Fee-Target-Notice` |
+| `marketUpdateLogo(...)` |`C`| `market`: Valid Arweave address<br>`logo`: String |  `Update-Logo-Notice` |
 | `marketFactoryInfo()` ||  |  | `Info-Response` |
-| `marketFactorySpawnMarket(...)`  ||  `resolutionAgent`: Valid Arweave address<br>`collateralToken`: Valid Arweave address<br>`question`: String<br>`outcomeSlotCount`: Integer greater than or equal to 2<br>`category`: String<br>`subcategory`: String<br>`logo`:String<br>`rules`: String<br>`creatorFee`: Integer greater than or equal to 0<br>`creatorFeeTarget`: Valid Arweave address  |  | `Spawned`<br>`Spawn-Market-Notice` |
-| `marketFactoryInitMarket()` ||  |  | `Log-Market-Notice`<br>`Init-Market-Notice` |
-| `marketFactoryMarketsPending()` ||  |  | `Markets-Pending-Response` |
-| `marketFactoryMarketsInit()` ||  |  | `Markets-Init-Response` |
-| `marketFactoryMarketsByCreator()` ||  |  | `Markets-By-Creator-Response` |
-| `marketFactoryGetProcessId()` ||  |  | `Get-Process-Id-Response` |
-| `marketFactoryGetLatestProcessIdForCreator()`  ||  |  | `Get-Latest-Process-Id-For-Creator-Response` |
-| `marketFactoryUpdateConfigurator(...)` |`C`|  `configurator`: Valid Arweave address |  | `-Update-Configurator-Notice` |
-| `marketFactoryUpdateIncentives(...)` |`C`| `incentives`: Valid Arweave address |  | `Update-Incentives-Notice` |
-| `marketFactoryUpdateLpFee(...)`   |`C`|  `lpFee`: Integer greater than or equal to 0 |  | `Update-LP-Fee-Notice` |
-| `marketFactoryUpdateProtocolFee(...)`  |`C`|  `protocolFee`: Integer greater than or equal to 0 |  | `Update-Protocol-Fee-Notice` |
-| `marketFactoryUpdateProtocolFeeTarget(...)` |`C`| `protocolFeeTarget`: Valid Arweave address |  | `Update-Protocol-Fee-Target-Notice` |
-| `marketFactoryUpdateMaximumTakeFee(...)` |`C`|  `maximumTakeFee`: Integer greater than or equal to 0 |  | `Update-Maximum-Take-Fee-Notice` |
-| `marketFactoryApproveCollateral(...)` |`C`|  `collateral`: Valid Arweave address<br>`approved`: Boolean (`true` or `false`) |  | `Approve-Collateral-Notice` |
-| `marketFactoryTransfer(...)` |`C`| `token`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`recipient`: Valid Arweave address |  | `Transfer-Notice`<br>`Transfer-Success-Notice` |
-| `tokenInfo()` ||  |  | `Info-Response` |
-| `tokenClaim()` ||  |  | `Debit-Notice`<br>`Credit-Notice`<br>`Claim-Notice` |
-| `tokenTransfer(...)` || `quantity`: Integer greater than 0<br>`recipient`: Valid Arweave address | `target`: Valid Arweave address or `nil`<br>`X-*`: Tags beginning with "X-" | `Debit-Notice`, `Credit-Notice` |
-| `tokenMint(...)` || `target`: Valid Arweave address<br>`quantity`: Integer greater than 0 |  | `Mint-Notice` |
-| `tokenBurn(...)` ||  `quantity`: Integer greater than 0 |  | `Burn-Notice` |
-| `tokenClaimBalance(...)` ||  | `account`: Valid Arweave address or `nil` | `Claim-Balance-Response` |
-| `tokenClaimBalances()` |  |  | `Claim-Balances-Response` |
-| `tokenBalance(...)` ||  | `target`: Valid Arweave address or `nil`<br>`account`: Valid Arweave address or `nil` | `Balance-Response` |
-| `tokenBalances(...)` ||  |  | `Balances-Response` |
-| `tokenTotalSupply(...)` ||  |  `target`: Valid Arweave address or `nil` | `Total-Supply-Response` |
-| `tokenUpdateConfigurator(...)` |`C`| `configurator`: Valid Arweave address |  | `Update-Configurator-Notice` |
-| `tokenUpdateLpToHolderRatio(...)` |`C`| `ratio`: Decimal greater than 0 |  | `Update-Lp-To-Holder-Ratio-Notice` |
-| `tokenUpdateCollateralPrices(...)` |`C`| `collateralPrices`: Valid table of <Arweave address, Integer greater than 0> mappings |  | `Update-Collateral-Prices-Notice` |
-| `tokenUpdateCollateralFactors(...)` |`C`|  `collateralFactors`: Valid table of <Arweave address, Decimal greater than 0> mappings |  | `Update-Collateral-Factors-Notice` |
-| `tokenUpdateCollateralDenominations(...)` |`C`| `collateralDenominations`: Valid table of <Arweave address, Integer greater than 0> mappings |  | `Update-Collateral-Denominations-Notice` |
+| `marketFactorySpawnMarket(...)`  ||  `resolutionAgent`: Valid Arweave address<br>`collateralToken`: Valid Arweave address<br>`question`: String<br>`outcomeSlotCount`: Integer greater than or equal to 2<br>`category`: String<br>`subcategory`: String<br>`logo`:String<br>`rules`: String<br>`creatorFee`: Integer greater than or equal to 0<br>`creatorFeeTarget`: Valid Arweave address  | `Spawned`<br>`Spawn-Market-Notice` |
+| `marketFactoryInitMarket()` ||  |  `Log-Market-Notice`<br>`Init-Market-Notice` |
+| `marketFactoryMarketsPending()` ||  | `Markets-Pending-Response` |
+| `marketFactoryMarketsInit()` ||  |  `Markets-Init-Response` |
+| `marketFactoryMarketsByCreator()` ||  |  `Markets-By-Creator-Response` |
+| `marketFactoryGetProcessId()` ||  |  `Get-Process-Id-Response` |
+| `marketFactoryGetLatestProcessIdForCreator()`  ||  |  `Get-Latest-Process-Id-For-Creator-Response` |
+| `marketFactoryUpdateConfigurator(...)` |`C`|  `configurator`: Valid Arweave address |  `-Update-Configurator-Notice` |
+| `marketFactoryUpdateIncentives(...)` |`C`| `incentives`: Valid Arweave address |  `Update-Incentives-Notice` |
+| `marketFactoryUpdateLpFee(...)`   |`C`|  `lpFee`: Integer greater than or equal to 0 |  `Update-LP-Fee-Notice` |
+| `marketFactoryUpdateProtocolFee(...)`  |`C`|  `protocolFee`: Integer greater than or equal to 0 |  `Update-Protocol-Fee-Notice` |
+| `marketFactoryUpdateProtocolFeeTarget(...)` |`C`| `protocolFeeTarget`: Valid Arweave address |  `Update-Protocol-Fee-Target-Notice` |
+| `marketFactoryUpdateMaximumTakeFee(...)` |`C`|  `maximumTakeFee`: Integer greater than or equal to 0 |  `Update-Maximum-Take-Fee-Notice` |
+| `marketFactoryApproveCollateral(...)` |`C`|  `collateral`: Valid Arweave address<br>`approved`: Boolean (`true` or `false`) |  `Approve-Collateral-Notice` |
+| `marketFactoryTransfer(...)` |`C`| `token`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`recipient`: Valid Arweave address |  `Transfer-Notice`<br>`Transfer-Success-Notice` |
+| `tokenInfo()` ||  |  `Info-Response` |
+| `tokenClaim()` ||  |  `Debit-Notice`<br>`Credit-Notice`<br>`Claim-Notice` |
+| `tokenTransfer(...)` || `quantity`: Integer greater than 0<br>`recipient`: Valid Arweave address<br>`target`: Valid Arweave address or `nil`<br>`X-*`: Tags beginning with "X-" or `nil`| `Debit-Notice`, `Credit-Notice` |
+| `tokenMint(...)` || `target`: Valid Arweave address<br>`quantity`: Integer greater than 0 | `Mint-Notice` |
+| `tokenBurn(...)` ||  `quantity`: Integer greater than 0 | `Burn-Notice` |
+| `tokenClaimBalance(...)` || `account`: Valid Arweave address or `nil` | `Claim-Balance-Response` |
+| `tokenClaimBalances()` |  || `Claim-Balances-Response` |
+| `tokenBalance(...)` || `target`: Valid Arweave address or `nil`<br>`account`: Valid Arweave address or `nil` | `Balance-Response` |
+| `tokenBalances(...)` || `target`: Valid Arweave address or `nil`  | `Balances-Response` |
+| `tokenTotalSupply(...)` || `target`: Valid Arweave address or `nil` | `Total-Supply-Response` |
+| `tokenUpdateConfigurator(...)` |`C`| `configurator`: Valid Arweave address | `Update-Configurator-Notice` |
+| `tokenUpdateLpToHolderRatio(...)` |`C`| `ratio`: Decimal greater than 0 | `Update-Lp-To-Holder-Ratio-Notice` |
+| `tokenUpdateCollateralPrices(...)` |`C`| `collateralPrices`: Valid table of <Arweave address, Integer greater than 0> mappings | `Update-Collateral-Prices-Notice` |
+| `tokenUpdateCollateralFactors(...)` |`C`|  `collateralFactors`: Valid table of <Arweave address, Decimal greater than 0> mappings | `Update-Collateral-Factors-Notice` |
+| `tokenUpdateCollateralDenominations(...)` |`C`| `collateralDenominations`: Valid table of <Arweave address, Integer greater than 0> mappings | `Update-Collateral-Denominations-Notice` |
 
 ## Testing
 

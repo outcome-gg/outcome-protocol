@@ -207,12 +207,12 @@ CPMM WRITE METHODS
 --- @param msg Message The message received
 --- @return nil -- TODO: send/specify notice
 function MarketMethods:addFunding(msg)
-  cpmmValidation.addFunding(#self.cpmm.tokens.positionIds, msg)
+  cpmmValidation.addFunding(msg)
   local distribution = msg.Tags['X-Distribution'] and json.decode(msg.Tags['X-Distribution']) or nil
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
   -- @dev returns collateral tokens if invalid
   if self.cpmm:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
-    self.cpmm:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, distribution, msg)
+    self.cpmm:addFunding(onBehalfOf, msg.Tags.Quantity, distribution, msg)
     -- log funding
     logFunding(self.incentives, self.dataIndex, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
   end
@@ -225,10 +225,10 @@ end
 function MarketMethods:removeFunding(msg)
   cpmmValidation.removeFunding(msg)
   -- @dev returns LP tokens if invalid
-  if self.cpmm:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
-    self.cpmm:removeFunding(msg.Tags.Sender, msg.Tags.Quantity, msg)
+  if self.cpmm:validateRemoveFunding(msg.From, msg.Tags.Quantity) then
+    self.cpmm:removeFunding(msg.From, msg.Tags.Quantity, msg)
     -- log funding
-    logFunding(self.incentives, self.dataIndex, msg.Tags.Sender, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
+    logFunding(self.incentives, self.dataIndex, msg.From, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
   end
 end
 
@@ -285,11 +285,11 @@ end
 function MarketMethods:sell(msg)
   cpmmValidation.sell(msg, self.cpmm.tokens.positionIds)
   local positionTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
-  assert(bint.__le(bint(positionTokensToSell), bint(msg.Tags.Quantity)), 'Maximum sell amount not sufficient! positionTokensToSell: ' .. tostring(positionTokensToSell) .. " msg.Tags.Quantity: " .. msg.Tags.Quantity)
-  local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, msg)
+  assert(bint.__le(bint(positionTokensToSell), bint(msg.Tags.MaxPositionTokensToSell)), 'Max position tokens to sell not sufficient!')
+  local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.MaxPositionTokensToSell, msg)
   -- log prediction and probabilities
-  local price = tostring(bint.__div(positionTokensToSell, bint(msg.Tags.Quantity)))
-  logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags.PositionId, positionTokensToSell, price, msg)
+  local price = tostring(bint.__div(positionTokensToSell, bint(msg.Tags.ReturnAmount)))
+  logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.ReturnAmount, msg.Tags.PositionId, positionTokensToSell, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
   return notice
 end

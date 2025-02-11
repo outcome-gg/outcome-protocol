@@ -4,7 +4,7 @@ local token = require("marketModules.token")
 local tokens = require("marketModules.conditionalTokens")
 local json = require("json")
 
-local marketFactory = ""
+local market = ""
 local sender = ""
 local recipient = ""
 local conditionId = ""
@@ -55,6 +55,10 @@ local msgUpdateProtocolFeeTarget = {}
 local msgUpdateLogo = {}
 local noticeDebit = {}
 local noticeCredit = {}
+local noticeAddFunding = {}
+local noticeRemoveFunding = {}
+local noticeBuy = {}
+local noticeSell = {}
 
 local function getTagValue(tags, targetName)
   for _, tag in ipairs(tags) do
@@ -68,11 +72,11 @@ end
 describe("#market #conditionalTokens #cpmmValidation", function()
   before_each(function()
     -- set variables
-    marketFactory = "test-this-is-valid-arweave-wallet-address-0"
-    sender = "test-this-is-valid-arweave-wallet-address-1"
-    recipient = "test-this-is-valid-arweave-wallet-address-2"
+    market = "test-this-is-valid-arweave-wallet-address-1"
+    sender = "test-this-is-valid-arweave-wallet-address-2"
+    recipient = "test-this-is-valid-arweave-wallet-address-3"
     conditionId = "this-is-valid-condition-id"
-    collateralToken = "test-this-is-valid-arweave-wallet-address-2"
+    collateralToken = "test-this-is-valid-arweave-wallet-address-4"
     outcomeSlotCount = 2
     name = "Test Market"
     ticker = "TST"
@@ -115,7 +119,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     )
     -- create a message object
 		msgInit = {
-      From = marketFactory,
+      From = market,
       Tags = {
         ConditionId = conditionId,
         CollateralToken = collateralToken,
@@ -142,7 +146,13 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         ["X-Distribution"] = json.encode(distribution)
       },
       reply = function(message) return message end,
-      forward = function(message) return message end
+      forward = function(target, message) return message end
+    }
+    noticeAddFunding = {
+      Action = "Add-Funding-Notice",
+      MintAmount = quantity,
+      FundingAdded = json.encode({tonumber(quantity),tonumber(quantity)}),
+      Data = "Successfully added funding"
     }
     -- create a message object
     msgRemoveFunding = {
@@ -151,7 +161,14 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         Quantity = quantity,
       },
       reply = function(message) return message end,
-      forward = function(message) return message end
+      forward = function(target, message) return message end
+    }
+    noticeRemoveFunding = {
+      Action = "Remove-Funding-Notice",
+      SendAmounts = json.encode({quantity, quantity}),
+      CollateralRemovedFromFeePool = "0", -- no fees yet collected
+      SharesToBurn = quantity,
+      Data = "Successfully removed funding"
     }
     -- create a message object
     msgBuy = {
@@ -162,7 +179,16 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         Quantity = quantity,
       },
       reply = function(message) return message end,
-      forward = function(message) return message end
+      forward = function(target, message) return message end
+    }
+    noticeBuy = {
+      Action = "Buy-Notice",
+      OnBehalfOf = sender,
+      InvestmentAmount = investmentAmount,
+      FeeAmount = "0",
+      PositionId = "1",
+      PositionTokensBought = quantity,
+      Data = "Successful buy order"
     }
     -- create a message object
     msgSell = {
@@ -173,7 +199,16 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         ReturnAmount = returnAmount,
         MaxPositionTokensToSell = maxPositionTokensToSell
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
+    }
+    noticeSell = {
+      Action = "Sell-Notice",
+      ReturnAmount = returnAmount,
+      FeeAmount = "0",
+      PositionId = "1",
+      PositionTokensSold = quantity,
+      Data = "Successful sell order"
     }
     -- create a message object
     msgCalcBuyAmount = {
@@ -182,7 +217,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         PositionId = "1",
         InvestmentAmount = investmentAmount,
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgCalcSellAmount = {
@@ -191,7 +227,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         PositionId = "1",
         ReturnAmount = returnAmount,
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgMint = {
@@ -200,7 +237,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         Recipient = recipient,
         Quantity = quantity
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgBurn = {
@@ -208,7 +246,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       Tags = {
         Quantity = burnQuantity
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgTransfer = {
@@ -220,7 +259,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         ["X-Action"] = "FOO"
       },
       Id = "test-message-id",
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgTransferError = {
@@ -231,7 +271,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         Quantity = "100"
       },
       Id = "test-message-id",
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgUpdateConfigurator = {
@@ -239,7 +280,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       Tags = {
         Configurator = newConfigurator
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgUpdateIncentives = {
@@ -247,7 +289,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       Tags = {
         Incentives = newIncentives
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgUpdateTakeFee = {
@@ -256,7 +299,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         CreatorFee = newCreatorFee,
         ProtocolFee = newProtocolFee
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgUpdateProtocolFeeTarget = {
@@ -264,7 +308,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       Tags = {
         ProtocolFeeTarget = newProtocolFeeTarget
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgUpdateLogo = {
@@ -276,21 +321,19 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     }
     -- create a notice object
     noticeDebit = {
-      Target = sender,
       Action = "Debit-Notice",
       Recipient = recipient,
       Quantity = "100",
       ["X-Action"] = "FOO",
-      Data = "You transferred 100 to test-this-is-valid-arweave-wallet-address-2"
+      Data = "You transferred 100 to " .. recipient
     }
     -- create a notice object
     noticeCredit = {
-      Target = recipient,
       Action = "Credit-Notice",
       Sender = sender,
       Quantity = "100",
       ["X-Action"] = "FOO",
-      Data = "You received 100 from test-this-is-valid-arweave-wallet-address-1"
+      Data = "You received 100 from " .. sender
     }
 	end)
 
@@ -357,17 +400,17 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.are.same(poolBalances, CPMM:getPoolBalances())
     local fundingAdded = json.encode({tonumber(msgAddFunding.Tags.Quantity), tonumber(msgAddFunding.Tags.Quantity)})
     -- assert notice
-    assert.are.same(msgAddFunding.Tags.Sender, notice.Target)
-    assert.are.same("Successfully added funding", notice.Data)
-    assert.are.same("Funding-Added-Notice", getTagValue(notice.Tags, "Action"))
-    assert.are.same(msgAddFunding.Tags.Quantity,  getTagValue(notice.Tags, "MintAmount"))
-    assert.are.same(fundingAdded, getTagValue(notice.Tags, "FundingAdded"))
+    assert.are.same(noticeAddFunding, notice)
 	end)
 
   it("should addFunding with unbalanced distribution", function()
     -- unbalanced distribution
     local newDistribution = {80, 100}
     msgAddFunding.Tags["X-Distribution"] = json.encode(newDistribution)
+    -- calc and update new add funding distribution
+    local newQuantity1 = newDistribution[1] * tostring(msgAddFunding.Tags.Quantity) / 100
+    local newQuantity2 = newDistribution[2] * tostring(msgAddFunding.Tags.Quantity) / 100
+    noticeAddFunding.FundingAdded = json.encode({newQuantity1, newQuantity2})
     -- add funding
     local notice = CPMM:addFunding(
       msgAddFunding.Tags.Sender,
@@ -394,19 +437,18 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- Pool Balances
     local poolBalances = {tostring(newDistribution[1]), tostring(newDistribution[2])}
     assert.are.same(poolBalances, CPMM:getPoolBalances())
-    local fundingAdded = json.encode({newDistribution[1], 100})
     -- assert notice
-    assert.are.same(msgAddFunding.Tags.Sender, notice.Target)
-    assert.are.same("Successfully added funding", notice.Data)
-    assert.are.same("Funding-Added-Notice", getTagValue(notice.Tags, "Action"))
-    assert.are.same(msgAddFunding.Tags.Quantity,  getTagValue(notice.Tags, "MintAmount"))
-    assert.are.same(fundingAdded, getTagValue(notice.Tags, "FundingAdded"))
+    assert.are.same(noticeAddFunding, notice)
 	end)
 
   it("should addFunding with highly unbalanced distribution", function()
     -- highly unbalanced distribution
     local newDistribution = {1, 100}
     msgAddFunding.Tags["X-Distribution"] = json.encode(newDistribution)
+    -- calc and update new add funding distribution
+    local newQuantity1 = newDistribution[1] * tostring(msgAddFunding.Tags.Quantity) / 100
+    local newQuantity2 = newDistribution[2] * tostring(msgAddFunding.Tags.Quantity) / 100
+    noticeAddFunding.FundingAdded = json.encode({newQuantity1, newQuantity2})
     -- add funding
     local notice = CPMM:addFunding(
       msgAddFunding.Tags.Sender,
@@ -433,13 +475,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- Pool Balances
     local poolBalances = {tostring(newDistribution[1]), tostring(newDistribution[2])}
     assert.are.same(poolBalances, CPMM:getPoolBalances())
-    local fundingAdded = json.encode({newDistribution[1], 100})
     -- assert notice
-    assert.are.same(msgAddFunding.Tags.Sender, notice.Target)
-    assert.are.same("Successfully added funding", notice.Data)
-    assert.are.same("Funding-Added-Notice", getTagValue(notice.Tags, "Action"))
-    assert.are.same(msgAddFunding.Tags.Quantity,  getTagValue(notice.Tags, "MintAmount"))
-    assert.are.same(fundingAdded, getTagValue(notice.Tags, "FundingAdded"))
+    assert.are.same(noticeAddFunding, notice)
 	end)
 
   it("should fail addFunding with binary distribution", function()
@@ -459,6 +496,33 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 	end)
 
   it("should removeFunding", function()
+    -- backup send function override
+    local backupAoSend = _G.ao.send
+    -- Override ao.send to return a fixed balance
+    ---@diagnostic disable-next-line: duplicate-set-field
+    _G.ao.send = function(val)
+      local callCount = 0
+      if val.Action == 'Balance' and callCount == 0 then
+        callCount = callCount + 1
+        return {
+          receive = function()
+            return { Data = msgAddFunding.Tags.Quantity } -- -- pool collateral balance before burn
+          end
+        }
+      elseif val.Action == 'Balance' and callCount == 1 then
+        callCount = callCount + 1
+        return {
+          receive = function()
+            return { Data = "0" } -- pool collateral balance after burn
+          end
+        }
+        end
+      return {
+        receive = function()
+          return { Data = val }
+        end
+      }
+    end
     -- add funding
     CPMM:addFunding(
       msgAddFunding.Tags.Sender,
@@ -485,15 +549,10 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- Pool Balances
     assert.are.same({"0", "0"}, CPMM:getPoolBalances())
     -- assert notice
-    assert.are.same(msgRemoveFunding.From, notice.Target)
-    assert.are.same("Successfully removed funding", notice.Data)
-    assert.are.same("Funding-Removed-Notice", getTagValue(notice.Tags, "Action"))
-    local sendAmounts = json.encode({msgRemoveFunding.Tags.Quantity, msgRemoveFunding.Tags.Quantity})
-    assert.are.same(sendAmounts,  getTagValue(notice.Tags, "SendAmounts"))
-    assert.are.same(msgRemoveFunding.Tags.Quantity,  getTagValue(notice.Tags, "SharesToBurn"))
-    local collateralRemovedFromFeePool = "0" -- no fees yet collected
-    assert.are.same(collateralRemovedFromFeePool, getTagValue(notice.Tags, "CollateralRemovedFromFeePool"))
-	end)
+    assert.are.same(noticeRemoveFunding, notice)
+    -- restore ao.send
+    _G.ao.send = backupAoSend
+  end)
 
   it("should removeFunding with lpFees", function()
     -- add funding
@@ -520,13 +579,34 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgBuy
       )
     end)
-    -- override receive to return collateralToken balance
+    -- backup send function override
+    local backupAoSend = _G.ao.send
+    -- Override ao.send to return a fixed balance
     ---@diagnostic disable-next-line: duplicate-set-field
-    _G.Handlers.receive = function() return
-      { Data = tonumber(msgAddFunding.Tags.Quantity) }
+    _G.ao.send = function(val)
+      local callCount = 0
+      if val.Action == 'Balance' and callCount == 0 then
+        callCount = callCount + 1
+        return {
+          receive = function()
+            return { Data = msgAddFunding.Tags.Quantity } -- pool collateral balance before burn
+          end
+        }
+      elseif val.Action == 'Balance' and callCount == 1 then
+        callCount = callCount + 1
+        return {
+          receive = function()
+            return { Data = "10" } -- pool collateral balance after burn
+          end
+        }
+        end
+      return {
+        receive = function()
+          return { Data = val }
+        end
+      }
     end
     -- remove funding
-    local poolBalancesBefore = CPMM:getPoolBalances()
     local notice = CPMM:removeFunding(
       msgRemoveFunding.From,
       msgRemoveFunding.Tags.Quantity,
@@ -539,17 +619,11 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- Pool Balances
     assert.are.same({"0", "0"}, CPMM:getPoolBalances())
     -- assert notice
-    assert.are.same(msgRemoveFunding.From, notice.Target)
-    assert.are.same("Successfully removed funding", notice.Data)
-    assert.are.same("Funding-Removed-Notice", getTagValue(notice.Tags, "Action"))
-    local sendAmounts = json.encode({
-      tostring(tonumber(msgRemoveFunding.Tags.Quantity) - buyAmount),
-      msgRemoveFunding.Tags.Quantity
-    })
-    assert.are.same(json.encode(poolBalancesBefore),  getTagValue(notice.Tags, "SendAmounts"))
-    assert.are.same(msgRemoveFunding.Tags.Quantity,  getTagValue(notice.Tags, "SharesToBurn"))
-    local collateralRemovedFromFeePool = "0" -- no fees yet collected
-    assert.are.same(collateralRemovedFromFeePool, getTagValue(notice.Tags, "CollateralRemovedFromFeePool"))
+    -- @dev: updated send amounts due to buy
+    noticeRemoveFunding.SendAmounts = json.encode({"51", "199"})
+    assert.are.same(noticeRemoveFunding, notice)
+    -- restore ao.send
+    _G.ao.send = backupAoSend
 	end)
 
   it("should calc buy amount", function()
@@ -710,13 +784,10 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     }
     assert.are.same(poolBalances, CPMM:getPoolBalances())
     -- assert notice
-    assert.are.same("Buy-Notice", getTagValue(notice.Tags, "Action"))
-    assert.are.same(msgBuy.From, notice.Target)
-    assert.are.same(msgBuy.Tags.InvestmentAmount, getTagValue(notice.Tags, "InvestmentAmount"))
-    assert.are.same(tostring(feeAmount), getTagValue(notice.Tags, "FeeAmount"))
-    assert.are.same(msgBuy.Tags.PositionId, getTagValue(notice.Tags, "PositionId"))
-    assert.are.same(buyAmount, getTagValue(notice.Tags, "PositionTokensToBuy"))
-    assert.are.same("Successful buy order", notice.Data)
+    -- @dev: updated buy amount
+    noticeBuy.PositionTokensBought = buyAmount
+    noticeBuy.FeeAmount = tostring(math.floor(buyAmount * CPMM.lpFee / 10000))
+    assert.are.same(noticeBuy, notice)
 	end)
 
   it("should not buy when minimumPositionTokens not reached", function()
@@ -745,7 +816,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgBuy.Tags.Quantity,
       msgBuy
       )
-    end, "Minimum outcome tokens not reached!")
+    end, "Minimum position tokens not reached!")
   end)
 
   it("should sell", function()
@@ -792,16 +863,38 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       tonumber(msgSell.Tags.ReturnAmount),
       msgSell.Tags.PositionId
     )
+    -- Override ao.send to return a fixed balance
+    ---@diagnostic disable-next-line: duplicate-set-field
+    _G.ao.send = function(val)
+      if val.Action == 'Balance' then
+        return {
+          receive = function()
+            return { Data = msgBuy.Tags.InvestmentAmount } -- pool collateral balance before transfers
+          end
+        }
+      end
+      return {
+        receive = function()
+          return { Data = val }
+        end
+      }
+    end
+    -- @dev increase max sell amount to sellAmount
+    msgSell.Tags.MaxPositionTokensToSell = sellAmount
+    -- @dev similarly prepare notice
+    noticeSell.PositionTokensSold = sellAmount
+    -- @dev set notice feeAmount 
+    local feeAmount_ = math.ceil(tonumber(msgSell.Tags.ReturnAmount) * CPMM.lpFee / 10000)
+    noticeSell.FeeAmount = tostring(feeAmount_)
     -- sell
     local notice = {}
     assert.has.no.errors(function()
       notice = CPMM:sell(
-      msgSell.From,
-      msgSell.Tags.ReturnAmount,
-      msgSell.Tags.PositionId,
-      msgSell.Tags.Quantity,
-      msgSell.Tags.MaxPositionTokensToSell,
-      msgSell
+        msgSell.From,
+        msgSell.Tags.ReturnAmount,
+        msgSell.Tags.PositionId,
+        msgSell.Tags.MaxPositionTokensToSell,
+        msgSell
       )
     end)
     -- assert state
@@ -809,13 +902,12 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.are.same(msgBuy.Tags.InvestmentAmount, CPMM.token.balances[msgBuy.From])
     -- Conditional Token Balances
     local returnAmount_ = tonumber(msgSell.Tags.ReturnAmount)
-    local feeAmount_ = math.ceil(returnAmount * CPMM.lpFee / 10000)
     local returnAmountPlusFees = returnAmount_ + feeAmount_
-    local unburned = tonumber(msgSell.Tags.Quantity) - returnAmountPlusFees
+
     assert.are.same({
       ["1"] = {
-        [_G.ao.id] = tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees - unburned),
-        [msgSell.From] =  tostring(tonumber(balancesBefore["1"][msgSell.From]) - tonumber(sellAmount) + unburned),
+        [_G.ao.id] = tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees),
+        [msgSell.From] =  tostring(tonumber(balancesBefore["1"][msgSell.From]) - tonumber(sellAmount)),
       },
       ["2"] = {
         [_G.ao.id] = tostring(balancesBefore["2"][_G.ao.id] - returnAmountPlusFees),
@@ -823,18 +915,12 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     }, CPMM.tokens.balancesById)
     -- Pool Balances
     local poolBalances = {
-      tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees - unburned),
+      tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees),
       tostring(balancesBefore["2"][_G.ao.id] - returnAmountPlusFees)
     }
     assert.are.same(poolBalances, CPMM:getPoolBalances())
     -- assert notice
-    assert.are.same("Sell-Notice", getTagValue(notice.Tags, "Action"))
-    assert.are.same(msgSell.From, notice.Target)
-    assert.are.same(msgSell.Tags.ReturnAmount, getTagValue(notice.Tags, "ReturnAmount"))
-    assert.are.same(tostring(feeAmount), getTagValue(notice.Tags, "FeeAmount"))
-    assert.are.same(msgBuy.Tags.PositionId, getTagValue(notice.Tags, "PositionId"))
-    assert.are.same(sellAmount, getTagValue(notice.Tags, "PositionTokensToSell"))
-    assert.are.same("Successful sell order", notice.Data)
+    assert.are.same(noticeSell, notice)
   end)
 
   it("should fail to sell when max sell amount is exceeded", function()
@@ -945,7 +1031,6 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgSell.From,
       msgSell.Tags.ReturnAmount,
       msgSell.Tags.PositionId,
-      msgSell.Tags.Quantity,
       msgSell.Tags.MaxPositionTokensToSell,
       msgSell
       )
@@ -1056,14 +1141,14 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- fees withdrawable
     local feesWithdrawable = CPMM:feesWithdrawableBy(sender)
     -- withdraw fees
-    local withdrawnFees = nil
+    local withdrawnFeesNotice = {}
     -- should not throw an error
 		assert.has.no.error(function()
-      withdrawnFees = CPMM:withdrawFees(sender, msgBuy) -- msgBuy used to send a message with forward
+      withdrawnFeesNotice = CPMM:withdrawFees(sender, msgBuy) -- msgBuy used to send a message with forward
     end)
     -- assert withdrawn fees
     assert.are.equal("1", feesWithdrawable)
-    assert.are.equal(feesWithdrawable, withdrawnFees)
+    assert.are.equal(feesWithdrawable, withdrawnFeesNotice.FeeAmount)
     -- assert state change
     assert.are.equal("0", CPMM:feesWithdrawableBy(sender))
 	end)
@@ -1093,7 +1178,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- _beforeTokenTransfer
     -- should not throw an error
 		assert.has.no.error(function()
-      CPMM:_beforeTokenTransfer(sender, marketFactory, feesWithdrawable, msgBuy) -- msgBuy used to send a message with forward
+      CPMM:_beforeTokenTransfer(sender, market, feesWithdrawable, msgBuy) -- msgBuy used to send a message with forward
     end)
     -- assert state change
     assert.are.equal("0", CPMM:feesWithdrawableBy(sender))
@@ -1176,11 +1261,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.are.same(msgMint.Tags.Quantity, CPMM.token.totalSupply)
     -- assert notices
     assert.are.same(noticeDebit, notices[1])
-    assert.are.same(noticeCredit.Target, notices[2].Target)
-    assert.are.same(noticeCredit.Action, getTagValue(notices[2].Tags, "Action"))
-    assert.are.same(noticeCredit.Sender, getTagValue(notices[2].Tags, "Sender"))
-    assert.are.same(noticeCredit.Quantity, getTagValue(notices[2].Tags, "Quantity"))
-    assert.are.same(noticeCredit["X-Action"], getTagValue(notices[2].Tags, "X-Action"))
+    assert.are.same(noticeCredit, notices[2])
 	end)
 
   it("should fail to transfer tokens with insufficient balance", function()
@@ -1219,7 +1300,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- assert state
     assert.are.equal(msgUpdateConfigurator.Tags.Configurator, CPMM.configurator)
     -- assert notice
-    assert.are.equal("Configurator-Updated", notice.Action)
+    assert.are.equal("Update-Configurator-Notice", notice.Action)
     assert.are.equal(msgUpdateConfigurator.Tags.Configurator, notice.Data)
 	end)
 
@@ -1238,7 +1319,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.are.equal(msgUpdateTakeFee.Tags.ProtocolFee, CPMM.tokens.protocolFee)
     -- assert notice
     local takeFee = tostring(tonumber(msgUpdateTakeFee.Tags.CreatorFee) + tonumber(msgUpdateTakeFee.Tags.ProtocolFee))
-    assert.are.equal("Take-Fee-Updated", notice.Action)
+    assert.are.equal("Update-Take-Fee-Notice", notice.Action)
     assert.are.equal(tostring(msgUpdateTakeFee.Tags.CreatorFee), notice.CreatorFee)
     assert.are.equal(tostring(msgUpdateTakeFee.Tags.ProtocolFee), notice.ProtocolFee)
     assert.are.equal(takeFee, notice.Data)
@@ -1256,7 +1337,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- assert state
     assert.are.equal(msgUpdateProtocolFeeTarget.Tags.ProtocolFeeTarget, CPMM.tokens.protocolFeeTarget)
     -- assert notice
-    assert.are.equal("Protocol-Fee-Target-Updated", notice.Action)
+    assert.are.equal("Update-Protocol-Fee-Target-Notice", notice.Action)
     assert.are.equal(msgUpdateProtocolFeeTarget.Tags.ProtocolFeeTarget, notice.Data)
   end)
 
@@ -1273,7 +1354,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.are.equal(msgUpdateLogo.Tags.Logo, CPMM.tokens.logo)
     assert.are.equal(msgUpdateLogo.Tags.Logo, CPMM.token.logo)
     -- assert notice
-    assert.are.equal("Logo-Updated", notice.Action)
+    assert.are.equal("Update-Logo-Notice", notice.Action)
     assert.are.equal(msgUpdateLogo.Tags.Logo, notice.Data)
   end)
 end)

@@ -182,8 +182,8 @@ end
 --- @return Message The payout redemption notice
 function ConditionalTokensMethods:redeemPositions(msg)
   local den = self.payoutDenominator
-  assert(den > 0, "market not yet resolved")
-  assert(self.payoutNumerators and #self.payoutNumerators > 0, "market not yet initialized")
+  assert(den > 0, "market not resolved")
+  assert(self.payoutNumerators and #self.payoutNumerators > 0, "market not initialized")
   local totalPayout = 0
   for i = 1, #self.positionIds do
     local positionId = self.positionIds[i]
@@ -201,7 +201,7 @@ function ConditionalTokensMethods:redeemPositions(msg)
   -- Return total payout minus take fee.
   if totalPayout > 0 then
     totalPayout = math.floor(totalPayout)
-    self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)
+    self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout, msg)
   end
   -- Send notice.
   return self.redeemPositionsNotice(self.collateralToken, totalPayout, msg)
@@ -212,33 +212,35 @@ end
 --- @param collateralToken string The collateral token
 --- @param from string The account to receive the payout minus fees
 --- @param totalPayout number The total payout assciated with the acount stake
+--- @param msg Message The message received
 --- @return table<Message> The protocol fee, creator fee and payout messages
-function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)
+function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, msg)
   local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))
   local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))
   local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))
   local totalPayoutMinusFee = tostring(bint.__sub(totalPayout, bint(takeFee)))
   -- prepare txns
   local protocolFeeTxn = {
-    Target = collateralToken,
     Action = "Transfer",
     Recipient = self.protocolFeeTarget,
     Quantity = protocolFee,
   }
   local creatorFeeTxn = {
-    Target = collateralToken,
     Action = "Transfer",
     Recipient = self.creatorFeeTarget,
     Quantity = creatorFee,
   }
   local totalPayoutMinutTakeFeeTxn = {
-    Target = collateralToken,
     Action = "Transfer",
     Recipient = from,
     Quantity = totalPayoutMinusFee
   }
   -- send txns
-  return { ao.send(protocolFeeTxn), ao.send(creatorFeeTxn), ao.send(totalPayoutMinutTakeFeeTxn) }
+  return {
+    msg.forward(collateralToken, protocolFeeTxn),
+    msg.forward(collateralToken, creatorFeeTxn),
+    msg.forward(collateralToken, totalPayoutMinutTakeFeeTxn)
+  }
 end
 
 return ConditionalTokens

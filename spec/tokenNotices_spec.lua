@@ -13,9 +13,9 @@ local noticeCredit = {}
 
 local function getTagValue(tags, targetName)
   for _, tag in ipairs(tags) do
-      if tag.name == targetName then
-          return tag.value
-      end
+    if tag.name == targetName then
+      return tag.value
+    end
   end
   return nil -- Return nil if the name is not found
 end
@@ -34,7 +34,8 @@ describe("#market #token #tokenNotices", function()
         Recipient = recipient,
         Quantity = "100",
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgBurn = {
@@ -43,7 +44,8 @@ describe("#market #token #tokenNotices", function()
         Action = "Burn",
         Quantity = "100",
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgTransfer = {
@@ -54,11 +56,11 @@ describe("#market #token #tokenNotices", function()
         Quantity = "100",
       },
       Id = "test-message-id",
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a notice object
     noticeDebit = {
-      Target = sender,
       Action = "Debit-Notice",
       Recipient = recipient,
       Quantity = "100",
@@ -67,7 +69,6 @@ describe("#market #token #tokenNotices", function()
     }
     -- create a notice object
     noticeCredit = {
-      Target = recipient,
       Action = "Credit-Notice",
       Sender = sender,
       Quantity = "100",
@@ -106,14 +107,11 @@ describe("#market #token #tokenNotices", function()
     local notices = tokenNotices.transferNotices(
       noticeDebit,
       noticeCredit,
+      recipient,
       msgTransfer
     )
     assert.are.same(noticeDebit, notices[1])
-    assert.are.same(noticeCredit.Target, notices[2].Target)
-    assert.are.same(noticeCredit.Action, getTagValue(notices[2].Tags, "Action"))
-    assert.are.same(noticeCredit.Sender, getTagValue(notices[2].Tags, "Sender"))
-    assert.are.same(noticeCredit.Quantity, getTagValue(notices[2].Tags, "Quantity"))
-    assert.are.same(noticeCredit["X-Action"], getTagValue(notices[2].Tags, "X-Action"))
+    assert.are.same(noticeCredit, notices[2])
 	end)
 
   it("should send transferErrorNotice", function()

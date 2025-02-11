@@ -36,7 +36,7 @@ end
 --- Returns funding to sender on error
 --- @param from string The address of the sender
 --- @param quantity number The amount of funding to add
---- @param distribution table<number> The distribution of funding
+--- @param distribution table<number>|nil The distribution of funding or `nil`
 --- @return boolean True if error
 function CPMMHelpers:validateAddFunding(from, quantity, distribution)
   local error = false
@@ -70,7 +70,7 @@ function CPMMHelpers:validateAddFunding(from, quantity, distribution)
       end
     end
   else
-    if not error and bint.iszero(bint(self.token.totalSupply)) then
+    if bint.iszero(bint(self.token.totalSupply)) then
       error = true
       errorMessage = "Must specify distribution for inititial funding"
     end
@@ -96,25 +96,18 @@ end
 --- @return boolean True if error
 function CPMMHelpers:validateRemoveFunding(from, quantity)
   local error = false
-  local errorMessage = ''
+  local errorMessage = ""
   -- Get balance
   local balance = self.token.balances[from] or '0'
-  -- Check for errors
-  if from == self.creatorFeeTarget and self.payoutDenominator and self.payoutDenominator == 0 then
+  if not bint.__le(bint(quantity), bint(balance)) then
     error = true
-    errorMessage = 'Creator liquidity locked until market resolution!'
-  elseif not bint.__le(bint(quantity), bint(balance)) then -- @dev TODO: remove as will never be called?
-    error = true
-    errorMessage = 'Quantity must be less than balance!'
+    errorMessage = "Quantity must be less than balance!"
   end
-  -- Return funds on error.
   if error then
+    -- Return funds and assert error
     ao.send({
-      Target = ao.id,
-      Action = 'Transfer',
-      Recipient = from,
-      Quantity = tostring(quantity),
-      ['X-Error'] = errorMessage
+      Target = from,
+      Error = 'Remove-Funding Error: ' .. errorMessage
     })
   end
   return not error

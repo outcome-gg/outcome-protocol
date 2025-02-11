@@ -27,6 +27,7 @@ local msgSplitPosition = {}
 local msgMergePositions = {}
 local msgReportPayouts = {}
 local msgRedeemPositions = {}
+local msg = {}
 
 local function getTagValue(tags, targetName)
   for _, tag in ipairs(tags) do
@@ -98,7 +99,8 @@ describe("#market #conditionalTokens", function()
         OnBehalfOf = recipient,
         Quantity = quantity,
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(to, message) return {to, message} end
     }
     -- create a message object
     msgReportPayouts = {
@@ -111,7 +113,14 @@ describe("#market #conditionalTokens", function()
     -- create a message object
     msgRedeemPositions = {
       From = sender,
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
+    }
+    -- create a message object
+    msg = {
+      From = sender,
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
 	end)
 
@@ -275,7 +284,7 @@ describe("#market #conditionalTokens", function()
     assert.are.same(payouts, ConditionalTokens.payoutNumerators)
     assert.are.same(1, ConditionalTokens.payoutDenominator)
     -- assert notice
-    assert.are.equals("Condition-Resolution-Notice", notice.Action)
+    assert.are.equals("Report-Payouts-Notice", notice.Action)
     assert.are.equals(json.encode(msgReportPayouts.Tags.Payouts), notice.PayoutNumerators)
     assert.are.equals(msgReportPayouts.From, notice.ResolutionAgent)
 	end)
@@ -388,9 +397,8 @@ describe("#market #conditionalTokens", function()
       },
     }, ConditionalTokens.balancesById)
     -- assert notice
-    assert.are.equals("Payout-Redemption-Notice", notice.Action)
+    assert.are.equals("Redeem-Positions-Notice", notice.Action)
     assert.are.equals(quantity, notice.Payout)
-    assert.are.equals(_G.ao.id, notice.Process)
 	end)
 
   it("should fail to redeem positions (not reported)", function()
@@ -407,56 +415,32 @@ describe("#market #conditionalTokens", function()
       ConditionalTokens:redeemPositions(
         msgRedeemPositions
       )
-    end, "result for condition not received yet")
-	end)
-
-  it("should fail to redeem positions (no balance)", function()
-    -- split position
-    ConditionalTokens:splitPosition(
-      msgSplitPosition.From,
-      msgSplitPosition.Tags.CollateralToken,
-      msgSplitPosition.Tags.Quantity,
-      msgSplitPosition
-    )
-    -- report payouts
-    ConditionalTokens:reportPayouts(
-      msgReportPayouts.Tags.Payouts,
-      msgReportPayouts
-    )
-    -- redeem positions from different account
-    msgRedeemPositions.From = recipient
-    -- should throw an error
-    assert.has.error(function()
-      ConditionalTokens:redeemPositions(
-        msgRedeemPositions
-      )
-    end, "no stake to redeem")
+    end, "market not resolved")
 	end)
 
   it("should return total payout minus take fee", function()
     local result = ConditionalTokens:returnTotalPayoutMinusTakeFee(
       collateralToken,
       sender,
-      totalPayout
+      totalPayout,
+      msg
     )
     -- extract results
     local protocolFeeTransfer = result[1]
     local creatorFeeTransfer = result[2]
     local totalAmountMinusTakeFeeTransfer = result[3]
+
     -- assert protocol fee transfer
-    assert.are.equals(collateralToken, protocolFeeTransfer.Target)
-    assert.are.equals("Transfer", getTagValue(protocolFeeTransfer.Tags, "Action"))
-    assert.are.equals(protocolFeeTarget, getTagValue(protocolFeeTransfer.Tags, "Recipient"))
-    assert.are.equals(tostring(math.ceil(totalPayout * protocolFee / 1e4)), getTagValue(protocolFeeTransfer.Tags, "Quantity"))
-    -- -- assert creator fee transfer
-    assert.are.equals(collateralToken, creatorFeeTransfer.Target)
-    assert.are.equals("Transfer", getTagValue(creatorFeeTransfer.Tags, "Action"))
-    assert.are.equals(creatorFeeTarget, getTagValue(creatorFeeTransfer.Tags, "Recipient"))
-    assert.are.equals(tostring(math.ceil(totalPayout * creatorFee / 1e4)), getTagValue(creatorFeeTransfer.Tags, "Quantity"))
+    assert.are.equal("Transfer", protocolFeeTransfer.Action)
+    assert.are.equal(protocolFeeTarget,  protocolFeeTransfer.Recipient)
+    assert.are.equal(tostring(math.ceil(totalPayout * protocolFee / 1e4)), protocolFeeTransfer.Quantity)
+    -- assert creator fee transfer
+    assert.are.equal("Transfer", creatorFeeTransfer.Action)
+    assert.are.equal(creatorFeeTarget, creatorFeeTransfer.Recipient)
+    assert.are.equal(tostring(math.ceil(totalPayout * creatorFee / 1e4)), creatorFeeTransfer.Quantity)
     -- assert total amount minus take fee transfer
-    assert.are.equals(collateralToken, totalAmountMinusTakeFeeTransfer.Target)
-    assert.are.equals("Transfer", getTagValue(totalAmountMinusTakeFeeTransfer.Tags, "Action"))
-    assert.are.equals(sender, getTagValue(totalAmountMinusTakeFeeTransfer.Tags, "Recipient"))
-    assert.are.equals(tostring(totalPayout - math.ceil(totalPayout * protocolFee / 1e4) - math.ceil(totalPayout * creatorFee / 1e4)), getTagValue(totalAmountMinusTakeFeeTransfer.Tags, "Quantity"))
+    assert.are.equal("Transfer", totalAmountMinusTakeFeeTransfer.Action)
+    assert.are.equal(sender, totalAmountMinusTakeFeeTransfer.Recipient)
+    assert.are.equals(tostring(totalPayout - math.ceil(totalPayout * protocolFee / 1e4) - math.ceil(totalPayout * creatorFee / 1e4)), totalAmountMinusTakeFeeTransfer.Quantity)
 	end)
 end)

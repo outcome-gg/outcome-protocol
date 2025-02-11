@@ -2050,7 +2050,7 @@ describe("cpmm.integration.test", function () {
 
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
-      const tokenId_ = Messages[0].Tags.find(t => t.name === 'Token-Id').value
+      const tokenId_ = Messages[0].Tags.find(t => t.name === 'PositionId').value
 
       expect(action_).to.equal("Transfer-Error")
       expect(error_).to.equal("Insufficient Balance!")
@@ -2064,7 +2064,7 @@ describe("cpmm.integration.test", function () {
         process: conditionalTokens,
         tags: [
           { name: "Action", value: "Balance-By-Id" },
-          { name: "TokenId", value: "1" }
+          { name: "PositionId", value: "1" }
         ],
         signer: createDataItemSigner(wallet),
         data: "",
@@ -2159,7 +2159,7 @@ describe("cpmm.integration.test", function () {
 
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const error_ = Messages[0].Tags.find(t => t.name === 'Error').value
-      const tokenId_ = Messages[0].Tags.find(t => t.name === 'Token-Id').value
+      const tokenId_ = Messages[0].Tags.find(t => t.name === 'PositionId').value
 
       expect(action_).to.equal("Transfer-Error")
       expect(error_).to.equal("Insufficient Balance!")

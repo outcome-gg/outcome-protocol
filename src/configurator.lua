@@ -22,7 +22,7 @@ local configuratorValidation = require('configuratorModules.configuratorValidati
 ---------------------------------------------------------------------------------
 Env = 'DEV'
 Version = '1.0.1'
-Admin = Admin or "zpeP5Z3L2DfuDyvwymWoBWNz7zgC5CswhQTiBDRSljg" --'XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I'
+Admin = Admin or 'XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I'
 -- @dev Reset state on load while in DEV mode
 if not Configurator or Env == 'DEV' then Configurator = configurator:new(Admin, Env) end
 

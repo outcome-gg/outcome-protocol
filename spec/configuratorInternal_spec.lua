@@ -3,6 +3,7 @@ local configurator = require("configuratorModules.configurator")
 
 local admin = ""
 local delay = nil
+local updateDelay = nil
 local msg = {}
 local msgAdmin = {}
 local msgDelay = {}
@@ -40,12 +41,13 @@ describe("#configurator #configuratorInternal", function()
       reply = function(message) return message end
     }
     -- update delay
-    delay = "123"
+    delay = 3000
+    updateDelay = 123
     -- create a message object
     msgDelay = {
       From = admin,
       Tags = {
-        UpdateDelay = delay
+        UpdateDelay = tostring(delay)
       },
       reply = function(message) return message end
     }
@@ -72,13 +74,12 @@ describe("#configurator #configuratorInternal", function()
     }, Configurator.staged)
     -- assert correct notice
     assert.are.same({
-      Action = 'Update-Staged',
+      Action = 'Stage-Update-Notice',
       UpdateProcess = msg.Tags.UpdateProcess,
       UpdateAction = msg.Tags.UpdateAction,
       UpdateTags = msg.Tags.UpdateTags,
       UpdateData = msg.Tags.UpdateData,
       Hash = hash,
-      Timestamp = timestamp,
     }, notice)
 	end)
 
@@ -107,7 +108,7 @@ describe("#configurator #configuratorInternal", function()
     assert.are.same({}, Configurator.staged)
     -- assert correct notice
     assert.are.same({
-      Action = 'Update-Unstaged',
+      Action = 'Unstage-Update-Notice',
       Hash = hash,
     }, notice)
 	end)
@@ -141,7 +142,7 @@ describe("#configurator #configuratorInternal", function()
       [hash] = timestamp
     }, Configurator.staged)
     -- stub os.time to mock delay
-    stub(os, "time", function() return timestamp + 2 end)
+    stub(os, "time", function() return timestamp + delay end)
     -- action update
     local notice = Configurator:actionUpdate(
       msg.Tags.UpdateProcess,
@@ -154,7 +155,7 @@ describe("#configurator #configuratorInternal", function()
     assert.are.same({}, Configurator.staged)
     -- assert correct notice
     assert.are.same({
-      Action = 'Update-Actioned',
+      Action = 'Action-Update-Notice',
       Hash = hash,
     }, notice)
     -- restore the original os.time
@@ -183,7 +184,7 @@ describe("#configurator #configuratorInternal", function()
         msg.Tags.UpdateData,
         msg
       )
-    end, "Update not staged long enough! Remaining: 1s.")
+    end, "Update not staged long enough! Remaining: 3000s.")
     -- assert still staged
     assert.are.same({
       [hash] = timestamp
@@ -217,10 +218,9 @@ describe("#configurator #configuratorInternal", function()
     }, Configurator.staged)
     -- assert correct notice
     assert.are.same({
-      Action = 'Update-Admin-Staged',
+      Action = 'Stage-Update-Admin-Notice',
       UpdateAdmin = admin,
       Hash = hashAdmin,
-      Timestamp = timestamp,
     }, notice)
 	end)
 
@@ -243,7 +243,7 @@ describe("#configurator #configuratorInternal", function()
     assert.are.same({}, Configurator.staged)
     -- assert correct notice
     assert.are.same({
-      Action = 'Update-Admin-Unstaged',
+      Action = 'Unstage-Update-Admin-Notice',
       Hash = hashAdmin,
     }, notice)
 	end)
@@ -272,7 +272,7 @@ describe("#configurator #configuratorInternal", function()
       [hashAdmin] = timestamp
     }, Configurator.staged)
     -- stub os.time to mock delay
-    stub(os, "time", function() return timestamp + 2 end)
+    stub(os, "time", function() return timestamp + delay end)
     -- action update admin
     local notice = Configurator:actionUpdateAdmin(
       msgAdmin.Tags.UpdateAdmin,
@@ -282,7 +282,7 @@ describe("#configurator #configuratorInternal", function()
     assert.are.same({}, Configurator.staged)
     -- assert correct notice
     assert.are.same({
-      Action = 'Update-Admin-Actioned',
+      Action = 'Action-Update-Admin-Notice',
       Hash = hashAdmin,
     }, notice)
     -- assert admin updated
@@ -307,7 +307,7 @@ describe("#configurator #configuratorInternal", function()
         msgAdmin.Tags.UpdateAdmin,
         msgAdmin
       )
-    end, "Update not staged long enough! Remaining: 1s.")
+    end, "Update not staged long enough! Remaining: 3000s.")
     -- assert still staged
     assert.are.same({
       [hashAdmin] = timestamp
@@ -338,10 +338,9 @@ describe("#configurator #configuratorInternal", function()
     }, Configurator.staged)
     -- assert correct notice
     assert.are.same({
-      Action = 'Update-Delay-Staged',
-      UpdateDelay = delay,
+      Action = 'Stage-Update-Delay-Notice',
+      UpdateDelay = tostring(delay),
       Hash = hashDelay,
-      Timestamp = timestamp,
     }, notice)
 	end)
 
@@ -364,7 +363,7 @@ describe("#configurator #configuratorInternal", function()
     assert.are.same({}, Configurator.staged)
     -- assert correct notice
     assert.are.same({
-      Action = 'Update-Delay-Unstaged',
+      Action = 'Unstage-Update-Delay-Notice',
       Hash = hashDelay,
     }, notice)
 	end)
@@ -393,7 +392,7 @@ describe("#configurator #configuratorInternal", function()
       [hashDelay] = timestamp
     }, Configurator.staged)
     -- stub os.time to mock delay
-    stub(os, "time", function() return timestamp + 2 end)
+    stub(os, "time", function() return timestamp + delay end)
     -- action update admin
     local notice = Configurator:actionUpdateDelay(
       msgDelay.Tags.UpdateDelay,
@@ -403,7 +402,7 @@ describe("#configurator #configuratorInternal", function()
     assert.are.same({}, Configurator.staged)
     -- assert correct notice
     assert.are.same({
-      Action = 'Update-Delay-Actioned',
+      Action = 'Action-Update-Delay-Notice',
       Hash = hashDelay,
     }, notice)
     -- assert delay updated
@@ -428,7 +427,7 @@ describe("#configurator #configuratorInternal", function()
         msgDelay.Tags.UpdateDelay,
         msgDelay
       )
-    end, "Update not staged long enough! Remaining: 1s.")
+    end, "Update not staged long enough! Remaining: 3000s.")
     -- assert still staged
     assert.are.same({
       [hashDelay] = timestamp

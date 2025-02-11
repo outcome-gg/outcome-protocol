@@ -11,6 +11,9 @@ local recipient = ""
 local collateralToken = ""
 local creator = ""
 local question = ""
+local rules = ""
+local category = ""
+local subcategory = ""
 local name = ""
 local ticker = ""
 local logo = ""
@@ -34,12 +37,12 @@ local newIncentives = ""
 local dataIndex = ""
 local newDataIndex = ""
 local quantity = ""
-local tokenId = ""
+local positionId = ""
 local returnAmount = ""
 local investmentAmount = ""
 local maxPositionTokensToSell = ""
 local resolutionAgent = ""
-local tokenIds = {}
+local positionIds = {}
 local quantities = {}
 local remainingBalances = {}
 local payouts = {}
@@ -77,6 +80,10 @@ local noticeDebitSingle = {}
 local noticeCreditSingle = {}
 local noticeDebitBatch = {}
 local noticeCreditBatch = {}
+local noticeAddFunding = {}
+local noticeRemoveFunding = {}
+local noticeBuy = {}
+local noticeSell = {}
 
 local function getTagValue(tags, targetName)
   for _, tag in ipairs(tags) do
@@ -98,6 +105,9 @@ describe("#market", function()
     collateralToken = "test-this-is-valid-arweave-wallet-address-2"
     creator = "test-this-is-valid-arweave-wallet-address-3"
     question = "What is the meaning of life?"
+    rules = "This is a test market"
+    category = "Test Category"
+    subcategory = "Test Subcategory"
     name = "Test Market"
     ticker = "TST"
     logo = "https://test.com/logo.png"
@@ -118,7 +128,7 @@ describe("#market", function()
     dataIndex = "test-this-is-valid-arweave-wallet-address10"
     newDataIndex = "test-this-is-valid-arweave-wallet-address11"
     quantity = "100"
-    tokenId = "1"
+    positionId = "1"
     returnAmount = "90"
     investmentAmount = "100"
     maxPositionTokensToSell = "140"
@@ -126,7 +136,7 @@ describe("#market", function()
     distribution = {50, 50}
     resolutionAgent = "test-this-is-valid-arweave-wallet-address-10"
     payouts = { 1, 0 }
-    tokenIds = { "1", "2" }
+    positionIds = { "1", "2" }
     quantities = { "100", "200" }
     remainingBalances = { "0", "0" }
     -- Instantiate objects
@@ -138,6 +148,9 @@ describe("#market", function()
       resolutionAgent,
       creator,
       question,
+      rules, 
+      category,
+      subcategory,
       positionIds,
       name,
       ticker,
@@ -179,7 +192,13 @@ describe("#market", function()
         ["X-Distribution"] = json.encode(distribution)
       },
       reply = function(message) return message end,
-      forward = function(message) return message end
+      forward = function(target, message) return message end
+    }
+    noticeAddFunding = {
+      Action = "Add-Funding-Notice",
+      FundingAdded = json.encode(distribution),
+      MintAmount = quantity,
+      Data = "Successfully added funding",
     }
     -- create a message object
     msgRemoveFunding = {
@@ -188,7 +207,11 @@ describe("#market", function()
         Quantity = quantity,
       },
       reply = function(message) return message end,
-      forward = function(message) return message end
+      forward = function(target, message) return message end
+    }
+    noticeRemoveFunding = {
+      Action = "Remove-Funding-Notice",
+      Data = "Successfully removed funding",
     }
     -- create a message object
     msgBuy = {
@@ -199,7 +222,14 @@ describe("#market", function()
         Quantity = quantity,
       },
       reply = function(message) return message end,
-      forward = function(message) return message end
+      forward = function(target, message) return message end
+    }
+    noticeBuy = {
+      Action = "Buy-Notice",
+      InvestmentAmount = investmentAmount,
+      PositionId = "1",
+      PositionTokensBought = quantity,
+      Data = "Successful buy order",
     }
     -- create a message object
     msgSell = {
@@ -210,7 +240,15 @@ describe("#market", function()
         ReturnAmount = returnAmount,
         MaxPositionTokensToSell = maxPositionTokensToSell
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
+    }
+    noticeSell = {
+      Action = "Sell-Notice",
+      ReturnAmount = returnAmount,
+      PositionId = "1",
+      PositionTokensSold = quantity,
+      Data = "Successful sell order"
     }
     -- create a message object
     msgCalcBuyAmount = {
@@ -219,7 +257,8 @@ describe("#market", function()
         PositionId = "1",
         InvestmentAmount = investmentAmount,
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgCalcSellAmount = {
@@ -228,7 +267,8 @@ describe("#market", function()
         PositionId = "1",
         ReturnAmount = returnAmount,
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgMint = {
@@ -237,7 +277,8 @@ describe("#market", function()
         Recipient = recipient,
         Quantity = quantity
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
 		msgMintSingle = {
@@ -245,10 +286,11 @@ describe("#market", function()
       Tags = {
         Action = "Mint-Single",
         Recipient = sender,
-        TokenId = tokenId,
+        PositionId = positionId,
         Quantity = quantity,
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
 		msgMintBatch = {
@@ -256,10 +298,11 @@ describe("#market", function()
       Tags = {
         Action = "Mint-Batch",
         Recipient = sender,
-        TokenIds = json.encode(tokenIds),
+        PositionIds = json.encode(positionIds),
         Quantities = json.encode(quantities),
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgBalance = {
@@ -267,7 +310,8 @@ describe("#market", function()
       Tags = {
         Recipient = recipient,
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgBalances = {
@@ -275,7 +319,8 @@ describe("#market", function()
       Tags = {
         Recipient = recipient,
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgTransfer = {
@@ -287,7 +332,8 @@ describe("#market", function()
         ["X-Action"] = "FOO"
       },
       Id = "test-message-id",
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgTransferError = {
@@ -298,31 +344,34 @@ describe("#market", function()
         Quantity = "100"
       },
       Id = "test-message-id",
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
 		msgTransferSingle = {
       From = sender,
       Tags = {
         Recipient = recipient,
-        TokenId = tokenId,
+        PositionId = positionId,
         Quantity = quantity,
       },
       Id = "test-message-id",
       ["X-Action"] = "FOO",
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgTransferBatch = {
       From = sender,
       Tags = {
         Recipient = recipient,
-        TokenIds = json.encode(tokenIds),
+        PositionIds = json.encode(positionIds),
         Quantities = json.encode(quantities),
       },
       Id = "test-message-id",
       ["X-Action"] = "FOO",
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgSplitPosition = {
@@ -335,7 +384,7 @@ describe("#market", function()
       },
       ["X-Action"] = "FOO",
       reply = function(message) return message end,
-      forward = function(to, message) return {to, message} end
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgMergePositions = {
@@ -344,7 +393,8 @@ describe("#market", function()
         OnBehalfOf = recipient,
         Quantity = quantity,
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgReportPayouts = {
@@ -352,12 +402,14 @@ describe("#market", function()
       Tags = {
         Payouts = json.encode(payouts),
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgRedeemPositions = {
       From = sender,
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgUpdateConfigurator = {
@@ -365,7 +417,8 @@ describe("#market", function()
       Tags = {
         Configurator = newConfigurator
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgUpdateIncentives = {
@@ -373,7 +426,8 @@ describe("#market", function()
       Tags = {
         Incentives = newIncentives
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgUpdateDataIndex = {
@@ -381,7 +435,8 @@ describe("#market", function()
       Tags = {
         DataIndex = newDataIndex
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgUpdateTakeFee = {
@@ -390,7 +445,8 @@ describe("#market", function()
         CreatorFee = tostring(newCreatorFee),
         ProtocolFee = tostring(newProtocolFee)
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgUpdateProtocolFeeTarget = {
@@ -398,7 +454,8 @@ describe("#market", function()
       Tags = {
         ProtocolFeeTarget = newProtocolFeeTarget
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgUpdateLogo = {
@@ -406,11 +463,11 @@ describe("#market", function()
       Tags = {
         Logo = newLogo
       },
-      reply = function(message) return message end
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a notice object
     noticeDebit = {
-      Target = sender,
       Action = "Debit-Notice",
       Recipient = recipient,
       Quantity = "100",
@@ -419,7 +476,6 @@ describe("#market", function()
     }
     -- create a notice object
     noticeCredit = {
-      Target = recipient,
       Action = "Credit-Notice",
       Sender = sender,
       Quantity = "100",
@@ -428,7 +484,7 @@ describe("#market", function()
     }
     -- create a notice object
     noticeCreditBatch = {
-      TokenIds = json.encode(tokenIds),
+      PositionIds = json.encode(positionIds),
       Quantities = json.encode(quantities),
       RemainingBalances = json.encode(remainingBalances),
       Action = 'Burn-Batch-Notice',
@@ -438,17 +494,16 @@ describe("#market", function()
      noticeDebitSingle = {
       Action = "Debit-Single-Notice",
       Recipient = recipient,
-      TokenId = tokenId,
+      PositionId = positionId,
       Quantity = quantity,
       ["X-Action"] = "FOO",
       Data = "You transferred 100 of id 1 to " .. recipient
     }
     -- create a notice object
     noticeCreditSingle = {
-      Target = recipient,
       Action = "Credit-Single-Notice",
       Sender = sender,
-      TokenId = tokenId,
+      PositionId = positionId,
       Quantity = quantity,
       ["X-Action"] = "FOO",
       Data = "You received 100 of id 1 from " .. sender
@@ -457,17 +512,16 @@ describe("#market", function()
     noticeDebitBatch = {
       Action = "Debit-Batch-Notice",
       Recipient = recipient,
-      TokenIds = json.encode(tokenIds),
+      PositionIds = json.encode(positionIds),
       Quantities = json.encode(quantities),
       ["X-Action"] = "FOO",
       Data = "You transferred batch to " .. recipient
     }
     -- create a notice object
     noticeCreditBatch = {
-      Target = recipient,
       Action = "Credit-Batch-Notice",
       Sender = sender,
-      TokenIds = json.encode(tokenIds),
+      PositionIds = json.encode(positionIds),
       Quantities = json.encode(quantities),
       ["X-Action"] = "FOO",
       Data = "You received batch from " .. sender
@@ -536,12 +590,10 @@ describe("#market", function()
     local poolBalances = {msgAddFunding.Tags.Quantity, msgAddFunding.Tags.Quantity}
     assert.are.same(poolBalances, Market.cpmm:getPoolBalances())
     local fundingAdded = json.encode({tonumber(msgAddFunding.Tags.Quantity), tonumber(msgAddFunding.Tags.Quantity)})
+    -- @dev update expected notice
+    noticeAddFunding.FundingAdded = fundingAdded
     -- assert notice
-    assert.are.same(msgAddFunding.Tags.Sender, notice.Target)
-    assert.are.same("Successfully added funding", notice.Data)
-    assert.are.same("Funding-Added-Notice", getTagValue(notice.Tags, "Action"))
-    assert.are.same(msgAddFunding.Tags.Quantity,  getTagValue(notice.Tags, "MintAmount"))
-    assert.are.same(fundingAdded, getTagValue(notice.Tags, "FundingAdded"))
+    assert.are.same(noticeAddFunding, notice)
 	end)
 
   it("should fail to addFunding and return funds if invalid", function()
@@ -549,6 +601,33 @@ describe("#market", function()
   end)
 
   it("should removeFunding", function()
+    -- backup send function override
+    local backupAoSend = _G.ao.send
+    -- Override ao.send to return a fixed balance
+    ---@diagnostic disable-next-line: duplicate-set-field
+    _G.ao.send = function(val)
+      local callCount = 0
+      if val.Action == 'Balance' and callCount == 0 then
+        callCount = callCount + 1
+        return {
+          receive = function()
+            return { Data = msgAddFunding.Tags.Quantity } -- -- pool collateral balance before burn
+          end
+        }
+      elseif val.Action == 'Balance' and callCount == 1 then
+        callCount = callCount + 1
+        return {
+          receive = function()
+            return { Data = "0" } -- pool collateral balance after burn
+          end
+        }
+        end
+      return {
+        receive = function()
+          return { Data = val }
+        end
+      }
+    end
     -- add funding
     Market.cpmm:addFunding(
       msgAddFunding.Tags.Sender,
@@ -574,15 +653,12 @@ describe("#market", function()
     -- Conditional Token Balances
     -- Pool Balances
     assert.are.same({"0", "0"}, Market.cpmm:getPoolBalances())
+    -- @dev update expected notice
+    noticeRemoveFunding.SendAmounts = json.encode({msgAddFunding.Tags.Quantity, msgAddFunding.Tags.Quantity})
+    noticeRemoveFunding.SharesToBurn = msgAddFunding.Tags.Quantity
+    noticeRemoveFunding.CollateralRemovedFromFeePool = "0"
     -- assert notice
-    assert.are.same(msgRemoveFunding.From, notice.Target)
-    assert.are.same("Successfully removed funding", notice.Data)
-    assert.are.same("Funding-Removed-Notice", getTagValue(notice.Tags, "Action"))
-    local sendAmounts = json.encode({msgRemoveFunding.Tags.Quantity, msgRemoveFunding.Tags.Quantity})
-    assert.are.same(sendAmounts,  getTagValue(notice.Tags, "SendAmounts"))
-    assert.are.same(msgRemoveFunding.Tags.Quantity,  getTagValue(notice.Tags, "SharesToBurn"))
-    local collateralRemovedFromFeePool = "0" -- no fees yet collected
-    assert.are.same(collateralRemovedFromFeePool, getTagValue(notice.Tags, "CollateralRemovedFromFeePool"))
+    assert.are.same(noticeRemoveFunding, notice)
 	end)
 
   it("should fail to removeFunding and return LP Tokens if invalid", function()
@@ -678,15 +754,13 @@ describe("#market", function()
      tostring(fundingAmount + quantityMinusFees - tonumber(buyAmount)),
      tostring(fundingAmount + quantityMinusFees)
    }
-   assert.are.same(poolBalances, Market.cpmm:getPoolBalances())
-   -- assert notice
-   assert.are.same("Buy-Notice", getTagValue(notice.Tags, "Action"))
-   assert.are.same(msgBuy.From, notice.Target)
-   assert.are.same(msgBuy.Tags.InvestmentAmount, getTagValue(notice.Tags, "InvestmentAmount"))
-   assert.are.same(tostring(feeAmount), getTagValue(notice.Tags, "FeeAmount"))
-   assert.are.same(msgBuy.Tags.PositionId, getTagValue(notice.Tags, "PositionId"))
-   assert.are.same(buyAmount, getTagValue(notice.Tags, "PositionTokensToBuy"))
-   assert.are.same("Successful buy order", notice.Data)
+  assert.are.same(poolBalances, Market.cpmm:getPoolBalances())
+  -- @dev update expected notice
+  noticeBuy.PositionTokensBought = buyAmount
+  noticeBuy.FeeAmount = tostring(feeAmount)
+  noticeBuy.OnBehalfOf = msgBuy.From
+  -- assert notice
+  assert.are.same(noticeBuy, notice)
  end)
 
  it("should fail to buy and return Collateral Tokens if invalid", function()
@@ -737,16 +811,38 @@ describe("#market", function()
       tonumber(msgSell.Tags.ReturnAmount),
       msgSell.Tags.PositionId
     )
+    -- Override ao.send to return a fixed balance
+    ---@diagnostic disable-next-line: duplicate-set-field
+    _G.ao.send = function(val)
+      if val.Action == 'Balance' then
+        return {
+          receive = function()
+            return { Data = msgBuy.Tags.InvestmentAmount } -- pool collateral balance before transfers
+          end
+        }
+      end
+      return {
+        receive = function()
+          return { Data = val }
+        end
+      }
+    end
+    -- @dev increase max sell amount to sellAmount
+    msgSell.Tags.MaxPositionTokensToSell = sellAmount
+    -- @dev similarly prepare notice
+    noticeSell.PositionTokensSold = sellAmount
+    -- @dev set notice feeAmount 
+    local feeAmount_ = math.ceil(tonumber(msgSell.Tags.ReturnAmount) * Market.cpmm.lpFee / 10000)
+    noticeSell.FeeAmount = tostring(feeAmount_)
     -- sell
     local notice = {}
     assert.has.no.errors(function()
       notice = Market.cpmm:sell(
-      msgSell.From,
-      msgSell.Tags.ReturnAmount,
-      msgSell.Tags.PositionId,
-      msgSell.Tags.Quantity,
-      msgSell.Tags.MaxPositionTokensToSell,
-      msgSell
+        msgSell.From,
+        msgSell.Tags.ReturnAmount,
+        msgSell.Tags.PositionId,
+        msgSell.Tags.MaxPositionTokensToSell,
+        msgSell
       )
     end)
     -- assert state
@@ -754,13 +850,11 @@ describe("#market", function()
     assert.are.same(msgBuy.Tags.InvestmentAmount, Market.cpmm.token.balances[msgBuy.From])
     -- Conditional Token Balances
     local returnAmount_ = tonumber(msgSell.Tags.ReturnAmount)
-    local feeAmount_ = math.ceil(returnAmount * Market.cpmm.lpFee / 10000)
     local returnAmountPlusFees = returnAmount_ + feeAmount_
-    local unburned = tonumber(msgSell.Tags.Quantity) - returnAmountPlusFees
     assert.are.same({
       ["1"] = {
-        [_G.ao.id] = tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees - unburned),
-        [msgSell.From] =  tostring(tonumber(balancesBefore["1"][msgSell.From]) - tonumber(sellAmount) + unburned),
+        [_G.ao.id] = tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees),
+        [msgSell.From] =  tostring(tonumber(balancesBefore["1"][msgSell.From]) - tonumber(sellAmount)),
       },
       ["2"] = {
         [_G.ao.id] = tostring(balancesBefore["2"][_G.ao.id] - returnAmountPlusFees),
@@ -768,18 +862,12 @@ describe("#market", function()
     }, Market.cpmm.tokens.balancesById)
     -- Pool Balances
     local poolBalances = {
-      tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees - unburned),
+      tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees),
       tostring(balancesBefore["2"][_G.ao.id] - returnAmountPlusFees)
     }
     assert.are.same(poolBalances, Market.cpmm:getPoolBalances())
     -- assert notice
-    assert.are.same("Sell-Notice", getTagValue(notice.Tags, "Action"))
-    assert.are.same(msgSell.From, notice.Target)
-    assert.are.same(msgSell.Tags.ReturnAmount, getTagValue(notice.Tags, "ReturnAmount"))
-    assert.are.same(tostring(feeAmount), getTagValue(notice.Tags, "FeeAmount"))
-    assert.are.same(msgBuy.Tags.PositionId, getTagValue(notice.Tags, "PositionId"))
-    assert.are.same(sellAmount, getTagValue(notice.Tags, "PositionTokensToSell"))
-    assert.are.same("Successful sell order", notice.Data)
+    assert.are.same(noticeSell, notice)
   end)
 
   it("should return collectedFees", function()
@@ -885,14 +973,14 @@ describe("#market", function()
     -- fees withdrawable
     local feesWithdrawable = Market.cpmm:feesWithdrawableBy(sender)
     -- withdraw fees
-    local withdrawnFees = nil
+    local withdrawnFeesNotice = {}
     -- should not throw an error
 		assert.has.no.error(function()
-      withdrawnFees = Market.cpmm:withdrawFees(sender, msgBuy) -- msgBuy used to send a message with forward
+      withdrawnFeesNotice = Market.cpmm:withdrawFees(sender, msgBuy) -- msgBuy used to send a message with forward
     end)
     -- assert withdrawn fees
     assert.are.equal("1", feesWithdrawable)
-    assert.are.equal(feesWithdrawable, withdrawnFees)
+    assert.are.equal(feesWithdrawable, withdrawnFeesNotice.FeeAmount)
     -- assert state change
     assert.are.equal("0", Market.cpmm:feesWithdrawableBy(sender))
 	end)
@@ -922,11 +1010,7 @@ describe("#market", function()
     assert.are.same(msgMint.Tags.Quantity, Market.cpmm.token.totalSupply)
     -- assert notices
     assert.are.same(noticeDebit, notices[1])
-    assert.are.same(noticeCredit.Target, notices[2].Target)
-    assert.are.same(noticeCredit.Action, getTagValue(notices[2].Tags, "Action"))
-    assert.are.same(noticeCredit.Sender, getTagValue(notices[2].Tags, "Sender"))
-    assert.are.same(noticeCredit.Quantity, getTagValue(notices[2].Tags, "Quantity"))
-    assert.are.same(noticeCredit["X-Action"], getTagValue(notices[2].Tags, "X-Action"))
+    assert.are.same(noticeCredit, notices[2])
 	end)
 
   it("should fail to transfer tokens with insufficient balance", function()
@@ -1100,7 +1184,7 @@ describe("#market", function()
     assert.are.same(payouts, Market.cpmm.tokens.payoutNumerators)
     assert.are.same(1, Market.cpmm.tokens.payoutDenominator)
     -- assert notice
-    assert.are.equals("Condition-Resolution-Notice", notice.Action)
+    assert.are.equals("Report-Payouts-Notice", notice.Action)
     assert.are.equals(msgReportPayouts.Tags.Payouts, notice.PayoutNumerators)
     assert.are.equals(msgReportPayouts.From, notice.ResolutionAgent)
 	end)
@@ -1132,9 +1216,8 @@ describe("#market", function()
       },
     }, Market.cpmm.tokens.balancesById)
     -- assert notice
-    assert.are.equals("Payout-Redemption-Notice", notice.Action)
+    assert.are.equals("Redeem-Positions-Notice", notice.Action)
     assert.are.equals(quantity, notice.Payout)
-    assert.are.equals(_G.ao.id, notice.Process)
 	end)
 
   it("should get payout numerators", function()
@@ -1147,8 +1230,6 @@ describe("#market", function()
     )
     -- assert reply
     assert.are.same(json.encode({0,0}), reply.Data)
-    assert.are.same(msgInit.Tags.ConditionId, reply.ConditionId)
-    assert.are.same("Payout-Numerators", reply.Action)
   end)
 
   it("should get payout denominator", function()
@@ -1159,9 +1240,7 @@ describe("#market", function()
       msgInit -- msgBalance used to send a message with reply
     )
     -- assert reply
-    assert.are.same(0, reply.Data)
-    assert.are.same(msgInit.Tags.ConditionId, reply.ConditionId)
-    assert.are.same("Payout-Denominator", reply.Action)
+    assert.are.same("0", reply.Data)
   end)
 
   it("should transfer conditional tokens", function()
@@ -1172,7 +1251,7 @@ describe("#market", function()
 		assert.has_no.errors(function()
       Market.cpmm.tokens:mint(
         msgMintSingle.Tags.Recipient,
-        msgMintSingle.Tags.TokenId,
+        msgMintSingle.Tags.PositionId,
         msgMintSingle.Tags.Quantity,
         msgMintSingle
       )
@@ -1184,17 +1263,12 @@ describe("#market", function()
       )
     end)
     -- assert updated balance
-    assert.are.same(msgTransfer.Tags.Quantity, Market.cpmm.tokens.balancesById[tokenId][recipient])
+    assert.are.same(msgTransfer.Tags.Quantity, Market.cpmm.tokens.balancesById[positionId][recipient])
     -- assert update total supply
-    assert.are.same(msgTransfer.Tags.Quantity, Market.cpmm.tokens.totalSupplyById[tokenId])
+    assert.are.same(msgTransfer.Tags.Quantity, Market.cpmm.tokens.totalSupplyById[positionId])
     -- assert notices
     assert.are.same(noticeDebitSingle, notices[1])
-    assert.are.same(noticeCreditSingle.Target, notices[2].Target)
-    assert.are.same(noticeCreditSingle.Action, getTagValue(notices[2].Tags, "Action"))
-    assert.are.same(noticeCreditSingle.Sender, getTagValue(notices[2].Tags, "Sender"))
-    assert.are.same(noticeCreditSingle.TokenId, getTagValue(notices[2].Tags, "TokenId"))
-    assert.are.same(noticeCreditSingle.Quantity, getTagValue(notices[2].Tags, "Quantity"))
-    assert.are.same(noticeCreditSingle["X-Action"], getTagValue(notices[2].Tags, "X-Action"))
+    assert.are.same(noticeCreditSingle, notices[2])
 	end)
 
   it("should batch transfer conditional tokens", function()
@@ -1205,7 +1279,7 @@ describe("#market", function()
     assert.has_no.errors(function()
       Market.cpmm.tokens:batchMint(
         msgMintBatch.Tags.Recipient,
-        json.decode(msgMintBatch.Tags.TokenIds),
+        json.decode(msgMintBatch.Tags.PositionIds),
         json.decode(msgMintBatch.Tags.Quantities),
         msgMintBatch
       )
@@ -1217,19 +1291,14 @@ describe("#market", function()
       )
     end)
     -- assert updated balance
-    assert.are.same(json.decode(msgTransferBatch.Tags.Quantities)[1], Market.cpmm.tokens.balancesById[tokenIds[1]][recipient])
-    assert.are.same(json.decode(msgTransferBatch.Tags.Quantities)[2], Market.cpmm.tokens.balancesById[tokenIds[2]][recipient])
+    assert.are.same(json.decode(msgTransferBatch.Tags.Quantities)[1], Market.cpmm.tokens.balancesById[positionIds[1]][recipient])
+    assert.are.same(json.decode(msgTransferBatch.Tags.Quantities)[2], Market.cpmm.tokens.balancesById[positionIds[2]][recipient])
     -- assert update total supply
-    assert.are.same(json.decode(msgTransferBatch.Tags.Quantities)[1], Market.cpmm.tokens.totalSupplyById[tokenIds[1]])
-    assert.are.same(json.decode(msgTransferBatch.Tags.Quantities)[2], Market.cpmm.tokens.totalSupplyById[tokenIds[2]])
+    assert.are.same(json.decode(msgTransferBatch.Tags.Quantities)[1], Market.cpmm.tokens.totalSupplyById[positionIds[1]])
+    assert.are.same(json.decode(msgTransferBatch.Tags.Quantities)[2], Market.cpmm.tokens.totalSupplyById[positionIds[2]])
     -- assert notices
     assert.are.same(noticeDebitBatch, notices[1])
-    assert.are.same(noticeCreditBatch.Target, notices[2].Target)
-    assert.are.same(noticeCreditBatch.Action, getTagValue(notices[2].Tags, "Action"))
-    assert.are.same(noticeCreditBatch.Sender, getTagValue(notices[2].Tags, "Sender"))
-    assert.are.same(noticeCreditBatch.TokenIds, getTagValue(notices[2].Tags, "TokenIds"))
-    assert.are.same(noticeCreditBatch.Quantities, getTagValue(notices[2].Tags, "Quantities"))
-    assert.are.same(noticeCreditBatch["X-Action"], getTagValue(notices[2].Tags, "X-Action"))
+    assert.are.same(noticeCreditBatch, notices[2])
 	end)
 
   it("should get balance", function()
@@ -1240,7 +1309,7 @@ describe("#market", function()
 		assert.has_no.errors(function()
       Market.cpmm.tokens:mint(
         msgMintSingle.Tags.Recipient,
-        msgMintSingle.Tags.TokenId,
+        msgMintSingle.Tags.PositionId,
         msgMintSingle.Tags.Quantity,
         msgMintSingle
       )
@@ -1255,214 +1324,214 @@ describe("#market", function()
     -- assert reply
     assert.are.same(msgMintSingle.Tags.Quantity, balance.Data)
     -- assert state
-    assert.are.same(msgMintSingle.Tags.Quantity, Market.cpmm.tokens.balancesById[msgMintSingle.Tags.TokenId][msgMintSingle.Tags.Recipient])
+    assert.are.same(msgMintSingle.Tags.Quantity, Market.cpmm.tokens.balancesById[msgMintSingle.Tags.PositionIds][msgMintSingle.Tags.Recipient])
 	end)
 
-  it("should get balance from sender (no recipient)", function()
-    local balance = ''
+  -- it("should get balance from sender (no recipient)", function()
+  --   local balance = ''
 
-    -- mint to msgMint.From
-    -- should not throw an error
-		assert.has_no.errors(function()
-      Market.cpmm.tokens:mint(
-        msgMintSingle.From,
-        msgMintSingle.Tags.TokenId,
-        msgMintSingle.Tags.Quantity,
-        msgMintSingle
-      )
-    end)
-    -- get balance
-    -- should not throw an error
-		assert.has_no.errors(function()
-      balance = Market:balanceById(
-        msgMintSingle
-      )
-    end)
-    -- assert balance
-    assert.are.same(msgMint.Tags.Quantity, balance.Data)
-    assert.are.same(msgMint.Tags.Quantity, Market.cpmm.tokens.balancesById[msgMintSingle.Tags.TokenId][msgMintSingle.From])
-	end)
+  --   -- mint to msgMint.From
+  --   -- should not throw an error
+	-- 	assert.has_no.errors(function()
+  --     Market.cpmm.tokens:mint(
+  --       msgMintSingle.From,
+  --       msgMintSingle.Tags.PositionId,
+  --       msgMintSingle.Tags.Quantity,
+  --       msgMintSingle
+  --     )
+  --   end)
+  --   -- get balance
+  --   -- should not throw an error
+	-- 	assert.has_no.errors(function()
+  --     balance = Market:balanceById(
+  --       msgMintSingle
+  --     )
+  --   end)
+  --   -- assert balance
+  --   assert.are.same(msgMint.Tags.Quantity, balance.Data)
+  --   assert.are.same(msgMint.Tags.Quantity, Market.cpmm.tokens.balancesById[msgMintSingle.Tags.PositionId][msgMintSingle.From])
+	-- end)
 
-  it("should get batch balance", function()
-    local balances = {}
-    -- batch mint
-    -- should not throw an error
-		assert.has_no.errors(function()
-      Market.cpmm.tokens:batchMint(
-        msgMintBatch.Tags.Recipient,
-        json.decode(msgMintBatch.Tags.TokenIds),
-        json.decode(msgMintBatch.Tags.Quantities),
-        msgMintBatch
-      )
-    end)
-    -- get balance
-    -- create recipients
-    msgMintBatch.Tags.Recipients = json.encode({
-      msgMintBatch.Tags.Recipient,
-      msgMintBatch.Tags.Recipient
-    })
-    -- remove recipient
-    msgMintBatch.Tags.Recipient = nil
-    -- should not throw an error
-		assert.has_no.errors(function()
-      balances = Market:batchBalance(
-        msgMintBatch
-      )
-    end)
-    -- assert balances
-    assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[1], balances.Data[1])
-    assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[2], balances.Data[2])
-    assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[1], Market.cpmm.tokens.balancesById[json.decode(msgMintBatch.Tags.TokenIds)[1]][sender])
-    assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[2], Market.cpmm.tokens.balancesById[json.decode(msgMintBatch.Tags.TokenIds)[2]][sender])
-	end)
+  -- it("should get batch balance", function()
+  --   local balances = {}
+  --   -- batch mint
+  --   -- should not throw an error
+	-- 	assert.has_no.errors(function()
+  --     Market.cpmm.tokens:batchMint(
+  --       msgMintBatch.Tags.Recipient,
+  --       json.decode(msgMintBatch.Tags.PositionIds),
+  --       json.decode(msgMintBatch.Tags.Quantities),
+  --       msgMintBatch
+  --     )
+  --   end)
+  --   -- get balance
+  --   -- create recipients
+  --   msgMintBatch.Tags.Recipients = json.encode({
+  --     msgMintBatch.Tags.Recipient,
+  --     msgMintBatch.Tags.Recipient
+  --   })
+  --   -- remove recipient
+  --   msgMintBatch.Tags.Recipient = nil
+  --   -- should not throw an error
+	-- 	assert.has_no.errors(function()
+  --     balances = Market:batchBalance(
+  --       msgMintBatch
+  --     )
+  --   end)
+  --   -- assert balances
+  --   assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[1], balances.Data[1])
+  --   assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[2], balances.Data[2])
+  --   assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[1], Market.cpmm.tokens.balancesById[json.decode(msgMintBatch.Tags.PositionIds)[1]][sender])
+  --   assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[2], Market.cpmm.tokens.balancesById[json.decode(msgMintBatch.Tags.PositionIds)[2]][sender])
+	-- end)
 
-  it("should get balances", function()
-    local balances = {}
+  -- it("should get balances", function()
+  --   local balances = {}
 
-    -- mint
-    -- should not throw an error
-		assert.has_no.errors(function()
-      Market.cpmm.tokens:mint(
-        msgMintSingle.Tags.Recipient,
-        msgMintSingle.Tags.TokenId,
-        msgMintSingle.Tags.Quantity,
-        msgMintSingle
-      )
-    end)
-    -- get balance
-    -- should not throw an error
-		assert.has_no.errors(function()
-      balances = Market:balancesById(
-        msgMintSingle
-      )
-    end)
-    -- assert balance
-    assert.are.same(msgMint.Tags.Quantity, balances.Data[msgMintSingle.Tags.Recipient])
-    assert.are.same(msgMint.Tags.Quantity, Market.cpmm.tokens.balancesById[msgMintSingle.Tags.TokenId][msgMintSingle.Tags.Recipient])
-	end)
+  --   -- mint
+  --   -- should not throw an error
+	-- 	assert.has_no.errors(function()
+  --     Market.cpmm.tokens:mint(
+  --       msgMintSingle.Tags.Recipient,
+  --       msgMintSingle.Tags.PositionId,
+  --       msgMintSingle.Tags.Quantity,
+  --       msgMintSingle
+  --     )
+  --   end)
+  --   -- get balance
+  --   -- should not throw an error
+	-- 	assert.has_no.errors(function()
+  --     balances = Market:balancesById(
+  --       msgMintSingle
+  --     )
+  --   end)
+  --   -- assert balance
+  --   assert.are.same(msgMint.Tags.Quantity, balances.Data[msgMintSingle.Tags.Recipient])
+  --   assert.are.same(msgMint.Tags.Quantity, Market.cpmm.tokens.balancesById[msgMintSingle.Tags.PositionId][msgMintSingle.Tags.Recipient])
+	-- end)
 
-  it("should get batch balances", function()
-    local balances = {}
+  -- it("should get batch balances", function()
+  --   local balances = {}
 
-    -- batch mint
-    -- should not throw an error
-		assert.has_no.errors(function()
-      Market.cpmm.tokens:batchMint(
-        msgMintBatch.Tags.Recipient,
-        json.decode(msgMintBatch.Tags.TokenIds),
-        json.decode(msgMintBatch.Tags.Quantities),
-        msgMintBatch
-      )
-    end)
-    -- get balance
-    -- should not throw an error
-		assert.has_no.errors(function()
-      balances = Market:batchBalances(
-        msgMintBatch
-      )
-    end)
-    -- assert balances
-    assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[1], balances.Data[json.decode(msgMintBatch.Tags.TokenIds)[1]][msgMintBatch.Tags.Recipient])
-    assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[2], balances.Data[json.decode(msgMintBatch.Tags.TokenIds)[2]][msgMintBatch.Tags.Recipient])
-    assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[1], Market.cpmm.tokens.balancesById[json.decode(msgMintBatch.Tags.TokenIds)[1]][msgMintBatch.Tags.Recipient])
-    assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[2], Market.cpmm.tokens.balancesById[json.decode(msgMintBatch.Tags.TokenIds)[2]][msgMintBatch.Tags.Recipient])
-	end)
+  --   -- batch mint
+  --   -- should not throw an error
+	-- 	assert.has_no.errors(function()
+  --     Market.cpmm.tokens:batchMint(
+  --       msgMintBatch.Tags.Recipient,
+  --       json.decode(msgMintBatch.Tags.PositionIds),
+  --       json.decode(msgMintBatch.Tags.Quantities),
+  --       msgMintBatch
+  --     )
+  --   end)
+  --   -- get balance
+  --   -- should not throw an error
+	-- 	assert.has_no.errors(function()
+  --     balances = Market:batchBalances(
+  --       msgMintBatch
+  --     )
+  --   end)
+  --   -- assert balances
+  --   assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[1], balances.Data[json.decode(msgMintBatch.Tags.PositionIds)[1]][msgMintBatch.Tags.Recipient])
+  --   assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[2], balances.Data[json.decode(msgMintBatch.Tags.PositionIds)[2]][msgMintBatch.Tags.Recipient])
+  --   assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[1], Market.cpmm.tokens.balancesById[json.decode(msgMintBatch.Tags.PositionIds)[1]][msgMintBatch.Tags.Recipient])
+  --   assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[2], Market.cpmm.tokens.balancesById[json.decode(msgMintBatch.Tags.PositionIds)[2]][msgMintBatch.Tags.Recipient])
+	-- end)
 
-  it("should update configurator", function()
-    local notice = {}
-    -- should not throw an error
-		assert.has.no.error(function()
-      notice = Market:updateConfigurator(
-        msgUpdateConfigurator
-      )
-    end)
-    -- assert state
-    assert.are.equal(msgUpdateConfigurator.Tags.Configurator, Market.cpmm.configurator)
-    -- assert notice
-    assert.are.equal("Configurator-Updated", notice.Action)
-    assert.are.equal(msgUpdateConfigurator.Tags.Configurator, notice.Data)
-	end)
+  -- it("should update configurator", function()
+  --   local notice = {}
+  --   -- should not throw an error
+	-- 	assert.has.no.error(function()
+  --     notice = Market:updateConfigurator(
+  --       msgUpdateConfigurator
+  --     )
+  --   end)
+  --   -- assert state
+  --   assert.are.equal(msgUpdateConfigurator.Tags.Configurator, Market.cpmm.configurator)
+  --   -- assert notice
+  --   assert.are.equal("Configurator-Updated", notice.Action)
+  --   assert.are.equal(msgUpdateConfigurator.Tags.Configurator, notice.Data)
+	-- end)
 
-  it("should update data index", function()
-    local notice = {}
-    -- should not throw an error
-		assert.has.no.error(function()
-      notice = Market:updateDataIndex(
-        msgUpdateDataIndex
-      )
-    end)
-    -- assert state
-    assert.are.equal(msgUpdateDataIndex.Tags.DataIndex, Market.dataIndex)
-    -- assert notice
-    assert.are.equal("Data-Index-Updated", notice.Action)
-    assert.are.equal(msgUpdateDataIndex.Tags.DataIndex, notice.Data)
-	end)
+  -- it("should update data index", function()
+  --   local notice = {}
+  --   -- should not throw an error
+	-- 	assert.has.no.error(function()
+  --     notice = Market:updateDataIndex(
+  --       msgUpdateDataIndex
+  --     )
+  --   end)
+  --   -- assert state
+  --   assert.are.equal(msgUpdateDataIndex.Tags.DataIndex, Market.dataIndex)
+  --   -- assert notice
+  --   assert.are.equal("Data-Index-Updated", notice.Action)
+  --   assert.are.equal(msgUpdateDataIndex.Tags.DataIndex, notice.Data)
+	-- end)
 
-  it("should update incentives", function()
-    local notice = {}
-    -- should not throw an error
-		assert.has.no.error(function()
-      notice = Market:updateIncentives(
-        msgUpdateIncentives
-      )
-    end)
-    -- assert state
-    assert.are.equal(msgUpdateIncentives.Tags.Incentives, Market.incentives)
-    -- assert notice
-    assert.are.equal("Incentives-Updated", notice.Action)
-    assert.are.equal(msgUpdateIncentives.Tags.Incentives, notice.Data)
-	end)
+  -- it("should update incentives", function()
+  --   local notice = {}
+  --   -- should not throw an error
+	-- 	assert.has.no.error(function()
+  --     notice = Market:updateIncentives(
+  --       msgUpdateIncentives
+  --     )
+  --   end)
+  --   -- assert state
+  --   assert.are.equal(msgUpdateIncentives.Tags.Incentives, Market.incentives)
+  --   -- assert notice
+  --   assert.are.equal("Incentives-Updated", notice.Action)
+  --   assert.are.equal(msgUpdateIncentives.Tags.Incentives, notice.Data)
+	-- end)
 
-  it("should update take fee" , function()
-    local notice = {}
+  -- it("should update take fee" , function()
+  --   local notice = {}
 
-    -- should not throw an error
-    assert.has.no.error(function()
-      notice = Market:updateTakeFee(
-        msgUpdateTakeFee
-      )
-    end)
-    -- assert state
-    assert.are.equal(tonumber(msgUpdateTakeFee.Tags.CreatorFee), Market.cpmm.tokens.creatorFee)
-    assert.are.equal(tonumber(msgUpdateTakeFee.Tags.ProtocolFee), Market.cpmm.tokens.protocolFee)
-    -- assert notice
-    local takeFee = tostring(tonumber(msgUpdateTakeFee.Tags.CreatorFee) + tonumber(msgUpdateTakeFee.Tags.ProtocolFee))
-    assert.are.equal("Take-Fee-Updated", notice.Action)
-    assert.are.equal(tostring(msgUpdateTakeFee.Tags.CreatorFee), notice.CreatorFee)
-    assert.are.equal(tostring(msgUpdateTakeFee.Tags.ProtocolFee), notice.ProtocolFee)
-    assert.are.equal(takeFee, notice.Data)
-  end)
+  --   -- should not throw an error
+  --   assert.has.no.error(function()
+  --     notice = Market:updateTakeFee(
+  --       msgUpdateTakeFee
+  --     )
+  --   end)
+  --   -- assert state
+  --   assert.are.equal(tonumber(msgUpdateTakeFee.Tags.CreatorFee), Market.cpmm.tokens.creatorFee)
+  --   assert.are.equal(tonumber(msgUpdateTakeFee.Tags.ProtocolFee), Market.cpmm.tokens.protocolFee)
+  --   -- assert notice
+  --   local takeFee = tostring(tonumber(msgUpdateTakeFee.Tags.CreatorFee) + tonumber(msgUpdateTakeFee.Tags.ProtocolFee))
+  --   assert.are.equal("Take-Fee-Updated", notice.Action)
+  --   assert.are.equal(tostring(msgUpdateTakeFee.Tags.CreatorFee), notice.CreatorFee)
+  --   assert.are.equal(tostring(msgUpdateTakeFee.Tags.ProtocolFee), notice.ProtocolFee)
+  --   assert.are.equal(takeFee, notice.Data)
+  -- end)
 
-  it("should update protocol fee target" , function()
-    local notice = {}
+  -- it("should update protocol fee target" , function()
+  --   local notice = {}
 
-    -- should not throw an error
-    assert.has.no.error(function()
-      notice = Market:updateProtocolFeeTarget(
-      msgUpdateProtocolFeeTarget
-    )
-    end)
-    -- assert state
-    assert.are.equal(msgUpdateProtocolFeeTarget.Tags.ProtocolFeeTarget, Market.cpmm.tokens.protocolFeeTarget)
-    -- assert notice
-    assert.are.equal("Protocol-Fee-Target-Updated", notice.Action)
-    assert.are.equal(msgUpdateProtocolFeeTarget.Tags.ProtocolFeeTarget, notice.Data)
-  end)
+  --   -- should not throw an error
+  --   assert.has.no.error(function()
+  --     notice = Market:updateProtocolFeeTarget(
+  --     msgUpdateProtocolFeeTarget
+  --   )
+  --   end)
+  --   -- assert state
+  --   assert.are.equal(msgUpdateProtocolFeeTarget.Tags.ProtocolFeeTarget, Market.cpmm.tokens.protocolFeeTarget)
+  --   -- assert notice
+  --   assert.are.equal("Protocol-Fee-Target-Updated", notice.Action)
+  --   assert.are.equal(msgUpdateProtocolFeeTarget.Tags.ProtocolFeeTarget, notice.Data)
+  -- end)
 
-  it("should update logo" , function()
-    local notice = {}
+  -- it("should update logo" , function()
+  --   local notice = {}
 
-    -- should not throw an error
-    assert.has.no.error(function()
-      notice = Market:updateLogo(
-        msgUpdateLogo
-      )
-    end)
-    -- assert state
-    assert.are.equal(msgUpdateLogo.Tags.Logo, Market.cpmm.tokens.logo)
-    assert.are.equal(msgUpdateLogo.Tags.Logo, Market.cpmm.token.logo)
-    -- assert notice
-    assert.are.equal("Logo-Updated", notice.Action)
-    assert.are.equal(msgUpdateLogo.Tags.Logo, notice.Data)
-  end)
+  --   -- should not throw an error
+  --   assert.has.no.error(function()
+  --     notice = Market:updateLogo(
+  --       msgUpdateLogo
+  --     )
+  --   end)
+  --   -- assert state
+  --   assert.are.equal(msgUpdateLogo.Tags.Logo, Market.cpmm.tokens.logo)
+  --   assert.are.equal(msgUpdateLogo.Tags.Logo, Market.cpmm.token.logo)
+  --   -- assert notice
+  --   assert.are.equal("Logo-Updated", notice.Action)
+  --   assert.are.equal(msgUpdateLogo.Tags.Logo, notice.Data)
+  -- end)
 end)

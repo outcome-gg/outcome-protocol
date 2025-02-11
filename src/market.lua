@@ -131,21 +131,6 @@ local function isAddFunding(msg)
   end
 end
 
---- Match on remove funding from CPMM
---- @param msg Message The message to match
---- @return boolean True if the message is to remove funding, false otherwise
-local function isRemoveFunding(msg)
-  if (
-    msg.From == ao.id and
-    msg.Action == "Credit-Notice" and
-    msg["X-Action"] == "Remove-Funding"
-  ) then
-    return true
-  else
-    return false
-  end
-end
-
 --- Match on buy from CPMM
 --- @param msg Message The message to match
 --- @return boolean True if the message is to buy, false otherwise
@@ -190,7 +175,7 @@ end)
 --- Remove funding handler
 --- @param msg Message The message received
 --- @return Message removeFundingNotice The remove funding notice
-Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
+Handlers.add("Remove-Funding", {Action = "Remove-Funding"}, function(msg)
   return Market:removeFunding(msg)
 end)
 

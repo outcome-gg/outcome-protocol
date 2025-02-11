@@ -64,13 +64,13 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
 	end)
 
   it("should send condition resolution notice", function()
-    local notice = conditionalTokensNotices.conditionResolutionNotice(
+    local notice = conditionalTokensNotices.reportPayoutsNotice(
       msgConditionResolution.Tags.ResolutionAgent,
       msgConditionResolution.Tags.PayoutNumerators,
       msgConditionResolution
     )
     assert.are.same({
-      Action = 'Condition-Resolution-Notice',
+      Action = 'Report-Payouts-Notice',
       ResolutionAgent = msgConditionResolution.Tags.ResolutionAgent,
       PayoutNumerators = json.encode(msgConditionResolution.Tags.PayoutNumerators)
     }, notice)
@@ -98,24 +98,25 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
 
   it("should send positions merge notice", function()
     local notice = conditionalTokensNotices.positionsMergeNotice(
+      msgPositionsMerge.Tags.CollateralToken,
       msgPositionsMerge.Tags.Quantity,
       msgPositionsMerge
     )
     assert.are.same({
       Action = 'Merge-Positions-Notice',
+      CollateralToken = msgPositionsMerge.Tags.CollateralToken,
       Quantity = msgPositionsMerge.Tags.Quantity
     }, notice)
   end)
 
   it("should send payout redemption notice", function()
-    local notice = conditionalTokensNotices.payoutRedemptionNotice(
+    local notice = conditionalTokensNotices.redeemPositionsNotice(
       msgPayoutRedemption.Tags.CollateralToken,
       msgPayoutRedemption.Tags.Payout,
       msgPayoutRedemption
     )
     assert.are.same({
-      Action = 'Payout-Redemption-Notice',
-      Process = _G.ao.id,
+      Action = 'Redeem-Positions-Notice',
       CollateralToken = msgPayoutRedemption.Tags.CollateralToken,
       Payout = tostring(msgPayoutRedemption.Tags.Payout)
     }, notice)

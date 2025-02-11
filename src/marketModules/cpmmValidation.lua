@@ -13,7 +13,7 @@ local json = require('json')
 
 --- Validates add funding
 --- @param msg Message The message to be validated
-function cpmmValidation.addFunding(outcomeSlotCount, msg)
+function cpmmValidation.addFunding(msg)
   sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
 end
 
@@ -37,7 +37,7 @@ end
 --- @param validPositionIds table<string> The array of valid position IDs
 function cpmmValidation.sell(msg, validPositionIds)
   sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
-  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  sharedValidation.validatePositiveInteger(msg.Tags.MaxPositionTokensToSell, "MaxPositionTokensToSell")
   sharedValidation.validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
 end
 
