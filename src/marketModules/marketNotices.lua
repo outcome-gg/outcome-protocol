@@ -13,7 +13,7 @@ local MarketNotices = {}
 --- @return Message The incentives updated notice
 function MarketNotices.updateIncentivesNotice(incentives, msg)
   return msg.reply({
-    Action = "Incentives-Updated",
+    Action = "Update-Incentives-Notice",
     Data = incentives
   })
 end
@@ -24,7 +24,7 @@ end
 --- @return Message The data index updated notice
 function MarketNotices.updateDataIndexNotice(dataIndex, msg)
   return msg.reply({
-    Action = "Data-Index-Updated",
+    Action = "Update-Data-Index-Notice",
     Data = dataIndex
   })
 end
