@@ -250,7 +250,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 	end)
 
   it("should fail sell validation when invalid maxPositionTokensToSell", function()
-    msgSell.Tags.Quantity = "not-a-number"
+    msgSell.Tags.MaxPositionTokensToSell = "not-a-number"
     -- should not throw an error
 		assert.has.error(function()
       cpmmValidation.sell(msgSell, _G.CPMM.tokens.positionIds)

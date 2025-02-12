@@ -102,10 +102,10 @@ describe("#marketFactory", function()
       Configurator = constants.configurator,
       Incentives = constants.incentives,
       DataIndex = constants.dataIndex,
-      LpFee = constants.lpFee,
-      ProtocolFee = constants.protocolFee,
+      LpFee = tostring(constants.lpFee),
+      ProtocolFee = tostring(constants.protocolFee),
       ProtocolFeeTarget = constants.protocolFeeTarget,
-      MaximumTakeFee = constants.maximumTakeFee,
+      MaximumTakeFee = tostring(constants.maximumTakeFee),
       ApprovedCollateralTokens = json.encode(constants.approvedCollateralTokens)
     }, info)
   end)
@@ -135,12 +135,15 @@ describe("#marketFactory", function()
       Action = "Spawn-Market-Notice",
       ResolutionAgent = msgSpawnMarket.Tags["ResolutionAgent"],
       CollateralToken = msgSpawnMarket.Tags["CollateralToken"],
-      Creator = msgSpawnMarket.Sender,
+      Creator = msgSpawnMarket.From,
       CreatorFee = msgSpawnMarket.Tags["CreatorFee"],
       CreatorFeeTarget = msgSpawnMarket.Tags["CreatorFeeTarget"],
       Question = msgSpawnMarket.Tags["Question"],
       Rules = msgSpawnMarket.Tags["Rules"],
       OutcomeSlotCount = msgSpawnMarket.Tags["OutcomeSlotCount"],
+      Category = msgSpawnMarket.Tags["Category"],
+      Subcategory = msgSpawnMarket.Tags["Subcategory"],
+      Logo = msgSpawnMarket.Tags["Logo"],
       ["Original-Msg-Id"] = msgSpawnMarket.Id
     }, notice)
   end)

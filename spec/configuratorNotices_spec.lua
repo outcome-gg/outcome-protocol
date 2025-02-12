@@ -1,11 +1,11 @@
 local configuratorNotices = require("configuratorModules.configuratorNotices")
 
 -- Define variables
-local admin = ""
-local delay = nil
-local msg = {}
-local hash = ""
-local timestamp = nil
+local admin
+local delay
+local msg
+local hash
+local timestamp
 
 describe("#configurator #configuratorNotices", function()
   before_each(function()
@@ -35,17 +35,15 @@ describe("#configurator #configuratorNotices", function()
       msg.Tags.UpdateTags,
       msg.Tags.UpdateData,
       hash,
-      timestamp,
       msg
     )
 		assert.are.same({
-      Action = 'Update-Staged',
+      Action = 'Stage-Update-Notice',
       UpdateProcess = msg.Tags.UpdateProcess,
       UpdateAction = msg.Tags.UpdateAction,
       UpdateTags = msg.Tags.UpdateTags,
       UpdateData = msg.Tags.UpdateData,
       Hash = hash,
-      Timestamp = timestamp,
     }, notice)
 	end)
 
@@ -55,7 +53,7 @@ describe("#configurator #configuratorNotices", function()
       msg
     )
 		assert.are.same({
-      Action = 'Update-Unstaged',
+      Action = 'Unstage-Update-Notice',
       Hash = hash
     }, notice)
 	end)
@@ -66,7 +64,7 @@ describe("#configurator #configuratorNotices", function()
       msg
     )
 		assert.are.same({
-      Action = 'Update-Actioned',
+      Action = 'Action-Update-Notice',
       Hash = hash
     }, notice)
 	end)
@@ -75,14 +73,12 @@ describe("#configurator #configuratorNotices", function()
     local notice = configuratorNotices.stageUpdateAdminNotice(
       admin,
       hash,
-      timestamp,
       msg
     )
 		assert.are.same({
-      Action = 'Update-Admin-Staged',
+      Action = 'Stage-Update-Admin-Notice',
       UpdateAdmin = admin,
       Hash = hash,
-      Timestamp = timestamp,
     }, notice)
 	end)
 
@@ -92,7 +88,7 @@ describe("#configurator #configuratorNotices", function()
       msg
     )
 		assert.are.same({
-      Action = 'Update-Admin-Unstaged',
+      Action = 'Unstage-Update-Admin-Notice',
       Hash = hash,
     }, notice)
 	end)
@@ -103,7 +99,7 @@ describe("#configurator #configuratorNotices", function()
       msg
     )
 		assert.are.same({
-      Action = 'Update-Admin-Actioned',
+      Action = 'Action-Update-Admin-Notice',
       Hash = hash,
     }, notice)
 	end)
@@ -112,14 +108,12 @@ describe("#configurator #configuratorNotices", function()
     local notice = configuratorNotices.stageUpdateDelayNotice(
       delay,
       hash,
-      timestamp,
       msg
     )
 		assert.are.same({
-      Action = 'Update-Delay-Staged',
+      Action = 'Stage-Update-Delay-Notice',
       UpdateDelay = delay,
       Hash = hash,
-      Timestamp = timestamp,
     }, notice)
 	end)
 
@@ -129,7 +123,7 @@ describe("#configurator #configuratorNotices", function()
       msg
     )
 		assert.are.same({
-      Action = 'Update-Delay-Unstaged',
+      Action = 'Unstage-Update-Delay-Notice',
       Hash = hash,
     }, notice)
 	end)
@@ -140,7 +134,7 @@ describe("#configurator #configuratorNotices", function()
       msg
     )
 		assert.are.same({
-      Action = 'Update-Delay-Actioned',
+      Action = 'Action-Update-Delay-Notice',
       Hash = hash,
     }, notice)
 	end)

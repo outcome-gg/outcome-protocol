@@ -1,0 +1,1506 @@
+<!doctype html>
+<html lang="en">
+<head>
+   <meta charset="utf-8" />
+   <title>Code coverage report</title>
+   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+   <link rel="shortcut icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAFo9M/3AAAACXBIWXMAAADsAAAA7AF5KHG9AAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAYBJREFUOI2tkjtLA0EUhb+JjxQ+qhGtBAtbG0GJFj5rsfQXWKUUQau7QoRIUFBRyG8QBNuABhFNoY12dopso43iM2iuxe7ETXwQxQMLM3funnPumYFKiJaXJtiZyfJRJnOo4I0ZAOujAKc9fAlvDkStXSoAxEAXAW5uHvsdYZ/1Ud+iIqImYiIGTEBTDh4SQA7ExCIO34Bt1Zn7dHo8B03NoeGgwfpS5nL2skmhLCESmfOPWOgFb+TDk9yGc7pC6bilpWF3eflIId4FtDn1rfAP9by8qqqCPDpeA/IMxD9LinESqyJgfcH6ggj4VvBtcCMxkNmfrBv4PgMRMXW1RQCwGof+HRjehJEXyBcA6qs4p4A00BkpPgEbcLcGJIBW0FFgJdKzkAApubjcl0rtq0OQr2SqfYUjDJ0AzdWHhcIVr68lDg4uSaX2KRbfBmA0D3sXrse9pnOgW6T2RCAIMcygcRCKZ0D7+vRnlmRWmF6vrGeTwT58S/PXIB2/0/8nvAPwp5kuNmMrGQAAAABJRU5ErkJggg==" />
+
+   <style>
+      @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
+      
+      html {
+          height: 100%;
+      }
+      
+      body {
+          position: relative;
+          margin: 0;
+          font-family: 'Roboto Mono', monospace;
+          display: flex;
+          flex-direction: column;
+          min-height: 100%;
+      }
+      
+      main {
+          flex: 1 0 auto;
+      }
+      
+      footer {
+          flex-shrink: 0;
+          font-size: 12px;
+          color: #808080;
+          width: 100%;
+          height: 30px;
+          line-height: 30px;
+          text-align: center;
+      }
+      
+      .pln {
+          color: #000
+      }
+      
+      @media screen {
+          .str {
+              color: #080
+          }
+      
+          .kwd {
+              color: #008
+          }
+      
+          .com {
+              color: #800
+          }
+      
+          .typ {
+              color: #606
+          }
+      
+          .lit {
+              color: #066
+          }
+      
+          .clo, .opn, .pun {
+              color: #660
+          }
+      
+          .tag {
+              color: #008
+          }
+      
+          .atn {
+              color: #606
+          }
+      
+          .atv {
+              color: #080
+          }
+      
+          .dec, .var {
+              color: #606
+          }
+      
+          .fun {
+              color: red
+          }
+      }
+      
+      @media print, projection {
+          .kwd, .tag, .typ {
+              font-weight: 700
+          }
+      
+          .str {
+              color: #060
+          }
+      
+          .kwd {
+              color: #006
+          }
+      
+          .com {
+              color: #600;
+              font-style: italic
+          }
+      
+          .typ {
+              color: #404
+          }
+      
+          .lit {
+              color: #044
+          }
+      
+          .clo, .opn, .pun {
+              color: #440
+          }
+      
+          .tag {
+              color: #006
+          }
+      
+          .atn {
+              color: #404
+          }
+      
+          .atv {
+              color: #060
+          }
+      }
+      
+      pre.prettyprint {
+          padding: 0;
+          margin: 0;
+          border: 0;
+          border-bottom: 1px solid #808080;
+      }
+      
+      .file.hidden pre.prettyprint {
+          display: none;
+      }
+      
+      ol.linenums {
+          margin-top: 0;
+          margin-bottom: 0;
+          counter-reset: number;
+          list-style-type: none;
+      }
+      
+      pre.prettyprint ol {
+          margin: 0;
+          padding: 0;
+      }
+      
+      pre.prettyprint li {
+          font-size: 14px;
+          word-wrap: normal;
+          white-space: pre;
+          line-height: 20px;
+      }
+      
+      pre.prettyprint li::before {
+          counter-increment: number;
+          content: counter(number) "\a0";
+          float: left;
+          position: relative;
+          width: 1%;
+          min-width: 50px;
+          padding-right: 10px;
+          padding-left: 10px;
+          font-size: 12px;
+          color: #6E7781;
+          text-align: right;
+          white-space: nowrap;
+          vertical-align: top;
+          line-height: 20px;
+      }
+      
+      pre.prettyprint span.fc {
+          background-color: #DFF0D8;
+          display: block;
+      }
+      
+      pre.prettyprint span.fc:before {
+          content: attr(data-hits);
+          position: absolute;
+          left: 0;
+          width: 30px;
+          margin-left: 5px;
+          text-align: center;
+          font-size: 10px;
+          color: #808080;
+      }
+      
+      pre.prettyprint span.nc {
+          background-color: #F2DEDE;
+          display: block;
+      }
+      
+      pre.prettyprint span.pc {
+          background-color: #FFFFCC;
+          display: block;
+      }
+      
+      pre.prettyprint span.bpc:hover {
+          background-color: #FFFF80;
+      }
+      
+      pre.prettyprint span.hits {
+          position: absolute;
+          left: 0;
+          width: 30px;
+          margin-left: 5px;
+          text-align: center;
+          font-size: 10px;
+      }
+      
+      
+      .file .title {
+          border-bottom: 1px solid #808080;
+          border-left: 0;
+          border-right: 0;
+          padding: 0.67em;
+          margin: 0;
+          position: relative;
+      }
+      
+      .file:not(.total) .title {
+          cursor: pointer;
+      }
+      
+      .file:not(.total) .title:before {
+          content: "";
+          display: block;
+          width: 100%;
+          height: 100%;
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          top: 0;
+          background: #fff;
+          opacity: 0.0;
+          transition: all 200ms;
+      }
+      
+      .file:not(.total) .title:not(.total):hover:before {
+          opacity: 0.3;
+      }
+      
+      .file.danger .title {
+          background: #F2DEDE;
+      }
+      
+      .file.warning .title {
+          background: #FCF8E3;
+      }
+      
+      .file.success-low .title {
+          background: #DFF0D8;
+      }
+      
+      .file.success-medium .title {
+          background: #C3E3B5;
+      }
+      
+      .file.success-high .title {
+          background: #99CB84;
+      }
+      
+      .file .title .stats {
+          font-size: 12px;
+          line-height: 12px;
+          color: #444;
+          margin-top: 2px;
+          display: flex;
+      }
+      
+      .file .title .stats .hits,
+      .file .title .stats .cov,
+      .file .title .stats .miss {
+          padding: 2px 6px;
+          border-radius: 12px;
+          border: 1px solid #808080;
+          position: relative;
+          margin-right: 10px;
+      }
+      
+      .file .title .stats .hits {
+          background: #DFF0D8;
+      }
+      
+      .file .title .stats .cov {
+          background: #F2DEDE;
+          overflow: hidden;
+      }
+      
+      .file .title .stats .cov span {
+          position: relative;
+      }
+      
+      .file .title .stats .cov .bg {
+          height: 100%;
+          position: absolute;
+          left: 0;
+          top: 0;
+          background-color: #DFF0D8;
+      }
+      
+      .file .title .stats .miss {
+          background: #F2DEDE;
+      }
+      
+   </style>
+
+</head>
+<body onload="initialize()">
+   <main>
+      <div class="file danger total">
+         <h1 class="title">
+            Code coverage report
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 30.15%"></span>
+                  <span><strong>30.15%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>101</strong> Hits</span>
+               <span class="miss"><strong>234</strong> Missed</span>
+            </span>
+         </h1>
+      </div>
+
+      <div class="hidden file danger" id="src-marketmodules-conditionaltokens">
+         <h2 class="title">
+            src/marketModules/conditionalTokens.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 6.52%"></span>
+                  <span><strong>6.52%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>6</strong> Hits</span>
+               <span class="miss"><strong>86</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums">--[[
+======================================================================================
+Outcome © 2025. All Rights Reserved.
+======================================================================================
+This code is proprietary and owned by Outcome.
+
+You are permitted to build applications, integrations, and extensions that interact
+with the Outcome Protocol, provided such usage adheres to the official Outcome
+terms of service and does not result in unauthorized forks or clones of this codebase.
+
+Redistribution, modification, or unauthorized use of this code is strictly prohibited
+without explicit written permission from Outcome.
+======================================================================================
+]]
+
+<span class="fc" data-hits="1">local ConditionalTokens = {}</span>
+<span class="fc" data-hits="1">local ConditionalTokensMethods = {}</span>
+<span class="fc" data-hits="1">local ConditionalTokensNotices = require(&#39;marketModules.conditionalTokensNotices&#39;)</span>
+<span class="fc" data-hits="1">local SemiFungibleTokens = require(&#39;marketModules.semiFungibleTokens&#39;)</span>
+<span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
+<span class="fc" data-hits="1">local crypto = require(&#39;.crypto&#39;)</span>
+<span class="nc">local json = require(&quot;json&quot;)</span>
+<span class="nc">local ao = ao or require(&#39;.ao&#39;)</span>
+
+--- Represents ConditionalTokens
+--- @class ConditionalTokens
+--- @field name string The token name
+--- @field ticker string The token ticker
+--- @field logo string The token logo Arweave TxID
+--- @field balancesById table&lt;string, table&lt;string, string&gt;&gt; The account token balances by ID
+--- @field totalSupplyById table&lt;string, string&gt; The total supply of the token by ID
+--- @field denomination number The number of decimals
+--- @field resolutionAgent string The process ID of the resolution agent
+--- @field collateralToken string The process ID of the collateral token
+--- @field positionIds table&lt;string&gt; The position IDs representing outcomes
+--- @field payoutNumerators table&lt;number&gt; The relative payouts for each outcome slot
+--- @field payoutDenominator number The sum of payout numerators, zero if unreported
+--- @field creatorFee number The creator fee to be paid, in basis points
+--- @field creatorFeeTarget string The process ID to receive the creator fee
+--- @field protocolFee number The protocol fee to be paid, in basis points
+--- @field protocolFeeTarget string The process ID to receive the protocol fee
+
+--- Creates a new ConditionalTokens instance
+--- @param name string The token name
+--- @param ticker string The token ticker
+--- @param logo string The token logo Arweave TxID
+--- @param balancesById table&lt;string, table&lt;string, string&gt;&gt; The account token balances by ID
+--- @param totalSupplyById table&lt;string, string&gt; The total supply of the token by ID
+--- @param denomination number The number of decimals
+--- @param resolutionAgent string The process ID of the resolution agent
+--- @param collateralToken string The process ID of the collateral token
+--- @param positionIds table&lt;string&gt; The position IDs representing outcomes
+--- @param creatorFee number The creator fee to be paid, in basis points
+--- @param creatorFeeTarget string The process ID to receive the creator fee
+--- @param protocolFee number The protocol fee to be paid, in basis points
+--- @param protocolFeeTarget string The process ID to receive the protocol fee
+--- @return ConditionalTokens conditionalTokens The new ConditionalTokens instance
+<span class="nc">function ConditionalTokens:new(</span>
+  name,
+  ticker,
+  logo,
+  balancesById,
+  totalSupplyById,
+  denomination,
+  resolutionAgent,
+  collateralToken,
+  positionIds,
+  creatorFee,
+  creatorFeeTarget,
+  protocolFee,
+  protocolFeeTarget
+)
+  ---@class ConditionalTokens : SemiFungibleTokens
+<span class="nc">  local conditionalTokens = SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)</span>
+<span class="nc">  conditionalTokens.resolutionAgent = resolutionAgent</span>
+<span class="nc">  conditionalTokens.collateralToken = collateralToken</span>
+<span class="nc">  conditionalTokens.positionIds = positionIds</span>
+<span class="nc">  conditionalTokens.creatorFee = tonumber(creatorFee) or 0</span>
+<span class="nc">  conditionalTokens.creatorFeeTarget = creatorFeeTarget</span>
+<span class="nc">  conditionalTokens.protocolFee = tonumber(protocolFee) or 0</span>
+<span class="nc">  conditionalTokens.protocolFeeTarget = protocolFeeTarget</span>
+<span class="nc">  conditionalTokens.payoutDenominator = 0</span>
+  -- Initialize the payout vector as zeros.
+<span class="nc">  conditionalTokens.payoutNumerators = {}</span>
+<span class="nc">  for _ = 1, #positionIds do</span>
+<span class="nc">    table.insert(conditionalTokens.payoutNumerators, 0)</span>
+  end
+  -- Initialize the denominator to zero to indicate that the condition has not been resolved.
+<span class="nc">  conditionalTokens.payoutDenominator = 0</span>
+
+<span class="nc">  local semiFungibleTokensMetatable = getmetatable(conditionalTokens)</span>
+<span class="nc">  setmetatable(conditionalTokens, {</span>
+    __index = function(_, k)
+<span class="nc">      if ConditionalTokensMethods[k] then</span>
+<span class="nc">        return ConditionalTokensMethods[k]</span>
+<span class="nc">      elseif ConditionalTokensNotices[k] then</span>
+<span class="nc">        return ConditionalTokensNotices[k]</span>
+      else
+        -- Fallback directly to the parent metatable
+<span class="nc">        return semiFungibleTokensMetatable.__index(_, k)</span>
+      end
+    end
+  })
+<span class="nc">  return conditionalTokens</span>
+end
+
+--- Split position
+--- @param from string The process ID of the account that split the position
+--- @param collateralToken string The process ID of the collateral token
+--- @param quantity string The quantity of collateral to split
+--- @param msg Message The message received
+--- @return Message The position split notice
+<span class="nc">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)</span>
+<span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
+  -- Create equal split positions.
+<span class="nc">  local quantities = {}</span>
+<span class="nc">  for _ = 1, #self.positionIds do</span>
+<span class="nc">    table.insert(quantities, quantity)</span>
+  end
+  -- Mint the stake in the split target positions.
+<span class="nc">  self:batchMint(from, self.positionIds, quantities, msg)</span>
+  -- Send notice.
+<span class="nc">  return self.positionSplitNotice(from, collateralToken, quantity, msg)</span>
+end
+
+--- Merge positions
+--- @param from string The process ID of the account that merged the positions
+--- @param onBehalfOf string The process ID of the account that will receive the collateral
+--- @param quantity string The quantity of collateral to merge
+--- @param isSell boolean True if the merge is a sell, false otherwise
+--- @param msg Message The message received
+--- @return Message The positions merge notice
+<span class="nc">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)</span>
+<span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
+  -- Create equal merge positions.
+<span class="nc">  local quantities = {}</span>
+<span class="nc">  for _ = 1, #self.positionIds do</span>
+<span class="nc">    table.insert(quantities, quantity)</span>
+  end
+  -- Burn equal quantiies from user positions.
+<span class="nc">  self:batchBurn(from, self.positionIds, quantities, msg)</span>
+  -- @dev below already handled within the sell method. 
+  -- sell method w&#47; a different quantity and recipient.
+<span class="nc">  if not isSell then</span>
+    -- Return the collateral to the user.
+<span class="nc">    ao.send({</span>
+      Target = self.collateralToken,
+      Action = &quot;Transfer&quot;,
+      Quantity = quantity,
+<span class="nc">      Recipient = onBehalfOf</span>
+    })
+  end
+  -- Send notice.
+<span class="nc">  return self.positionsMergeNotice(self.collateralToken, quantity, msg)</span>
+end
+
+--- Report payouts
+--- @param payouts table&lt;number&gt; The resolution agent&#39;s answer
+--- @param msg Message The message received
+--- @return Message reportPayoutsNotice The report payouts notice
+<span class="nc">function ConditionalTokensMethods:reportPayouts(payouts, msg)</span>
+<span class="nc">  assert(#payouts == #self.positionIds, &quot;Payouts must match outcome slot count!&quot;)</span>
+<span class="nc">  assert(msg.From == self.resolutionAgent, &quot;Sender not resolution agent!&quot;)</span>
+<span class="nc">  assert(self.payoutDenominator == 0, &quot;payout denominator already set&quot;)</span>
+  -- Set the payout vector for the condition.
+<span class="nc">  local den = 0</span>
+<span class="nc">  for i = 1, #self.positionIds do</span>
+<span class="nc">    local num = payouts[i]</span>
+<span class="nc">    den = den + num</span>
+<span class="nc">    assert(self.payoutNumerators[i] == 0, &quot;payout numerator already set&quot;)</span>
+<span class="nc">    self.payoutNumerators[i] = num</span>
+  end
+<span class="nc">  assert(den &gt; 0, &quot;payout is all zeroes&quot;)</span>
+<span class="nc">  self.payoutDenominator = den</span>
+  -- Send notice.
+<span class="nc">  return self.reportPayoutsNotice(msg.From, self.payoutNumerators, msg)</span>
+end
+
+--- Redeem positions
+--- Transfers any payout minus fees to the message sender
+--- @param msg Message The message received
+--- @return Message The payout redemption notice
+<span class="nc">function ConditionalTokensMethods:redeemPositions(msg)</span>
+<span class="nc">  local den = self.payoutDenominator</span>
+<span class="nc">  assert(den &gt; 0, &quot;market not resolved&quot;)</span>
+<span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;market not initialized&quot;)</span>
+<span class="nc">  local totalPayout = 0</span>
+<span class="nc">  for i = 1, #self.positionIds do</span>
+<span class="nc">    local positionId = self.positionIds[i]</span>
+<span class="nc">    local payoutNumerator = self.payoutNumerators[tonumber(positionId)]</span>
+    -- Get the stake to redeem.
+<span class="nc">    if not self.balancesById[positionId] then self.balancesById[positionId] = {} end</span>
+<span class="nc">    if not self.balancesById[positionId][msg.From] then self.balancesById[positionId][msg.From] = &quot;0&quot; end</span>
+<span class="nc">    local payoutStake = self.balancesById[positionId][msg.From]</span>
+<span class="nc">    if bint.__lt(0, bint(payoutStake)) then</span>
+      -- Calculate the payout and burn position.
+<span class="nc">      totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) &#47; den)</span>
+<span class="nc">      self:burn(msg.From, positionId, payoutStake, msg)</span>
+    end
+  end
+  -- Return total payout minus take fee.
+<span class="nc">  if totalPayout &gt; 0 then</span>
+<span class="nc">    totalPayout = math.floor(totalPayout)</span>
+<span class="nc">    self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout, msg)</span>
+  end
+  -- Send notice.
+<span class="nc">  return self.redeemPositionsNotice(self.collateralToken, totalPayout, msg)</span>
+end
+
+--- Return total payout minus take fee
+--- Distributes payout and fees to the redeem account, creator and protocol
+--- @param collateralToken string The collateral token
+--- @param from string The account to receive the payout minus fees
+--- @param totalPayout number The total payout assciated with the acount stake
+--- @param msg Message The message received
+--- @return table&lt;Message&gt; The protocol fee, creator fee and payout messages
+<span class="nc">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, msg)</span>
+<span class="nc">  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))</span>
+<span class="nc">  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))</span>
+<span class="nc">  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))</span>
+<span class="nc">  local totalPayoutMinusFee = tostring(bint.__sub(totalPayout, bint(takeFee)))</span>
+  -- prepare txns
+<span class="nc">  local protocolFeeTxn = {</span>
+    Action = &quot;Transfer&quot;,
+    Recipient = self.protocolFeeTarget,
+    Quantity = protocolFee,
+  }
+<span class="nc">  local creatorFeeTxn = {</span>
+    Action = &quot;Transfer&quot;,
+    Recipient = self.creatorFeeTarget,
+    Quantity = creatorFee,
+  }
+<span class="nc">  local totalPayoutMinutTakeFeeTxn = {</span>
+    Action = &quot;Transfer&quot;,
+    Recipient = from,
+<span class="nc">    Quantity = totalPayoutMinusFee</span>
+  }
+  -- send txns
+<span class="nc">  return {</span>
+<span class="nc">    msg.forward(collateralToken, protocolFeeTxn),</span>
+<span class="nc">    msg.forward(collateralToken, creatorFeeTxn),</span>
+<span class="nc">    msg.forward(collateralToken, totalPayoutMinutTakeFeeTxn)</span>
+  }
+end
+
+<span class="nc">return ConditionalTokens</span>
+</pre>
+      </div>
+
+      <div class="hidden file success-high" id="src-marketmodules-conditionaltokensnotices">
+         <h2 class="title">
+            src/marketModules/conditionalTokensNotices.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>30</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums">--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See conditionalTokens.lua for full license details.
+=========================================================
+]]
+
+<span class="fc" data-hits="2">local json = require(&#39;json&#39;)</span>
+<span class="fc" data-hits="2">local ao = ao or require(&#39;.ao&#39;)</span>
+
+<span class="fc" data-hits="2">local ConditionalTokensNotices = {}</span>
+
+--- Report payouts notice
+--- @param resolutionAgent string The process assigned to report the result for the prepared condition
+--- @param payoutNumerators table&lt;number&gt; The payout numerators for each outcome slot
+--- @param msg Message The message received
+--- @return Message reportPayoutsNotice The report payouts notice
+<span class="fc" data-hits="2">function ConditionalTokensNotices.reportPayoutsNotice(resolutionAgent, payoutNumerators, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &quot;Report-Payouts-Notice&quot;,</span>
+<span class="fc" data-hits="1">    ResolutionAgent = resolutionAgent,</span>
+<span class="fc" data-hits="1">    PayoutNumerators = json.encode(payoutNumerators)</span>
+  })
+end
+
+--- Position split notice
+--- @param from string The address of the account that split the position
+--- @param collateralToken string The address of the collateral token
+--- @param quantity string The quantity
+--- @param msg Message The message received
+--- @return Message The position split notice
+<span class="fc" data-hits="2">function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, quantity, msg)</span>
+<span class="fc" data-hits="1">  local notice = {</span>
+<span class="fc" data-hits="1">    Action = &quot;Split-Position-Notice&quot;,</span>
+<span class="fc" data-hits="1">    Process = ao.id,</span>
+<span class="fc" data-hits="1">    Stakeholder = from,</span>
+<span class="fc" data-hits="1">    CollateralToken = collateralToken,</span>
+<span class="fc" data-hits="1">    Quantity = quantity</span>
+  }
+  -- Forward tags
+<span class="fc" data-hits="5">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="fc" data-hits="4">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="fc" data-hits="1">      notice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice | @dev ao.send vs msg.reply to ensure message is sent to user (not collateralToken)
+<span class="fc" data-hits="1">  return msg.forward(from, notice)</span>
+end
+
+--- Positions merge notice
+--- @param collateralToken string The address of the collateral token
+--- @param quantity string The quantity
+--- @param msg Message The message received
+--- @return Message The positions merge notice
+<span class="fc" data-hits="2">function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &quot;Merge-Positions-Notice&quot;,</span>
+<span class="fc" data-hits="1">    CollateralToken = collateralToken,</span>
+<span class="fc" data-hits="1">    Quantity = quantity</span>
+  })
+end
+
+--- Redeem positions notice
+--- @param collateralToken string The address of the collateral token
+--- @param payout string The payout amount
+--- @param msg Message The message received
+--- @return Message The payout redemption notice
+<span class="fc" data-hits="2">function ConditionalTokensNotices.redeemPositionsNotice(collateralToken, payout, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &quot;Redeem-Positions-Notice&quot;,</span>
+<span class="fc" data-hits="1">    CollateralToken = collateralToken,</span>
+<span class="fc" data-hits="1">    Payout = tostring(payout)</span>
+  })
+end
+
+<span class="fc" data-hits="2">return ConditionalTokensNotices</span>
+</pre>
+      </div>
+
+      <div class="hidden file success-high" id="src-marketmodules-conditionaltokensvalidation">
+         <h2 class="title">
+            src/marketModules/conditionalTokensValidation.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 100.00%"></span>
+                  <span><strong>100.00%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>17</strong> Hits</span>
+               <span class="miss"><strong>0</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums">--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See conditionalTokens.lua for full license details.
+=========================================================
+]]
+
+<span class="fc" data-hits="1">local ConditionalTokensValidation = {}</span>
+<span class="fc" data-hits="1">local sharedUtils = require(&#39;marketModules.sharedUtils&#39;)</span>
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+
+--- Validates quantity
+--- @param quantity any The quantity to be validated
+local function validateQuantity(quantity)
+<span class="fc" data-hits="6">  assert(type(quantity) == &#39;string&#39;, &#39;Quantity is required!&#39;)</span>
+<span class="fc" data-hits="5">  assert(tonumber(quantity), &#39;Quantity must be a number!&#39;)</span>
+<span class="fc" data-hits="4">  assert(tonumber(quantity) &gt; 0, &#39;Quantity must be greater than zero!&#39;)</span>
+<span class="fc" data-hits="2">  assert(tonumber(quantity) % 1 == 0, &#39;Quantity must be an integer!&#39;)</span>
+end
+
+--- Validates payouts
+--- @param payouts any The payouts to be validated
+local function validatePayouts(payouts)
+<span class="fc" data-hits="4">  assert(payouts, &quot;Payouts is required!&quot;)</span>
+<span class="fc" data-hits="3">  assert(sharedUtils.isJSONArray(payouts), &quot;Payouts must be valid JSON Array!&quot;)</span>
+<span class="fc" data-hits="3">  for _, payout in ipairs(json.decode(payouts)) do</span>
+<span class="fc" data-hits="2">    assert(tonumber(payout), &quot;Payouts item must be a number!&quot;)</span>
+  end
+end
+
+--- Validates the mergePositions message
+--- @param msg Message The message to be validated
+<span class="fc" data-hits="1">function ConditionalTokensValidation.mergePositions(msg)</span>
+<span class="fc" data-hits="6">  validateQuantity(msg.Tags.Quantity)</span>
+end
+
+--- Validates the reporrtPayouts message
+--- @param msg Message The message to be validated
+--- @param resolutionAgent string The resolution agent process ID
+<span class="fc" data-hits="1">function ConditionalTokensValidation.reportPayouts(msg, resolutionAgent)</span>
+<span class="fc" data-hits="5">  assert(msg.From == resolutionAgent, &quot;Sender must be resolution agent!&quot;)</span>
+<span class="fc" data-hits="4">  validatePayouts(msg.Tags.Payouts)</span>
+end
+
+<span class="fc" data-hits="1">return ConditionalTokensValidation</span>
+</pre>
+      </div>
+
+      <div class="hidden file danger" id="src-marketmodules-semifungibletokens">
+         <h2 class="title">
+            src/marketModules/semiFungibleTokens.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 15.04%"></span>
+                  <span><strong>15.04%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>17</strong> Hits</span>
+               <span class="miss"><strong>96</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums">--[[
+==============================================================================
+Outcome © 2025. MIT License.
+Module: semiFungibleTokens.lua
+==============================================================================
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the &quot;Software&quot;), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and&#47;or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+==============================================================================
+]]
+
+<span class="fc" data-hits="1">local SemiFungibleTokens = {}</span>
+<span class="fc" data-hits="1">local SemiFungibleTokensMethods = {}</span>
+<span class="fc" data-hits="1">local SemiFungibleTokensNotices = require(&#39;marketModules.semiFungibleTokensNotices&#39;)</span>
+<span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+
+-- Represents SemiFungibleTokens
+--- @class SemiFungibleTokens
+--- @field name string The token name
+--- @field ticker string The token ticker
+--- @field logo string The token logo Arweave TxID
+--- @field balancesById table&lt;string, table&lt;string, string&gt;&gt; The account token balances by ID
+--- @field totalSupplyById table&lt;string, string&gt; The total supply of the token by ID
+--- @field denomination number The number of decimals
+
+--- Creates a new SemiFungibleTokens instance
+--- @param name string The token name
+--- @param ticker string The token ticker
+--- @param logo string The token logo Arweave TxID
+--- @param balancesById table&lt;string, table&lt;string, string&gt;&gt; The account token balances by ID
+--- @param totalSupplyById table&lt;string, string&gt; The total supply of the token by ID
+--- @param denomination number The number of decimals
+--- @return SemiFungibleTokens semiFungibleTokens The new SemiFungibleTokens instance
+<span class="fc" data-hits="1">function SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)</span>
+<span class="nc">  local semiFungibleTokens = {</span>
+    name = name,
+    ticker = ticker,
+    logo = logo,
+    balancesById = balancesById,
+    totalSupplyById = totalSupplyById,
+<span class="nc">    denomination = denomination</span>
+  }
+<span class="nc">  setmetatable(semiFungibleTokens, {</span>
+    __index = function(_, k)
+<span class="nc">      if SemiFungibleTokensMethods[k] then</span>
+<span class="nc">        return SemiFungibleTokensMethods[k]</span>
+<span class="nc">      elseif SemiFungibleTokensNotices[k] then</span>
+<span class="nc">        return SemiFungibleTokensNotices[k]</span>
+      else
+<span class="nc">        return nil</span>
+      end
+    end
+  })
+<span class="nc">  return semiFungibleTokens</span>
+end
+
+--- Mint a quantity of tokens with the given ID
+--- @param to string The address that will own the minted tokens
+--- @param id string The ID of the tokens to mint
+--- @param quantity string The quantity of tokens to mint
+--- @param msg Message The message received
+--- @return Message The mint notice
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:mint(to, id, quantity, msg)</span>
+<span class="nc">  assert(quantity, &#39;Quantity is required!&#39;)</span>
+<span class="nc">  assert(bint.__lt(0, bint(quantity)), &#39;Quantity must be greater than zero!&#39;)</span>
+  -- mint tokens
+<span class="nc">  if not self.balancesById[id] then self.balancesById[id] = {} end</span>
+<span class="nc">  if not self.balancesById[id][to] then self.balancesById[id][to] = &quot;0&quot; end</span>
+<span class="nc">  if not self.totalSupplyById[id] then self.totalSupplyById[id] = &quot;0&quot; end</span>
+<span class="nc">  self.balancesById[id][to] = tostring(bint.__add(self.balancesById[id][to], bint(quantity)))</span>
+<span class="nc">  self.totalSupplyById[id] = tostring(bint.__add(self.totalSupplyById[id], bint(quantity)))</span>
+  -- send notice
+<span class="nc">  return self.mintSingleNotice(to, id, quantity, msg)</span>
+end
+
+--- Batch mint quantities of tokens with the given IDs
+--- @param to string The address that will own the minted tokens
+--- @param ids table&lt;string&gt; The IDs of the tokens to mint
+--- @param quantities table&lt;string&gt; The quantities of tokens to mint
+--- @param msg Message The message received
+--- @return Message The batch mint notice
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchMint(to, ids, quantities, msg)</span>
+<span class="nc">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
+  -- mint tokens
+<span class="nc">  for i = 1, #ids do</span>
+    -- @dev spacing to resolve text to code eval issue
+<span class="nc">    if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end</span>
+<span class="nc">    if not self.balancesById[ ids[i] ][to] then self.balancesById[ ids[i] ][to] = &quot;0&quot; end</span>
+<span class="nc">    if not self.totalSupplyById[ ids[i] ] then self.totalSupplyById[ ids[i] ] = &quot;0&quot; end</span>
+<span class="nc">    self.balancesById[ ids[i] ][to] = tostring(bint.__add(self.balancesById[ ids[i] ][to], quantities[i]))</span>
+<span class="nc">    self.totalSupplyById[ ids[i] ] = tostring(bint.__add(self.totalSupplyById[ ids[i] ], quantities[i]))</span>
+  end
+  -- send notice
+<span class="nc">  return self.mintBatchNotice(to, ids, quantities, msg)</span>
+end
+
+--- Burn a quantity of tokens with a given ID
+--- @param from string The process ID that will no longer own the burned tokens
+--- @param id string The ID of the tokens to burn
+--- @param quantity string The quantity of tokens to burn
+--- @param msg Message The message received
+--- @return Message The burn notice
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:burn(from, id, quantity, msg)</span>
+<span class="nc">  assert(bint.__lt(0, bint(quantity)), &#39;Quantity must be greater than zero!&#39;)</span>
+<span class="nc">  assert(self.balancesById[id], &#39;Id must exist! &#39; .. id)</span>
+<span class="nc">  assert(self.balancesById[id][from], &#39;Account must hold token! :: &#39; .. id)</span>
+<span class="nc">  assert(bint.__le(bint(quantity), self.balancesById[id][from]), &#39;Account must have sufficient tokens! &#39; .. id)</span>
+  -- burn tokens
+<span class="nc">  self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], bint(quantity)))</span>
+<span class="nc">  self.totalSupplyById[id] = tostring(bint.__sub(self.totalSupplyById[id], bint(quantity)))</span>
+  -- send notice
+<span class="nc">  return self.burnSingleNotice(from, id, quantity, msg)</span>
+end
+
+--- Batch burn a quantity of tokens with the given IDs
+--- @param from string The process ID that will no longer own the burned tokens
+--- @param ids table&lt;string&gt; The IDs of the tokens to burn
+--- @param quantities table&lt;string&gt; The quantities of tokens to burn
+--- @param msg Message The message received
+--- @return Message The batch burn notice
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)</span>
+<span class="nc">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
+<span class="nc">  for i = 1, #ids do</span>
+<span class="nc">    assert(bint.__lt(0, quantities[i]), &#39;Quantity must be greater than zero!&#39;)</span>
+<span class="nc">    assert(self.balancesById[ ids[i] ], &#39;Id must exist! &#39; .. ids[i])</span>
+<span class="nc">    assert(self.balancesById[ ids[i] ][from], &#39;Account must hold token! &#39; .. ids[i])</span>
+<span class="nc">    assert(bint.__le(quantities[i], self.balancesById[ ids[i] ][from]), &#39;Account must have sufficient tokens!&#39;)</span>
+  end
+  -- burn tokens
+<span class="nc">  local remainingBalances = {}</span>
+<span class="nc">  for i = 1, #ids do</span>
+<span class="nc">    self.balancesById[ ids[i] ][from] = tostring(bint.__sub(self.balancesById[ ids[i] ][from], quantities[i]))</span>
+<span class="nc">    self.totalSupplyById[ ids[i] ] = tostring(bint.__sub(self.totalSupplyById[ ids[i] ], quantities[i]))</span>
+<span class="nc">    remainingBalances[i] = self.balancesById[ ids[i] ][from]</span>
+  end
+  -- send notice
+<span class="nc">  return self.burnBatchNotice(from, ids, quantities, remainingBalances, msg)</span>
+end
+
+--- Transfer a quantity of tokens with the given ID
+--- @param from string The process ID that will send the token
+--- @param recipient string The process ID that will receive the token
+--- @param id string The ID of the tokens to transfer
+--- @param quantity string The quantity of tokens to transfer
+--- @param cast boolean The cast is set to true to silence the transfer notice
+--- @param msg Message The message received
+--- @return table&lt;Message&gt;|Message|nil The transfer notices, error notice or nothing
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, msg)</span>
+<span class="nc">  if not self.balancesById[id] then self.balancesById[id] = {} end</span>
+<span class="nc">  if not self.balancesById[id][from] then self.balancesById[id][from] = &quot;0&quot; end</span>
+<span class="nc">  if not self.balancesById[id][recipient] then self.balancesById[id][recipient] = &quot;0&quot; end</span>
+
+<span class="nc">  local qty = bint(quantity)</span>
+<span class="nc">  local balance = bint(self.balancesById[id][from])</span>
+<span class="nc">  if bint.__le(qty, balance) then</span>
+<span class="nc">    self.balancesById[id][from] = tostring(bint.__sub(balance, qty))</span>
+<span class="nc">    self.balancesById[id][recipient] = tostring(bint.__add(self.balancesById[id][recipient], qty))</span>
+
+    -- Only send the notifications if the cast tag is not set
+<span class="nc">    if not cast then</span>
+<span class="nc">      return self.transferSingleNotices(from, recipient, id, quantity, msg)</span>
+    end
+  else
+<span class="nc">    return self.transferErrorNotice(id, msg)</span>
+  end
+end
+
+--- Batch transfer quantities of tokens with the given IDs
+--- @param from string The process ID that will send the token
+--- @param recipient string The process ID that will receive the token
+--- @param ids table&lt;string&gt; The IDs of the tokens to transfer
+--- @param quantities table&lt;string&gt; The quantities of tokens to transfer
+--- @param cast boolean The cast is set to true to silence the transfer notice
+--- @param msg Message The message received
+--- @return table&lt;Message&gt;|Message|nil The transfer notices, error notice or nothing
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg)</span>
+<span class="nc">  local ids_ = {}</span>
+<span class="nc">  local quantities_ = {}</span>
+
+<span class="nc">  for i = 1, #ids do</span>
+<span class="nc">    if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end</span>
+<span class="nc">    if not self.balancesById[ ids[i] ][from] then self.balancesById[ ids[i] ][from] = &quot;0&quot; end</span>
+<span class="nc">    if not self.balancesById[ ids[i] ][recipient] then self.balancesById[ ids[i] ][recipient] = &quot;0&quot; end</span>
+
+<span class="nc">    local qty = bint(quantities[i])</span>
+<span class="nc">    local balance = bint(self.balancesById[ ids[i] ][from])</span>
+
+<span class="nc">    if bint.__le(qty, balance) then</span>
+<span class="nc">      self.balancesById[ ids[i] ][from] = tostring(bint.__sub(balance, qty))</span>
+<span class="nc">      self.balancesById[ ids[i] ][recipient] = tostring(bint.__add(self.balancesById[ ids[i] ][recipient], qty))</span>
+<span class="nc">      table.insert(ids_, ids[i])</span>
+<span class="nc">      table.insert(quantities_, quantities[i])</span>
+    else
+<span class="nc">      return self.transferErrorNotice(ids[i], msg)</span>
+    end
+  end
+
+  -- Only send the notifications if the cast tag is not set
+<span class="nc">  if not cast and #ids_ &gt; 0 then</span>
+<span class="nc">    return self.transferBatchNotices(from, recipient, ids_, quantities_, msg)</span>
+  end
+end
+
+--- Get account balance of tokens with the given ID
+--- @param sender string The process ID of the sender
+--- @param recipient string|nil The process ID of the recipient (optional)
+--- @param id string The ID of the token
+--- @return string The balance of the account for the given ID
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBalance(sender, recipient, id)</span>
+<span class="nc">  local bal = &#39;0&#39;</span>
+  -- If ID is found then continue
+<span class="nc">  if self.balancesById[id] then</span>
+    -- If recipient is not provided, return the senders balance
+<span class="nc">    if (recipient and self.balancesById[id][recipient]) then</span>
+<span class="nc">      bal = self.balancesById[id][recipient]</span>
+<span class="nc">    elseif self.balancesById[id][sender] then</span>
+<span class="nc">      bal = self.balancesById[id][sender]</span>
+    end
+  end
+  -- return balance
+<span class="nc">  return bal</span>
+end
+
+--- Get accounts&#39; balance of tokens with the given IDs
+--- @param recipients table&lt;string&gt; The process IDs of the recipients
+--- @param ids table&lt;string&gt; The IDs of the tokens
+--- @return table&lt;string&gt; The balances of the recipients for each respective ID
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBatchBalance(recipients, ids)</span>
+<span class="nc">  assert(#recipients == #ids, &#39;Recipients and Ids must have same lengths&#39;)</span>
+<span class="nc">  local bals = {}</span>
+
+<span class="nc">  for i = 1, #recipients do</span>
+<span class="nc">    table.insert(bals, &#39;0&#39;)</span>
+<span class="nc">    if self.balancesById[ ids[i] ] then</span>
+<span class="nc">      if self.balancesById[ ids[i] ][ recipients[i] ] then</span>
+<span class="nc">        bals[i] = self.balancesById[ ids[i] ][ recipients[i] ]</span>
+      end
+    end
+  end
+
+<span class="nc">  return bals</span>
+end
+
+--- Get account balances of tokens with the given ID
+--- @param id string The ID of the token
+--- @return table&lt;string, string&gt; The account balances for the given ID
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBalances(id)</span>
+<span class="nc">  local bals = {}</span>
+<span class="nc">  if self.balancesById[id] then</span>
+<span class="nc">    bals = self.balancesById[id]</span>
+  end
+  -- return balances
+<span class="nc">  return bals</span>
+end
+
+--- Get accounts&#39; balances of tokens with the given IDs
+--- @param positionIds table&lt;string&gt; The IDs of the tokens
+--- @return table&lt;string, table&lt;string, string&gt;&gt; The account balances for each respective ID
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBatchBalances(positionIds)</span>
+<span class="nc">  local bals = {}</span>
+
+<span class="nc">  for i = 1, #positionIds do</span>
+<span class="nc">    bals[ positionIds[i] ] = {}</span>
+<span class="nc">    if self.balancesById[ positionIds[i] ] then</span>
+<span class="nc">      bals[ positionIds[i] ] = self.balancesById[ positionIds[i] ]</span>
+    end
+  end
+  -- return balances
+<span class="nc">  return bals</span>
+end
+
+<span class="fc" data-hits="1">return SemiFungibleTokens</span>
+</pre>
+      </div>
+
+      <div class="hidden file danger" id="src-marketmodules-semifungibletokensnotices">
+         <h2 class="title">
+            src/marketModules/semiFungibleTokensNotices.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 21.74%"></span>
+                  <span><strong>21.74%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>10</strong> Hits</span>
+               <span class="miss"><strong>36</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums">--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See semiFungibleTokens.lua for full license details.
+=========================================================
+]]
+
+-- local ao = require(&#39;.ao&#39;)
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+
+<span class="fc" data-hits="1">local SemiFungibleTokensNotices = {}</span>
+
+--- Mint single notice
+--- @param to string The address that will own the minted token
+--- @param id string The ID of the token to be minted
+--- @param quantity string The quantity of the token to be minted
+--- @param msg Message The message received
+--- @return Message The mint notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, msg)</span>
+<span class="nc">  return msg.reply({</span>
+    Recipient = to,
+    PositionId = tostring(id),
+    Quantity = tostring(quantity),
+    Action = &#39;Mint-Single-Notice&#39;,
+<span class="nc">    Data = Colors.gray .. &quot;Successfully minted &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
+  })
+end
+
+--- Mint batch notice
+--- @param to string The address that will own the minted tokens
+--- @param ids table&lt;string&gt; The IDs of the tokens to be minted
+--- @param quantities table&lt;string&gt; The quantities of the tokens to be minted
+--- @param msg Message The message received
+--- @return Message The batch mint notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)</span>
+<span class="nc">  return msg.forward(to, {</span>
+    Recipient = to,
+    PositionIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+    Action = &#39;Mint-Batch-Notice&#39;,
+<span class="nc">    Data = &quot;Successfully minted batch&quot;</span>
+  })
+end
+
+--- Burn single notice
+--- @param from string The address that will burn the token
+--- @param id string The ID of the token to be burned
+--- @param quantity string The quantity of the token to be burned
+--- @param msg Message The message received
+--- @return Message The burn notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)</span>
+  -- Prepare notice
+<span class="nc">  local notice = {</span>
+    Recipient = from,
+    PositionId = tostring(id),
+    Quantity = tostring(quantity),
+    Action = &#39;Burn-Single-Notice&#39;,
+<span class="nc">    Data = Colors.gray .. &quot;Successfully burned &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      notice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  return msg.forward(from, notice)</span>
+end
+
+--- Burn batch notice
+--- @param from string The address that will burn the tokens
+--- @param positionIds table&lt;string&gt; The IDs of the positions to be burned
+--- @param quantities table&lt;string&gt; The quantities of the tokens to be burned
+--- @param remainingBalances table&lt;string&gt; The remaining balances of unburned tokens
+--- @param msg Message The message received
+--- @return Message The burn notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities, remainingBalances, msg)</span>
+  -- Prepare notice
+<span class="nc">  local notice = {</span>
+    Recipient = from,
+    PositionIds = json.encode(positionIds),
+    Quantities = json.encode(quantities),
+    RemainingBalances = json.encode(remainingBalances),
+    Action = &#39;Burn-Batch-Notice&#39;,
+<span class="nc">    Data = &quot;Successfully burned batch&quot;</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      notice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  return msg.forward(from, notice)</span>
+end
+
+--- Transfer single token notices
+--- @param from string The address to be debited
+--- @param to string The address to be credited
+--- @param id string The ID of the token to be transferred
+--- @param quantity string The quantity of the token to be transferred
+--- @param msg Message The message received
+--- @return table&lt;Message&gt; The debit and credit transfer notices
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg)</span>
+  -- Prepare debit notice
+<span class="nc">  local debitNotice = {</span>
+    Action = &#39;Debit-Single-Notice&#39;,
+    Recipient = to,
+    PositionId = tostring(id),
+    Quantity = tostring(quantity),
+<span class="nc">    Data = Colors.gray .. &quot;You transferred &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; to &quot; .. Colors.green .. to .. Colors.reset</span>
+  }
+  -- Prepare credit notice
+<span class="nc">  local creditNotice = {</span>
+    Action = &#39;Credit-Single-Notice&#39;,
+    Sender = from,
+    PositionId = tostring(id),
+    Quantity = tostring(quantity),
+<span class="nc">    Data = Colors.gray .. &quot;You received &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; from &quot; .. Colors.green .. from .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      debitNotice[tagName] = tagValue</span>
+<span class="nc">      creditNotice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notices
+<span class="nc">  return { msg.reply(debitNotice), msg.forward(to, creditNotice) }</span>
+end
+
+--- Transfer batch tokens notices
+--- @param from string The address to be debited
+--- @param to string The address to be credited
+--- @param ids table&lt;string&gt; The IDs of the tokens to be transferred
+--- @param quantities table&lt;string&gt; The quantities of the tokens to be transferred
+--- @param msg Message The message received
+--- @return table&lt;Message&gt; The debit and credit batch transfer notices
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg)</span>
+  -- Prepare debit notice
+<span class="nc">  local debitNotice = {</span>
+    Action = &#39;Debit-Batch-Notice&#39;,
+    Recipient = to,
+    PositionIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+<span class="nc">    Data = Colors.gray .. &quot;You transferred batch to &quot; .. Colors.green .. to .. Colors.reset</span>
+  }
+  -- Prepare credit notice
+<span class="nc">  local creditNotice = {</span>
+    Action = &#39;Credit-Batch-Notice&#39;,
+    Sender = from,
+    PositionIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+<span class="nc">    Data = Colors.gray .. &quot;You received batch from &quot; .. Colors.green .. from .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      debitNotice[tagName] = tagValue</span>
+<span class="nc">      creditNotice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  return {msg.reply(debitNotice), msg.forward(to, creditNotice)}</span>
+end
+
+--- Transfer error notice
+--- @param id string The ID of the token to be transferred
+--- @param msg Message The message received
+--- @return Message The transfer error notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferErrorNotice(id, msg)</span>
+<span class="nc">  return msg.reply({</span>
+    Action = &#39;Transfer-Error&#39;,
+    [&#39;Message-Id&#39;] = msg.Id,
+    [&#39;PositionId&#39;] = id,
+<span class="nc">    Error = &#39;Insufficient Balance!&#39;</span>
+  })
+end
+
+<span class="fc" data-hits="1">return SemiFungibleTokensNotices</span>
+</pre>
+      </div>
+
+      <div class="hidden file warning" id="src-marketmodules-sharedutils">
+         <h2 class="title">
+            src/marketModules/sharedUtils.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 56.76%"></span>
+                  <span><strong>56.76%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>21</strong> Hits</span>
+               <span class="miss"><strong>16</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums">--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See market.lua for full license details.
+=========================================================
+]]
+
+<span class="fc" data-hits="1">local sharedUtils = {}</span>
+
+--- Verify if extracted value is a JSON simple value
+--- @param value any
+--- @return boolean
+local function isSimpleValue(value)
+  -- Trim whitespace
+<span class="fc" data-hits="5">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
+  -- Check for a quoted string: &quot;someValue&quot;
+<span class="fc" data-hits="5">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
+<span class="nc">    return true</span>
+  end
+  -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
+<span class="fc" data-hits="5">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
+<span class="fc" data-hits="4">    return true</span>
+  end
+  -- Check for boolean
+<span class="fc" data-hits="1">  if string.lower(value) == &quot;true&quot; or string.lower(value) == &quot;false&quot; then</span>
+<span class="nc">    return true</span>
+  end
+<span class="fc" data-hits="1">  return false</span>
+end
+
+--- Verify if a valid JSON object
+--- @param str any
+--- @return boolean
+<span class="fc" data-hits="1">function sharedUtils.isValidKeyValueJSON(str)</span>
+<span class="nc">  if type(str) ~= &quot;string&quot; then return false end</span>
+  -- Trim whitespace
+<span class="nc">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
+  -- Ensure it starts with `{` and ends with `}`
+<span class="nc">  local isObject = str:match(&quot;^%{%s*(.-)%s*%}$&quot;)</span>
+<span class="nc">  if not isObject then return false end</span>
+  -- This pattern only extracts the key and the entire raw value
+<span class="nc">  local keyValuePattern = &#39;^%s*&quot;([^&quot;]+)&quot;%s*:%s*(.-)%s*$&#39;</span>
+  -- Check all key-value pairs
+<span class="nc">  for keyValue in isObject:gmatch(&quot;[^,]+&quot;) do</span>
+<span class="nc">    local key, rawValue = keyValue:match(keyValuePattern)</span>
+<span class="nc">    if not key or not rawValue then</span>
+<span class="nc">      return false</span>
+    end
+    -- Now validate that rawValue is a valid JSON simple value
+<span class="nc">    if not isSimpleValue(rawValue) then</span>
+<span class="nc">      return false</span>
+    end
+  end
+<span class="nc">  return true</span>
+end
+
+--- Verify if a valid JSON array
+--- @param str any
+--- @return boolean
+<span class="fc" data-hits="1">function sharedUtils.isJSONArray(str)</span>
+<span class="fc" data-hits="3">  if type(str) ~= &quot;string&quot; then return false end</span>
+  -- Trim whitespace
+<span class="fc" data-hits="3">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
+  -- Ensure it starts with `[` and ends with `]`
+<span class="fc" data-hits="3">  local isArray = str:match(&quot;^%[%s*(.-)%s*%]$&quot;)</span>
+<span class="fc" data-hits="3">  if not isArray then return false end</span>
+  -- Split the array elements and validate each one
+<span class="fc" data-hits="6">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
+<span class="fc" data-hits="5">    value = value:match(&quot;^%s*(.-)%s*$&quot;) -- Trim whitespace around each value</span>
+<span class="fc" data-hits="5">    if not isSimpleValue(value) then</span>
+<span class="fc" data-hits="1">      return false</span>
+    end
+  end
+<span class="fc" data-hits="1">  return true</span>
+end
+
+--- Verify if a valid Arweave address
+--- @param address any
+--- @return boolean
+<span class="fc" data-hits="1">function sharedUtils.isValidArweaveAddress(address)</span>
+<span class="nc">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[%w-_]+$&quot;) ~= nil</span>
+end
+
+--- Verify if a valid boolean string
+--- @param value any
+--- @return boolean
+<span class="fc" data-hits="1">function sharedUtils.isValidBooleanString(value)</span>
+<span class="nc">  return type(value) == &quot;string&quot; and (string.lower(value) == &quot;true&quot; or string.lower(value) == &quot;false&quot;)</span>
+end
+
+<span class="fc" data-hits="1">return sharedUtils</span>
+</pre>
+      </div>
+
+   </main>
+   <footer>
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-02-12 06:36:01
+   </footer>
+
+   <script type="text/javascript">
+      !function(){/*
+      
+       Copyright (C) 2006 Google Inc.
+      
+       Licensed under the Apache License, Version 2.0 (the "License");
+       you may not use this file except in compliance with the License.
+       You may obtain a copy of the License at
+      
+            http://www.apache.org/licenses/LICENSE-2.0
+      
+       Unless required by applicable law or agreed to in writing, software
+       distributed under the License is distributed on an "AS IS" BASIS,
+       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+       See the License for the specific language governing permissions and
+       limitations under the License.
+      */
+      "undefined"!==typeof window&&(window.PR_SHOULD_USE_CONTINUATION=!0);
+      (function(){function T(a){function d(e){var a=e.charCodeAt(0);if(92!==a)return a;var c=e.charAt(1);return(a=w[c])?a:"0"<=c&&"7">=c?parseInt(e.substring(1),8):"u"===c||"x"===c?parseInt(e.substring(2),16):e.charCodeAt(1)}function f(e){if(32>e)return(16>e?"\\x0":"\\x")+e.toString(16);e=String.fromCharCode(e);return"\\"===e||"-"===e||"]"===e||"^"===e?"\\"+e:e}function c(e){var c=e.substring(1,e.length-1).match(RegExp("\\\\u[0-9A-Fa-f]{4}|\\\\x[0-9A-Fa-f]{2}|\\\\[0-3][0-7]{0,2}|\\\\[0-7]{1,2}|\\\\[\\s\\S]|-|[^-\\\\]","g"));
+      e=[];var a="^"===c[0],b=["["];a&&b.push("^");for(var a=a?1:0,g=c.length;a<g;++a){var h=c[a];if(/\\[bdsw]/i.test(h))b.push(h);else{var h=d(h),k;a+2<g&&"-"===c[a+1]?(k=d(c[a+2]),a+=2):k=h;e.push([h,k]);65>k||122<h||(65>k||90<h||e.push([Math.max(65,h)|32,Math.min(k,90)|32]),97>k||122<h||e.push([Math.max(97,h)&-33,Math.min(k,122)&-33]))}}e.sort(function(e,a){return e[0]-a[0]||a[1]-e[1]});c=[];g=[];for(a=0;a<e.length;++a)h=e[a],h[0]<=g[1]+1?g[1]=Math.max(g[1],h[1]):c.push(g=h);for(a=0;a<c.length;++a)h=
+      c[a],b.push(f(h[0])),h[1]>h[0]&&(h[1]+1>h[0]&&b.push("-"),b.push(f(h[1])));b.push("]");return b.join("")}function m(e){for(var a=e.source.match(RegExp("(?:\\[(?:[^\\x5C\\x5D]|\\\\[\\s\\S])*\\]|\\\\u[A-Fa-f0-9]{4}|\\\\x[A-Fa-f0-9]{2}|\\\\[0-9]+|\\\\[^ux0-9]|\\(\\?[:!=]|[\\(\\)\\^]|[^\\x5B\\x5C\\(\\)\\^]+)","g")),b=a.length,d=[],g=0,h=0;g<b;++g){var k=a[g];"("===k?++h:"\\"===k.charAt(0)&&(k=+k.substring(1))&&(k<=h?d[k]=-1:a[g]=f(k))}for(g=1;g<d.length;++g)-1===d[g]&&(d[g]=++E);for(h=g=0;g<b;++g)k=a[g],
+      "("===k?(++h,d[h]||(a[g]="(?:")):"\\"===k.charAt(0)&&(k=+k.substring(1))&&k<=h&&(a[g]="\\"+d[k]);for(g=0;g<b;++g)"^"===a[g]&&"^"!==a[g+1]&&(a[g]="");if(e.ignoreCase&&q)for(g=0;g<b;++g)k=a[g],e=k.charAt(0),2<=k.length&&"["===e?a[g]=c(k):"\\"!==e&&(a[g]=k.replace(/[a-zA-Z]/g,function(a){a=a.charCodeAt(0);return"["+String.fromCharCode(a&-33,a|32)+"]"}));return a.join("")}for(var E=0,q=!1,l=!1,n=0,b=a.length;n<b;++n){var p=a[n];if(p.ignoreCase)l=!0;else if(/[a-z]/i.test(p.source.replace(/\\u[0-9a-f]{4}|\\x[0-9a-f]{2}|\\[^ux]/gi,
+      ""))){q=!0;l=!1;break}}for(var w={b:8,t:9,n:10,v:11,f:12,r:13},r=[],n=0,b=a.length;n<b;++n){p=a[n];if(p.global||p.multiline)throw Error(""+p);r.push("(?:"+m(p)+")")}return new RegExp(r.join("|"),l?"gi":"g")}function U(a,d){function f(a){var b=a.nodeType;if(1==b){if(!c.test(a.className)){for(b=a.firstChild;b;b=b.nextSibling)f(b);b=a.nodeName.toLowerCase();if("br"===b||"li"===b)m[l]="\n",q[l<<1]=E++,q[l++<<1|1]=a}}else if(3==b||4==b)b=a.nodeValue,b.length&&(b=d?b.replace(/\r\n?/g,"\n"):b.replace(/[ \t\r\n]+/g,
+      " "),m[l]=b,q[l<<1]=E,E+=b.length,q[l++<<1|1]=a)}var c=/(?:^|\s)nocode(?:\s|$)/,m=[],E=0,q=[],l=0;f(a);return{a:m.join("").replace(/\n$/,""),c:q}}function J(a,d,f,c,m){f&&(a={h:a,l:1,j:null,m:null,a:f,c:null,i:d,g:null},c(a),m.push.apply(m,a.g))}function V(a){for(var d=void 0,f=a.firstChild;f;f=f.nextSibling)var c=f.nodeType,d=1===c?d?a:f:3===c?W.test(f.nodeValue)?a:d:d;return d===a?void 0:d}function G(a,d){function f(a){for(var l=a.i,n=a.h,b=[l,"pln"],p=0,q=a.a.match(m)||[],r={},e=0,t=q.length;e<
+      t;++e){var z=q[e],v=r[z],g=void 0,h;if("string"===typeof v)h=!1;else{var k=c[z.charAt(0)];if(k)g=z.match(k[1]),v=k[0];else{for(h=0;h<E;++h)if(k=d[h],g=z.match(k[1])){v=k[0];break}g||(v="pln")}!(h=5<=v.length&&"lang-"===v.substring(0,5))||g&&"string"===typeof g[1]||(h=!1,v="src");h||(r[z]=v)}k=p;p+=z.length;if(h){h=g[1];var A=z.indexOf(h),C=A+h.length;g[2]&&(C=z.length-g[2].length,A=C-h.length);v=v.substring(5);J(n,l+k,z.substring(0,A),f,b);J(n,l+k+A,h,K(v,h),b);J(n,l+k+C,z.substring(C),f,b)}else b.push(l+
+      k,v)}a.g=b}var c={},m;(function(){for(var f=a.concat(d),l=[],n={},b=0,p=f.length;b<p;++b){var w=f[b],r=w[3];if(r)for(var e=r.length;0<=--e;)c[r.charAt(e)]=w;w=w[1];r=""+w;n.hasOwnProperty(r)||(l.push(w),n[r]=null)}l.push(/[\0-\uffff]/);m=T(l)})();var E=d.length;return f}function x(a){var d=[],f=[];a.tripleQuotedStrings?d.push(["str",/^(?:\'\'\'(?:[^\'\\]|\\[\s\S]|\'{1,2}(?=[^\']))*(?:\'\'\'|$)|\"\"\"(?:[^\"\\]|\\[\s\S]|\"{1,2}(?=[^\"]))*(?:\"\"\"|$)|\'(?:[^\\\']|\\[\s\S])*(?:\'|$)|\"(?:[^\\\"]|\\[\s\S])*(?:\"|$))/,
+      null,"'\""]):a.multiLineStrings?d.push(["str",/^(?:\'(?:[^\\\']|\\[\s\S])*(?:\'|$)|\"(?:[^\\\"]|\\[\s\S])*(?:\"|$)|\`(?:[^\\\`]|\\[\s\S])*(?:\`|$))/,null,"'\"`"]):d.push(["str",/^(?:\'(?:[^\\\'\r\n]|\\.)*(?:\'|$)|\"(?:[^\\\"\r\n]|\\.)*(?:\"|$))/,null,"\"'"]);a.verbatimStrings&&f.push(["str",/^@\"(?:[^\"]|\"\")*(?:\"|$)/,null]);var c=a.hashComments;c&&(a.cStyleComments?(1<c?d.push(["com",/^#(?:##(?:[^#]|#(?!##))*(?:###|$)|.*)/,null,"#"]):d.push(["com",/^#(?:(?:define|e(?:l|nd)if|else|error|ifn?def|include|line|pragma|undef|warning)\b|[^\r\n]*)/,
+      null,"#"]),f.push(["str",/^<(?:(?:(?:\.\.\/)*|\/?)(?:[\w-]+(?:\/[\w-]+)+)?[\w-]+\.h(?:h|pp|\+\+)?|[a-z]\w*)>/,null])):d.push(["com",/^#[^\r\n]*/,null,"#"]));a.cStyleComments&&(f.push(["com",/^\/\/[^\r\n]*/,null]),f.push(["com",/^\/\*[\s\S]*?(?:\*\/|$)/,null]));if(c=a.regexLiterals){var m=(c=1<c?"":"\n\r")?".":"[\\S\\s]";f.push(["lang-regex",RegExp("^(?:^^\\.?|[+-]|[!=]=?=?|\\#|%=?|&&?=?|\\(|\\*=?|[+\\-]=|->|\\/=?|::?|<<?=?|>>?>?=?|,|;|\\?|@|\\[|~|{|\\^\\^?=?|\\|\\|?=?|break|case|continue|delete|do|else|finally|instanceof|return|throw|try|typeof)\\s*("+
+      ("/(?=[^/*"+c+"])(?:[^/\\x5B\\x5C"+c+"]|\\x5C"+m+"|\\x5B(?:[^\\x5C\\x5D"+c+"]|\\x5C"+m+")*(?:\\x5D|$))+/")+")")])}(c=a.types)&&f.push(["typ",c]);c=(""+a.keywords).replace(/^ | $/g,"");c.length&&f.push(["kwd",new RegExp("^(?:"+c.replace(/[\s,]+/g,"|")+")\\b"),null]);d.push(["pln",/^\s+/,null," \r\n\t\u00a0"]);c="^.[^\\s\\w.$@'\"`/\\\\]*";a.regexLiterals&&(c+="(?!s*/)");f.push(["lit",/^@[a-z_$][a-z_$@0-9]*/i,null],["typ",/^(?:[@_]?[A-Z]+[a-z][A-Za-z_$@0-9]*|\w+_t\b)/,null],["pln",/^[a-z_$][a-z_$@0-9]*/i,
+      null],["lit",/^(?:0x[a-f0-9]+|(?:\d(?:_\d+)*\d*(?:\.\d*)?|\.\d\+)(?:e[+\-]?\d+)?)[a-z]*/i,null,"0123456789"],["pln",/^\\[\s\S]?/,null],["pun",new RegExp(c),null]);return G(d,f)}function L(a,d,f){function c(a){var b=a.nodeType;if(1==b&&!t.test(a.className))if("br"===a.nodeName.toLowerCase())m(a),a.parentNode&&a.parentNode.removeChild(a);else for(a=a.firstChild;a;a=a.nextSibling)c(a);else if((3==b||4==b)&&f){var e=a.nodeValue,d=e.match(q);d&&(b=e.substring(0,d.index),a.nodeValue=b,(e=e.substring(d.index+
+      d[0].length))&&a.parentNode.insertBefore(l.createTextNode(e),a.nextSibling),m(a),b||a.parentNode.removeChild(a))}}function m(a){function c(a,b){var e=b?a.cloneNode(!1):a,k=a.parentNode;if(k){var k=c(k,1),d=a.nextSibling;k.appendChild(e);for(var f=d;f;f=d)d=f.nextSibling,k.appendChild(f)}return e}for(;!a.nextSibling;)if(a=a.parentNode,!a)return;a=c(a.nextSibling,0);for(var e;(e=a.parentNode)&&1===e.nodeType;)a=e;b.push(a)}for(var t=/(?:^|\s)nocode(?:\s|$)/,q=/\r\n?|\n/,l=a.ownerDocument,n=l.createElement("li");a.firstChild;)n.appendChild(a.firstChild);
+      for(var b=[n],p=0;p<b.length;++p)c(b[p]);d===(d|0)&&b[0].setAttribute("value",d);var w=l.createElement("ol");w.className="linenums";d=Math.max(0,d-1|0)||0;for(var p=0,r=b.length;p<r;++p)n=b[p],n.className="L"+(p+d)%10,n.firstChild||n.appendChild(l.createTextNode("\u00a0")),w.appendChild(n);a.appendChild(w)}function t(a,d){for(var f=d.length;0<=--f;){var c=d[f];I.hasOwnProperty(c)?D.console&&console.warn("cannot override language handler %s",c):I[c]=a}}function K(a,d){a&&I.hasOwnProperty(a)||(a=/^\s*</.test(d)?
+      "default-markup":"default-code");return I[a]}function M(a){var d=a.j;try{var f=U(a.h,a.l),c=f.a;a.a=c;a.c=f.c;a.i=0;K(d,c)(a);var m=/\bMSIE\s(\d+)/.exec(navigator.userAgent),m=m&&8>=+m[1],d=/\n/g,t=a.a,q=t.length,f=0,l=a.c,n=l.length,c=0,b=a.g,p=b.length,w=0;b[p]=q;var r,e;for(e=r=0;e<p;)b[e]!==b[e+2]?(b[r++]=b[e++],b[r++]=b[e++]):e+=2;p=r;for(e=r=0;e<p;){for(var x=b[e],z=b[e+1],v=e+2;v+2<=p&&b[v+1]===z;)v+=2;b[r++]=x;b[r++]=z;e=v}b.length=r;var g=a.h;a="";g&&(a=g.style.display,g.style.display="none");
+      try{for(;c<n;){var h=l[c+2]||q,k=b[w+2]||q,v=Math.min(h,k),A=l[c+1],C;if(1!==A.nodeType&&(C=t.substring(f,v))){m&&(C=C.replace(d,"\r"));A.nodeValue=C;var N=A.ownerDocument,u=N.createElement("span");u.className=b[w+1];var B=A.parentNode;B.replaceChild(u,A);u.appendChild(A);f<h&&(l[c+1]=A=N.createTextNode(t.substring(v,h)),B.insertBefore(A,u.nextSibling))}f=v;f>=h&&(c+=2);f>=k&&(w+=2)}}finally{g&&(g.style.display=a)}}catch(y){D.console&&console.log(y&&y.stack||y)}}var D="undefined"!==typeof window?
+      window:{},B=["break,continue,do,else,for,if,return,while"],F=[[B,"auto,case,char,const,default,double,enum,extern,float,goto,inline,int,long,register,restrict,short,signed,sizeof,static,struct,switch,typedef,union,unsigned,void,volatile"],"catch,class,delete,false,import,new,operator,private,protected,public,this,throw,true,try,typeof"],H=[F,"alignas,alignof,align_union,asm,axiom,bool,concept,concept_map,const_cast,constexpr,decltype,delegate,dynamic_cast,explicit,export,friend,generic,late_check,mutable,namespace,noexcept,noreturn,nullptr,property,reinterpret_cast,static_assert,static_cast,template,typeid,typename,using,virtual,where"],
+      O=[F,"abstract,assert,boolean,byte,extends,finally,final,implements,import,instanceof,interface,null,native,package,strictfp,super,synchronized,throws,transient"],P=[F,"abstract,add,alias,as,ascending,async,await,base,bool,by,byte,checked,decimal,delegate,descending,dynamic,event,finally,fixed,foreach,from,get,global,group,implicit,in,interface,internal,into,is,join,let,lock,null,object,out,override,orderby,params,partial,readonly,ref,remove,sbyte,sealed,select,set,stackalloc,string,select,uint,ulong,unchecked,unsafe,ushort,value,var,virtual,where,yield"],
+      F=[F,"abstract,async,await,constructor,debugger,enum,eval,export,from,function,get,import,implements,instanceof,interface,let,null,of,set,undefined,var,with,yield,Infinity,NaN"],Q=[B,"and,as,assert,class,def,del,elif,except,exec,finally,from,global,import,in,is,lambda,nonlocal,not,or,pass,print,raise,try,with,yield,False,True,None"],R=[B,"alias,and,begin,case,class,def,defined,elsif,end,ensure,false,in,module,next,nil,not,or,redo,rescue,retry,self,super,then,true,undef,unless,until,when,yield,BEGIN,END"],
+      B=[B,"case,done,elif,esac,eval,fi,function,in,local,set,then,until"],S=/^(DIR|FILE|array|vector|(de|priority_)?queue|(forward_)?list|stack|(const_)?(reverse_)?iterator|(unordered_)?(multi)?(set|map)|bitset|u?(int|float)\d*)\b/,W=/\S/,X=x({keywords:[H,P,O,F,"caller,delete,die,do,dump,elsif,eval,exit,foreach,for,goto,if,import,last,local,my,next,no,our,print,package,redo,require,sub,undef,unless,until,use,wantarray,while,BEGIN,END",Q,R,B],hashComments:!0,cStyleComments:!0,multiLineStrings:!0,regexLiterals:!0}),
+      I={};t(X,["default-code"]);t(G([],[["pln",/^[^<?]+/],["dec",/^<!\w[^>]*(?:>|$)/],["com",/^<\!--[\s\S]*?(?:-\->|$)/],["lang-",/^<\?([\s\S]+?)(?:\?>|$)/],["lang-",/^<%([\s\S]+?)(?:%>|$)/],["pun",/^(?:<[%?]|[%?]>)/],["lang-",/^<xmp\b[^>]*>([\s\S]+?)<\/xmp\b[^>]*>/i],["lang-js",/^<script\b[^>]*>([\s\S]*?)(<\/script\b[^>]*>)/i],["lang-css",/^<style\b[^>]*>([\s\S]*?)(<\/style\b[^>]*>)/i],["lang-in.tag",/^(<\/?[a-z][^<>]*>)/i]]),"default-markup htm html mxml xhtml xml xsl".split(" "));t(G([["pln",/^[\s]+/,
+      null," \t\r\n"],["atv",/^(?:\"[^\"]*\"?|\'[^\']*\'?)/,null,"\"'"]],[["tag",/^^<\/?[a-z](?:[\w.:-]*\w)?|\/?>$/i],["atn",/^(?!style[\s=]|on)[a-z](?:[\w:-]*\w)?/i],["lang-uq.val",/^=\s*([^>\'\"\s]*(?:[^>\'\"\s\/]|\/(?=\s)))/],["pun",/^[=<>\/]+/],["lang-js",/^on\w+\s*=\s*\"([^\"]+)\"/i],["lang-js",/^on\w+\s*=\s*\'([^\']+)\'/i],["lang-js",/^on\w+\s*=\s*([^\"\'>\s]+)/i],["lang-css",/^style\s*=\s*\"([^\"]+)\"/i],["lang-css",/^style\s*=\s*\'([^\']+)\'/i],["lang-css",/^style\s*=\s*([^\"\'>\s]+)/i]]),["in.tag"]);
+      t(G([],[["atv",/^[\s\S]+/]]),["uq.val"]);t(x({keywords:H,hashComments:!0,cStyleComments:!0,types:S}),"c cc cpp cxx cyc m".split(" "));t(x({keywords:"null,true,false"}),["json"]);t(x({keywords:P,hashComments:!0,cStyleComments:!0,verbatimStrings:!0,types:S}),["cs"]);t(x({keywords:O,cStyleComments:!0}),["java"]);t(x({keywords:B,hashComments:!0,multiLineStrings:!0}),["bash","bsh","csh","sh"]);t(x({keywords:Q,hashComments:!0,multiLineStrings:!0,tripleQuotedStrings:!0}),["cv","py","python"]);t(x({keywords:"caller,delete,die,do,dump,elsif,eval,exit,foreach,for,goto,if,import,last,local,my,next,no,our,print,package,redo,require,sub,undef,unless,until,use,wantarray,while,BEGIN,END",
+      hashComments:!0,multiLineStrings:!0,regexLiterals:2}),["perl","pl","pm"]);t(x({keywords:R,hashComments:!0,multiLineStrings:!0,regexLiterals:!0}),["rb","ruby"]);t(x({keywords:F,cStyleComments:!0,regexLiterals:!0}),["javascript","js","ts","typescript"]);t(x({keywords:"all,and,by,catch,class,else,extends,false,finally,for,if,in,is,isnt,loop,new,no,not,null,of,off,on,or,return,super,then,throw,true,try,unless,until,when,while,yes",hashComments:3,cStyleComments:!0,multilineStrings:!0,tripleQuotedStrings:!0,
+      regexLiterals:!0}),["coffee"]);t(G([],[["str",/^[\s\S]+/]]),["regex"]);var Y=D.PR={createSimpleLexer:G,registerLangHandler:t,sourceDecorator:x,PR_ATTRIB_NAME:"atn",PR_ATTRIB_VALUE:"atv",PR_COMMENT:"com",PR_DECLARATION:"dec",PR_KEYWORD:"kwd",PR_LITERAL:"lit",PR_NOCODE:"nocode",PR_PLAIN:"pln",PR_PUNCTUATION:"pun",PR_SOURCE:"src",PR_STRING:"str",PR_TAG:"tag",PR_TYPE:"typ",prettyPrintOne:D.prettyPrintOne=function(a,d,f){f=f||!1;d=d||null;var c=document.createElement("div");c.innerHTML="<pre>"+a+"</pre>";
+      c=c.firstChild;f&&L(c,f,!0);M({j:d,m:f,h:c,l:1,a:null,i:null,c:null,g:null});return c.innerHTML},prettyPrint:D.prettyPrint=function(a,d){function f(){for(var c=D.PR_SHOULD_USE_CONTINUATION?b.now()+250:Infinity;p<x.length&&b.now()<c;p++){for(var d=x[p],l=g,n=d;n=n.previousSibling;){var m=n.nodeType,u=(7===m||8===m)&&n.nodeValue;if(u?!/^\??prettify\b/.test(u):3!==m||/\S/.test(n.nodeValue))break;if(u){l={};u.replace(/\b(\w+)=([\w:.%+-]+)/g,function(a,b,c){l[b]=c});break}}n=d.className;if((l!==g||r.test(n))&&
+      !e.test(n)){m=!1;for(u=d.parentNode;u;u=u.parentNode)if(v.test(u.tagName)&&u.className&&r.test(u.className)){m=!0;break}if(!m){d.className+=" prettyprinted";m=l.lang;if(!m){var m=n.match(w),q;!m&&(q=V(d))&&z.test(q.tagName)&&(m=q.className.match(w));m&&(m=m[1])}if(B.test(d.tagName))u=1;else var u=d.currentStyle,y=t.defaultView,u=(u=u?u.whiteSpace:y&&y.getComputedStyle?y.getComputedStyle(d,null).getPropertyValue("white-space"):0)&&"pre"===u.substring(0,3);y=l.linenums;(y="true"===y||+y)||(y=(y=n.match(/\blinenums\b(?::(\d+))?/))?
+      y[1]&&y[1].length?+y[1]:!0:!1);y&&L(d,y,u);M({j:m,h:d,m:y,l:u,a:null,i:null,c:null,g:null})}}}p<x.length?D.setTimeout(f,250):"function"===typeof a&&a()}for(var c=d||document.body,t=c.ownerDocument||document,c=[c.getElementsByTagName("pre"),c.getElementsByTagName("code"),c.getElementsByTagName("xmp")],x=[],q=0;q<c.length;++q)for(var l=0,n=c[q].length;l<n;++l)x.push(c[q][l]);var c=null,b=Date;b.now||(b={now:function(){return+new Date}});var p=0,w=/\blang(?:uage)?-([\w.]+)(?!\S)/,r=/\bprettyprint\b/,
+      e=/\bprettyprinted\b/,B=/pre|xmp/i,z=/^code$/i,v=/^(?:pre|code|xmp)$/i,g={};f()}},H=D.define;"function"===typeof H&&H.amd&&H("google-code-prettify",[],function(){return Y})})();}()
+      
+   </script>
+
+   <script type="text/javascript">
+      /*
+      
+       Copyright (C) 2008 Google Inc.
+      
+       Licensed under the Apache License, Version 2.0 (the "License");
+       you may not use this file except in compliance with the License.
+       You may obtain a copy of the License at
+      
+          http://www.apache.org/licenses/LICENSE-2.0
+      
+       Unless required by applicable law or agreed to in writing, software
+       distributed under the License is distributed on an "AS IS" BASIS,
+       WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+       See the License for the specific language governing permissions and
+       limitations under the License.
+      */
+      PR.registerLangHandler(PR.createSimpleLexer([["pln",/^[\t\n\r \xA0]+/,null,"\t\n\r \u00a0"],["str",/^(?:\"(?:[^\"\\]|\\[\s\S])*(?:\"|$)|\'(?:[^\'\\]|\\[\s\S])*(?:\'|$))/,null,"\"'"]],[["com",/^--(?:\[(=*)\[[\s\S]*?(?:\]\1\]|$)|[^\r\n]*)/],["str",/^\[(=*)\[[\s\S]*?(?:\]\1\]|$)/],["kwd",/^(?:and|break|do|else|elseif|end|false|for|function|if|in|local|nil|not|or|repeat|return|then|true|until|while)\b/,null],["lit",/^[+-]?(?:0x[\da-f]+|(?:(?:\.\d+|\d+(?:\.\d*)?)(?:e[+\-]?\d+)?))/i],
+      ["pln",/^[a-z_]\w*/i],["pun",/^[^\w\t\n\r \xA0][^\w\t\n\r \xA0\"\'\-\+=]*/]]),["lua"]);
+      
+   </script>
+
+   <script type="text/javascript">
+      function initialize() {
+      
+         const LOCAL_STORAGE_KEY = "luacov_report_visible_ids";
+      
+         let visibleIDs;
+      
+         if (localStorage) {
+            visibleIDs = localStorage.getItem(LOCAL_STORAGE_KEY);
+         }
+         if (!visibleIDs) {
+            visibleIDs = []
+         } else {
+            visibleIDs = JSON.parse(visibleIDs);
+         }
+      
+         function save() {
+            if (localStorage) {
+               localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(visibleIDs));
+            }
+         }
+      
+         function show(id) {
+            let classList = document.getElementById(id).classList;
+            if (classList.contains('hidden')) {
+               classList.remove("hidden");
+               if (visibleIDs.indexOf(id) < 0) {
+                  visibleIDs.push(id);
+                  save();
+               }
+            }
+         }
+      
+         function hide(id) {
+            let classList = document.getElementById(id).classList;
+            if (!classList.contains('hidden')) {
+               classList.add("hidden");
+               if (visibleIDs.indexOf(id) >= 0) {
+                  visibleIDs.splice(visibleIDs.indexOf(id), 1);
+                  save();
+               }
+            }
+         }
+      
+         const fileHeaders = Array.prototype.slice.call(document.getElementsByTagName("h2"));
+         fileHeaders.forEach(function (h2) {
+            let div = h2.parentElement;
+            let id = div.getAttribute("id");
+            h2.onclick = function () {
+               if (div.classList.contains('hidden')) {
+                  show(id)
+               } else {
+                  hide(id)
+               }
+            }
+         });
+      
+         let changed;
+         visibleIDs.forEach((id) => {
+            if (!document.getElementById(id)) {
+               changed = true;
+               visibleIDs.splice(visibleIDs.indexOf(id), 1);
+            } else {
+               show(id);
+            }
+         });
+         if (changed) {
+            save();
+         }
+      
+         prettyPrint()
+      }
+      
+   </script>
+
+</body>
+</html>
