@@ -146,11 +146,19 @@ Handlers.add("Markets-Init", {Action = "Markets-Init"}, function(msg)
   return MarketFactory:marketsInitialized(msg)
 end)
 
+--- Market groups by creator handler
+--- @param msg Message The message to handle
+--- @return Message marketsGroupsByCreator The market groups by creator
+Handlers.add("Market-Groups-By-Creator", {Action = "Market-Groups-By-Creator"}, function(msg)
+  marketFactoryValidation.validateMarketsByCreator(msg)
+  return MarketFactory:marketGroupsByCreator(msg)
+end)
+
 --- Markets by creator handler
 --- @param msg Message The message to handle
 --- @return Message marketsByCreator The markets by creator
 Handlers.add("Markets-By-Creator", {Action = "Markets-By-Creator"}, function(msg)
-  marketFactoryValidation.validateMarketsByCreator(msg)
+  marketFactoryValidation.validateMarketGroupsByCreator(msg)
   return MarketFactory:marketsByCreator(msg)
 end)
 

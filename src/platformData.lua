@@ -50,6 +50,21 @@ MARKETS = [[
     category TEXT NOT NULL,
     subcategory TEXT NOT NULL,
     logo TEXT NOT NULL,
+    group_id TEXT NOT NULL,
+    timestamp NUMBER NOT NULL
+  );
+]]
+
+MARKET_GROUPS = [[
+  CREATE TABLE IF NOT EXISTS Markets (
+    id TEXT PRIMARY KEY,
+    collateral TEXT NOT NULL,
+    creator TEXT NOT NULL,
+    question TEXT NOT NULL,
+    rules TEXT NOT NULL,
+    category TEXT NOT NULL,
+    subcategory TEXT NOT NULL,
+    logo TEXT NOT NULL,
     timestamp NUMBER NOT NULL
   );
 ]]
@@ -141,6 +156,7 @@ DbAdmin = require('platformDataModules.dbAdmin').new(Db)
 local function initDb()
   Db:exec(USERS)
   Db:exec(MARKETS)
+  Db:exec(MARKET_GROUPS)
   Db:exec(MESSAGES)
   Db:exec(FUNDINGS)
   Db:exec(PREDICTIONS)
@@ -203,18 +219,27 @@ ACTIVITY WRITE HANDLERS
 --- Log market handler
 --- @param msg Message The message received
 --- @return Message|nil logMarketNotice The log market notice or nil if cast is false
-Handlers.add("Log-Market", {Action = "Log-Market"}, function(msg)
+Handlers.add("Log-Market", {Action = "Log-Market-Notice"}, function(msg)
   activityValidation.validateLogMarket(msg)
   local cast = msg.Tags.Cast == "true"
   local creatorFee = tonumber(msg.Tags.CreatorFee)
   local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
-  return PlatformData.activity:logMarket(msg.Tags.Market, msg.Tags.Creator, creatorFee, msg.Tags.CreatorFeeTarget, msg.Tags.Question, msg.Tags.Rules, outcomeSlotCount, msg.Tags.Collateral, msg.Tags.ResolutionAgent, msg.Tags.Category, msg.Tags.Subcategory, msg.Tags.Logo, os.time(), cast, msg)
+  return PlatformData.activity:logMarket(msg.Tags.Market, msg.Tags.Creator, creatorFee, msg.Tags.CreatorFeeTarget, msg.Tags.Question, msg.Tags.Rules, outcomeSlotCount, msg.Tags.Collateral, msg.Tags.ResolutionAgent, msg.Tags.Category, msg.Tags.Subcategory, msg.Tags.Logo, msg.Tags.GroupId, os.time(), cast, msg)
+end)
+
+--- Log market group handler
+--- @param msg Message The message received
+--- @return Message|nil logMarketGroupNotice The log market group notice or nil if cast is false
+Handlers.add("Log-Market-Group", {Action = "Log-Market-Group-Notice"}, function(msg)
+  activityValidation.validateLogMarket(msg)
+  local cast = msg.Tags.Cast == "true"
+  return PlatformData.activity:logMarketGroup(msg.Tags.GroupId, msg.Tags.Collateral, msg.Tags.Creator, msg.Tags.Question, msg.Tags.Rules, msg.Tags.Collateral, msg.Tags.Category, msg.Tags.Subcategory, msg.Tags.Logo, os.time(), cast, msg)
 end)
 
 --- Log funding handler
 --- @param msg Message The message received
 --- @return Message|nil logFundingNotice The log funding notice or nil if cast is false
-Handlers.add("Log-Funding", {Action = "Log-Funding"}, function(msg)
+Handlers.add("Log-Funding", {Action = "Log-Funding-Notice"}, function(msg)
   activityValidation.validateLogFunding(msg)
   local cast = msg.Tags.Cast == "true"
   return PlatformData.activity:logFunding(msg.Tags.User, msg.Tags.Operation, msg.Tags.Collateral, msg.Tags.Quantity, os.time(), cast, msg)
@@ -223,7 +248,7 @@ end)
 --- Log prediction handler
 --- @param msg Message The message received
 --- @return Message|nil logPredictionNotice The log prediction notice or nil if cast is false
-Handlers.add("Log-Prediction", {Action = "Log-Prediction"}, function(msg)
+Handlers.add("Log-Prediction", {Action = "Log-Prediction-Notice"}, function(msg)
   activityValidation.validateLogPrediction(msg)
   local cast = msg.Tags.Cast == "true"
   return PlatformData.activity:logPrediction(msg.Tags.User, msg.Tags.Operation, msg.Tags.Collateral, msg.Tags.Quantity, msg.Tags.Outcome, msg.Tags.Shares, msg.Tags.Price, os.time(), cast, msg)
@@ -232,7 +257,7 @@ end)
 --- Log probabilities handler
 --- @param msg Message The message received
 --- @return Message|nil logProbabilitiesNotice The log probabilities notice or nil if cast is false
-Handlers.add("Log-Probabilities", {Action = "Log-Probabilities"}, function(msg)
+Handlers.add("Log-Probabilities", {Action = "Log-Probabilities-Notice"}, function(msg)
   activityValidation.validateLogProbabilities(msg)
   local cast = msg.Tags.Cast == "true"
   local probabilities = json.decode(msg.Tags.Probabilities)

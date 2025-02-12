@@ -50,6 +50,33 @@ WRITE METHODS
 =============
 ]]
 
+--- Log market group
+--- @param groupId string The group ID
+--- @param collateral string The group collateral
+--- @param creator string The group creator
+--- @param question string The group question
+--- @param rules string The group rules
+--- @param category string The group category
+--- @param subcategory string The group subcategory
+--- @param logo string The group logo
+--- @param timestamp number The group timestamp
+--- @param cast boolean Whether to cast the message
+--- @param msg Message The message received
+--- @return Message|nil logMarketGroupNotice The log group notice or nil if cast is false
+function ActivityMethods:logMarketGroup(groupId, collateral, creator, question, rules, category, subcategory, logo, timestamp, cast, msg)
+  -- Insert group
+  self.dbAdmin:safeExec(
+    [[
+      INSERT INTO Groups (id, collateral, creator, question, rules, category, subcategory, logo, timestamp) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+    ]], false, groupId, collateral, creator, question, rules, category, subcategory, logo, timestamp
+  )
+  -- Send notice if cast is true
+  if cast then
+    return self.logMarketGroupNotice(msg.From, groupId, collateral, creator, question, rules, category, subcategory, logo, msg)
+  end
+end
+
 --- Log market
 --- @param market string The market process ID
 --- @param creator string The market creator
@@ -63,21 +90,22 @@ WRITE METHODS
 --- @param category string The market category
 --- @param subcategory string The market subcategory
 --- @param logo string The market logo
+--- @param groupId string The market group ID
 --- @param timestamp number The market timestamp
 --- @param cast boolean Whether to cast the message
 --- @param msg Message The message received
 --- @return Message|nil logMarketNotice The log market notice or nil if cast is false
-function ActivityMethods:logMarket(market, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, timestamp, cast, msg)
+function ActivityMethods:logMarket(market, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, groupId, timestamp, cast, msg)
   -- Insert market
   self.dbAdmin:safeExec(
     [[
-      INSERT INTO Markets (id, status, creator, creator_fee, creator_fee_target, question, rules, outcome_slot_count, collateral, resolution_agent, category, subcategory, logo, timestamp) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, timestamp
+      INSERT INTO Markets (id, status, creator, creator_fee, creator_fee_target, question, rules, outcome_slot_count, collateral, resolution_agent, category, subcategory, logo, group_id, timestamp) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, groupId, timestamp
   )
   -- Send notice if cast is true
   if cast then
-    return self.logMarketNotice(msg.From, market, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, msg)
+    return self.logMarketNotice(msg.From, market, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, groupId, msg)
   end
 end
 

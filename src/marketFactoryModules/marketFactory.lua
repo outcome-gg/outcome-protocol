@@ -64,6 +64,7 @@ function MarketFactory:new(
     marketsSpawnedByCreator = {},
     marketsPendingInit = {},
     marketsInit = {},
+    marketGroupCollateralByCreator = {},
     marketProcessCode = marketProcessCode
   }
   setmetatable(marketFactory, {
@@ -125,41 +126,47 @@ ACTIVITY LOGS
 =============
 ]]
 
-local function logMarket(dataIndex, market, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateralToken, resolutionAgent, category, subcategory, logo)
+local function logMarket(dataIndex, market, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateralToken, resolutionAgent, category, subcategory, logo, groupId, msg)
+  -- create notice
+  local notice = {
+    Action = "Log-Market-Notice",
+    Market = market,
+    Creator = creator,
+    CreatorFee = tostring(creatorFee),
+    CreatorFeeTarget = creatorFeeTarget,
+    Question = question,
+    Rules = rules,
+    OutcomeSlotCount = tostring(outcomeSlotCount),
+    Collateral = collateralToken,
+    ResolutionAgent = resolutionAgent,
+    Category = category,
+    Subcategory = subcategory,
+    Logo = logo,
+    GroupId = groupId
+  }
   -- log to data index
-  ao.send({
-    Target = dataIndex,
-    Action = "Log-Market",
-    Market = market,
-    Creator = creator,
-    CreatorFee = tostring(creatorFee),
-    CreatorFeeTarget = creatorFeeTarget,
-    Question = question,
-    Rules = rules,
-    OutcomeSlotCount = tostring(outcomeSlotCount),
-    Collateral = collateralToken,
-    ResolutionAgent = resolutionAgent,
-    Category = category,
-    Subcategory = subcategory,
-    Logo = logo
-  })
+  msg.forward(dataIndex, notice)
   -- log to creator
-  ao.send({
-    Target = creator,
-    Action = "Log-Market",
-    Market = market,
-    Creator = creator,
-    CreatorFee = tostring(creatorFee),
-    CreatorFeeTarget = creatorFeeTarget,
+  msg.forward(creator, notice)
+end
+
+local function logGroup(dataIndex, group, creator, collateral, question, rules, category, subcategory, logo, msg)
+  -- create notice
+  local notice = {
+    Action = "Log-Group-Notice",
+    Group = group,
+    Collateral = collateral,
     Question = question,
     Rules = rules,
-    OutcomeSlotCount = tostring(outcomeSlotCount),
-    Collateral = collateralToken,
-    ResolutionAgent = resolutionAgent,
     Category = category,
     Subcategory = subcategory,
-    Logo = logo
-  })
+    Logo = logo,
+    Creator = creator
+  }
+  -- log to data index
+  msg.forward(dataIndex, notice)
+  -- log to creator
+  msg.forward(creator, notice)
 end
 
 --[[
@@ -167,6 +174,24 @@ end
 WRITE METHODS
 =============
 ]]
+
+--- Create Market Group
+--- @notice Market groups only support binary outcomes
+--- @param msg Message The message received
+--- @return Message The create group message
+function MarketFactoryMethods:createMarketGroup(collateral, question, rules, category, subcategory, logo, msg)
+  -- set defaults
+  category = category or ""
+  subcategory = subcategory or ""
+  logo = logo or self.marketLogo
+  -- create group
+  if not self.marketGroupCollateralByCreator[msg.From] then self.marketGroupCollateralByCreator[msg.From] = {} end
+  self.marketGroupCollateralByCreator[msg.From][msg.Id] = collateral
+  -- log group
+  logGroup(self.dataIndex, msg.Id, msg.From, collateral, question, rules, category, subcategory, logo, msg)
+  -- send notice
+  return self.createMarketGroupNotice(collateral, msg.From, question, rules, category, subcategory, logo, msg)
+end
 
 --- Spawn market
 --- @param collateralToken string The collateral token address
@@ -180,12 +205,31 @@ WRITE METHODS
 --- @param category string|nil The category of the market
 --- @param subcategory string|nil The subcategory of the market
 --- @param logo string|nil The logo of the market
+--- @param groupId string|nil The group ID or nil
 --- @param msg Message The message received
 --- @return Message marketSpawnedNotice The market spawned notice
-function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, question, rules, outcomeSlotCount, creator, creatorFee, creatorFeeTarget, category, subcategory, logo, msg)
-  category = category or "undefined"
-  subcategory = subcategory or "undefined"
+function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, question, rules, outcomeSlotCount, creator, creatorFee, creatorFeeTarget, category, subcategory, logo, groupId, msg)
+  -- set defaults
+  rules = rules or ""
+  category = category or ""
+  subcategory = subcategory or ""
   logo = logo or self.marketLogo
+  groupId = groupId or ""
+  -- check if group exists, creator is the owner, collateral matches group, and outcomeSlotCount == 2
+  if groupId ~= "" then
+    if not self.marketGroupCollateralByCreator[creator] then
+      return msg.reply({Error = "Group not found"})
+    end
+    if not self.marketGroupCollateralByCreator[creator][groupId] then
+      return msg.reply({Error = "Group not found"})
+    end
+    if not self.marketGroupCollateralByCreator[msg.From][msg.Id] == collateralToken then
+      return msg.reply({Error = "Collateral token does not match group"})
+    end
+    if outcomeSlotCount ~= 2 then
+      return msg.reply({Error = "Outcome slot count must be 2 for group markets"})
+    end
+  end
   -- spawn market
   ao.spawn(ao.env.Module.Id, {
     -- Factory parameters
@@ -212,7 +256,8 @@ function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, ques
     ["Rules"] = rules,
     ["Category"] = category,
     ["Subcategory"] = subcategory,
-    ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount))
+    ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount)),
+    ["GroupId"] = groupId
   })
   -- add mapping
   local marketConfig = {
@@ -227,10 +272,11 @@ function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, ques
     category = category,
     subcategory = subcategory,
     logo = logo,
+    groupId = groupId
   }
   self.messageToMarketConfigMapping[msg.Id] = marketConfig
   -- send notice
-  return self.spawnMarketNotice(resolutionAgent, collateralToken, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
+  return self.spawnMarketNotice(resolutionAgent, collateralToken, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, groupId, msg)
 end
 
 function MarketFactoryMethods:initMarket(msg)
@@ -250,9 +296,25 @@ function MarketFactoryMethods:initMarket(msg)
     -- add to markets init
     table.insert(self.marketsInit, processId)
     -- log market with data index and creator
-    local messageId = self.processToMessageMapping[ processId ]
+    local messageId = self.processToMessageMapping[processId]
     local marketConfig = self.messageToMarketConfigMapping[messageId]
-    logMarket(self.dataIndex, processId, marketConfig.creator, marketConfig.creatorFee, marketConfig.creatorFeeTarget, marketConfig.question, marketConfig.rules, marketConfig.outcomeSlotCount, marketConfig.collateralToken, marketConfig.resolutionAgent, marketConfig.category, marketConfig.subcategory, marketConfig.logo)
+    logMarket(
+      self.dataIndex,
+      processId,
+      marketConfig.creator,
+      marketConfig.creatorFee,
+      marketConfig.creatorFeeTarget,
+      marketConfig.question,
+      marketConfig.rules,
+      marketConfig.outcomeSlotCount,
+      marketConfig.collateralToken,
+      marketConfig.resolutionAgent,
+      marketConfig.category,
+      marketConfig.subcategory,
+      marketConfig.logo,
+      marketConfig.groupId,
+      msg
+    )
   end
   -- reset pending init
   self.marketsPendingInit = {}
@@ -272,6 +334,14 @@ end
 
 function MarketFactoryMethods:marketsInitialized(msg)
   return msg.reply({Data = json.encode(self.marketsInit)})
+end
+
+function MarketFactoryMethods:marketGroupsByCreator(msg)
+  local creatorMarketGroups = self.marketGroupCollateralByCreator[msg.Tags.Creator] or {}
+  return msg.reply({
+    Creator = msg.Tags.Creator or msg.From,
+    Data = json.encode(creatorMarketGroups)
+  })
 end
 
 function MarketFactoryMethods:marketsByCreator(msg)

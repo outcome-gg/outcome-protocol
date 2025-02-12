@@ -8,6 +8,30 @@ See factory.lua for full license details.
 local MarketFactoryNotices = {}
 local json = require('json')
 
+--- Create market group notice
+--- @param collateral string The collateral token address
+--- @param creator string The creator address
+--- @param question string The group title
+--- @param rules string The group rules
+--- @param category string The group category
+--- @param subcategory string The group subcategory
+--- @param logo string The group logo
+--- @param msg Message The message received
+--- @return Message createGroupNotice The create group notice
+function MarketFactoryNotices.createMarketGroupNotice(collateral, creator, question, rules, category, subcategory, logo, msg)
+  return msg.reply({
+    Action = "Create-Market-Group-Notice",
+    GroupId = msg.Id,
+    Collateral = collateral,
+    Creator = creator,
+    Question = question,
+    Rules = rules,
+    Category = category,
+    Subcategory = subcategory,
+    Logo = logo
+  })
+end
+
 --- Spawn market notice
 --- @param resolutionAgent string The resolution agent address
 --- @param collateralToken string The collateral token address
@@ -20,9 +44,10 @@ local json = require('json')
 --- @param category string The market category
 --- @param subcategory string The market subcategory
 --- @param logo string The market logo
+--- @param groupId string The group ID
 --- @param msg Message The message received
 --- @return Message spawnMarketNotice The spawn market notice
-function MarketFactoryNotices.spawnMarketNotice(resolutionAgent, collateralToken, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
+function MarketFactoryNotices.spawnMarketNotice(resolutionAgent, collateralToken, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, groupId, msg)
   return msg.reply({
     Action = "Spawn-Market-Notice",
     ResolutionAgent = resolutionAgent,
@@ -36,6 +61,7 @@ function MarketFactoryNotices.spawnMarketNotice(resolutionAgent, collateralToken
     Category = category,
     Subcategory = subcategory,
     Logo = logo,
+    GroupId = groupId,
     ["Original-Msg-Id"] = msg.Id
   })
 end
