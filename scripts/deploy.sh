@@ -47,27 +47,21 @@ create_or_update_process() {
 
 # Check for command-line argument
 if [ "$1" == "test" ]; then
-    echo "Running in TEST mode..."
+    echo "Creating or updating processes. Running in TEST mode..."
     # Deploy core contracts
-    create_or_update_process TEST_DATA_INDEX4 src/core/dataIndex.lua --sqlite
-    create_or_update_process TEST_MARKET_FACTORY2 src/core/marketFactory.lua --sqlite
-    # Deploy market contracts
-    create_or_update_process TEST_CONDITIONAL_TOKENS2 src/ctf/ctf.lua
-    create_or_update_process TEST_DLOB src/market/market.lua
-    create_or_update_process TEST_CPMM1 src/cpmm/cpmm.lua
-    # Deploy mock contracts
-    create_or_update_process TEST_COLLATERAL_TOKEN3 src/mock/token.lua
-    # Deploy agents
-    create_or_update_process TEST_DATA_AGENT src/agents/dataAgent0rbit.lua
+    create_or_update_process TEST_MARKET_FACTORY8 src/core/marketFactory.lua
+    create_or_update_process MOCK_SPAWNED_MARKET5 src/market.lua
+    # create_or_update_process TEST_OCM_TOKEN src/ocmToken.lua
+    # Deploy configurator
+    create_or_update_process TEST_CONFIGURATOR src/configurator.lua
+    # Deploy platform data contract
+    create_or_update_process TEST_PLATFORM_DATA2 src/platformData.lua --sqlite
+    # Deploy mock collateral contract
+    create_or_update_process DEV_MOCK_DAI src/mock/token.lua
     
 elif [ "$1" == "prod" ]; then
-    echo "Running in PROD mode..."
-    # Deploy core contracts
-    create_or_update_process PROD_DATA_INDEX4 src/core/dataIndex.lua --sqlite
-    create_or_update_process PROD_MARKET_FACTORY src/core/marketFactory.lua --sqlite
-    # Deploy market contracts
-    create_or_update_process PROD_CONDITIONAL_TOKENS2 src/ctf/ctf.lua
-    create_or_update_process PROD_CPMM1 src/cpmm/cpmm.lua
+    echo "Creating or updating processes. Running in PROD mode..."
+    # TODO
 else
     echo "Usage: $0 {test|prod}"
     exit 1

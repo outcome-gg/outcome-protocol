@@ -11,7 +11,7 @@ import exp from "constants";
 
 dotenv.config();
 
-const configurator = process.env.TEST_CONFIGURATOR;
+const configurator = process.env.TEST_CONFIGURATOR2;
 
 console.log("CONFIGURATOR: ", configurator)
 
@@ -110,7 +110,7 @@ describe("cpmm.integration.test", function () {
       const staged_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Staged').value)
       
       expect(admin_).to.equal(admin)
-      expect(delay_).to.equal(delay)
+      expect(delay_).to.equal(delay.toString())
       expect(Object.keys(staged_).length).to.equal(0)
     })
   })
@@ -282,15 +282,13 @@ describe("cpmm.integration.test", function () {
       const updateTags_ = Messages[0].Tags.find(t => t.name === 'UpdateTags').value
       const updateData_ = Messages[0].Tags.find(t => t.name === 'UpdateData').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
-      const timestamp_ = Messages[0].Tags.find(t => t.name === 'Timestamp').value
 
-      expect(action_).to.equal("Update-Staged")
+      expect(action_).to.equal("Stage-Update-Notice")
       expect(updateProcess_).to.equal(updateProcess)
       expect(updateAction_).to.equal(updateAction)
       expect(updateTags_).to.equal("")
       expect(updateData_).to.equal(updateData)
       expect(hash_).to.equal(hashNoTags)
-      expect(timestamp_).to.be.a('number')
     })
 
     it("+ve should stage update (no data)", async () => {
@@ -328,15 +326,13 @@ describe("cpmm.integration.test", function () {
       const updateTags_ = Messages[0].Tags.find(t => t.name === 'UpdateTags').value
       const updateData_ = Messages[0].Tags.find(t => t.name === 'UpdateData').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
-      const timestamp_ = Messages[0].Tags.find(t => t.name === 'Timestamp').value
 
-      expect(action_).to.equal("Update-Staged")
+      expect(action_).to.equal("Stage-Update-Notice")
       expect(updateProcess_).to.equal(updateProcess)
       expect(updateAction_).to.equal(updateAction)
       expect(updateTags_).to.equal(updateTags)
       expect(updateData_).to.equal("")
       expect(hash_).to.equal(hashNoData)
-      expect(timestamp_).to.be.a('number')
     })
 
     it("+ve should stage update", async () => {
@@ -375,15 +371,13 @@ describe("cpmm.integration.test", function () {
       const updateTags_ = Messages[0].Tags.find(t => t.name === 'UpdateTags').value
       const updateData_ = Messages[0].Tags.find(t => t.name === 'UpdateData').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
-      const timestamp_ = Messages[0].Tags.find(t => t.name === 'Timestamp').value
 
-      expect(action_).to.equal("Update-Staged")
+      expect(action_).to.equal("Stage-Update-Notice")
       expect(updateProcess_).to.equal(updateProcess)
       expect(updateAction_).to.equal(updateAction)
       expect(updateTags_).to.equal(updateTags)
       expect(updateData_).to.equal(updateData)
       expect(hash_).to.equal(hash)
-      expect(timestamp_).to.be.a('number')
     })
 
     it("+ve should have updated info (staged)", async () => {
@@ -610,7 +604,7 @@ describe("cpmm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
 
-      expect(action_).to.equal("Update-Unstaged")
+      expect(action_).to.equal("Unstage-Update-Notice")
       expect(hash_).to.equal(hash)
     })
 
@@ -838,7 +832,7 @@ describe("cpmm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
 
-      expect(action_).to.equal("Update-Staged")
+      expect(action_).to.equal("Stage-Update-Notice")
       expect(hash_).to.equal(hash)
     })
 
@@ -916,7 +910,7 @@ describe("cpmm.integration.test", function () {
       const action_1 = Messages[1].Tags.find(t => t.name === 'Action').value
       const hash_1 = Messages[1].Tags.find(t => t.name === 'Hash').value
 
-      expect(action_1).to.equal("Update-Actioned")
+      expect(action_1).to.equal("Action-Update-Notice")
       expect(hash_1).to.equal(hash)
     })
 
@@ -1033,7 +1027,7 @@ describe("cpmm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
 
-      expect(action_).to.equal("Update-Admin-Staged")
+      expect(action_).to.equal("Stage-Update-Admin-Notice")
       expect(hash_).to.equal(hashAdmin)
     })
   })
@@ -1121,7 +1115,7 @@ describe("cpmm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
 
-      expect(action_).to.equal("Update-Admin-Unstaged")
+      expect(action_).to.equal("Unstage-Update-Admin-Notice")
       expect(hash_).to.equal(hashAdmin)
     })
   })
@@ -1160,7 +1154,7 @@ describe("cpmm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
 
-      expect(action_).to.equal("Update-Admin-Staged")
+      expect(action_).to.equal("Stage-Update-Admin-Notice")
       expect(hash_).to.equal(hashAdmin)
     })
 
@@ -1269,7 +1263,7 @@ describe("cpmm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
 
-      expect(action_).to.equal("Update-Admin-Actioned")
+      expect(action_).to.equal("Action-Update-Admin-Notice")
       expect(hash_).to.equal(hashAdmin)
     })
 
@@ -1304,7 +1298,7 @@ describe("cpmm.integration.test", function () {
       const staged_ = JSON.parse(Messages[0].Tags.find(t => t.name === 'Staged').value)
       
       expect(admin_).to.equal(updateAdmin)
-      expect(delay_).to.equal(delay)
+      expect(delay_).to.equal(delay.toString())
       expect(Object.keys(staged_).length).to.equal(2)
     })
   })
@@ -1491,12 +1485,10 @@ describe("cpmm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const updateDelay_ = Messages[0].Tags.find(t => t.name === 'UpdateDelay').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
-      const timestamp_ = Messages[0].Tags.find(t => t.name === 'Timestamp').value
 
-      expect(action_).to.equal("Update-Delay-Staged")
+      expect(action_).to.equal("Stage-Update-Delay-Notice")
       expect(updateDelay_).to.equal(updateDelay.toString())
       expect(hash_).to.equal(hashDelay)
-      expect(timestamp_).to.be.a('number')
     })
   })
 
@@ -1583,7 +1575,7 @@ describe("cpmm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
 
-      expect(action_).to.equal("Update-Delay-Unstaged")
+      expect(action_).to.equal("Unstage-Update-Delay-Notice")
       expect(hash_).to.equal(hashDelay)
     })
   })
@@ -1622,7 +1614,7 @@ describe("cpmm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
 
-      expect(action_).to.equal("Update-Delay-Staged")
+      expect(action_).to.equal("Stage-Update-Delay-Notice")
       expect(hash_).to.equal(hashDelay)
     })
 
@@ -1731,7 +1723,7 @@ describe("cpmm.integration.test", function () {
       const action_ = Messages[0].Tags.find(t => t.name === 'Action').value
       const hash_ = Messages[0].Tags.find(t => t.name === 'Hash').value
 
-      expect(action_).to.equal("Update-Delay-Actioned")
+      expect(action_).to.equal("Action-Update-Delay-Notice")
       expect(hash_).to.equal(hashDelay)
     })
 

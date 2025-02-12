@@ -461,7 +461,7 @@ yarn test:unit
 
 Check test coverage:
 ```bash
-yarn test:unit
+yarn test:coverage
 ```
 
 ### Integration Tests
@@ -470,7 +470,7 @@ Before running integration tests, ensure your local Arweave wallet JSON files ar
 - `./wallet.json` – Primary wallet for deploying and testing  
 - `./wallet2.json` – Secondary wallet for additional tests  
 
-Rn integration tests: 
+Run integration tests: 
 ```bash
 yarn test:integration   
 ```
@@ -480,7 +480,7 @@ To run a specific integration test, run:
 yarn test:integration:{PROCESS}
 ```
 
-To redeploy and run a specific integration test, run: 
+To (re)deploy processes for testing, run: 
 ```bash
-yarn test:integration:{PROCESS}:clean
+yarn test:deploy
 ```

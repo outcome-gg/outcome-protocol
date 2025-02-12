@@ -11,10 +11,10 @@ import exp from "constants";
 
 dotenv.config();
 
-const spawnedMarket = process.env.MOCK_SPAWNED_MARKET5;
+const spawnedMarket = process.env.TEST_MARKET6;
 const cpmm = spawnedMarket;
 const conditionalTokens = spawnedMarket;
-const collateralToken = process.env.DEV_MOCK_DAI;
+const collateralToken = process.env.TEST_MOCK_DAI;
 
 console.log("SPAWNED_MARKET: ", spawnedMarket)
 console.log("COLLATERAL TOKEN: ", collateralToken)

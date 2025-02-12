@@ -11,7 +11,7 @@ import exp from "constants";
 
 dotenv.config();
 
-const platformData = process.env.TEST_PLATFORM_DATA2;
+const platformData = process.env.TEST_PLATFORM_DATA3;
 console.log("TEST_PLATFORM_DATA: ", platformData)
 // Get the current file path
 const __filename = fileURLToPath(import.meta.url);

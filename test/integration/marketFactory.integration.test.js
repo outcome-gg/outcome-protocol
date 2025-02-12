@@ -11,8 +11,8 @@ import exp from "constants";
 
 dotenv.config();
 
-const marketFactory = process.env.TEST_MARKET_FACTORY8;
-const collateralToken = process.env.DEV_MOCK_DAI;
+const marketFactory = process.env.TEST_MARKET_FACTORY9;
+const collateralToken = process.env.TEST_MOCK_DAI;
 
 console.log("MARKET_FACTORY: ", marketFactory)
 console.log("COLLATERAL_TOKEN: ", collateralToken)

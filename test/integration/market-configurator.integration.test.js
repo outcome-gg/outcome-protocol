@@ -12,9 +12,9 @@ import { hash } from "crypto";
 
 dotenv.config();
 
-const market = process.env.MOCK_SPAWNED_MARKET5;
-const collateralToken = process.env.DEV_MOCK_DAI;
-const testConfigurator = process.env.TEST_CONFIGURATOR;
+const market = process.env.TEST_MARKET6;
+const collateralToken = process.env.TEST_MOCK_DAI;
+const testConfigurator = process.env.TEST_CONFIGURATOR2;
 
 console.log("MARKET: ", market)
 console.log("COLLATERAL TOKEN: ", collateralToken)
