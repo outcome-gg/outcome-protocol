@@ -15,10 +15,10 @@ without explicit written permission from Outcome.
 
 Outcome = { _version = "0.0.1"}
 Outcome.__index = Outcome
-Outcome.configurator = "KnOsk_EaaI5zNCb18PdbzeeBZYWVxq0jeg2ZgkhBO8M"
-Outcome.marketFactory = "Gt0NBIvtGgJW8yiy1TzeA7wI38QVFZDNZ_6Nz8HEKjg"
+Outcome.configurator = "XZrrfWA17ljL8msjXvG3kYx2mo5odhlgJJ8bWo6lxwo"
+Outcome.marketFactory = "nhewZ6N_JQuNAALXVtAHq4fXk_4ndgYq3Y6MoCaeREU"
 Outcome.token = "haUOiKKmYMGum59nWZx5TVFEkDgI5LakIEY7jgfQgAI"
-Outcome.testCollateral = "WY-SBx8N4d4wJZB3o3h7Uk_zHPLUqBx2qFeh_CDkceQ"
+Outcome.testCollateral = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU"
 
 local sharedUtils = require('configuratorModules.sharedUtils')
 local json = require('json')
