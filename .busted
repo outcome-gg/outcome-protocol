@@ -2,7 +2,7 @@ print("Loading .busted configuration...")
 
 return {
   default = {
-    helper = "spec/setup.lua",
+    helper = "test/unit/setup.lua",
     verbose = true,
     coverage = true,
     output = "utfTerminal",
