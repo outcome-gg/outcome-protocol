@@ -195,14 +195,13 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 
 ### Market
 
-- An action marked with a star `(*)` represents the `X-Action` tag included in a `Transfer` targetting the market's collateral token with the market as recipient.
-- An action marked with two stars `(**)` represents the `X-Action` tag included in a `Transfer` targetting the market (the market's LP token) with the market as recipient.
+> An action marked with a star `(*)` represents the `X-Action` tag included in a `Transfer` targetting the market's collateral token with the market as recipient.
 
 | Action                | Required Role                    | Required Tags                          | Optional Tags                   | Result                 | 
 | --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 
 | `Info`      || | | `Info-Response` |
 | `Add-Funding(*)`        || `Quantity`: Integer greater than 0<br>`Recipient`: Valid Arweave address<br>`X-Distribution`: Valid JSON Array of Integers greater than 0 (**exclude after initial funding or the transaction will fail**) | `X-OnBehalfOf`: Valid Arweave address | `Debit-Notice`<br>`Credit-Notice`<br>`Mint-Batch-Notice`<br>`Split-Position-Notice`<br>`Mint-Notice`<br>`Add-Funding-Notice`<br>`Log-Funding-Notice` |
-| `Remove-Funding(**)`      || `Quantity`: Integer greater than 0 | | `Debit-Notice`<br>`Credit-Notice`<br>`Withdraw-Fees-Notice`<br>`Burn-Notice`<br>`Debit-Batch-Notice`<br>`Credit-Batch-Notice`<br>`Remove-Funding-Notice`<br>`Log-Funding-Notice`  |
+| `Remove-Funding`      || `Quantity`: Integer greater than 0 | | `Debit-Notice`<br>`Credit-Notice`<br>`Withdraw-Fees-Notice`<br>`Burn-Notice`<br>`Debit-Batch-Notice`<br>`Credit-Batch-Notice`<br>`Remove-Funding-Notice`<br>`Log-Funding-Notice`  |
 | `Buy(*)`       || `Quantity`: Integer greater than 0s<br>`X-PositionId`: Integer greater than 0<br>`X-MinPositionTokensToBuy`: Integer greater than 0 |  `X-OnBehalfOf`: Valid Arweave address | `Debit-Notice`<br>`Credit-Notice`<br>`Mint-Batch-Notice`<br>`Split-Position-Notice`<br>`Debit-Single-Notice`<br>`Credit-Single-Notice`<br>`Buy-Notice`<br>`Log-Prediction-Notice`<br>`Log-Probabilities-Notice` |
 | `Sell`  || `Quantity`: Integer greater than 0s<br>`PositionId`: Integer greater than 0<br>`ReturnAmount`: Integer greater than 0  |  | `Debit-Single-Notice`<br>`Credit-Single-Notice`<br>`Batch-Burn-Notice`<br>`Merge-Positions-Notice`<br>`Debit-Notice`<br>`Credit-Notice`<br>`Debit-Single-Notice`<br>`Credit-Single-Notice`<br>`Sell-Notice`<br>`Log-Prediction-Notice`<br>`Log-Probabilities-Notice` |
 | `Withdraw-Fees`|| | | `Withdraw-Fees-Notice` |
@@ -273,7 +272,7 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 
 ### Platform Data
 
-**Note**: actions in `platformData.lua` are restricted and require proper permissions to execute.
+> Actions in `platformData.lua` are restricted and require proper permissions to execute.
 
 | Action                | Required Role                    | Required Tags                          | Optional Tags                   | Result                | 
 | --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 

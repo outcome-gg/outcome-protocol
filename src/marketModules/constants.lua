@@ -71,11 +71,11 @@ constants.denomination = 12
 -- Market Config
 constants.marketConfig = {}
 constants.marketConfig["DEV"] = {
-  configurator = "zpeP5Z3L2DfuDyvwymWoBWNz7zgC5CswhQTiBDRSljg",
+  configurator = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
   incentives = "haUOiKKmYMGum59nWZx5TVFEkDgI5LakIEY7jgfQgAI",
   dataIndex = "rXSAUKwZhJkIBTIEyBl1rf8Gtk_88RKQFsx5JvDOwlE",
-  collateralToken = "WY-SBx8N4d4wJZB3o3h7Uk_zHPLUqBx2qFeh_CDkceQ",
-  resolutionAgent = "zpeP5Z3L2DfuDyvwymWoBWNz7zgC5CswhQTiBDRSljg",
+  collateralToken = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
+  resolutionAgent = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
   creator = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
   question = "Liquid Ops oUSDC interest reaches 8% in March",
   rules = "Where we're going, we don't need rules",

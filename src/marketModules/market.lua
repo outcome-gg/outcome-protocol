@@ -225,7 +225,7 @@ end
 function MarketMethods:removeFunding(msg)
   cpmmValidation.removeFunding(msg)
   -- @dev returns LP tokens if invalid
-  if self.cpmm:validateRemoveFunding(msg.From, msg.Tags.Quantity) then
+  if self.cpmm:validateRemoveFunding(msg.From, msg.Tags.Quantity, msg) then
     self.cpmm:removeFunding(msg.From, msg.Tags.Quantity, msg)
     -- log funding
     logFunding(self.incentives, self.dataIndex, msg.From, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)

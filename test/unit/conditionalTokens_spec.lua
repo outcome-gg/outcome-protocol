@@ -45,7 +45,6 @@ describe("#market #conditionalTokens", function()
     recipient = "test-this-is-valid-arweave-wallet-address-2"
     resolutionAgent = "test-this-is-valid-arweave-wallet-address-3"
     collateralToken = "test-this-is-valid-arweave-wallet-address-4"
-    payout = 50 -- collateral tokens
     payouts = { 1, 0, 0 }
     totalPayout = 100 -- collateral tokens
     quantity = "100"

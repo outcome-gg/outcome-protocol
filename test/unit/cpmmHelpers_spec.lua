@@ -8,7 +8,7 @@ local sender
 local quantity
 local distribution
 local outcomeSlotCount
-
+local msg
 
 describe("#market #conditionalTokens #cpmmHelpers", function()
   before_each(function()
@@ -22,6 +22,12 @@ describe("#market #conditionalTokens #cpmmHelpers", function()
     -- Mock cpmmHelpers object
     cpmmHelpers.token = { totalSupply = "0", balances = {} }
     cpmmHelpers.tokens = { positionIds = { "1", "2", "3" }, getBatchBalance = function() return { "100", "200", "300" } end  }
+    -- create a message object
+    msg = {
+      From = sender,
+
+      reply = function(message) return message end
+    }
   end)
 
   it("should get position ids", function()
@@ -80,7 +86,8 @@ describe("#market #conditionalTokens #cpmmHelpers", function()
     cpmmHelpers.token.balances[sender] = "100"
     local result = cpmmHelpers:validateRemoveFunding(
       sender,
-      quantity
+      quantity,
+      msg
     )
     assert.is_true(result)
 	end)
@@ -88,7 +95,8 @@ describe("#market #conditionalTokens #cpmmHelpers", function()
   it("should not validate removeFunding when quantity > balance", function()
     local result = cpmmHelpers:validateRemoveFunding(
       sender,
-      quantity
+      quantity,
+      msg
     )
     assert.is_false(result)
 	end)
@@ -100,7 +108,8 @@ describe("#market #conditionalTokens #cpmmHelpers", function()
     cpmmHelpers.creatorFeeTarget = sender
     local result = cpmmHelpers:validateRemoveFunding(
       sender,
-      quantity
+      quantity,
+      msg
     )
     assert.is_false(result)
 	end)

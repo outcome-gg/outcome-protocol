@@ -94,7 +94,7 @@ end
 --- @param from string The address of the sender
 --- @param quantity number The amount of funding to remove
 --- @return boolean True if error
-function CPMMHelpers:validateRemoveFunding(from, quantity)
+function CPMMHelpers:validateRemoveFunding(from, quantity, msg)
   local error = false
   local errorMessage = ""
   -- Get balance
@@ -105,9 +105,9 @@ function CPMMHelpers:validateRemoveFunding(from, quantity)
   end
   if error then
     -- Return funds and assert error
-    ao.send({
-      Target = from,
-      Error = 'Remove-Funding Error: ' .. errorMessage
+    msg.reply({
+      Action = "Remove-Funding-Error",
+      Error = errorMessage
     })
   end
   return not error

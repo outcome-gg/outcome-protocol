@@ -567,7 +567,6 @@ describe("#market", function()
     -- add funding
     local notice = Market.cpmm:addFunding(
       msgAddFunding.Tags.Sender,
-      msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       msgAddFunding
@@ -631,7 +630,6 @@ describe("#market", function()
     -- add funding
     Market.cpmm:addFunding(
       msgAddFunding.Tags.Sender,
-      msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       msgAddFunding
@@ -669,7 +667,6 @@ describe("#market", function()
     -- add funding
     Market.cpmm:addFunding(
       msgAddFunding.Tags.Sender,
-      msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       msgAddFunding
@@ -690,7 +687,6 @@ describe("#market", function()
     -- add funding 
     Market.cpmm:addFunding(
       msgAddFunding.Tags.Sender,
-      msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       msgAddFunding
@@ -711,7 +707,6 @@ describe("#market", function()
    -- add funding
    Market.cpmm:addFunding(
      msgAddFunding.Tags.Sender,
-     msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
      msgAddFunding.Tags.Quantity,
      json.decode(msgAddFunding.Tags["X-Distribution"]),
      msgAddFunding
@@ -771,7 +766,6 @@ describe("#market", function()
     -- add funding
     Market.cpmm:addFunding(
       msgAddFunding.Tags.Sender,
-      msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       msgAddFunding
@@ -853,17 +847,17 @@ describe("#market", function()
     local returnAmountPlusFees = returnAmount_ + feeAmount_
     assert.are.same({
       ["1"] = {
-        [_G.ao.id] = tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees),
-        [msgSell.From] =  tostring(tonumber(balancesBefore["1"][msgSell.From]) - tonumber(sellAmount)),
+        [_G.ao.id] = tostring(tonumber(balancesBefore["1"][_G.ao.id])),
+        [msgSell.From] =  tostring(tonumber(balancesBefore["1"][msgSell.From]) - tonumber(msgSell.Tags.MaxPositionTokensToSell)),
       },
       ["2"] = {
-        [_G.ao.id] = tostring(balancesBefore["2"][_G.ao.id] - returnAmountPlusFees),
+        [_G.ao.id] = tostring(balancesBefore["2"][_G.ao.id] - tonumber(msgSell.Tags.MaxPositionTokensToSell)),
       },
     }, Market.cpmm.tokens.balancesById)
     -- Pool Balances
     local poolBalances = {
-      tostring(tonumber(balancesBefore["1"][_G.ao.id]) + tonumber(sellAmount) - returnAmountPlusFees),
-      tostring(balancesBefore["2"][_G.ao.id] - returnAmountPlusFees)
+      tostring(tonumber(balancesBefore["1"][_G.ao.id])),
+      tostring(balancesBefore["2"][_G.ao.id] - tonumber(msgSell.Tags.MaxPositionTokensToSell))
     }
     assert.are.same(poolBalances, Market.cpmm:getPoolBalances())
     -- assert notice
@@ -884,7 +878,6 @@ describe("#market", function()
     -- add funding
     Market.cpmm:addFunding(
       msgAddFunding.Tags.Sender,
-      msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       msgAddFunding
@@ -924,7 +917,6 @@ describe("#market", function()
     -- add funding
     Market.cpmm:addFunding(
       msgAddFunding.Tags.Sender,
-      msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       msgAddFunding
@@ -954,7 +946,6 @@ describe("#market", function()
     -- add funding
     Market.cpmm:addFunding(
       msgAddFunding.Tags.Sender,
-      msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       msgAddFunding

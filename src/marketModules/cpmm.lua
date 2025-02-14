@@ -96,13 +96,12 @@ function CPMM:new(configurator, collateralToken, resolutionAgent, positionIds, n
 end
 
 --- Add funding
---- @param from string The process ID of the account that added the funding
 --- @param onBehalfOf string The process ID of the account to receive the LP tokens
 --- @param addedFunds string The amount of funds to add
 --- @param distributionHint table<number> The initial probability distribution
 --- @param msg Message The message received
 --- @return Message The funding added notice
-function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, msg)
+function CPMMMethods:addFunding(onBehalfOf, addedFunds, distributionHint, msg)
   assert(bint.__lt(0, bint(addedFunds)), "funding must be non-zero")
   local sendBackAmounts = {}
   local poolShareSupply = self.token.totalSupply
@@ -319,7 +318,7 @@ function CPMMMethods:sell(from, returnAmount, positionId, maxPositionTokensToSel
   assert(bint.__le(bint(positionTokensToSell), bint(balance)), 'Insufficient balance!')
   self.tokens:transferSingle(from, ao.id, positionId, positionTokensToSell, true, msg)
   -- Merge positions through all conditions (burns returnAmountPlusFees).
-  self.tokens:mergePositions(ao.id, '', returnAmountPlusFees, true, msg)
+  self.tokens:mergePositions(ao.id, '', positionTokensToSell, true, msg)
   -- Returns collateral to the user
   ao.send({
     Target = self.tokens.collateralToken,
