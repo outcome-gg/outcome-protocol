@@ -842,9 +842,7 @@ describe("#market", function()
     -- assert state
     -- LP Token balances
     assert.are.same(msgBuy.Tags.InvestmentAmount, Market.cpmm.token.balances[msgBuy.From])
-    -- Conditional Token Balances
-    local returnAmount_ = tonumber(msgSell.Tags.ReturnAmount)
-    local returnAmountPlusFees = returnAmount_ + feeAmount_
+
     assert.are.same({
       ["1"] = {
         [_G.ao.id] = tostring(tonumber(balancesBefore["1"][_G.ao.id])),
