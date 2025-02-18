@@ -404,7 +404,7 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 | `Update-Protocol-Fee-Target` | `C` | `ProtocolFeeTarget`:  Valid Arweave address | | `Update-Protocol-Fee-Target-Notice` |
 | `Update-Maximum-Take-Fee` | `C` | `MaximumTakeFee`: Integer greater than or equal to 0 | | `Update-Maximum-Take-Fee-Notice` |
 | `Approve-Collateral-Token` | `C` | `CollateralToken`:  Valid Arweave address<br>`Approved`: Boolean (true or false) | | `Approve-Collateral-Token-Notice` |
-| `Transfer` | `C` |`Token`:  Valid Arweave address<br>`Quantity`: Integer greater than 0<br>`Recipient`: Valid Arweave address | `X-*`: Tags beginning with "X-" | `Transfer-Notice`, `Transfer-Success-Notice` |
+| `Transfer` | `C` |`Token`:  Valid Arweave address<br>`Quantity`: Integer greater than 0<br>`Recipient`: Valid Arweave address | `X-*`: Tags beginning with "X-" | `Transfer-Notice`<br>`Transfer-Success-Notice` |
 
 ### OCM Token
 
@@ -530,7 +530,7 @@ Outcome.configuratorInfo()
 
 > **All methods below are accessed via the `Outcome` package.**
 
-| Method                | Required Role  | Required Parameters                    | Result                 |
+| Method                | Req. Role  | Required Parameters                    | Result                 |
 | --------------------- | -------------- | -------------------------------------- | ---------------------- |
 | `configuratorInfo()`        ||  | `Info-Response` |
 | `configuratorStageUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Stage-Update-Notice` |
@@ -552,7 +552,7 @@ Outcome.configuratorInfo()
 | `marketCalcSellAmount(...)`|| `market`: Valid Arweave address<br>`returnAmount`: Integer greater than 0<br>`positionId`: Integer greater than 0 | `Calc-Sell-Amount-Response` |
 | `marketCollectedFees(...)` || `market`: Valid Arweave address | `Collected-Fees-Response` |
 | `marketFeesWithdrawable(...)` ||  `market`: Valid Arweave address<br>`account`: Valid Arweave address | `Fees-Withdrawable-Response` |
-| `marketLpTokenTransfer(...)`  || `market`: Valid Arweave address<br>`recipient`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`X-*`: Tags beginning with "X-" or `nil` | `Debit-Notice`, `Credit-Notice`, `Withdraw-Fees-Notice` |
+| `marketLpTokenTransfer(...)`  || `market`: Valid Arweave address<br>`recipient`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`X-*`: Tags beginning with "X-" or `nil` | `Debit-Notice`<br>`Credit-Notice`<br>`Withdraw-Fees-Notice` |
 | `marketLpTokenBalance(...)` || `market`: Valid Arweave address<br>`recipient`: Valid Arweave address or `nil` | `Balance-Response` |
 | `marketLpTokenBalances(...)`||  `market`: Valid Arweave address |  `Balances-Response` |
 | `marketLpTokenTotalSupply(...)` ||  `market`: Valid Arweave address | `Total-Supply-Response` |
@@ -590,7 +590,7 @@ Outcome.configuratorInfo()
 | `marketFactoryTransfer(...)` |`C`| `token`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`recipient`: Valid Arweave address |  `Transfer-Notice`<br>`Transfer-Success-Notice` |
 | `tokenInfo()` ||  |  `Info-Response` |
 | `tokenClaim()` ||  |  `Debit-Notice`<br>`Credit-Notice`<br>`Claim-Notice` |
-| `tokenTransfer(...)` || `quantity`: Integer greater than 0<br>`recipient`: Valid Arweave address<br>`target`: Valid Arweave address or `nil`<br>`X-*`: Tags beginning with "X-" or `nil`| `Debit-Notice`, `Credit-Notice` |
+| `tokenTransfer(...)` || `quantity`: Integer greater than 0<br>`recipient`: Valid Arweave address<br>`target`: Valid Arweave address or `nil`<br>`X-*`: Tags beginning with "X-" or `nil`| `Debit-Notice`<br>`Credit-Notice` |
 | `tokenMint(...)` || `target`: Valid Arweave address<br>`quantity`: Integer greater than 0 | `Mint-Notice` |
 | `tokenBurn(...)` ||  `quantity`: Integer greater than 0 | `Burn-Notice` |
 | `tokenClaimBalance(...)` || `account`: Valid Arweave address or `nil` | `Claim-Balance-Response` |
