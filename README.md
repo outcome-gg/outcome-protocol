@@ -1,6 +1,6 @@
 # Outcome v2
 
-Outcome v2 is a new automated market maker and prediction market protocol that enables permissionless market creation and autonomous resolution, with all markets and their outcomes permanently stored on Arweave and AO.
+Outcome v2 is a new decentralized automated market maker and prediction market protocol enabling permissionless market creation and autonomous, oracle-free resolution. All markets and their outcomes are permanently stored on Arweave and AO.
 
 ## Quickstart
 
@@ -19,18 +19,25 @@ Load the Outcome package into AOS:
 aos --load src/outcome.lua
 ```
 
-### 3. Choose your environment
+### 3. Mint Test Collateral
 
-#### **Mainnet**: Stake Tokens
-Stake **1,000,000 $OCM tokens** to create markets on mainnet:
+Mint **Test Collateral tokens** to create markets on testnet.
+
+#### Run
 ```lua
-Outcome.tokenStake(1000000)
+Outcome.tokenMint(Outcome.testCollateral, "1000000000000000") 
 ```
 
-#### **Testnet**: Mint Test Collateral
-Mint **Test Collateral tokens** to create markets on testnet:
+#### Expected Result
 ```lua
-Outcome.tokenMint(Outcome.testCollateral, 1000000) 
+{
+   Quantity = "1000000000000000",
+   Block-Height = 1612508,
+   Action = "Mint-Notice",
+   MessageId = "kuLUM8a06p4MBnUgpuXGQBU-14I-fOD3Ai91CboLThM",
+   Timestamp = 1739887893528,
+   Recipient = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8"
+}
 ```
 
 ### 4. Create a Market
@@ -47,6 +54,8 @@ Once tokens are staked, spawn a new prediction market.
 - `rules`: Market rules.
 - `creatorFeeBps`: Creator fee in basis points (e.g., `250` for a `2.5%` fee).
 - `creatorFeeTarget`: Address receiving the creator fee (set to `ao.id` for Quickstart).
+
+#### Run
 ```lua
 res = Outcome.marketFactorySpawnMarket(
     ao.id,
@@ -62,20 +71,68 @@ res = Outcome.marketFactorySpawnMarket(
 )
 ```
 
+#### Expected Result
+```lua
+{
+   Block-Height = 1612507,
+   Rules = "Rules of the market",
+   Timestamp = 1739887594422,
+   MessageId = "NYb6kEiXFWdd6SIItCbh6ovKN-fU137AG_IPvYgzIEY",
+   Creator = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
+   ResolutionAgent = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
+   Logo = "Logo_TxID",
+   Category = "Crypto",
+   CreatorFeeTarget = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
+   CollateralToken = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
+   CreatorFee = 250,
+   Subcategory = "Prices",
+   Action = "Spawn-Market-Notice",
+   Original-Msg-Id = "ykZi8Sh-IJoyvP7XrZ2ayXsA4STEiDy5mOoLCCiBibU",
+   OutcomeSlotCount = 2,
+   Question = "$A0 surpasses $AR market cap by the end of 2025"
+}
+```
+
 ### 5. Get Market Process ID
 Retrieve the market process ID using the original message ID.
 
-**Note:** Wait 1-2 seconds for the process to spawn before retrieving the ID.
+> Wait 1-2 seconds for the process to spawn before retrieving the ID.
+
+#### Run
 ```lua
 originalMsgId = res["Original-Msg-Id"]
 res = Outcome.marketFactoryGetProcessId(originalMsgId)
 market = res.ProcessId
 ```
 
+#### Expected Result
+```lua
+{
+   ProcessId = "MFUPbtanZgdXMQrmeXMnN7qnsN5s2vZAcAp3FuDEaIc",
+   Block-Height = 1612507,
+   Original-Msg-Id = "ykZi8Sh-IJoyvP7XrZ2ayXsA4STEiDy5mOoLCCiBibU",
+   Timestamp = 1739887616685,
+   MessageId = "hrIWFO5xTV98W-ScUAaYJ80BLE4VvUwnaGkdtFKBA2M"
+}
+```
+
 ### 6. Initialize the Market
 Once a market has been spawned, it must be initialized.
+
+#### Run
 ```lua
 Outcome.marketFactoryInitMarket()
+```
+
+#### Expected Result
+```lua
+{
+   MarketProcessIds = { "MFUPbtanZgdXMQrmeXMnN7qnsN5s2vZAcAp3FuDEaIc" },
+   Action = "Init-Market-Notice",
+   MessageId = "tbESFtEP3Lrr6fBmGMOqklIdMcex3BFqUFkJCRp3Iz0",
+   Timestamp = 1739887635868,
+   Block-Height = 1612507
+}
 ```
 
 ### 7. Fund the Market and Set Initial Probabilities
@@ -86,17 +143,67 @@ Provide liquidity and define the starting probability distribution.
 - `collateralToken`:  Token used for collateral (use `Outcome.testCollateral` for Quickstart).
 - `fundingAmount`: The quantity of tokens to supply.
 - `distribution`: Initial probability distribution (e.g., `{60, 40}` for 60% IN, 40% OUT).
+
+#### Run
 ```lua
 Outcome.marketAddFunding(
   market,
   Outcome.testCollateral,
-  1000000,
+  "100000000000000",
   {60, 40}
 )
 ```
 
+#### Expected Result
+```lua
+{
+   X-OnBehalfOf = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
+   MessageId = "PyMclTSI_s3N8QKv9eKrXRhy9Z1yCYAR8tAtlajel2s",
+   Recipient = "MFUPbtanZgdXMQrmeXMnN7qnsN5s2vZAcAp3FuDEaIc",
+   Quantity = "100000000000000",
+   X-Distribution = "[60,40]",
+   Timestamp = 1739887656056,
+   Action = "Debit-Notice",
+   Block-Height = 1612507,
+   X-Action = "Add-Funding",
+   Collateral = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU"
+}
+```
+
+### 7. Calc Buy Amount
+Calculate how many position tokens to expect in return for an investment of collateral.
+
+#### Parameters
+- `market`: Market process ID (variable set to market above).
+- `collateralToken`: Token used for collateral (use `Outcome.testCollateral` for Quickstart).
+- `investmentAmount`: The quantity of collateral tokens to spend.
+- `positionId`: ID of the position being purchased (e.g., `"1"` for "IN").
+
+#### Run
+```lua
+res = Outcome.marketCalcBuyAmount(
+  market,
+  "1000000000000",
+  "1"
+) 
+```
+
+#### Expected Result
+```lua
+{
+   PositionId = "1",
+   BuyAmount = "2453270434054",
+   InvestmentAmount = "1000000000000",
+   MessageId = "SFeWEN7nFq0JKX_pQS5LIqhTUF30sWQItGeMVCqAFeE",
+   Timestamp = 1739887683076,
+   Block-Height = 1612508
+}
+```
+
 ### 8. Buy Outcome Positions
 Trade outcome positions.
+
+> We use `res.BuyAmount` from the previous step for `minPositionTokensToBuy`. In a live trading environment, you may want to set this slightly lower to prevent failed transactions if the price moves against you.
 
 #### Parameters
 - `market`: Market process ID (variable set to market above).
@@ -104,24 +211,45 @@ Trade outcome positions.
 - `investmentAmount`: The quantity of collateral tokens to spend.
 - `positionId`: ID of the position being purchased (e.g., `"1"` for "IN").
 - `minPositionTokensToBuy`: Minimum number of position tokens to buy.
+
+#### Run
 ```lua
 Outcome.marketBuy(
   market,
   Outcome.testCollateral,
-  1000,
+  "1000000000000",
   "1",
-  900
+  res.BuyAmount
 ) 
+```
+
+#### Expected Result
+```lua
+{
+   X-MinPositionTokensToBuy = "2453270434054",
+   X-OnBehalfOf = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
+   MessageId = "Ug66pt9A6HJX6Y9W8-G-w8ORMf1sqDETKJSVCoWc2rg",
+   Recipient = "MFUPbtanZgdXMQrmeXMnN7qnsN5s2vZAcAp3FuDEaIc",
+   Quantity = "1000000000000",
+   Collateral = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
+   Timestamp = 1739887722694,
+   Action = "Debit-Notice",
+   Block-Height = 1612508,
+   X-Action = "Buy",
+   X-PositionId = "1"
+}
 ```
 
 ### 9. Resolve Market
 Finalize the market outcome by reporting the payout distribution.
 
-**Note**: This function is callable in Quickstart because we set the resolution agent to `ao.id`.
+> This function is callable in Quickstart because we set the resolution agent to `ao.id`.
 
 #### Parameters
 - `market`: Market process ID (variable set to market above).
 - `payout`: Payout distribution, where each value represents the fraction of the total payout assigned to each outcome (e.g., `{1, 0}` means 100% to IN and 0% to OUT).
+
+#### Run
 ```lua
 Outcome.marketReportPayouts(
     market,
@@ -129,10 +257,37 @@ Outcome.marketReportPayouts(
 )
 ```
 
+#### Expected Result
+```lua
+{
+   Block-Height = 1612508,
+   Timestamp = 1739887760967,
+   Action = "Report-Payouts-Notice",
+   ResolutionAgent = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
+   PayoutNumerators = { 1, 0 },
+   MessageId = "2a9DuV5YIdvg4ncAZkW-zUds5vxFBeGt6BQLZ7hMyTQ"
+}
+```
+
 ### 10. Redeem Positions
 Claim winnings in collateral by redeeming outcome positions.
+
+#### Run
 ```lua
 Outcome.marketRedeemPositions(market)
+```
+
+#### Expected Result
+```lua
+{
+   GrossPayout = "2453270434054",
+   Block-Height = 1612508,
+   Collateral = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
+   Action = "Redeem-Positions-Notice",
+   MessageId = "ojiLvEhKooljDfFdGrYbj5kQFa77Izcv9gt-WgAAC8g",
+   Timestamp = 1739887786254,
+   NetPayout = "2330606912350"
+}
 ```
 
 ## Architecture
