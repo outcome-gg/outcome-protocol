@@ -233,7 +233,6 @@ function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, ques
   -- spawn market
   ao.spawn(ao.env.Module.Id, {
     -- Factory parameters
-    ["Action"] = "Spawn-Market",
     ["Original-Msg-Id"] = msg.Id,
     -- Configurator-controlled parameters
     ["Authority"] = ao.authorities[1],
@@ -356,7 +355,7 @@ function MarketFactoryMethods:getProcessId(msg)
   local originalMsgId = msg.Tags["Original-Msg-Id"]
   return msg.reply({
     ["Original-Msg-Id"] = originalMsgId,
-    Data = self.messageToProcessMapping[originalMsgId] or nil
+    Data = self.messageToProcessMapping[originalMsgId]
   })
 end
 

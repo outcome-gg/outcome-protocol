@@ -30,7 +30,7 @@ end
 --- @param quantity any The quantity to be validated
 --- @param tagName string The name of the tag being validated
 function sharedValidation.validatePositiveInteger(quantity, tagName)
-  assert(type(quantity) == 'string', tagName .. ' is required!')
+  assert(type(quantity) == 'string', tagName .. ' is required!!')
   assert(tonumber(quantity), tagName .. ' must be a number!')
   assert(tonumber(quantity) > 0, tagName .. ' must be greater than zero!')
   assert(tonumber(quantity) % 1 == 0, tagName .. ' must be an integer!')

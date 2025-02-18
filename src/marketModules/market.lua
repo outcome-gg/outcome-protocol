@@ -298,7 +298,7 @@ end
 --- @param msg Message The message received
 --- @return Message withdrawFees The amount withdrawn
 function MarketMethods:withdrawFees(msg)
-  return self.cpmm:withdrawFees(msg.From, msg)
+  return self.cpmm:withdrawFees(msg.From, msg, true)
 end
 
 --[[
@@ -454,7 +454,7 @@ function MarketMethods:mergePositions(msg)
       Data = errorMessage
     })
   end
-  return self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg)
+  return self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg, true)
 end
 
 --- Report payouts
@@ -505,7 +505,7 @@ SEMI-FUNGIBLE TOKENS WRITE METHODS
 --- @return table<Message>|Message|nil transferSingleNotices The transfer notices, error notice or nothing
 function MarketMethods:transferSingle(msg)
   semiFungibleTokensValidation.transferSingle(msg, self.cpmm.tokens.positionIds)
-  return self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.PositionId, msg.Tags.Quantity, msg.Tags.Cast, msg)
+  return self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.PositionId, msg.Tags.Quantity, msg.Tags.Cast, msg, true)
 end
 
 --- Transfer batch
@@ -515,7 +515,7 @@ function MarketMethods:transferBatch(msg)
   semiFungibleTokensValidation.transferBatch(msg, self.cpmm.tokens.positionIds)
   local positionIds = json.decode(msg.Tags.PositionIds)
   local quantities = json.decode(msg.Tags.Quantities)
-  return self.cpmm.tokens:transferBatch(msg.From, msg.Tags.Recipient, positionIds, quantities, msg.Tags.Cast, msg)
+  return self.cpmm.tokens:transferBatch(msg.From, msg.Tags.Recipient, positionIds, quantities, msg.Tags.Cast, msg, true)
 end
 
 --[[

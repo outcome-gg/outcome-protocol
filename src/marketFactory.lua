@@ -115,6 +115,7 @@ Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
     msg.Tags["Category"],
     msg.Tags["Subcategory"],
     msg.Tags["Logo"],
+    msg.Tags["GroupId"],
     msg
   )
 end)

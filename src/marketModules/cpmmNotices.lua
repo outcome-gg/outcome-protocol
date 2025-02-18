@@ -26,16 +26,16 @@ end
 
 --- Sends a remove funding notice
 --- @param sendAmounts table The send amounts
---- @param collateralRemovedFromFeePool number The collateral removed from the fee pool
---- @param sharesToBurn number The shares to burn
+--- @param collateralRemovedFromFeePool string The collateral removed from the fee pool
+--- @param sharesToBurn string The shares to burn
 --- @param msg Message The message received
 --- @return Message The funding removed notice
 function CPMMNotices.removeFundingNotice(sendAmounts, collateralRemovedFromFeePool, sharesToBurn, msg)
   return msg.reply({
     Action = "Remove-Funding-Notice",
     SendAmounts = json.encode(sendAmounts),
-    CollateralRemovedFromFeePool = tostring(collateralRemovedFromFeePool),
-    SharesToBurn = tostring(sharesToBurn),
+    CollateralRemovedFromFeePool = collateralRemovedFromFeePool,
+    SharesToBurn = sharesToBurn,
     Data = "Successfully removed funding"
   })
 end
@@ -70,7 +70,7 @@ end
 --- @param msg Message The message received
 --- @return Message The sell notice
 function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, positionTokensSold, msg)
-  return msg.forward(from,{
+  return msg.forward(from, {
     Action = "Sell-Notice",
     ReturnAmount = tostring(returnAmount),
     FeeAmount = tostring(feeAmount),
@@ -81,15 +81,21 @@ function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, posit
 end
 
 --- Sends a withdraw fees notice
+--- @notice Returns notice with `msg.reply` if `useReply` is true, otherwise uses `ao.send`
+--- @dev Ensures the final notice is sent to the user, preventing unintended message handling 
 --- @param feeAmount number The fee amount
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The withdraw fees notice
-function CPMMNotices.withdrawFeesNotice(feeAmount, msg)
-  return msg.reply({
+function CPMMNotices.withdrawFeesNotice(feeAmount, msg, useReply)
+  local notice = {
     Action = "Withdraw-Fees-Notice",
     FeeAmount = tostring(feeAmount),
     Data = "Successfully withdrew fees"
-  })
+  }
+  if useReply then return msg.reply(notice) end
+  notice.Target = msg.Sender and msg.Sender or msg.From
+  return ao.send(notice)
 end
 
 --- Sends an update configurator notice

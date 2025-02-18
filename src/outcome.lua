@@ -16,7 +16,7 @@ without explicit written permission from Outcome.
 Outcome = { _version = "0.0.1"}
 Outcome.__index = Outcome
 Outcome.configurator = "XZrrfWA17ljL8msjXvG3kYx2mo5odhlgJJ8bWo6lxwo"
-Outcome.marketFactory = "nhewZ6N_JQuNAALXVtAHq4fXk_4ndgYq3Y6MoCaeREU"
+Outcome.marketFactory = "l9l7DorUAeRQ5KYmg1Kh3ZfBwQBIqVHbVl2hnBGG9Tc"
 Outcome.token = "haUOiKKmYMGum59nWZx5TVFEkDgI5LakIEY7jgfQgAI"
 Outcome.testCollateral = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU"
 
@@ -686,11 +686,10 @@ function Outcome.marketAddFunding(market, collateral, quantity, distribution, on
   }
 end
 
---- @class MarketRemoveFundingLpTokenDebitNotice: BaseNotice
---- @field Collateral string The collateral token
---- @field Quantity string The quantity of LP tokens transferred, i.e. the amount of shares to burn
---- @field Recipient string The recipient of the debit, i.e. the market process ID
---- @field X-Action string The forwarded action
+--- @class MarketRemoveFundingtNotice: BaseNotice
+--- @field SendAmounts table The amounts of position tokens sent back to the provider
+--- @field CollateralRemovedFromFeePool string The quantity collateral received as fees
+--- @field SharesToBurn string The number of LP shares to burn
 
 --- Market remove funding
 --- @notice Calling `marketRemoveFunding` will simultaneously return the liquidity provider's share of accrued fees
@@ -709,7 +708,7 @@ end
 --- **📊 Logging & Analytics**  
 --- - `Remove-Funding-Notice`: **market → ao.id**                                           -- Logs the remove funding action       
 --- - `Log-Funding-Notice`: **market → Outcome.token** and **market → Outcome.dataIndex**   -- Logs the funding
---- @return MarketRemoveFundingLpTokenDebitNotice The market remove funding LP token debit notice
+--- @return MarketRemoveFundingtNotice The market remove funding notice
 function Outcome.marketRemoveFunding(market, quantity)
   -- Validate input
   validateValidArweaveAddress(market, "market")
@@ -717,18 +716,15 @@ function Outcome.marketRemoveFunding(market, quantity)
   -- Send and receive response
   local notice = ao.send({
     Target = market,
-    Action = "Transfer",
-    Quantity = quantity,
-    Recipient = market,
-    ["X-Action"] = "Remove-Funding",
+    Action = "Remove-Funding",
+    Quantity = quantity
   }).receive()
   -- Return formatted response
   return {
     Action = notice.Tags.Action,
-    Collateral = notice.From,
-    Quantity = notice.Tags.Quantity,
-    Recipient = notice.Tags.Recipient,
-    ["X-Action"] = notice.Tags["X-Action"],
+    SendAmounts = json.decode(notice.Tags.SendAmounts),
+    CollateralRemovedFromFeePool = notice.Tags.CollateralRemovedFromFeePool,
+    SharesToBurn = notice.Tags.SharesToBurn,
     Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
@@ -816,9 +812,9 @@ end
 --- @warning Ensure sufficient liquidity exists before calling `marketSell`, or the transaction may fail
 --- @use Call `marketCalcSellAmount` to verify liquidity and the number of outcome position tokens to be sold
 --- @param market string The market process ID
---- @param quantity string The quantity of outcome position tokens to transfer, a.k.a. the max outcome position tokens to sell
---- @param positionId string The outcome position token position ID
 --- @param returnAmount string The quantity of collateral tokens to receive
+--- @param positionId string The outcome position token position ID
+--- @param maxPositionTokensToSell string The max outcome position tokens to sell
 --- @note **Emits the following notices:**  
 --- **🔄 Execution Transfers**  
 --- - `Debit-Single-Notice`: **market → ao.id**       -- Transfers sold position tokens from the seller
@@ -836,19 +832,19 @@ end
 --- - `Log-Prediction-Notice`: **market → Outcome.token** and **market → Outcome.dataIndex**    -- Logs the prediction
 --- - `Log-Probabilities-Notice`: **market → Outcome.dataIndex**                                -- Logs the updated probabilities
 --- @return MarketSellNotice The market sell notice
-function Outcome.marketSell(market, quantity, positionId, returnAmount)
+function Outcome.marketSell(market, returnAmount, positionId, maxPositionTokensToSell)
   -- Validate input
   validateValidArweaveAddress(market, "market")
-  validatePositiveIntegerGreaterThanZero(quantity, "quantity")
-  validatePositiveIntegerGreaterThanZero(positionId, "positionId")
   validatePositiveIntegerGreaterThanZero(returnAmount, "returnAmount")
+  validatePositiveIntegerGreaterThanZero(positionId, "positionId")
+  validatePositiveIntegerGreaterThanZero(maxPositionTokensToSell, "maxPositionTokensToSell")
   -- Send and receive response
   local notice = ao.send({
     Target = market,
     Action = "Sell",
-    Quantity = quantity,
+    ReturnAmount = returnAmount,
     PositionId = positionId,
-    ReturnAmount = returnAmount
+    MaxPositionTokensToSell = maxPositionTokensToSell
   }).receive()
   -- Return formatted response
   return {
@@ -1233,7 +1229,8 @@ function Outcome.marketReportPayouts(market, payouts)
 end
 
 --- @class MarketRedeemPositionsNotice: BaseNotice
---- @field Payout string The payout amount
+--- @field GrossPayout string The gross payout amount (before fees)
+--- @field NetPayout string The net payout amount (after fees)
 --- @field Collateral string The collateral token
 
 --- Market redeem positions
@@ -1259,7 +1256,8 @@ function Outcome.marketRedeemPositions(market)
   -- Return formatted response
   return {
     Action = notice.Tags.Action,
-    Payout = notice.Tags.Payout,
+    GrossPayout = notice.Tags.GrossPayout,
+    NetPayout = notice.Tags.NetPayout,
     Collateral = notice.Tags.CollateralToken,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
@@ -1415,7 +1413,7 @@ end
 --- Market outcome position tokens balance by ID
 --- @param market string The market process ID
 --- @param positionId string The outcome position token position ID
---- @param recipient string The recipient process ID or `nil` for the sender
+--- @param recipient string? The recipient process ID or `nil` for the sender
 --- @return MarketPositionBalanceResponse The market position balance response message
 function Outcome.marketPositionBalance(market, positionId, recipient)
   -- Validate input
@@ -1427,7 +1425,8 @@ function Outcome.marketPositionBalance(market, positionId, recipient)
     Target = market,
     Action = "Balance-By-Id",
     PositionId = positionId,
-    Recipient = recipient
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    Recipient = recipient or nil
   }).receive()
   -- Return formatted response
   return {

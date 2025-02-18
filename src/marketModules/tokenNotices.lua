@@ -27,7 +27,8 @@ end
 --- @param msg Message The message received
 --- @return Message The burn notice
 function TokenNotices.burnNotice(quantity, msg)
-  return msg.reply({
+  return ao.send({
+    Target = msg.Sender and msg.Sender or msg.From,
     Quantity = tostring(quantity),
     Action = 'Burn-Notice',
     Data = Colors.gray .. "Successfully burned " .. Colors.blue .. tostring(quantity) .. Colors.reset

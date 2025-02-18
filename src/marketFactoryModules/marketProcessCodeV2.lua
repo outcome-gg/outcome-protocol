@@ -17,7 +17,7 @@ local MarketNotices = {}
 --- @return Message The incentives updated notice
 function MarketNotices.updateIncentivesNotice(incentives, msg)
   return msg.reply({
-    Action = "Incentives-Updated",
+    Action = "Update-Incentives-Notice",
     Data = incentives
   })
 end
@@ -28,7 +28,7 @@ end
 --- @return Message The data index updated notice
 function MarketNotices.updateDataIndexNotice(dataIndex, msg)
   return msg.reply({
-    Action = "Data-Index-Updated",
+    Action = "Update-Data-Index-Notice",
     Data = dataIndex
   })
 end
@@ -836,7 +836,7 @@ end
 --- Returns funding to sender on error
 --- @param from string The address of the sender
 --- @param quantity number The amount of funding to add
---- @param distribution table<number> The distribution of funding
+--- @param distribution table<number>|nil The distribution of funding or `nil`
 --- @return boolean True if error
 function CPMMHelpers:validateAddFunding(from, quantity, distribution)
   local error = false
@@ -844,28 +844,35 @@ function CPMMHelpers:validateAddFunding(from, quantity, distribution)
 
   if distribution then
     -- Ensure distribution set only for initial funding
-    if not bint.iszero(bint(self.token.totalSupply)) then
+    if not error and not bint.iszero(bint(self.token.totalSupply)) then
       error = true
       errorMessage = "Cannot specify distribution after initial funding"
     end
     -- Ensure distribution is set across all position ids
-    if #distribution ~= #self.tokens.positionIds then
+    if not error and #distribution ~= #self.tokens.positionIds then
       error = true
       errorMessage = "Distribution length mismatch"
     end
-    -- Ensure distribution content is valid
-    local distributionSum = 0
-    for i = 1, #distribution do
-      if type(distribution[i]) ~= "number" then
+    if not error then
+      -- Ensure distribution content is valid
+      local distributionSum = 0
+      for i = 1, #distribution do
+        if not error and type(distribution[i]) ~= "number" then
+          error = true
+          errorMessage = "Distribution item must be number"
+        else
+          distributionSum = distributionSum + distribution[i]
+        end
+      end
+      if not error and distributionSum == 0 then
         error = true
-        errorMessage = "Distribution item must be number"
-      else
-        distributionSum = distributionSum + distribution[i]
+        errorMessage = "Distribution sum must be greater than zero"
       end
     end
-    if distributionSum == 0 then
+  else
+    if bint.iszero(bint(self.token.totalSupply)) then
       error = true
-      errorMessage = "Distribution sum must be greater than zero"
+      errorMessage = "Must specify distribution for inititial funding"
     end
   end
 
@@ -876,7 +883,7 @@ function CPMMHelpers:validateAddFunding(from, quantity, distribution)
       Action = 'Transfer',
       Recipient = from,
       Quantity = tostring(quantity),
-      Error = 'Add-Funding Error: ' .. errorMessage
+      ['X-Error'] = 'Add-Funding Error: ' .. errorMessage
     })
   end
   return not error
@@ -887,26 +894,19 @@ end
 --- @param from string The address of the sender
 --- @param quantity number The amount of funding to remove
 --- @return boolean True if error
-function CPMMHelpers:validateRemoveFunding(from, quantity)
+function CPMMHelpers:validateRemoveFunding(from, quantity, msg)
   local error = false
-  local errorMessage = ''
+  local errorMessage = ""
   -- Get balance
   local balance = self.token.balances[from] or '0'
-  -- Check for errors
-  if from == self.creatorFeeTarget and self.payoutDenominator and self.payoutDenominator == 0 then
+  if not bint.__le(bint(quantity), bint(balance)) then
     error = true
-    errorMessage = 'Creator liquidity locked until market resolution!'
-  elseif not bint.__le(bint(quantity), bint(balance)) then -- @dev TODO: remove as will never be called?
-    error = true
-    errorMessage = 'Quantity must be less than balance!'
+    errorMessage = "Quantity must be less than balance!"
   end
-  -- Return funds on error.
   if error then
-    ao.send({
-      Target = ao.id,
-      Action = 'Transfer',
-      Recipient = from,
-      Quantity = tostring(quantity),
+    -- Return funds and assert error
+    msg.reply({
+      Action = "Remove-Funding-Error",
       Error = errorMessage
     })
   end
@@ -944,34 +944,32 @@ local json = require('json')
 
 local CPMMNotices = {}
 
---- Sends a funding added notice
---- @param from string The address that added funding
+--- Sends an add funding notice
 --- @param fundingAdded table The funding added
 --- @param mintAmount number The mint amount
+--- @param msg Message The message received
 --- @return Message The funding added notice
-function CPMMNotices.fundingAddedNotice(from, fundingAdded, mintAmount)
-  return ao.send({
-    Target = from,
-    Action = "Funding-Added-Notice",
+function CPMMNotices.addFundingNotice(fundingAdded, mintAmount, msg)
+  return msg.forward(msg.Tags.Sender, {
+    Action = "Add-Funding-Notice",
     FundingAdded = json.encode(fundingAdded),
     MintAmount = tostring(mintAmount),
     Data = "Successfully added funding"
   })
 end
 
---- Sends a funding removed notice
---- @param from string The address that removed funding
+--- Sends a remove funding notice
 --- @param sendAmounts table The send amounts
---- @param collateralRemovedFromFeePool number The collateral removed from the fee pool
---- @param sharesToBurn number The shares to burn
+--- @param collateralRemovedFromFeePool string The collateral removed from the fee pool
+--- @param sharesToBurn string The shares to burn
+--- @param msg Message The message received
 --- @return Message The funding removed notice
-function CPMMNotices.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
-  return ao.send({
-    Target = from,
-    Action = "Funding-Removed-Notice",
+function CPMMNotices.removeFundingNotice(sendAmounts, collateralRemovedFromFeePool, sharesToBurn, msg)
+  return msg.reply({
+    Action = "Remove-Funding-Notice",
     SendAmounts = json.encode(sendAmounts),
-    CollateralRemovedFromFeePool = tostring(collateralRemovedFromFeePool),
-    SharesToBurn = tostring(sharesToBurn),
+    CollateralRemovedFromFeePool = collateralRemovedFromFeePool,
+    SharesToBurn = sharesToBurn,
     Data = "Successfully removed funding"
   })
 end
@@ -982,17 +980,17 @@ end
 --- @param investmentAmount number The investment amount
 --- @param feeAmount number The fee amount
 --- @param positionId string The position ID
---- @param outcomeTokensToBuy number The outcome tokens to buy
+--- @param positionTokensBought number The outcome position tokens bought
+--- @param msg Message The message received
 --- @return Message The buy notice
-function CPMMNotices.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
-  return ao.send({
-    Target = from,
+function CPMMNotices.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, positionTokensBought, msg)
+  return msg.forward(from, {
     Action = "Buy-Notice",
     OnBehalfOf = onBehalfOf,
     InvestmentAmount = tostring(investmentAmount),
     FeeAmount = tostring(feeAmount),
     PositionId = positionId,
-    OutcomeTokensToBuy = tostring(outcomeTokensToBuy),
+    PositionTokensBought = tostring(positionTokensBought),
     Data = "Successful buy order"
   })
 end
@@ -1002,18 +1000,36 @@ end
 --- @param returnAmount number The return amount
 --- @param feeAmount number The fee amount
 --- @param positionId string The position ID
---- @param outcomeTokensToSell number The outcome tokens to sell
+--- @param positionTokensSold number The outcome position tokens sold
+--- @param msg Message The message received
 --- @return Message The sell notice
-function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)
-  return ao.send({
-    Target = from,
+function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, positionTokensSold, msg)
+  return msg.forward(from, {
     Action = "Sell-Notice",
     ReturnAmount = tostring(returnAmount),
     FeeAmount = tostring(feeAmount),
     PositionId = positionId,
-    OutcomeTokensToSell = tostring(outcomeTokensToSell),
+    PositionTokensSold = tostring(positionTokensSold),
     Data = "Successful sell order"
   })
+end
+
+--- Sends a withdraw fees notice
+--- @notice Returns notice with `msg.reply` if `useReply` is true, otherwise uses `ao.send`
+--- @dev Ensures the final notice is sent to the user, preventing unintended message handling 
+--- @param feeAmount number The fee amount
+--- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
+--- @return Message The withdraw fees notice
+function CPMMNotices.withdrawFeesNotice(feeAmount, msg, useReply)
+  local notice = {
+    Action = "Withdraw-Fees-Notice",
+    FeeAmount = tostring(feeAmount),
+    Data = "Successfully withdrew fees"
+  }
+  if useReply then return msg.reply(notice) end
+  notice.Target = msg.Sender and msg.Sender or msg.From
+  return ao.send(notice)
 end
 
 --- Sends an update configurator notice
@@ -1022,7 +1038,7 @@ end
 --- @return Message The configurator updated notice
 function CPMMNotices.updateConfiguratorNotice(configurator, msg)
   return msg.reply({
-    Action = "Configurator-Updated",
+    Action = "Update-Configurator-Notice",
     Data = configurator
   })
 end
@@ -1034,7 +1050,7 @@ end
 --- @param msg Message The message received
 function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)
   return msg.reply({
-    Action = "Take-Fee-Updated",
+    Action = "Update-Take-Fee-Notice",
     CreatorFee = tostring(creatorFee),
     ProtocolFee = tostring(protocolFee),
     Data = tostring(takeFee)
@@ -1047,7 +1063,7 @@ end
 --- @return Message The protocol fee target updated notice
 function CPMMNotices.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)
   return msg.reply({
-    Action = "Protocol-Fee-Target-Updated",
+    Action = "Update-Protocol-Fee-Target-Notice",
     Data = protocolFeeTarget
   })
 end
@@ -1058,7 +1074,7 @@ end
 --- @return Message The logo updated notice
 function CPMMNotices.updateLogoNotice(logo, msg)
   return msg.reply({
-    Action = "Logo-Updated",
+    Action = "Update-Logo-Notice",
     Data = logo
   })
 end
@@ -1086,7 +1102,7 @@ local TokenNotices = {}
 --- @param msg Message The message received
 --- @return Message The mint notice
 function TokenNotices.mintNotice(recipient, quantity, msg)
-  return msg.reply({
+  return msg.forward(recipient, {
     Recipient = recipient,
     Quantity = tostring(quantity),
     Action = 'Mint-Notice',
@@ -1099,7 +1115,8 @@ end
 --- @param msg Message The message received
 --- @return Message The burn notice
 function TokenNotices.burnNotice(quantity, msg)
-  return msg.reply({
+  return ao.send({
+    Target = msg.Sender and msg.Sender or msg.From,
     Quantity = tostring(quantity),
     Action = 'Burn-Notice',
     Data = Colors.gray .. "Successfully burned " .. Colors.blue .. tostring(quantity) .. Colors.reset
@@ -1109,10 +1126,11 @@ end
 --- Transfer notices
 --- @param debitNotice Message The notice to send the spender
 --- @param creditNotice Message The notice to send the receiver
+--- @param recipient string The address that will receive the tokens
 --- @param msg Message The mesage received
 --- @return table<Message> The transfer notices
-function TokenNotices.transferNotices(debitNotice, creditNotice, msg)
-  return { msg.reply(debitNotice), ao.send(creditNotice) }
+function TokenNotices.transferNotices(debitNotice, creditNotice, recipient, msg)
+  return { msg.reply(debitNotice), msg.forward(recipient, creditNotice) }
 end
 
 --- Transfer error notice
@@ -1265,7 +1283,6 @@ function TokenMethods:transfer(from, recipient, quantity, cast, msg)
     if not cast then
       -- Debit-Notice message template, that is sent to the Sender of the transfer
       local debitNotice = {
-        Target = from,
         Action = 'Debit-Notice',
         Recipient = recipient,
         Quantity = quantity,
@@ -1275,7 +1292,6 @@ function TokenMethods:transfer(from, recipient, quantity, cast, msg)
       }
       -- Credit-Notice message template, that is sent to the Recipient of the transfer
       local creditNotice = {
-        Target = recipient,
         Action = 'Credit-Notice',
         Sender = from,
         Quantity = quantity,
@@ -1294,7 +1310,7 @@ function TokenMethods:transfer(from, recipient, quantity, cast, msg)
       end
 
       -- Send Debit-Notice and Credit-Notice
-      return self.transferNotices(debitNotice, creditNotice, msg)
+      return self.transferNotices(debitNotice, creditNotice, recipient, msg)
     end
   else
     return self.transferErrorNotice(msg)
@@ -1382,13 +1398,16 @@ constants.denomination = 12
 -- Market Config
 constants.marketConfig = {}
 constants.marketConfig["DEV"] = {
-  configurator = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
+  configurator = "b9hj1yVw3eWGIggQgJxRDj1t8SZFCezctYD-7U5nYFk",
   incentives = "haUOiKKmYMGum59nWZx5TVFEkDgI5LakIEY7jgfQgAI",
   dataIndex = "rXSAUKwZhJkIBTIEyBl1rf8Gtk_88RKQFsx5JvDOwlE",
-  collateralToken = "WY-SBx8N4d4wJZB3o3h7Uk_zHPLUqBx2qFeh_CDkceQ",
-  resolutionAgent = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0",
+  collateralToken = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
+  resolutionAgent = "ukmrCFkEWdFH_xS4UicCErwCqGT2RJjr1qlk4U720C8",
   creator = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
   question = "Liquid Ops oUSDC interest reaches 8% in March",
+  rules = "Where we're going, we don't need rules",
+  category = "Finance",
+  sucategory = "Interest Rates",
   positionIds = json.encode({"1","2"}),
   name = "Mock Spawn Market",
   ticker = 'MSM',
@@ -1886,27 +1905,34 @@ function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, qua
 end
 
 --- Positions merge notice
+--- @param collateralToken string The address of the collateral token
 --- @param quantity string The quantity
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The positions merge notice
-function ConditionalTokensNotices.positionsMergeNotice(quantity, msg)
-  return msg.reply({
+function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, msg, useReply)
+  local notice = {
     Action = "Merge-Positions-Notice",
+    CollateralToken = collateralToken,
     Quantity = quantity
-  })
+  }
+  if useReply then return msg.reply(notice) end
+  notice.Target = msg.Sender and msg.Sender or msg.From
+  return ao.send(notice)
 end
 
---- Payout redemption notice
+--- Redeem positions notice
 --- @param collateralToken string The address of the collateral token
---- @param payout string The payout amount
+--- @param payout number The payout amount
+--- @param netPayout string The net payout amount (after fees)
 --- @param msg Message The message received
 --- @return Message The payout redemption notice
-function ConditionalTokensNotices.payoutRedemptionNotice(collateralToken, payout, msg)
+function ConditionalTokensNotices.redeemPositionsNotice(collateralToken, payout, netPayout, msg)
   return msg.reply({
-    Action = "Payout-Redemption-Notice",
-    Process = ao.id,
+    Action = "Redeem-Positions-Notice",
     CollateralToken = collateralToken,
-    Payout = tostring(payout)
+    GrossPayout = tostring(payout),
+    NetPayout = netPayout
   })
 end
 
@@ -1939,7 +1965,7 @@ local SemiFungibleTokensNotices = {}
 function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, msg)
   return msg.reply({
     Recipient = to,
-    TokenId = tostring(id),
+    PositionId = tostring(id),
     Quantity = tostring(quantity),
     Action = 'Mint-Single-Notice',
     Data = Colors.gray .. "Successfully minted " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.reset
@@ -1953,9 +1979,9 @@ end
 --- @param msg Message The message received
 --- @return Message The batch mint notice
 function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)
-  return msg.reply({
+  return msg.forward(to, {
     Recipient = to,
-    TokenIds = json.encode(ids),
+    PositionIds = json.encode(ids),
     Quantities = json.encode(quantities),
     Action = 'Mint-Batch-Notice',
     Data = "Successfully minted batch"
@@ -1967,12 +1993,13 @@ end
 --- @param id string The ID of the token to be burned
 --- @param quantity string The quantity of the token to be burned
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The burn notice
-function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)
+function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg, useReply)
   -- Prepare notice
   local notice = {
     Recipient = from,
-    TokenId = tostring(id),
+    PositionId = tostring(id),
     Quantity = tostring(quantity),
     Action = 'Burn-Single-Notice',
     Data = Colors.gray .. "Successfully burned " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.reset
@@ -1985,14 +2012,29 @@ function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)
     end
   end
   -- Send notice
-  return msg.reply(notice)
+  if useReply then return msg.reply(notice) end
+  notice.Target = from
+  return ao.send(notice)
 end
 
 --- Burn batch notice
---- @param notice Message The prepared notice to be sent
+--- @param from string The address that will burn the tokens
+--- @param positionIds table<string> The IDs of the positions to be burned
+--- @param quantities table<string> The quantities of the tokens to be burned
+--- @param remainingBalances table<string> The remaining balances of unburned tokens
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The burn notice
-function SemiFungibleTokensNotices.burnBatchNotice(notice, msg)
+function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities, remainingBalances, msg, useReply)
+  -- Prepare notice
+  local notice = {
+    Recipient = from,
+    PositionIds = json.encode(positionIds),
+    Quantities = json.encode(quantities),
+    RemainingBalances = json.encode(remainingBalances),
+    Action = 'Burn-Batch-Notice',
+    Data = "Successfully burned batch"
+  }
   -- Forward X-Tags
   for tagName, tagValue in pairs(msg) do
     -- Tags beginning with "X-" are forwarded
@@ -2001,7 +2043,9 @@ function SemiFungibleTokensNotices.burnBatchNotice(notice, msg)
     end
   end
   -- Send notice
-  return msg.reply(notice)
+  if useReply then return msg.reply(notice) end
+  notice.Target = from
+  return ao.send(notice)
 end
 
 --- Transfer single token notices
@@ -2010,22 +2054,22 @@ end
 --- @param id string The ID of the token to be transferred
 --- @param quantity string The quantity of the token to be transferred
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return table<Message> The debit and credit transfer notices
-function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg)
+function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg, useReply)
   -- Prepare debit notice
   local debitNotice = {
     Action = 'Debit-Single-Notice',
     Recipient = to,
-    TokenId = tostring(id),
+    PositionId = tostring(id),
     Quantity = tostring(quantity),
     Data = Colors.gray .. "You transferred " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.gray .. " to " .. Colors.green .. to .. Colors.reset
   }
   -- Prepare credit notice
   local creditNotice = {
-    Target = to,
     Action = 'Credit-Single-Notice',
     Sender = from,
-    TokenId = tostring(id),
+    PositionId = tostring(id),
     Quantity = tostring(quantity),
     Data = Colors.gray .. "You received " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.gray .. " from " .. Colors.green .. from .. Colors.reset
   }
@@ -2038,7 +2082,10 @@ function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity,
     end
   end
   -- Send notices
-  return { msg.reply(debitNotice), ao.send(creditNotice) }
+  if useReply then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end
+  debitNotice.Target = from
+  creditNotice.Target = to
+  return { ao.send(debitNotice), ao.send(creditNotice) }
 end
 
 --- Transfer batch tokens notices
@@ -2047,22 +2094,22 @@ end
 --- @param ids table<string> The IDs of the tokens to be transferred
 --- @param quantities table<string> The quantities of the tokens to be transferred
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return table<Message> The debit and credit batch transfer notices
-function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg)
+function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg, useReply)
   -- Prepare debit notice
   local debitNotice = {
     Action = 'Debit-Batch-Notice',
     Recipient = to,
-    TokenIds = json.encode(ids),
+    PositionIds = json.encode(ids),
     Quantities = json.encode(quantities),
     Data = Colors.gray .. "You transferred batch to " .. Colors.green .. to .. Colors.reset
   }
   -- Prepare credit notice
   local creditNotice = {
-    Target = to,
     Action = 'Credit-Batch-Notice',
     Sender = from,
-    TokenIds = json.encode(ids),
+    PositionIds = json.encode(ids),
     Quantities = json.encode(quantities),
     Data = Colors.gray .. "You received batch from " .. Colors.green .. from .. Colors.reset
   }
@@ -2075,7 +2122,10 @@ function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantitie
     end
   end
   -- Send notice
-  return {msg.reply(debitNotice), ao.send(creditNotice)}
+  if useReply then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end
+  debitNotice.Target = from
+  creditNotice.Target = to
+  return {ao.send(debitNotice), ao.send(creditNotice)}
 end
 
 --- Transfer error notice
@@ -2086,7 +2136,7 @@ function SemiFungibleTokensNotices.transferErrorNotice(id, msg)
   return msg.reply({
     Action = 'Transfer-Error',
     ['Message-Id'] = msg.Id,
-    ['Token-Id'] = id,
+    ['PositionId'] = id,
     Error = 'Insufficient Balance!'
   })
 end
@@ -2215,8 +2265,9 @@ end
 --- @param id string The ID of the tokens to burn
 --- @param quantity string The quantity of tokens to burn
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The burn notice
-function SemiFungibleTokensMethods:burn(from, id, quantity, msg)
+function SemiFungibleTokensMethods:burn(from, id, quantity, msg, useReply)
   assert(bint.__lt(0, bint(quantity)), 'Quantity must be greater than zero!')
   assert(self.balancesById[id], 'Id must exist! ' .. id)
   assert(self.balancesById[id][from], 'Account must hold token! :: ' .. id)
@@ -2225,7 +2276,7 @@ function SemiFungibleTokensMethods:burn(from, id, quantity, msg)
   self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], bint(quantity)))
   self.totalSupplyById[id] = tostring(bint.__sub(self.totalSupplyById[id], bint(quantity)))
   -- send notice
-  return self.burnSingleNotice(from, id, quantity, msg)
+  return self.burnSingleNotice(from, id, quantity, msg, useReply)
 end
 
 --- Batch burn a quantity of tokens with the given IDs
@@ -2233,8 +2284,9 @@ end
 --- @param ids table<string> The IDs of the tokens to burn
 --- @param quantities table<string> The quantities of tokens to burn
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The batch burn notice
-function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)
+function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg, useReply)
   assert(#ids == #quantities, 'Ids and quantities must have the same lengths')
   for i = 1, #ids do
     assert(bint.__lt(0, quantities[i]), 'Quantity must be greater than zero!')
@@ -2249,23 +2301,8 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)
     self.totalSupplyById[ ids[i] ] = tostring(bint.__sub(self.totalSupplyById[ ids[i] ], quantities[i]))
     remainingBalances[i] = self.balancesById[ ids[i] ][from]
   end
-  -- draft notice
-  local notice = {
-    Recipient = from,
-    TokenIds = json.encode(ids),
-    Quantities = json.encode(quantities),
-    RemainingBalances = json.encode(remainingBalances),
-    Action = 'Burn-Batch-Notice',
-    Data = "Successfully burned batch"
-  }
-  -- forward x-tags
-  for tagName, tagValue in pairs(msg) do
-    if string.sub(tagName, 1, 2) == "X-" then
-      notice[tagName] = tagValue
-    end
-  end
   -- send notice
-  return self.burnBatchNotice(notice, msg)
+  return self.burnBatchNotice(from, ids, quantities, remainingBalances, msg, useReply)
 end
 
 --- Transfer a quantity of tokens with the given ID
@@ -2274,9 +2311,10 @@ end
 --- @param id string The ID of the tokens to transfer
 --- @param quantity string The quantity of tokens to transfer
 --- @param cast boolean The cast is set to true to silence the transfer notice
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil The transfer notices, error notice or nothing
-function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, msg)
+function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, msg, useReply)
   if not self.balancesById[id] then self.balancesById[id] = {} end
   if not self.balancesById[id][from] then self.balancesById[id][from] = "0" end
   if not self.balancesById[id][recipient] then self.balancesById[id][recipient] = "0" end
@@ -2289,7 +2327,7 @@ function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity,
 
     -- Only send the notifications if the cast tag is not set
     if not cast then
-      return self.transferSingleNotices(from, recipient, id, quantity, msg)
+      return self.transferSingleNotices(from, recipient, id, quantity, msg, useReply)
     end
   else
     return self.transferErrorNotice(id, msg)
@@ -2302,9 +2340,10 @@ end
 --- @param ids table<string> The IDs of the tokens to transfer
 --- @param quantities table<string> The quantities of tokens to transfer
 --- @param cast boolean The cast is set to true to silence the transfer notice
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil The transfer notices, error notice or nothing
-function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg)
+function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg, useReply)
   local ids_ = {}
   local quantities_ = {}
 
@@ -2328,7 +2367,7 @@ function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantitie
 
   -- Only send the notifications if the cast tag is not set
   if not cast and #ids_ > 0 then
-    return self.transferBatchNotices(from, recipient, ids_, quantities_, msg)
+    return self.transferBatchNotices(from, recipient, ids_, quantities_, msg, useReply)
   end
 end
 
@@ -2385,15 +2424,15 @@ function SemiFungibleTokensMethods:getBalances(id)
 end
 
 --- Get accounts' balances of tokens with the given IDs
---- @param tokenIds table<string> The IDs of the tokens
+--- @param positionIds table<string> The IDs of the tokens
 --- @return table<string, table<string, string>> The account balances for each respective ID
-function SemiFungibleTokensMethods:getBatchBalances(tokenIds)
+function SemiFungibleTokensMethods:getBatchBalances(positionIds)
   local bals = {}
 
-  for i = 1, #tokenIds do
-    bals[ tokenIds[i] ] = {}
-    if self.balancesById[ tokenIds[i] ] then
-      bals[ tokenIds[i] ] = self.balancesById[ tokenIds[i] ]
+  for i = 1, #positionIds do
+    bals[ positionIds[i] ] = {}
+    if self.balancesById[ positionIds[i] ] then
+      bals[ positionIds[i] ] = self.balancesById[ positionIds[i] ]
     end
   end
   -- return balances
@@ -2539,8 +2578,9 @@ end
 --- @param quantity string The quantity of collateral to merge
 --- @param isSell boolean True if the merge is a sell, false otherwise
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The positions merge notice
-function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)
+function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg, useReply)
   assert(self.payoutNumerators and #self.payoutNumerators > 0, "Condition not prepared!")
   -- Create equal merge positions.
   local quantities = {}
@@ -2548,7 +2588,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     table.insert(quantities, quantity)
   end
   -- Burn equal quantiies from user positions.
-  self:batchBurn(from, self.positionIds, quantities, msg)
+  self:batchBurn(from, self.positionIds, quantities, msg, false)
   -- @dev below already handled within the sell method. 
   -- sell method w/ a different quantity and recipient.
   if not isSell then
@@ -2561,7 +2601,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     })
   end
   -- Send notice.
-  return self.positionsMergeNotice(quantity, msg)
+  return self.positionsMergeNotice(self.collateralToken, quantity, msg, useReply)
 end
 
 --- Report payouts
@@ -2592,9 +2632,10 @@ end
 --- @return Message The payout redemption notice
 function ConditionalTokensMethods:redeemPositions(msg)
   local den = self.payoutDenominator
-  assert(den > 0, "result for condition not received yet")
-  assert(self.payoutNumerators and #self.payoutNumerators > 0, "condition not prepared yet")
+  assert(den > 0, "market not resolved")
+  assert(self.payoutNumerators and #self.payoutNumerators > 0, "market not initialized")
   local totalPayout = 0
+  local totalPayoutMinusFee = "0"
   for i = 1, #self.positionIds do
     local positionId = self.positionIds[i]
     local payoutNumerator = self.payoutNumerators[tonumber(positionId)]
@@ -2602,18 +2643,19 @@ function ConditionalTokensMethods:redeemPositions(msg)
     if not self.balancesById[positionId] then self.balancesById[positionId] = {} end
     if not self.balancesById[positionId][msg.From] then self.balancesById[positionId][msg.From] = "0" end
     local payoutStake = self.balancesById[positionId][msg.From]
-    assert(bint.__lt(0, bint(payoutStake)), "no stake to redeem")
-    -- Calculate the payout and burn position.
-    totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
-    self:burn(msg.From, positionId, payoutStake, msg)
+    if bint.__lt(0, bint(payoutStake)) then
+      -- Calculate the payout and burn position.
+      totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
+      self:burn(msg.From, positionId, payoutStake, msg, false)
+    end
   end
   -- Return total payout minus take fee.
   if totalPayout > 0 then
     totalPayout = math.floor(totalPayout)
-    self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)
+    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout, msg)
   end
   -- Send notice.
-  return self.payoutRedemptionNotice(self.collateralToken, totalPayout, msg)
+  return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, msg)
 end
 
 --- Return total payout minus take fee
@@ -2621,8 +2663,9 @@ end
 --- @param collateralToken string The collateral token
 --- @param from string The account to receive the payout minus fees
 --- @param totalPayout number The total payout assciated with the acount stake
---- @return table<Message> The protocol fee, creator fee and payout messages
-function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)
+--- @param msg Message The message received
+--- @return string The total payout minus fee amount
+function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, msg)
   local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))
   local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))
   local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))
@@ -2647,7 +2690,11 @@ function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken,
     Quantity = totalPayoutMinusFee
   }
   -- send txns
-  return { ao.send(protocolFeeTxn), ao.send(creatorFeeTxn), ao.send(totalPayoutMinutTakeFeeTxn) }
+  ao.send(protocolFeeTxn)
+  ao.send(creatorFeeTxn)
+  ao.send(totalPayoutMinutTakeFeeTxn)
+
+  return totalPayoutMinusFee
 end
 
 return ConditionalTokens
@@ -2756,19 +2803,19 @@ function CPMM:new(configurator, collateralToken, resolutionAgent, positionIds, n
 end
 
 --- Add funding
---- @param from string The process ID of the account that added the funding
 --- @param onBehalfOf string The process ID of the account to receive the LP tokens
 --- @param addedFunds string The amount of funds to add
---- @param distributionHint table<number, ...> The initial probability distribution
+--- @param distributionHint table<number> The initial probability distribution
 --- @param msg Message The message received
 --- @return Message The funding added notice
-function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, msg)
+function CPMMMethods:addFunding(onBehalfOf, addedFunds, distributionHint, msg)
   assert(bint.__lt(0, bint(addedFunds)), "funding must be non-zero")
   local sendBackAmounts = {}
   local poolShareSupply = self.token.totalSupply
   local mintAmount = '0'
 
   if bint.iszero(bint(poolShareSupply)) then
+    assert(distributionHint, "must use distribution hint for initial funding")
     -- Initial Liquidity
     if #distributionHint > 0 then
       local maxHint = 0
@@ -2831,7 +2878,7 @@ function CPMMMethods:addFunding(from, onBehalfOf, addedFunds, distributionHint, 
     sendBackAmounts[i] = addedFunds - sendBackAmounts[i]
   end
   -- Send notice with amounts added
-  return self.fundingAddedNotice(from, sendBackAmounts, mintAmount)
+  return self.addFundingNotice(sendBackAmounts, mintAmount, msg)
 end
 
 --- Remove funding
@@ -2850,17 +2897,17 @@ function CPMMMethods:removeFunding(from, sharesToBurn, msg)
   end
   -- Calculate collateralRemovedFromFeePool
   local collateralRemovedFromFeePool = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
-  self:burn(ao.id, sharesToBurn, msg)
+  self:burn(from, sharesToBurn, msg)
   local poolFeeBalance = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
   collateralRemovedFromFeePool = tostring(math.floor(poolFeeBalance - collateralRemovedFromFeePool))
   -- Send collateralRemovedFromFeePool
   if bint(collateralRemovedFromFeePool) > 0 then
-    ao.send({ Target = self.tokens.collateralToken, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
+    ao.send({Target = self.tokens.collateralToke, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
   end
   -- Send conditionalTokens amounts
   self.tokens:transferBatch(ao.id, from, self.tokens.positionIds, sendAmounts, false, msg)
   -- Send notice
-  return self.fundingRemovedNotice(from, sendAmounts, collateralRemovedFromFeePool, sharesToBurn)
+  return self.removeFundingNotice(sendAmounts, collateralRemovedFromFeePool, sharesToBurn, msg)
 end
 
 --- Calc buy amount
@@ -2938,12 +2985,12 @@ end
 --- @param onBehalfOf string The process ID of the account to receive the tokens
 --- @param investmentAmount number The amount to stake on an outcome
 --- @param positionId string The position ID of the outcome
---- @param minOutcomeTokensToBuy number The minimum number of outcome tokens to buy
+--- @param minPositionTokensToBuy number The minimum number of outcome tokens to buy
 --- @param msg Message The message received
 --- @return Message The buy notice
-function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minOutcomeTokensToBuy, msg)
-  local outcomeTokensToBuy = self:calcBuyAmount(investmentAmount, positionId)
-  assert(bint.__le(minOutcomeTokensToBuy, bint(outcomeTokensToBuy)), "Minimum outcome tokens not reached!")
+function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minPositionTokensToBuy, msg)
+  local positionTokensToBuy = self:calcBuyAmount(investmentAmount, positionId)
+  assert(bint.__le(minPositionTokensToBuy, bint(positionTokensToBuy)), "Minimum position tokens not reached!")
   -- Calculate investmentAmountMinusFees.
   local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(investmentAmount, self.lpFee), 1e4)))
   self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
@@ -2951,48 +2998,42 @@ function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minOutc
   -- Split position through all conditions
   self.tokens:splitPosition(ao.id, self.tokens.collateralToken, investmentAmountMinusFees, msg)
   -- Transfer buy position to onBehalfOf
-  self.tokens:transferSingle(ao.id, onBehalfOf, positionId, outcomeTokensToBuy, false, msg)
-  -- -- Send notice.
-  return self.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, outcomeTokensToBuy)
+  self.tokens:transferSingle(ao.id, onBehalfOf, positionId, positionTokensToBuy, true, msg, false)
+  -- Send notice.
+  return self.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, positionTokensToBuy, msg)
 end
 
 --- Sell
---- Returns collateral and excess outcome tokens to the sender
 --- @param from string The process ID of the account that initiates the sell
 --- @param returnAmount number The amount to unstake from an outcome
 --- @param positionId string The position ID of the outcome
---- @param quantity number The quantity of tokens sent for this transaction
---- @param maxOutcomeTokensToSell number The maximum number of outcome tokens to sell
+--- @param maxPositionTokensToSell number The max outcome tokens to sell
 --- @return Message The sell notice
-function CPMMMethods:sell(from, returnAmount, positionId, quantity, maxOutcomeTokensToSell, msg)
+function CPMMMethods:sell(from, returnAmount, positionId, maxPositionTokensToSell, msg)
   -- Calculate outcome tokens to sell.
-  local outcomeTokensToSell = self:calcSellAmount(returnAmount, positionId)
-  assert(bint.__le(bint(outcomeTokensToSell), bint(maxOutcomeTokensToSell)), "Maximum sell amount exceeded!")
+  local positionTokensToSell = self:calcSellAmount(returnAmount, positionId)
+  assert(bint.__le(bint(positionTokensToSell), bint(maxPositionTokensToSell)), "Maximum sell amount exceeded!")
   -- Calculate returnAmountPlusFees.
   local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(returnAmount, self.lpFee), bint.__sub(1e4, self.lpFee))))
   self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
   local returnAmountPlusFees = tostring(bint.__add(returnAmount, bint(feeAmount)))
   -- Check sufficient liquidity within the process or revert.
-  local collataralBalance = ao.send({Target = self.tokens.collateralToken, Action = "Balance"}).receive().Data
+  local collataralBalance = ao.send({Target = self.tokens.collateralToken, Action = "Balance", ["X-Action"] = "Check Liquidity"}).receive().Data
   assert(bint.__le(bint(returnAmountPlusFees), bint(collataralBalance)), "Insufficient liquidity!")
-  -- Check user balance and transfer outcomeTokensToSell to process before merge.
+  -- Check user balance and transfer positionTokensToSell to process before merge.
   local balance = self.tokens:getBalance(from, nil, positionId)
-  assert(bint.__le(bint(quantity), bint(balance)), 'Insufficient balance!')
-  self.tokens:transferSingle(from, ao.id, positionId, outcomeTokensToSell, true, msg)
+  assert(bint.__le(bint(positionTokensToSell), bint(balance)), 'Insufficient balance!')
+  self.tokens:transferSingle(from, ao.id, positionId, positionTokensToSell, true, msg, false)
   -- Merge positions through all conditions (burns returnAmountPlusFees).
-  self.tokens:mergePositions(ao.id, '', returnAmountPlusFees, true, msg)
+  self.tokens:mergePositions(ao.id, '', positionTokensToSell, true, msg, false)
   -- Returns collateral to the user
-  ao.send({
-    Target = self.tokens.collateralToken,
+  msg.forward(self.tokens.collateralToken,{
     Action = "Transfer",
-    Quantity = returnAmount,
+    Quantity = tostring(returnAmount),
     Recipient = from
-  }).receive()
-  -- Returns unburned conditional tokens to user 
-  local unburned = tostring(bint.__sub(bint(quantity), bint(returnAmountPlusFees)))
-  self.tokens:transferSingle(ao.id, from, positionId, unburned, true, msg)
+  })
   -- Send notice (Process continued via "SellOrderCompletionCollateralToken" and "SellOrderCompletionConditionalTokens" handlers)
-  return self.sellNotice(from, returnAmount, feeAmount, positionId, outcomeTokensToSell)
+  return self.sellNotice(from, returnAmount, feeAmount, positionId, positionTokensToSell, msg)
 end
 
 --- Colleced fees
@@ -3016,15 +3057,16 @@ end
 --- Withdraw fees
 --- @param sender string The process ID of the sender
 --- @param msg Message The message received
---- @return string The amount of fees withdrawn to the sender
-function CPMMMethods:withdrawFees(sender, msg)
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
+--- @return Message The withdraw fees message
+function CPMMMethods:withdrawFees(sender, msg, useReply)
   local feeAmount = self:feesWithdrawableBy(sender)
   if bint.__lt(0, bint(feeAmount)) then
     self.withdrawnFees[sender] = feeAmount
     self.totalWithdrawnFees = tostring(bint.__add(bint(self.totalWithdrawnFees), bint(feeAmount)))
     msg.forward(self.tokens.collateralToken, {Action = 'Transfer', Recipient = sender, Quantity = feeAmount})
   end
-  return feeAmount
+  return self.withdrawFeesNotice(feeAmount, msg, useReply)
 end
 
 --- Before token transfer
@@ -3034,13 +3076,13 @@ end
 --- @param amount string The amount transferred
 --- @param msg Message The message received
 function CPMMMethods:_beforeTokenTransfer(from, to, amount, msg)
-  if from ~= nil then
-    self:withdrawFees(from, msg)
+  if from ~= nil and from ~= ao.id then
+    self:withdrawFees(from, msg, false)
   end
   local totalSupply = self.token.totalSupply
   local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self:collectedFees()), bint(amount)), totalSupply)))
 
-  if from ~= nil and to ~= nil then
+  if from ~= nil and to ~= nil and from ~= ao.id then
     self.withdrawnFees[from] = tostring(bint.__sub(bint(self.withdrawnFees[from] or '0'), bint(withdrawnFeesTransfer)))
     self.withdrawnFees[to] = tostring(bint.__add(bint(self.withdrawnFees[to] or '0'), bint(withdrawnFeesTransfer)))
   end
@@ -3279,7 +3321,7 @@ local json = require('json')
 
 --- Validates add funding
 --- @param msg Message The message to be validated
-function cpmmValidation.addFunding(outcomeSlotCount, msg)
+function cpmmValidation.addFunding(msg)
   sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
 end
 
@@ -3295,6 +3337,7 @@ end
 function cpmmValidation.buy(msg, validPositionIds)
   sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "X-PositionId")
   sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  sharedValidation.validatePositiveInteger(msg.Tags["X-MinPositionTokensToBuy"], "X-MinPositionTokensToBuy")
 end
 
 --- Validates sell
@@ -3302,9 +3345,8 @@ end
 --- @param validPositionIds table<string> The array of valid position IDs
 function cpmmValidation.sell(msg, validPositionIds)
   sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
-  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  sharedValidation.validatePositiveInteger(msg.Tags.MaxPositionTokensToSell, "MaxPositionTokensToSell")
   sharedValidation.validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
-  sharedValidation.validatePositiveInteger(msg.Tags.MaxOutcomeTokensToSell, "MaxOutcomeTokensToSell")
 end
 
 --- Validates calc buy amount
@@ -3427,69 +3469,69 @@ local json = require("json")
 
 --- Validates a transferSingle message
 --- @param msg Message The message received
---- @param validTokenIds table<string> The array of valid token IDs
-function semiFungibleTokensValidation.transferSingle(msg, validTokenIds)
+--- @param validPositionIds table<string> The array of valid token IDs
+function semiFungibleTokensValidation.transferSingle(msg, validPositionIds)
   sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
-  sharedValidation.validateItem(msg.Tags.TokenId, validTokenIds, "TokenId")
+  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
   sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
 end
 
 --- Validates a transferBatch message
 --- @param msg Message The message received
---- @param validTokenIds table<string> The array of valid token IDs
-function semiFungibleTokensValidation.transferBatch(msg, validTokenIds)
+--- @param validPositionIds table<string> The array of valid token IDs
+function semiFungibleTokensValidation.transferBatch(msg, validPositionIds)
   sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
-  assert(type(msg.Tags.TokenIds) == 'string', 'TokenIds is required!')
-  local tokenIds = json.decode(msg.Tags.TokenIds)
+  assert(type(msg.Tags.PositionIds) == 'string', 'PositionIds is required!')
+  local positionIds = json.decode(msg.Tags.PositionIds)
   assert(type(msg.Tags.Quantities) == 'string', 'Quantities is required!')
   local quantities = json.decode(msg.Tags.Quantities)
-  assert(#tokenIds == #quantities, 'Input array lengths must match!')
-  assert(#tokenIds > 0, "Input array length must be greater than zero!")
-  for i = 1, #tokenIds do
-    sharedValidation.validateItem(tokenIds[i], validTokenIds, "TokenId")
+  assert(#positionIds == #quantities, 'Input array lengths must match!')
+  assert(#positionIds > 0, "Input array length must be greater than zero!")
+  for i = 1, #positionIds do
+    sharedValidation.validateItem(positionIds[i], validPositionIds, "PositionId")
     sharedValidation.validatePositiveInteger(quantities[i], "Quantity")
   end
 end
 
 --- Validates a balanceById message
 --- @param msg Message The message received
---- @param validTokenIds table<string> The array of valid token IDs
-function semiFungibleTokensValidation.balanceById(msg, validTokenIds)
-  sharedValidation.validateItem(msg.Tags.TokenId, validTokenIds, "TokenId")
+--- @param validPositionIds table<string> The array of valid token IDs
+function semiFungibleTokensValidation.balanceById(msg, validPositionIds)
+  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
 end
 
 --- Validates a balancesById message
 --- @param msg Message The message received
---- @param validTokenIds table<string> The array of valid token IDs
-function semiFungibleTokensValidation.balancesById(msg, validTokenIds)
-  sharedValidation.validateItem(msg.Tags.TokenId, validTokenIds, "TokenId")
+--- @param validPositionIds table<string> The array of valid token IDs
+function semiFungibleTokensValidation.balancesById(msg, validPositionIds)
+  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
 end
 
 --- Validates a batchBalance message
 --- @param msg Message The message received
---- @param validTokenIds table<string> The array of valid token IDs
-function semiFungibleTokensValidation.batchBalance(msg, validTokenIds)
+--- @param validPositionIds table<string> The array of valid token IDs
+function semiFungibleTokensValidation.batchBalance(msg, validPositionIds)
   assert(msg.Tags.Recipients, "Recipients is required!")
   local recipients = json.decode(msg.Tags.Recipients)
-  assert(msg.Tags.TokenIds, "TokenIds is required!")
-  local tokenIds = json.decode(msg.Tags.TokenIds)
-  assert(#recipients == #tokenIds, "Input array lengths must match!")
+  assert(msg.Tags.PositionIds, "PositionIds is required!")
+  local positionIds = json.decode(msg.Tags.PositionIds)
+  assert(#recipients == #positionIds, "Input array lengths must match!")
   assert(#recipients > 0, "Input array length must be greater than zero!")
-  for i = 1, #tokenIds do
+  for i = 1, #positionIds do
     sharedValidation.validateAddress(recipients[i], 'Recipient')
-    sharedValidation.validateItem(tokenIds[i], validTokenIds, "TokenId")
+    sharedValidation.validateItem(positionIds[i], validPositionIds, "PositionId")
   end
 end
 
 --- Validates a batchBalances message
 --- @param msg Message The message received
---- @param validTokenIds table<string> The array of valid token IDs
-function semiFungibleTokensValidation.batchBalances(msg, validTokenIds)
-  assert(msg.Tags.TokenIds, "TokenIds is required!")
-  local tokenIds = json.decode(msg.Tags.TokenIds)
-  assert(#tokenIds > 0, "Input array length must be greater than zero!")
-  for i = 1, #tokenIds do
-    sharedValidation.validateItem(tokenIds[i], validTokenIds, "TokenId")
+--- @param validPositionIds table<string> The array of valid token IDs
+function semiFungibleTokensValidation.batchBalances(msg, validPositionIds)
+  assert(msg.Tags.PositionIds, "PositionIds is required!")
+  local positionIds = json.decode(msg.Tags.PositionIds)
+  assert(#positionIds > 0, "Input array length must be greater than zero!")
+  for i = 1, #positionIds do
+    sharedValidation.validateItem(positionIds[i], validPositionIds, "PositionId")
   end
 end
 
@@ -3592,6 +3634,9 @@ local conditionalTokensValidation = require('marketModules.conditionalTokensVali
 --- @param resolutionAgent string The process ID of the resolution agent
 --- @param creator string The address of the market creator
 --- @param question string The market question
+--- @param rules string The market rules
+--- @param category string The market category
+--- @param subcategory string The market subcategory
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name 
 --- @param ticker string The CPMM token(s) ticker 
@@ -3610,6 +3655,9 @@ function Market:new(
   resolutionAgent,
   creator,
   question,
+  rules,
+  category,
+  subcategory,
   positionIds,
   name,
   ticker,
@@ -3636,6 +3684,9 @@ function Market:new(
       protocolFeeTarget
     ),
     question = question,
+    rules = rules,
+    category = category,
+    subcategory = subcategory,
     creator = creator,
     incentives = incentives,
     dataIndex = dataIndex
@@ -3670,6 +3721,9 @@ function MarketMethods:info(msg)
     DataIndex = self.dataIndex,
     ResolutionAgent = self.cpmm.tokens.resolutionAgent,
     Question = self.question,
+    Rules = self.rules,
+    Category = self.category,
+    Subcategory = self.subcategory,
     Creator = self.creator,
     LpFee = tostring(self.cpmm.lpFee),
     LpFeePoolWeight = self.cpmm.feePoolWeight,
@@ -3748,12 +3802,12 @@ CPMM WRITE METHODS
 --- @param msg Message The message received
 --- @return nil -- TODO: send/specify notice
 function MarketMethods:addFunding(msg)
-  cpmmValidation.addFunding(#self.cpmm.tokens.positionIds, msg)
+  cpmmValidation.addFunding(msg)
   local distribution = msg.Tags['X-Distribution'] and json.decode(msg.Tags['X-Distribution']) or nil
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
   -- @dev returns collateral tokens if invalid
   if self.cpmm:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
-    self.cpmm:addFunding(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, distribution, msg)
+    self.cpmm:addFunding(onBehalfOf, msg.Tags.Quantity, distribution, msg)
     -- log funding
     logFunding(self.incentives, self.dataIndex, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
   end
@@ -3766,10 +3820,10 @@ end
 function MarketMethods:removeFunding(msg)
   cpmmValidation.removeFunding(msg)
   -- @dev returns LP tokens if invalid
-  if self.cpmm:validateRemoveFunding(msg.Tags.Sender, msg.Tags.Quantity) then
-    self.cpmm:removeFunding(msg.Tags.Sender, msg.Tags.Quantity, msg)
+  if self.cpmm:validateRemoveFunding(msg.From, msg.Tags.Quantity, msg) then
+    self.cpmm:removeFunding(msg.From, msg.Tags.Quantity, msg)
     -- log funding
-    logFunding(self.incentives, self.dataIndex, msg.Tags.Sender, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
+    logFunding(self.incentives, self.dataIndex, msg.From, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
   end
 end
 
@@ -3783,7 +3837,7 @@ function MarketMethods:buy(msg)
   local error = false
   local errorMessage = ''
 
-  local outcomeTokensToBuy = '0'
+  local positionTokensToBuy = '0'
 
   if not msg.Tags['X-PositionId'] then
     error = true
@@ -3791,12 +3845,12 @@ function MarketMethods:buy(msg)
   elseif not utils.includes(msg.Tags['X-PositionId'], self.cpmm.tokens.positionIds) then
     error = true
     errorMessage = 'Invalid X-PositionId!'
-  elseif not msg.Tags['X-MinOutcomeTokensToBuy'] then
+  elseif not msg.Tags['X-MinPositionTokensToBuy'] then
     error = true
-    errorMessage = 'X-MinOutcomeTokensToBuy is required!'
+    errorMessage = 'X-MinPositionTokensToBuy is required!'
   else
-    outcomeTokensToBuy = self.cpmm:calcBuyAmount(msg.Tags.Quantity, msg.Tags['X-PositionId'])
-    if not bint.__le(bint(msg.Tags['X-MinOutcomeTokensToBuy']), bint(outcomeTokensToBuy)) then
+    positionTokensToBuy = self.cpmm:calcBuyAmount(msg.Tags.Quantity, msg.Tags['X-PositionId'])
+    if not bint.__le(bint(msg.Tags['X-MinPositionTokensToBuy']), bint(positionTokensToBuy)) then
       error = true
       errorMessage = 'minimum buy amount not reached'
     end
@@ -3812,10 +3866,10 @@ function MarketMethods:buy(msg)
     })
     assert(false, errorMessage)
   end
-  local notice = self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinOutcomeTokensToBuy']), msg)
+  local notice = self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinPositionTokensToBuy']), msg)
   -- log prediction and probabilities
-  local price = tostring(bint.__div(bint(outcomeTokensToBuy), bint(msg.Tags.Quantity)))
-  logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], outcomeTokensToBuy, price, msg)
+  local price = tostring(bint.__div(bint(positionTokensToBuy), bint(msg.Tags.Quantity)))
+  logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], positionTokensToBuy, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
   return notice
 end
@@ -3825,12 +3879,12 @@ end
 --- @return Message sellNotice The sell notice
 function MarketMethods:sell(msg)
   cpmmValidation.sell(msg, self.cpmm.tokens.positionIds)
-  local outcomeTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
-  assert(bint.__le(bint(outcomeTokensToSell), bint(msg.Tags.MaxOutcomeTokensToSell)), 'Maximum sell amount not sufficient!')
-  local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.Quantity, tonumber(msg.Tags.MaxOutcomeTokensToSell), msg)
+  local positionTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
+  assert(bint.__le(bint(positionTokensToSell), bint(msg.Tags.MaxPositionTokensToSell)), 'Max position tokens to sell not sufficient!')
+  local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.MaxPositionTokensToSell, msg)
   -- log prediction and probabilities
-  local price = tostring(bint.__div(outcomeTokensToSell, bint(msg.Tags.Quantity)))
-  logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags.PositionId, outcomeTokensToSell, price, msg)
+  local price = tostring(bint.__div(positionTokensToSell, bint(msg.Tags.ReturnAmount)))
+  logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.ReturnAmount, msg.Tags.PositionId, positionTokensToSell, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
   return notice
 end
@@ -3839,7 +3893,7 @@ end
 --- @param msg Message The message received
 --- @return Message withdrawFees The amount withdrawn
 function MarketMethods:withdrawFees(msg)
-  return msg.reply({ Data = self.cpmm:withdrawFees(msg.From) })
+  return self.cpmm:withdrawFees(msg.From, msg, true)
 end
 
 --[[
@@ -3850,26 +3904,40 @@ CPMM READ METHODS
 
 --- Calc buy amount
 --- @param msg Message The message received
---- @return Message buyAmount The amount of tokens to be purchased
+--- @return Message calcBuyAmountNotice The calc buy amount notice
 function MarketMethods:calcBuyAmount(msg)
   cpmmValidation.calcBuyAmount(msg, self.cpmm.tokens.positionIds)
   local buyAmount = self.cpmm:calcBuyAmount(msg.Tags.InvestmentAmount, msg.Tags.PositionId)
-  return msg.reply({ Data = buyAmount })
+  return msg.reply({
+    BuyAmount = buyAmount,
+    PositionId =  msg.Tags.PositionId,
+    InvestmentAmount = msg.Tags.InvestmentAmount,
+    Data = buyAmount
+  })
 end
 
 --- Calc sell amount
 --- @param msg Message The message received
---- @return Message sellAmount The amount of tokens to be sold
+--- @return Message calcSellAmountNotice The calc sell amount notice
 function MarketMethods:calcSellAmount(msg)
   cpmmValidation.calcSellAmount(msg, self.cpmm.tokens.positionIds)
   local sellAmount = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
-  return msg.reply({ Data = sellAmount })
+  return msg.reply({
+    SellAmount = sellAmount,
+    PositionId = msg.Tags.PositionId,
+    ReturnAmount = msg.Tags.ReturnAmount,
+    Data = sellAmount
+  })
 end
 
 --- Colleced fees
 --- @return Message collectedFees The total unwithdrawn fees collected by the CPMM
 function MarketMethods:collectedFees(msg)
-  return msg.reply({ Data = self.cpmm:collectedFees() })
+  local fees = self.cpmm:collectedFees()
+  return msg.reply({
+    CollectedFees = fees,
+    Data = fees
+  })
 end
 
 --- Fees withdrawable 
@@ -3877,7 +3945,12 @@ end
 --- @return Message feesWithdrawable The fees withdrawable by the account
 function MarketMethods:feesWithdrawable(msg)
   local account = msg.Tags['Recipient'] or msg.From
-  return msg.reply({ Data = self.cpmm:feesWithdrawableBy(account) })
+  local fees = self.cpmm:feesWithdrawableBy(account)
+  return msg.reply({
+    FeesWithdrawable = fees,
+    Account = account,
+    Data = fees
+  })
 end
 
 --[[
@@ -3950,29 +4023,33 @@ CONDITIONAL TOKENS WRITE METHODS
 --- @return Message mergePositionsNotice The positions merge notice or error message
 function MarketMethods:mergePositions(msg)
   conditionalTokensValidation.mergePositions(msg)
-  local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.From
+  local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
   -- Check user balances
   local error = false
   local errorMessage = ''
   for i = 1, #self.cpmm.tokens.positionIds do
-    if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ] then
-      error = true
-      errorMessage = "Invalid position! PositionId: " .. self.cpmm.tokens.positionIds[i]
-    end
-    if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From] then
-      error = true
-      errorMessage = "Invalid user position! PositionId: " .. self.cpmm.tokens.positionIds[i]
-    end
-    if bint.__lt(bint(self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From]), bint(msg.Tags.Quantity)) then
-      error = true
-      errorMessage = "Insufficient tokens! PositionId: " .. self.cpmm.tokens.positionIds[i]
+    if not error then
+      if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ] then
+        error = true
+        errorMessage = "Invalid position! PositionId: " .. self.cpmm.tokens.positionIds[i]
+      elseif not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From] then
+        error = true
+        errorMessage = "Invalid user position! PositionId: " .. self.cpmm.tokens.positionIds[i]
+      elseif bint.__lt(bint(self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From]), bint(msg.Tags.Quantity)) then
+        error = true
+        errorMessage = "Insufficient tokens! PositionId: " .. self.cpmm.tokens.positionIds[i]
+      end
     end
   end
   -- Revert on error
   if error then
-    return msg.reply({ Action = 'Error', Data = errorMessage })
+    return msg.reply({
+      Action = 'Merge-Positions-Error',
+      Error = errorMessage,
+      Data = errorMessage
+    })
   end
-  return self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg)
+  return self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg, true)
 end
 
 --- Report payouts
@@ -4002,22 +4079,14 @@ CONDITIONAL TOKENS READ METHODS
 --- @param msg Message The message received
 --- @return Message payoutNumerators payout numerators for the condition
 function MarketMethods:getPayoutNumerators(msg)
-  return msg.reply({
-    Action = "Payout-Numerators",
-    ConditionId = self.cpmm.tokens.conditionId,
-    Data = json.encode(self.cpmm.tokens.payoutNumerators)
-  })
+  return msg.reply({ Data = json.encode(self.cpmm.tokens.payoutNumerators) })
 end
 
 --- Get payout denominator
 --- @param msg Message The message received
 --- @return Message payoutDenominator The payout denominator for the condition
 function MarketMethods:getPayoutDenominator(msg)
-  return msg.reply({
-    Action = "Payout-Denominator",
-    ConditionId = self.cpmm.tokens.conditionId,
-    Data = self.cpmm.tokens.payoutDenominator
-  })
+  return msg.reply({ Data = tostring(self.cpmm.tokens.payoutDenominator) })
 end
 
 --[[
@@ -4031,7 +4100,7 @@ SEMI-FUNGIBLE TOKENS WRITE METHODS
 --- @return table<Message>|Message|nil transferSingleNotices The transfer notices, error notice or nothing
 function MarketMethods:transferSingle(msg)
   semiFungibleTokensValidation.transferSingle(msg, self.cpmm.tokens.positionIds)
-  return self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.TokenId, msg.Tags.Quantity, msg.Tags.Cast, msg)
+  return self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.PositionId, msg.Tags.Quantity, msg.Tags.Cast, msg, true)
 end
 
 --- Transfer batch
@@ -4039,9 +4108,9 @@ end
 --- @return table<Message>|Message|nil transferBatchNotices The transfer notices, error notice or nothing
 function MarketMethods:transferBatch(msg)
   semiFungibleTokensValidation.transferBatch(msg, self.cpmm.tokens.positionIds)
-  local tokenIds = json.decode(msg.Tags.TokenIds)
+  local positionIds = json.decode(msg.Tags.PositionIds)
   local quantities = json.decode(msg.Tags.Quantities)
-  return self.cpmm.tokens:transferBatch(msg.From, msg.Tags.Recipient, tokenIds, quantities, msg.Tags.Cast, msg)
+  return self.cpmm.tokens:transferBatch(msg.From, msg.Tags.Recipient, positionIds, quantities, msg.Tags.Cast, msg, true)
 end
 
 --[[
@@ -4056,11 +4125,10 @@ SEMI-FUNGIBLE TOKENS READ METHODS
 function MarketMethods:balanceById(msg)
   semiFungibleTokensValidation.balanceById(msg, self.cpmm.tokens.positionIds)
   local account = msg.Tags.Recipient or msg.From
-  local bal = self.cpmm.tokens:getBalance(msg.From, account, msg.Tags.TokenId)
+  local bal = self.cpmm.tokens:getBalance(msg.From, account, msg.Tags.PositionId)
   return msg.reply({
     Balance = bal,
-    TokenId = msg.Tags.TokenId,
-    Ticker = Ticker,
+    PositionId = msg.Tags.PositionId,
     Account = account,
     Data = bal
   })
@@ -4071,8 +4139,11 @@ end
 --- @return Message balancesById The balances of all accounts filtered by ID
 function MarketMethods:balancesById(msg)
   semiFungibleTokensValidation.balancesById(msg, self.cpmm.tokens.positionIds)
-  local bals = self.cpmm.tokens:getBalances(msg.Tags.TokenId)
-  return msg.reply({ Data = bals })
+  local bals = self.cpmm.tokens:getBalances(msg.Tags.PositionId)
+  return msg.reply({
+    PositionId = msg.Tags.PositionId,
+    Data = json.encode(bals)
+  })
 end
 
 --- Batch balance
@@ -4081,9 +4152,13 @@ end
 function MarketMethods:batchBalance(msg)
   semiFungibleTokensValidation.batchBalance(msg, self.cpmm.tokens.positionIds)
   local recipients = json.decode(msg.Tags.Recipients)
-  local tokenIds = json.decode(msg.Tags.TokenIds)
-  local bals = self.cpmm.tokens:getBatchBalance(recipients, tokenIds)
-  return msg.reply({ Data = bals })
+  local positionIds = json.decode(msg.Tags.PositionIds)
+  local bals = self.cpmm.tokens:getBatchBalance(recipients, positionIds)
+  return msg.reply({
+    PositionIds = msg.Tags.PositionIds,
+    Accounts = msg.Tags.Recipients,
+    Data = json.encode(bals)
+  })
 end
 
 --- Batch balances
@@ -4091,16 +4166,16 @@ end
 --- @return Message batchBalances The balances of all accounts filtered by IDs
 function MarketMethods:batchBalances(msg)
   semiFungibleTokensValidation.batchBalances(msg, self.cpmm.tokens.positionIds)
-  local tokenIds = json.decode(msg.Tags.TokenIds)
-  local bals = self.cpmm.tokens:getBatchBalances(tokenIds)
-  return msg.reply({ Data = bals })
+  local positionIds = json.decode(msg.Tags.PositionIds)
+  local bals = self.cpmm.tokens:getBatchBalances(positionIds)
+  return msg.reply({ Data = json.encode(bals) })
 end
 
 --- Balances all
 --- @param msg Message The message received
 --- @return Message balances The balances of all accounts
 function MarketMethods:balancesAll(msg)
-  return msg.reply({ Data = self.cpmm.tokens.balancesById })
+  return msg.reply({ Data = json.encode(self.cpmm.tokens.balancesById) })
 end
 
 --[[
@@ -4202,6 +4277,9 @@ Version = "1.0.1"
 --- @field resolutionAgent string The Resolution Agent process ID
 --- @field creator string The Creator address
 --- @field question string The Market question 
+--- @field rules string The Market rules
+--- @field category string The Market category
+--- @field subcategory string The Market subcategory
 --- @field positionIds table<string> The Position process IDs  
 --- @field name string The Market name  
 --- @field ticker string The Market ticker  
@@ -4224,6 +4302,9 @@ local function retrieveMarketConfig()
     resolutionAgent = ao.env.Process.Tags.ResolutionAgent or constants.marketConfig[Env].resolutionAgent,
     creator = ao.env.Process.Tags.Creator or constants.marketConfig[Env].creator,
     question = ao.env.Process.Tags.Question or constants.marketConfig[Env].question,
+    rules = ao.env.Process.Tags.Rules or constants.marketConfig[Env].rules,
+    category = ao.env.Process.Tags.Category or constants.marketConfig[Env].category,
+    subcategory = ao.env.Process.Tags.Subcategory or constants.marketConfig[Env].subcategory,
     positionIds = json.decode(ao.env.Process.Tags.PositionIds or constants.marketConfig[Env].positionIds),
     name = ao.env.Process.Tags.Name or constants.marketConfig[Env].name,
     ticker = ao.env.Process.Tags.Ticker or constants.marketConfig[Env].ticker,
@@ -4253,6 +4334,9 @@ if not Market or Env == 'DEV' then
     marketConfig.resolutionAgent,
     marketConfig.creator,
     marketConfig.question,
+    marketConfig.rules,
+    marketConfig.category,
+    marketConfig.subcategory,
     marketConfig.positionIds,
     marketConfig.name,
     marketConfig.ticker,
@@ -4282,21 +4366,6 @@ local function isAddFunding(msg)
     msg.From == Market.cpmm.tokens.collateralToken and
     msg.Action == "Credit-Notice" and
     msg["X-Action"] == "Add-Funding"
-  ) then
-    return true
-  else
-    return false
-  end
-end
-
---- Match on remove funding from CPMM
---- @param msg Message The message to match
---- @return boolean True if the message is to remove funding, false otherwise
-local function isRemoveFunding(msg)
-  if (
-    msg.From == ao.id and
-    msg.Action == "Credit-Notice" and
-    msg["X-Action"] == "Remove-Funding"
   ) then
     return true
   else
@@ -4348,7 +4417,7 @@ end)
 --- Remove funding handler
 --- @param msg Message The message received
 --- @return Message removeFundingNotice The remove funding notice
-Handlers.add("Remove-Funding", isRemoveFunding, function(msg)
+Handlers.add("Remove-Funding", {Action = "Remove-Funding"}, function(msg)
   return Market:removeFunding(msg)
 end)
 

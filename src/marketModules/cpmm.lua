@@ -195,7 +195,7 @@ function CPMMMethods:removeFunding(from, sharesToBurn, msg)
   collateralRemovedFromFeePool = tostring(math.floor(poolFeeBalance - collateralRemovedFromFeePool))
   -- Send collateralRemovedFromFeePool
   if bint(collateralRemovedFromFeePool) > 0 then
-    ao.send({ Target = self.tokens.collateralToken, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
+    ao.send({Target = self.tokens.collateralToke, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
   end
   -- Send conditionalTokens amounts
   self.tokens:transferBatch(ao.id, from, self.tokens.positionIds, sendAmounts, false, msg)
@@ -291,7 +291,7 @@ function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minPosi
   -- Split position through all conditions
   self.tokens:splitPosition(ao.id, self.tokens.collateralToken, investmentAmountMinusFees, msg)
   -- Transfer buy position to onBehalfOf
-  self.tokens:transferSingle(ao.id, onBehalfOf, positionId, positionTokensToBuy, false, msg)
+  self.tokens:transferSingle(ao.id, onBehalfOf, positionId, positionTokensToBuy, true, msg, false)
   -- Send notice.
   return self.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, positionTokensToBuy, msg)
 end
@@ -311,21 +311,20 @@ function CPMMMethods:sell(from, returnAmount, positionId, maxPositionTokensToSel
   self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
   local returnAmountPlusFees = tostring(bint.__add(returnAmount, bint(feeAmount)))
   -- Check sufficient liquidity within the process or revert.
-  local collataralBalance = ao.send({Target = self.tokens.collateralToken, Action = "Balance"}).receive().Data
+  local collataralBalance = ao.send({Target = self.tokens.collateralToken, Action = "Balance", ["X-Action"] = "Check Liquidity"}).receive().Data
   assert(bint.__le(bint(returnAmountPlusFees), bint(collataralBalance)), "Insufficient liquidity!")
   -- Check user balance and transfer positionTokensToSell to process before merge.
   local balance = self.tokens:getBalance(from, nil, positionId)
   assert(bint.__le(bint(positionTokensToSell), bint(balance)), 'Insufficient balance!')
-  self.tokens:transferSingle(from, ao.id, positionId, positionTokensToSell, true, msg)
+  self.tokens:transferSingle(from, ao.id, positionId, positionTokensToSell, true, msg, false)
   -- Merge positions through all conditions (burns returnAmountPlusFees).
-  self.tokens:mergePositions(ao.id, '', positionTokensToSell, true, msg)
+  self.tokens:mergePositions(ao.id, '', positionTokensToSell, true, msg, false)
   -- Returns collateral to the user
-  ao.send({
-    Target = self.tokens.collateralToken,
+  msg.forward(self.tokens.collateralToken,{
     Action = "Transfer",
     Quantity = tostring(returnAmount),
     Recipient = from
-  }).receive()
+  })
   -- Send notice (Process continued via "SellOrderCompletionCollateralToken" and "SellOrderCompletionConditionalTokens" handlers)
   return self.sellNotice(from, returnAmount, feeAmount, positionId, positionTokensToSell, msg)
 end
@@ -351,15 +350,16 @@ end
 --- Withdraw fees
 --- @param sender string The process ID of the sender
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The withdraw fees message
-function CPMMMethods:withdrawFees(sender, msg)
+function CPMMMethods:withdrawFees(sender, msg, useReply)
   local feeAmount = self:feesWithdrawableBy(sender)
   if bint.__lt(0, bint(feeAmount)) then
     self.withdrawnFees[sender] = feeAmount
     self.totalWithdrawnFees = tostring(bint.__add(bint(self.totalWithdrawnFees), bint(feeAmount)))
     msg.forward(self.tokens.collateralToken, {Action = 'Transfer', Recipient = sender, Quantity = feeAmount})
   end
-  return self.withdrawFeesNotice(feeAmount, msg)
+  return self.withdrawFeesNotice(feeAmount, msg, useReply)
 end
 
 --- Before token transfer
@@ -370,7 +370,7 @@ end
 --- @param msg Message The message received
 function CPMMMethods:_beforeTokenTransfer(from, to, amount, msg)
   if from ~= nil and from ~= ao.id then
-    self:withdrawFees(from, msg)
+    self:withdrawFees(from, msg, false)
   end
   local totalSupply = self.token.totalSupply
   local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self:collectedFees()), bint(amount)), totalSupply)))

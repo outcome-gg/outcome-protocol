@@ -9,13 +9,7 @@
     "test": "yarn format:fix && yarn test:unit && yarn test:integration",
     "test:unit": "rm -rf coverage && mkdir -p coverage && busted . && luacov",
     "test:coverage": "rm -rf -R coverage && mkdir -p coverage && for file in test/unit/*_spec.lua; do echo Running tests in $(basename \"$file\"); busted \"$file\" --coverage; done && luacov --reporter html && open coverage/luacov.report.html",
-    "test:integration": "yarn && yarn test:deploy && mocha 'test/integration/**/*.js' --timeout 30000",
-    "test:integration:marketFactory": "yarn && mocha 'test/integration/marketFactory*.js' --timeout 2400000",
-    "test:integration:market": "yarn && mocha 'test/integration/market.integration.*.js' --timeout 90000",
-    "test:integration:platformData": "yarn && mocha 'test/integration/platformData*.js' --timeout 30000",
-    "test:integration:configurator": "yarn && mocha 'test/integration/configurator.*.js' --timeout 90000",
-    "test:integration:market-configurator": "yarn && mocha 'test/integration/market-configurator.integration.*.js' --timeout 90000",
-    "test:deploy": "scripts/deploy.sh test"
+    "test:integration": " aos testMarket --load src/testMarket.lua"
   },
   "keywords": [],
   "author": "",

@@ -465,21 +465,13 @@ yarn test:coverage
 
 ### Integration Tests
 
-Before running integration tests, ensure your local Arweave wallet JSON files are in the project root:
-- `./wallet.json` – Primary wallet for deploying and testing  
-- `./wallet2.json` – Secondary wallet for additional tests  
+Ensure the AOS runtime is installed:
+
+```bash
+yarn global add https://get_ao.g8way.io
+```
 
 Run integration tests: 
 ```bash
 yarn test:integration   
-```
-
-To run a specific integration test, run: 
-```bash
-yarn test:integration:{PROCESS}
-```
-
-To (re)deploy processes for testing, run: 
-```bash
-yarn test:deploy
 ```

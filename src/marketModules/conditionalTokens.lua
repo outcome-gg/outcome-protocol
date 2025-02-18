@@ -129,8 +129,9 @@ end
 --- @param quantity string The quantity of collateral to merge
 --- @param isSell boolean True if the merge is a sell, false otherwise
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The positions merge notice
-function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)
+function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg, useReply)
   assert(self.payoutNumerators and #self.payoutNumerators > 0, "Condition not prepared!")
   -- Create equal merge positions.
   local quantities = {}
@@ -138,7 +139,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     table.insert(quantities, quantity)
   end
   -- Burn equal quantiies from user positions.
-  self:batchBurn(from, self.positionIds, quantities, msg)
+  self:batchBurn(from, self.positionIds, quantities, msg, false)
   -- @dev below already handled within the sell method. 
   -- sell method w/ a different quantity and recipient.
   if not isSell then
@@ -151,7 +152,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     })
   end
   -- Send notice.
-  return self.positionsMergeNotice(self.collateralToken, quantity, msg)
+  return self.positionsMergeNotice(self.collateralToken, quantity, msg, useReply)
 end
 
 --- Report payouts
@@ -185,6 +186,7 @@ function ConditionalTokensMethods:redeemPositions(msg)
   assert(den > 0, "market not resolved")
   assert(self.payoutNumerators and #self.payoutNumerators > 0, "market not initialized")
   local totalPayout = 0
+  local totalPayoutMinusFee = "0"
   for i = 1, #self.positionIds do
     local positionId = self.positionIds[i]
     local payoutNumerator = self.payoutNumerators[tonumber(positionId)]
@@ -195,16 +197,16 @@ function ConditionalTokensMethods:redeemPositions(msg)
     if bint.__lt(0, bint(payoutStake)) then
       -- Calculate the payout and burn position.
       totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
-      self:burn(msg.From, positionId, payoutStake, msg)
+      self:burn(msg.From, positionId, payoutStake, msg, false)
     end
   end
   -- Return total payout minus take fee.
   if totalPayout > 0 then
     totalPayout = math.floor(totalPayout)
-    self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout, msg)
+    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout, msg)
   end
   -- Send notice.
-  return self.redeemPositionsNotice(self.collateralToken, totalPayout, msg)
+  return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, msg)
 end
 
 --- Return total payout minus take fee
@@ -213,7 +215,7 @@ end
 --- @param from string The account to receive the payout minus fees
 --- @param totalPayout number The total payout assciated with the acount stake
 --- @param msg Message The message received
---- @return table<Message> The protocol fee, creator fee and payout messages
+--- @return string The total payout minus fee amount
 function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, msg)
   local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))
   local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))
@@ -221,26 +223,29 @@ function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken,
   local totalPayoutMinusFee = tostring(bint.__sub(totalPayout, bint(takeFee)))
   -- prepare txns
   local protocolFeeTxn = {
+    Target = collateralToken,
     Action = "Transfer",
     Recipient = self.protocolFeeTarget,
     Quantity = protocolFee,
   }
   local creatorFeeTxn = {
+    Target = collateralToken,
     Action = "Transfer",
     Recipient = self.creatorFeeTarget,
     Quantity = creatorFee,
   }
   local totalPayoutMinutTakeFeeTxn = {
+    Target = collateralToken,
     Action = "Transfer",
     Recipient = from,
     Quantity = totalPayoutMinusFee
   }
   -- send txns
-  return {
-    msg.forward(collateralToken, protocolFeeTxn),
-    msg.forward(collateralToken, creatorFeeTxn),
-    msg.forward(collateralToken, totalPayoutMinutTakeFeeTxn)
-  }
+  ao.send(protocolFeeTxn)
+  ao.send(creatorFeeTxn)
+  ao.send(totalPayoutMinutTakeFeeTxn)
+
+  return totalPayoutMinusFee
 end
 
 return ConditionalTokens
