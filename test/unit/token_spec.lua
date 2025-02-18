@@ -74,9 +74,7 @@ describe("#market #token #tokenInternal", function()
       From = sender,
       Tags = {
         Quantity = burnQuantity
-      },
-      reply = function(message) return message end,
-      forward = function(target, message) return message end
+      }
     }
     -- create a message object
     msgTransfer = {
@@ -166,7 +164,7 @@ describe("#market #token #tokenInternal", function()
         msgBurn.From,
         msgBurn.Tags.Quantity,
         msgBurn
-      )
+      ).receive().Data
     end)
     -- calculate expected updated balance
     local updateBalance = tostring(tonumber(quantity) - tonumber(burnQuantity))
@@ -175,9 +173,11 @@ describe("#market #token #tokenInternal", function()
     -- assert update total supply
     assert.are.same(Token.totalSupply, updateBalance)
     -- assert notice
+
     assert.are.same({
-      Quantity = msgBurn.Tags.Quantity,
+      Target = msgBurn.From,
       Action = 'Burn-Notice',
+      Quantity = msgBurn.Tags.Quantity,
       Data = "Successfully burned " .. msgBurn.Tags.Quantity
     }, notice)
 	end)

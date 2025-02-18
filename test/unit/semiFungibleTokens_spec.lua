@@ -116,6 +116,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         Quantity = quantity,
       },
       ["X-Action"] = "FOO",
+      reply = function(message) return message end,
       forward = function(target, message) return message end
     }
     -- create a message object
@@ -322,7 +323,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgBurn.From,
         msgBurn.Tags.PositionId,
         msgBurn.Tags.Quantity,
-        msgBurn
+        msgBurn,
+        true -- useReply
       )
     end)
     -- assert updated balance
@@ -359,7 +361,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
       msgBurnBatch.From,
       msgBurnBatch.Tags.PositionIds,
       msgBurnBatch.Tags.Quantities,
-      msgBurnBatch
+      msgBurnBatch,
+      true -- useReply
     )
     end)
     -- assert updated balance
@@ -402,7 +405,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgTransfer.Tags.PositionId,
         msgTransfer.Tags.Quantity,
         false, -- cast
-        msgTransfer
+        msgTransfer,
+        true -- useReply
       )
     end)
     -- assert updated balance
@@ -460,7 +464,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgTransferBatch.Tags.PositionIds,
         msgTransferBatch.Tags.Quantities,
         false, -- cast
-        msgTransfer
+        msgTransfer,
+        true -- useReply
       )
     end)
     -- assert updated balance

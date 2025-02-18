@@ -182,7 +182,8 @@ describe("#market #conditionalTokens", function()
       msgMergePositions.Tags.OnBehalfOf,
       msgMergePositions.Tags.Quantity,
       true, -- isSell
-      msgMergePositions
+      msgMergePositions,
+      true -- useReply
     )
     -- asert state change
     assert.are.same({
@@ -215,7 +216,8 @@ describe("#market #conditionalTokens", function()
       msgMergePositions.Tags.OnBehalfOf,
       msgMergePositions.Tags.Quantity,
       false, -- isSell
-      msgMergePositions
+      msgMergePositions,
+      true -- useReply
     )
     -- asert state change
     assert.are.same({
@@ -397,7 +399,8 @@ describe("#market #conditionalTokens", function()
     }, ConditionalTokens.balancesById)
     -- assert notice
     assert.are.equals("Redeem-Positions-Notice", notice.Action)
-    assert.are.equals(quantity, notice.Payout)
+    assert.are.equals(quantity, notice.GrossPayout)
+    assert.are.equals(tostring(math.floor(tonumber(quantity) * 0.94)), notice.NetPayout) -- 6 = math.ceil(2.5) + math.ceil(2.5)
 	end)
 
   it("should fail to redeem positions (not reported)", function()
@@ -418,28 +421,13 @@ describe("#market #conditionalTokens", function()
 	end)
 
   it("should return total payout minus take fee", function()
-    local result = ConditionalTokens:returnTotalPayoutMinusTakeFee(
+    local totalAmountMinusFee_ = ConditionalTokens:returnTotalPayoutMinusTakeFee(
       collateralToken,
       sender,
       totalPayout,
       msg
     )
-    -- extract results
-    local protocolFeeTransfer = result[1]
-    local creatorFeeTransfer = result[2]
-    local totalAmountMinusTakeFeeTransfer = result[3]
-
-    -- assert protocol fee transfer
-    assert.are.equal("Transfer", protocolFeeTransfer.Action)
-    assert.are.equal(protocolFeeTarget,  protocolFeeTransfer.Recipient)
-    assert.are.equal(tostring(math.ceil(totalPayout * protocolFee / 1e4)), protocolFeeTransfer.Quantity)
-    -- assert creator fee transfer
-    assert.are.equal("Transfer", creatorFeeTransfer.Action)
-    assert.are.equal(creatorFeeTarget, creatorFeeTransfer.Recipient)
-    assert.are.equal(tostring(math.ceil(totalPayout * creatorFee / 1e4)), creatorFeeTransfer.Quantity)
-    -- assert total amount minus take fee transfer
-    assert.are.equal("Transfer", totalAmountMinusTakeFeeTransfer.Action)
-    assert.are.equal(sender, totalAmountMinusTakeFeeTransfer.Recipient)
-    assert.are.equals(tostring(totalPayout - math.ceil(totalPayout * protocolFee / 1e4) - math.ceil(totalPayout * creatorFee / 1e4)), totalAmountMinusTakeFeeTransfer.Quantity)
+    -- assert total amount minus take fee
+    assert.are.equal(tostring(math.floor(tonumber(totalPayout) * 0.94)),  totalAmountMinusFee_)
 	end)
 end)

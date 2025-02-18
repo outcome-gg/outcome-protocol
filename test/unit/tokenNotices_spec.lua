@@ -43,9 +43,7 @@ describe("#market #token #tokenNotices", function()
       Tags = {
         Action = "Burn",
         Quantity = "100",
-      },
-      reply = function(message) return message end,
-      forward = function(target, message) return message end
+      }
     }
     -- create a message object
     msgTransfer = {
@@ -95,8 +93,10 @@ describe("#market #token #tokenNotices", function()
     local notice = tokenNotices.burnNotice(
       msgBurn.Tags.Quantity,
       msgBurn
-    )
+    ).receive().Data
+
     assert.are.same({
+      Target = msgBurn.From,
       Action = 'Burn-Notice',
       Quantity = msgBurn.Tags.Quantity,
       Data = "Successfully burned " .. msgBurn.Tags.Quantity

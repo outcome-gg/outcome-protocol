@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 30.15%"></span>
-                  <span><strong>30.15%</strong> Coverage</span>
+                  <span class="bg" style="width: 29.43%"></span>
+                  <span><strong>29.43%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>101</strong> Hits</span>
-               <span class="miss"><strong>234</strong> Missed</span>
+               <span class="hits"><strong>103</strong> Hits</span>
+               <span class="miss"><strong>247</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -335,11 +335,11 @@
             src/marketModules/conditionalTokens.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 6.52%"></span>
-                  <span><strong>6.52%</strong> Coverage</span>
+                  <span class="bg" style="width: 6.45%"></span>
+                  <span><strong>6.45%</strong> Coverage</span>
                </span>
                <span class="hits"><strong>6</strong> Hits</span>
-               <span class="miss"><strong>86</strong> Missed</span>
+               <span class="miss"><strong>87</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -473,8 +473,9 @@ end
 --- @param quantity string The quantity of collateral to merge
 --- @param isSell boolean True if the merge is a sell, false otherwise
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The positions merge notice
-<span class="nc">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg)</span>
+<span class="nc">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg, useReply)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal merge positions.
 <span class="nc">  local quantities = {}</span>
@@ -482,7 +483,7 @@ end
 <span class="nc">    table.insert(quantities, quantity)</span>
   end
   -- Burn equal quantiies from user positions.
-<span class="nc">  self:batchBurn(from, self.positionIds, quantities, msg)</span>
+<span class="nc">  self:batchBurn(from, self.positionIds, quantities, msg, false)</span>
   -- @dev below already handled within the sell method. 
   -- sell method w&#47; a different quantity and recipient.
 <span class="nc">  if not isSell then</span>
@@ -495,7 +496,7 @@ end
     })
   end
   -- Send notice.
-<span class="nc">  return self.positionsMergeNotice(self.collateralToken, quantity, msg)</span>
+<span class="nc">  return self.positionsMergeNotice(self.collateralToken, quantity, msg, useReply)</span>
 end
 
 --- Report payouts
@@ -529,6 +530,7 @@ end
 <span class="nc">  assert(den &gt; 0, &quot;market not resolved&quot;)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;market not initialized&quot;)</span>
 <span class="nc">  local totalPayout = 0</span>
+<span class="nc">  local totalPayoutMinusFee = &quot;0&quot;</span>
 <span class="nc">  for i = 1, #self.positionIds do</span>
 <span class="nc">    local positionId = self.positionIds[i]</span>
 <span class="nc">    local payoutNumerator = self.payoutNumerators[tonumber(positionId)]</span>
@@ -539,16 +541,16 @@ end
 <span class="nc">    if bint.__lt(0, bint(payoutStake)) then</span>
       -- Calculate the payout and burn position.
 <span class="nc">      totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) &#47; den)</span>
-<span class="nc">      self:burn(msg.From, positionId, payoutStake, msg)</span>
+<span class="nc">      self:burn(msg.From, positionId, payoutStake, msg, false)</span>
     end
   end
   -- Return total payout minus take fee.
 <span class="nc">  if totalPayout &gt; 0 then</span>
 <span class="nc">    totalPayout = math.floor(totalPayout)</span>
-<span class="nc">    self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout, msg)</span>
+<span class="nc">    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout, msg)</span>
   end
   -- Send notice.
-<span class="nc">  return self.redeemPositionsNotice(self.collateralToken, totalPayout, msg)</span>
+<span class="nc">  return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, msg)</span>
 end
 
 --- Return total payout minus take fee
@@ -557,7 +559,7 @@ end
 --- @param from string The account to receive the payout minus fees
 --- @param totalPayout number The total payout assciated with the acount stake
 --- @param msg Message The message received
---- @return table&lt;Message&gt; The protocol fee, creator fee and payout messages
+--- @return string The total payout minus fee amount
 <span class="nc">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, msg)</span>
 <span class="nc">  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))</span>
 <span class="nc">  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))</span>
@@ -565,26 +567,29 @@ end
 <span class="nc">  local totalPayoutMinusFee = tostring(bint.__sub(totalPayout, bint(takeFee)))</span>
   -- prepare txns
 <span class="nc">  local protocolFeeTxn = {</span>
+    Target = collateralToken,
     Action = &quot;Transfer&quot;,
     Recipient = self.protocolFeeTarget,
     Quantity = protocolFee,
   }
 <span class="nc">  local creatorFeeTxn = {</span>
+    Target = collateralToken,
     Action = &quot;Transfer&quot;,
     Recipient = self.creatorFeeTarget,
     Quantity = creatorFee,
   }
 <span class="nc">  local totalPayoutMinutTakeFeeTxn = {</span>
+    Target = collateralToken,
     Action = &quot;Transfer&quot;,
     Recipient = from,
 <span class="nc">    Quantity = totalPayoutMinusFee</span>
   }
   -- send txns
-<span class="nc">  return {</span>
-<span class="nc">    msg.forward(collateralToken, protocolFeeTxn),</span>
-<span class="nc">    msg.forward(collateralToken, creatorFeeTxn),</span>
-<span class="nc">    msg.forward(collateralToken, totalPayoutMinutTakeFeeTxn)</span>
-  }
+<span class="nc">  ao.send(protocolFeeTxn)</span>
+<span class="nc">  ao.send(creatorFeeTxn)</span>
+<span class="nc">  ao.send(totalPayoutMinutTakeFeeTxn)</span>
+
+<span class="nc">  return totalPayoutMinusFee</span>
 end
 
 <span class="nc">return ConditionalTokens</span>
@@ -596,11 +601,11 @@ end
             src/marketModules/conditionalTokensNotices.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 100.00%"></span>
-                  <span><strong>100.00%</strong> Coverage</span>
+                  <span class="bg" style="width: 94.12%"></span>
+                  <span><strong>94.12%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>30</strong> Hits</span>
-               <span class="miss"><strong>0</strong> Missed</span>
+               <span class="hits"><strong>32</strong> Hits</span>
+               <span class="miss"><strong>2</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -657,25 +662,31 @@ end
 --- @param collateralToken string The address of the collateral token
 --- @param quantity string The quantity
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The positions merge notice
-<span class="fc" data-hits="2">function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, msg)</span>
-<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="2">function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, msg, useReply)</span>
+<span class="fc" data-hits="1">  local notice = {</span>
 <span class="fc" data-hits="1">    Action = &quot;Merge-Positions-Notice&quot;,</span>
 <span class="fc" data-hits="1">    CollateralToken = collateralToken,</span>
 <span class="fc" data-hits="1">    Quantity = quantity</span>
-  })
+  }
+<span class="fc" data-hits="1">  if useReply then return msg.reply(notice) end</span>
+<span class="nc">  notice.Target = msg.Sender and msg.Sender or msg.From</span>
+<span class="nc">  return ao.send(notice)</span>
 end
 
 --- Redeem positions notice
 --- @param collateralToken string The address of the collateral token
---- @param payout string The payout amount
+--- @param payout number The payout amount
+--- @param netPayout string The net payout amount (after fees)
 --- @param msg Message The message received
 --- @return Message The payout redemption notice
-<span class="fc" data-hits="2">function ConditionalTokensNotices.redeemPositionsNotice(collateralToken, payout, msg)</span>
+<span class="fc" data-hits="2">function ConditionalTokensNotices.redeemPositionsNotice(collateralToken, payout, netPayout, msg)</span>
 <span class="fc" data-hits="2">  return msg.reply({</span>
 <span class="fc" data-hits="1">    Action = &quot;Redeem-Positions-Notice&quot;,</span>
 <span class="fc" data-hits="1">    CollateralToken = collateralToken,</span>
-<span class="fc" data-hits="1">    Payout = tostring(payout)</span>
+<span class="fc" data-hits="1">    GrossPayout = tostring(payout),</span>
+<span class="fc" data-hits="1">    NetPayout = netPayout</span>
   })
 end
 
@@ -871,8 +882,9 @@ end
 --- @param id string The ID of the tokens to burn
 --- @param quantity string The quantity of tokens to burn
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The burn notice
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:burn(from, id, quantity, msg)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:burn(from, id, quantity, msg, useReply)</span>
 <span class="nc">  assert(bint.__lt(0, bint(quantity)), &#39;Quantity must be greater than zero!&#39;)</span>
 <span class="nc">  assert(self.balancesById[id], &#39;Id must exist! &#39; .. id)</span>
 <span class="nc">  assert(self.balancesById[id][from], &#39;Account must hold token! :: &#39; .. id)</span>
@@ -881,7 +893,7 @@ end
 <span class="nc">  self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], bint(quantity)))</span>
 <span class="nc">  self.totalSupplyById[id] = tostring(bint.__sub(self.totalSupplyById[id], bint(quantity)))</span>
   -- send notice
-<span class="nc">  return self.burnSingleNotice(from, id, quantity, msg)</span>
+<span class="nc">  return self.burnSingleNotice(from, id, quantity, msg, useReply)</span>
 end
 
 --- Batch burn a quantity of tokens with the given IDs
@@ -889,8 +901,9 @@ end
 --- @param ids table&lt;string&gt; The IDs of the tokens to burn
 --- @param quantities table&lt;string&gt; The quantities of tokens to burn
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The batch burn notice
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg, useReply)</span>
 <span class="nc">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
 <span class="nc">  for i = 1, #ids do</span>
 <span class="nc">    assert(bint.__lt(0, quantities[i]), &#39;Quantity must be greater than zero!&#39;)</span>
@@ -906,7 +919,7 @@ end
 <span class="nc">    remainingBalances[i] = self.balancesById[ ids[i] ][from]</span>
   end
   -- send notice
-<span class="nc">  return self.burnBatchNotice(from, ids, quantities, remainingBalances, msg)</span>
+<span class="nc">  return self.burnBatchNotice(from, ids, quantities, remainingBalances, msg, useReply)</span>
 end
 
 --- Transfer a quantity of tokens with the given ID
@@ -915,9 +928,10 @@ end
 --- @param id string The ID of the tokens to transfer
 --- @param quantity string The quantity of tokens to transfer
 --- @param cast boolean The cast is set to true to silence the transfer notice
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return table&lt;Message&gt;|Message|nil The transfer notices, error notice or nothing
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, msg)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, msg, useReply)</span>
 <span class="nc">  if not self.balancesById[id] then self.balancesById[id] = {} end</span>
 <span class="nc">  if not self.balancesById[id][from] then self.balancesById[id][from] = &quot;0&quot; end</span>
 <span class="nc">  if not self.balancesById[id][recipient] then self.balancesById[id][recipient] = &quot;0&quot; end</span>
@@ -930,7 +944,7 @@ end
 
     -- Only send the notifications if the cast tag is not set
 <span class="nc">    if not cast then</span>
-<span class="nc">      return self.transferSingleNotices(from, recipient, id, quantity, msg)</span>
+<span class="nc">      return self.transferSingleNotices(from, recipient, id, quantity, msg, useReply)</span>
     end
   else
 <span class="nc">    return self.transferErrorNotice(id, msg)</span>
@@ -943,9 +957,10 @@ end
 --- @param ids table&lt;string&gt; The IDs of the tokens to transfer
 --- @param quantities table&lt;string&gt; The quantities of tokens to transfer
 --- @param cast boolean The cast is set to true to silence the transfer notice
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return table&lt;Message&gt;|Message|nil The transfer notices, error notice or nothing
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg, useReply)</span>
 <span class="nc">  local ids_ = {}</span>
 <span class="nc">  local quantities_ = {}</span>
 
@@ -969,7 +984,7 @@ end
 
   -- Only send the notifications if the cast tag is not set
 <span class="nc">  if not cast and #ids_ &gt; 0 then</span>
-<span class="nc">    return self.transferBatchNotices(from, recipient, ids_, quantities_, msg)</span>
+<span class="nc">    return self.transferBatchNotices(from, recipient, ids_, quantities_, msg, useReply)</span>
   end
 end
 
@@ -1050,11 +1065,11 @@ end
             src/marketModules/semiFungibleTokensNotices.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 21.74%"></span>
-                  <span><strong>21.74%</strong> Coverage</span>
+                  <span class="bg" style="width: 17.86%"></span>
+                  <span><strong>17.86%</strong> Coverage</span>
                </span>
                <span class="hits"><strong>10</strong> Hits</span>
-               <span class="miss"><strong>36</strong> Missed</span>
+               <span class="miss"><strong>46</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -1106,8 +1121,9 @@ end
 --- @param id string The ID of the token to be burned
 --- @param quantity string The quantity of the token to be burned
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The burn notice
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg, useReply)</span>
   -- Prepare notice
 <span class="nc">  local notice = {</span>
     Recipient = from,
@@ -1124,7 +1140,9 @@ end
     end
   end
   -- Send notice
-<span class="nc">  return msg.forward(from, notice)</span>
+<span class="nc">  if useReply then return msg.reply(notice) end</span>
+<span class="nc">  notice.Target = from</span>
+<span class="nc">  return ao.send(notice)</span>
 end
 
 --- Burn batch notice
@@ -1133,8 +1151,9 @@ end
 --- @param quantities table&lt;string&gt; The quantities of the tokens to be burned
 --- @param remainingBalances table&lt;string&gt; The remaining balances of unburned tokens
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The burn notice
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities, remainingBalances, msg)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities, remainingBalances, msg, useReply)</span>
   -- Prepare notice
 <span class="nc">  local notice = {</span>
     Recipient = from,
@@ -1152,7 +1171,9 @@ end
     end
   end
   -- Send notice
-<span class="nc">  return msg.forward(from, notice)</span>
+<span class="nc">  if useReply then return msg.reply(notice) end</span>
+<span class="nc">  notice.Target = from</span>
+<span class="nc">  return ao.send(notice)</span>
 end
 
 --- Transfer single token notices
@@ -1161,8 +1182,9 @@ end
 --- @param id string The ID of the token to be transferred
 --- @param quantity string The quantity of the token to be transferred
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return table&lt;Message&gt; The debit and credit transfer notices
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg, useReply)</span>
   -- Prepare debit notice
 <span class="nc">  local debitNotice = {</span>
     Action = &#39;Debit-Single-Notice&#39;,
@@ -1188,7 +1210,10 @@ end
     end
   end
   -- Send notices
-<span class="nc">  return { msg.reply(debitNotice), msg.forward(to, creditNotice) }</span>
+<span class="nc">  if useReply then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end</span>
+<span class="nc">  debitNotice.Target = from</span>
+<span class="nc">  creditNotice.Target = to</span>
+<span class="nc">  return { ao.send(debitNotice), ao.send(creditNotice) }</span>
 end
 
 --- Transfer batch tokens notices
@@ -1197,8 +1222,9 @@ end
 --- @param ids table&lt;string&gt; The IDs of the tokens to be transferred
 --- @param quantities table&lt;string&gt; The quantities of the tokens to be transferred
 --- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return table&lt;Message&gt; The debit and credit batch transfer notices
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg, useReply)</span>
   -- Prepare debit notice
 <span class="nc">  local debitNotice = {</span>
     Action = &#39;Debit-Batch-Notice&#39;,
@@ -1224,7 +1250,10 @@ end
     end
   end
   -- Send notice
-<span class="nc">  return {msg.reply(debitNotice), msg.forward(to, creditNotice)}</span>
+<span class="nc">  if useReply then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end</span>
+<span class="nc">  debitNotice.Target = from</span>
+<span class="nc">  creditNotice.Target = to</span>
+<span class="nc">  return {ao.send(debitNotice), ao.send(creditNotice)}</span>
 end
 
 --- Transfer error notice
@@ -1352,7 +1381,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-02-14 10:39:44
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-02-18 12:47:54
    </footer>
 
    <script type="text/javascript">

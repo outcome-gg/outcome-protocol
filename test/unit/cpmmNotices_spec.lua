@@ -235,8 +235,8 @@ describe("#market #conditionalTokens #cpmmNotices", function()
     noticeRemoveFunding.CollateralRemovedFromFeePool = tostring(collateralRemovedFromFeePool)
     local notice = cpmmNotices.removeFundingNotice(
       sendAmounts,
-      collateralRemovedFromFeePool,
-      sharesToBurn,
+      tostring(collateralRemovedFromFeePool),
+      tostring(sharesToBurn),
       msgRemoveFunding
     )
     assert.are.same(noticeRemoveFunding, notice)

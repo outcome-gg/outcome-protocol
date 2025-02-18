@@ -965,7 +965,7 @@ describe("#market", function()
     local withdrawnFeesNotice = {}
     -- should not throw an error
 		assert.has.no.error(function()
-      withdrawnFeesNotice = Market.cpmm:withdrawFees(sender, msgBuy) -- msgBuy used to send a message with forward
+      withdrawnFeesNotice = Market.cpmm:withdrawFees(sender, msgBuy, true) -- useReply
     end)
     -- assert withdrawn fees
     assert.are.equal("1", feesWithdrawable)
@@ -1206,7 +1206,7 @@ describe("#market", function()
     }, Market.cpmm.tokens.balancesById)
     -- assert notice
     assert.are.equals("Redeem-Positions-Notice", notice.Action)
-    assert.are.equals(quantity, notice.Payout)
+    assert.are.equals(quantity, notice.GrossPayout)
 	end)
 
   it("should get payout numerators", function()

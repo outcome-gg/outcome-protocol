@@ -1127,7 +1127,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     local withdrawnFeesNotice = {}
     -- should not throw an error
 		assert.has.no.error(function()
-      withdrawnFeesNotice = CPMM:withdrawFees(sender, msgBuy) -- msgBuy used to send a message with forward
+      withdrawnFeesNotice = CPMM:withdrawFees(sender, msgBuy, true) -- useReply
     end)
     -- assert withdrawn fees
     assert.are.equal("1", feesWithdrawable)
@@ -1203,7 +1203,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         msgBurn.From,
         msgBurn.Tags.Quantity,
         msgBurn
-      )
+      ).receive().Data
     end)
     -- calculate expected updated balance
     local updateBalance = tostring(tonumber(quantity) - tonumber(burnQuantity))
@@ -1213,8 +1213,9 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.are.same(CPMM.token.totalSupply, updateBalance)
     -- assert notice
     assert.are.same({
-      Quantity = msgBurn.Tags.Quantity,
       Action = 'Burn-Notice',
+      Target = msgBurn.From,
+      Quantity = msgBurn.Tags.Quantity,
       Data = "Successfully burned " .. msgBurn.Tags.Quantity
     }, notice)
 	end)
