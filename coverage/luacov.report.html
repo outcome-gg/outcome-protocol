@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 29.43%"></span>
-                  <span><strong>29.43%</strong> Coverage</span>
+                  <span class="bg" style="width: 33.41%"></span>
+                  <span><strong>33.41%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>103</strong> Hits</span>
-               <span class="miss"><strong>247</strong> Missed</span>
+               <span class="hits"><strong>138</strong> Hits</span>
+               <span class="miss"><strong>275</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -335,11 +335,11 @@
             src/marketModules/conditionalTokens.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 6.45%"></span>
-                  <span><strong>6.45%</strong> Coverage</span>
+                  <span class="bg" style="width: 14.29%"></span>
+                  <span><strong>14.29%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>6</strong> Hits</span>
-               <span class="miss"><strong>87</strong> Missed</span>
+               <span class="hits"><strong>13</strong> Hits</span>
+               <span class="miss"><strong>78</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -362,9 +362,7 @@ without explicit written permission from Outcome.
 <span class="fc" data-hits="1">local ConditionalTokensNotices = require(&#39;marketModules.conditionalTokensNotices&#39;)</span>
 <span class="fc" data-hits="1">local SemiFungibleTokens = require(&#39;marketModules.semiFungibleTokens&#39;)</span>
 <span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
-<span class="fc" data-hits="1">local crypto = require(&#39;.crypto&#39;)</span>
-<span class="nc">local json = require(&quot;json&quot;)</span>
-<span class="nc">local ao = ao or require(&#39;.ao&#39;)</span>
+<span class="fc" data-hits="1">local ao = ao or require(&#39;.ao&#39;)</span>
 
 --- Represents ConditionalTokens
 --- @class ConditionalTokens
@@ -399,7 +397,7 @@ without explicit written permission from Outcome.
 --- @param protocolFee number The protocol fee to be paid, in basis points
 --- @param protocolFeeTarget string The process ID to receive the protocol fee
 --- @return ConditionalTokens conditionalTokens The new ConditionalTokens instance
-<span class="nc">function ConditionalTokens:new(</span>
+<span class="fc" data-hits="1">function ConditionalTokens:new(</span>
   name,
   ticker,
   logo,
@@ -454,7 +452,7 @@ end
 --- @param quantity string The quantity of collateral to split
 --- @param msg Message The message received
 --- @return Message The position split notice
-<span class="nc">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal split positions.
 <span class="nc">  local quantities = {}</span>
@@ -475,7 +473,7 @@ end
 --- @param msg Message The message received
 --- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The positions merge notice
-<span class="nc">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg, useReply)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg, useReply)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal merge positions.
 <span class="nc">  local quantities = {}</span>
@@ -503,7 +501,7 @@ end
 --- @param payouts table&lt;number&gt; The resolution agent&#39;s answer
 --- @param msg Message The message received
 --- @return Message reportPayoutsNotice The report payouts notice
-<span class="nc">function ConditionalTokensMethods:reportPayouts(payouts, msg)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:reportPayouts(payouts, msg)</span>
 <span class="nc">  assert(#payouts == #self.positionIds, &quot;Payouts must match outcome slot count!&quot;)</span>
 <span class="nc">  assert(msg.From == self.resolutionAgent, &quot;Sender not resolution agent!&quot;)</span>
 <span class="nc">  assert(self.payoutDenominator == 0, &quot;payout denominator already set&quot;)</span>
@@ -525,7 +523,7 @@ end
 --- Transfers any payout minus fees to the message sender
 --- @param msg Message The message received
 --- @return Message The payout redemption notice
-<span class="nc">function ConditionalTokensMethods:redeemPositions(msg)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:redeemPositions(msg)</span>
 <span class="nc">  local den = self.payoutDenominator</span>
 <span class="nc">  assert(den &gt; 0, &quot;market not resolved&quot;)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;market not initialized&quot;)</span>
@@ -560,7 +558,7 @@ end
 --- @param totalPayout number The total payout assciated with the acount stake
 --- @param msg Message The message received
 --- @return string The total payout minus fee amount
-<span class="nc">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, msg)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, msg)</span>
 <span class="nc">  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))</span>
 <span class="nc">  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))</span>
 <span class="nc">  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))</span>
@@ -592,7 +590,7 @@ end
 <span class="nc">  return totalPayoutMinusFee</span>
 end
 
-<span class="nc">return ConditionalTokens</span>
+<span class="fc" data-hits="1">return ConditionalTokens</span>
 </pre>
       </div>
 
@@ -694,16 +692,16 @@ end
 </pre>
       </div>
 
-      <div class="hidden file success-high" id="src-marketmodules-conditionaltokensvalidation">
+      <div class="hidden file success-medium" id="src-marketmodules-conditionaltokensvalidation">
          <h2 class="title">
             src/marketModules/conditionalTokensValidation.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 100.00%"></span>
-                  <span><strong>100.00%</strong> Coverage</span>
+                  <span class="bg" style="width: 88.89%"></span>
+                  <span><strong>88.89%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>17</strong> Hits</span>
-               <span class="miss"><strong>0</strong> Missed</span>
+               <span class="hits"><strong>40</strong> Hits</span>
+               <span class="miss"><strong>5</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -714,40 +712,101 @@ See conditionalTokens.lua for full license details.
 ]]
 
 <span class="fc" data-hits="1">local ConditionalTokensValidation = {}</span>
+<span class="fc" data-hits="1">local sharedValidation = require(&#39;marketModules.sharedValidation&#39;)</span>
 <span class="fc" data-hits="1">local sharedUtils = require(&#39;marketModules.sharedUtils&#39;)</span>
+<span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
 <span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
 
 --- Validates quantity
 --- @param quantity any The quantity to be validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
 local function validateQuantity(quantity)
-<span class="fc" data-hits="6">  assert(type(quantity) == &#39;string&#39;, &#39;Quantity is required!&#39;)</span>
-<span class="fc" data-hits="5">  assert(tonumber(quantity), &#39;Quantity must be a number!&#39;)</span>
-<span class="fc" data-hits="4">  assert(tonumber(quantity) &gt; 0, &#39;Quantity must be greater than zero!&#39;)</span>
-<span class="fc" data-hits="2">  assert(tonumber(quantity) % 1 == 0, &#39;Quantity must be an integer!&#39;)</span>
+<span class="fc" data-hits="6">  if type(quantity) ~= &#39;string&#39; then</span>
+<span class="fc" data-hits="1">    return false, &#39;Quantity is required and must be a string!&#39;</span>
+  end
+
+<span class="fc" data-hits="5">  local num = tonumber(quantity)</span>
+<span class="fc" data-hits="5">  if not num then</span>
+<span class="fc" data-hits="1">    return false, &#39;Quantity must be a valid number!&#39;</span>
+  end
+<span class="fc" data-hits="4">  if num &lt;= 0 then</span>
+<span class="fc" data-hits="2">    return false, &#39;Quantity must be greater than zero!&#39;</span>
+  end
+<span class="fc" data-hits="2">  if num % 1 ~= 0 then</span>
+<span class="fc" data-hits="1">    return false, &#39;Quantity must be an integer!&#39;</span>
+  end
+
+<span class="fc" data-hits="1">  return true</span>
 end
 
 --- Validates payouts
 --- @param payouts any The payouts to be validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
 local function validatePayouts(payouts)
-<span class="fc" data-hits="4">  assert(payouts, &quot;Payouts is required!&quot;)</span>
-<span class="fc" data-hits="3">  assert(sharedUtils.isJSONArray(payouts), &quot;Payouts must be valid JSON Array!&quot;)</span>
-<span class="fc" data-hits="3">  for _, payout in ipairs(json.decode(payouts)) do</span>
-<span class="fc" data-hits="2">    assert(tonumber(payout), &quot;Payouts item must be a number!&quot;)</span>
+<span class="fc" data-hits="4">  if not payouts then</span>
+<span class="fc" data-hits="1">    return false, &quot;Payouts is required!&quot;</span>
   end
+<span class="fc" data-hits="3">  if not sharedUtils.isJSONArray(payouts) then</span>
+<span class="fc" data-hits="1">    return false, &quot;Payouts must be a valid JSON Array!&quot;</span>
+  end
+
+<span class="fc" data-hits="2">  local decodedPayouts = json.decode(payouts)</span>
+<span class="fc" data-hits="6">  for _, payout in ipairs(decodedPayouts) do</span>
+<span class="fc" data-hits="5">    if not tonumber(payout) then</span>
+<span class="fc" data-hits="1">      return false, &quot;Payouts item must be a valid number!&quot;</span>
+    end
+  end
+
+<span class="fc" data-hits="1">  return true</span>
 end
 
---- Validates the mergePositions message
+--- Validates the mergePositions message.
 --- @param msg Message The message to be validated
-<span class="fc" data-hits="1">function ConditionalTokensValidation.mergePositions(msg)</span>
-<span class="fc" data-hits="6">  validateQuantity(msg.Tags.Quantity)</span>
+--- @param cpmm CPMM The CPMM instance for checking token balances
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+<span class="fc" data-hits="1">function ConditionalTokensValidation.mergePositions(msg, cpmm)</span>
+<span class="fc" data-hits="6">  local onBehalfOf = msg.Tags[&#39;OnBehalfOf&#39;] or msg.From</span>
+  local success, err
+
+<span class="fc" data-hits="6">  if not onBehalfOf then</span>
+<span class="nc">    success, err = sharedValidation.validateAddress(onBehalfOf, &#39;onBehalfOf&#39;)</span>
+<span class="nc">    if not success then return false, err end</span>
+  end
+
+<span class="fc" data-hits="6">  success, err = validateQuantity(msg.Tags.Quantity)</span>
+<span class="fc" data-hits="6">  if not success then return false, err end</span>
+
+  -- Check user balances for each position
+<span class="fc" data-hits="4">  for i = 1, #cpmm.tokens.positionIds do</span>
+<span class="fc" data-hits="3">    local positionId = cpmm.tokens.positionIds[i]</span>
+
+<span class="fc" data-hits="3">    if not cpmm.tokens.balancesById[positionId] then</span>
+<span class="nc">      return false, &quot;Invalid position! PositionId: &quot; .. positionId</span>
+    end
+
+<span class="fc" data-hits="3">    if not cpmm.tokens.balancesById[positionId][onBehalfOf] then</span>
+<span class="nc">      return false, &quot;Invalid user position! PositionId: &quot; .. positionId</span>
+    end
+
+<span class="fc" data-hits="3">    if bint(cpmm.tokens.balancesById[positionId][onBehalfOf]) &lt; bint(msg.Tags.Quantity) then</span>
+<span class="nc">      return false, &quot;Insufficient tokens! PositionId: &quot; .. positionId</span>
+    end
+  end
+
+<span class="fc" data-hits="1">  return true</span>
 end
 
---- Validates the reporrtPayouts message
+
+--- Validates the reportPayouts message
 --- @param msg Message The message to be validated
 --- @param resolutionAgent string The resolution agent process ID
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
 <span class="fc" data-hits="1">function ConditionalTokensValidation.reportPayouts(msg, resolutionAgent)</span>
-<span class="fc" data-hits="5">  assert(msg.From == resolutionAgent, &quot;Sender must be resolution agent!&quot;)</span>
-<span class="fc" data-hits="4">  validatePayouts(msg.Tags.Payouts)</span>
+<span class="fc" data-hits="5">  if msg.From ~= resolutionAgent then</span>
+<span class="fc" data-hits="1">    return false, &quot;Sender must be the resolution agent!&quot;</span>
+  end
+
+<span class="fc" data-hits="4">  return validatePayouts(msg.Tags.Payouts)</span>
 end
 
 <span class="fc" data-hits="1">return ConditionalTokensValidation</span>
@@ -759,10 +818,10 @@ end
             src/marketModules/semiFungibleTokens.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 15.04%"></span>
-                  <span><strong>15.04%</strong> Coverage</span>
+                  <span class="bg" style="width: 14.29%"></span>
+                  <span><strong>14.29%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>17</strong> Hits</span>
+               <span class="hits"><strong>16</strong> Hits</span>
                <span class="miss"><strong>96</strong> Missed</span>
             </span>
          </h2>
@@ -795,7 +854,6 @@ THE SOFTWARE.
 <span class="fc" data-hits="1">local SemiFungibleTokensMethods = {}</span>
 <span class="fc" data-hits="1">local SemiFungibleTokensNotices = require(&#39;marketModules.semiFungibleTokensNotices&#39;)</span>
 <span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
-<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
 
 -- Represents SemiFungibleTokens
 --- @class SemiFungibleTokens
@@ -1278,11 +1336,11 @@ end
             src/marketModules/sharedUtils.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 56.76%"></span>
-                  <span><strong>56.76%</strong> Coverage</span>
+                  <span class="bg" style="width: 51.35%"></span>
+                  <span><strong>51.35%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>21</strong> Hits</span>
-               <span class="miss"><strong>16</strong> Missed</span>
+               <span class="hits"><strong>19</strong> Hits</span>
+               <span class="miss"><strong>18</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -1302,17 +1360,17 @@ local function isSimpleValue(value)
 <span class="fc" data-hits="5">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
   -- Check for a quoted string: &quot;someValue&quot;
 <span class="fc" data-hits="5">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
-<span class="nc">    return true</span>
+<span class="fc" data-hits="1">    return true</span>
   end
   -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
-<span class="fc" data-hits="5">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
+<span class="fc" data-hits="4">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
 <span class="fc" data-hits="4">    return true</span>
   end
   -- Check for boolean
-<span class="fc" data-hits="1">  if string.lower(value) == &quot;true&quot; or string.lower(value) == &quot;false&quot; then</span>
+<span class="nc">  if string.lower(value) == &quot;true&quot; or string.lower(value) == &quot;false&quot; then</span>
 <span class="nc">    return true</span>
   end
-<span class="fc" data-hits="1">  return false</span>
+<span class="nc">  return false</span>
 end
 
 --- Verify if a valid JSON object
@@ -1352,13 +1410,13 @@ end
 <span class="fc" data-hits="3">  local isArray = str:match(&quot;^%[%s*(.-)%s*%]$&quot;)</span>
 <span class="fc" data-hits="3">  if not isArray then return false end</span>
   -- Split the array elements and validate each one
-<span class="fc" data-hits="6">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
+<span class="fc" data-hits="7">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
 <span class="fc" data-hits="5">    value = value:match(&quot;^%s*(.-)%s*$&quot;) -- Trim whitespace around each value</span>
 <span class="fc" data-hits="5">    if not isSimpleValue(value) then</span>
-<span class="fc" data-hits="1">      return false</span>
+<span class="nc">      return false</span>
     end
   end
-<span class="fc" data-hits="1">  return true</span>
+<span class="fc" data-hits="2">  return true</span>
 end
 
 --- Verify if a valid Arweave address
@@ -1379,9 +1437,111 @@ end
 </pre>
       </div>
 
+      <div class="hidden file danger" id="src-marketmodules-sharedvalidation">
+         <h2 class="title">
+            src/marketModules/sharedValidation.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 21.05%"></span>
+                  <span><strong>21.05%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>8</strong> Hits</span>
+               <span class="miss"><strong>30</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums">--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See market.lua for full license details.
+=========================================================
+]]
+
+<span class="fc" data-hits="1">local sharedValidation = {}</span>
+<span class="fc" data-hits="1">local sharedUtils = require(&#39;marketModules.sharedUtils&#39;)</span>
+<span class="fc" data-hits="1">local utils = require(&#39;.utils&#39;)</span>
+
+--- Validates address
+--- @param address any The address to be validated
+--- @param tagName string The name of the tag being validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+<span class="fc" data-hits="1">function sharedValidation.validateAddress(address, tagName)</span>
+<span class="nc">  if type(address) ~= &#39;string&#39; then</span>
+<span class="nc">    return false, tagName .. &#39; is required and must be a string!&#39;</span>
+  end
+<span class="nc">  if not sharedUtils.isValidArweaveAddress(address) then</span>
+<span class="nc">    return false, tagName .. &#39; must be a valid Arweave address!&#39;</span>
+  end
+<span class="nc">  return true</span>
+end
+
+--- Validates array item
+--- @param item any The item to be validated
+--- @param validItems table&lt;string&gt; The array of valid items
+--- @param tagName string The name of the tag being validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+<span class="fc" data-hits="1">function sharedValidation.validateItem(item, validItems, tagName)</span>
+<span class="nc">  if type(item) ~= &#39;string&#39; then</span>
+<span class="nc">    return false, tagName .. &#39; is required and must be a string!&#39;</span>
+  end
+<span class="nc">  if not utils.includes(item, validItems) then</span>
+<span class="nc">    return false, &#39;Invalid &#39; .. tagName .. &#39;!&#39;</span>
+  end
+<span class="nc">  return true</span>
+end
+
+--- Validates positive integer
+--- @param quantity any The quantity to be validated
+--- @param tagName string The name of the tag being validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+<span class="fc" data-hits="1">function sharedValidation.validatePositiveInteger(quantity, tagName)</span>
+<span class="nc">  if type(quantity) ~= &#39;string&#39; then</span>
+<span class="nc">    return false, tagName .. &#39; is required and must be a string!&#39;</span>
+  end
+
+<span class="nc">  local num = tonumber(quantity)</span>
+<span class="nc">  if not num then</span>
+<span class="nc">    return false, tagName .. &#39; must be a valid number!&#39;</span>
+  end
+<span class="nc">  if num &lt;= 0 then</span>
+<span class="nc">    return false, tagName .. &#39; must be greater than zero!&#39;</span>
+  end
+<span class="nc">  if num % 1 ~= 0 then</span>
+<span class="nc">    return false, tagName .. &#39; must be an integer!&#39;</span>
+  end
+
+<span class="nc">  return true</span>
+end
+
+--- Validates positive integer or zero
+--- @param quantity any The quantity to be validated
+--- @param tagName string The name of the tag being validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+<span class="fc" data-hits="1">function sharedValidation.validatePositiveIntegerOrZero(quantity, tagName)</span>
+<span class="nc">  if type(quantity) ~= &#39;string&#39; then</span>
+<span class="nc">    return false, tagName .. &#39; is required and must be a string!&#39;</span>
+  end
+
+<span class="nc">  local num = tonumber(quantity)</span>
+<span class="nc">  if not num then</span>
+<span class="nc">    return false, tagName .. &#39; must be a valid number!&#39;</span>
+  end
+<span class="nc">  if num &lt; 0 then</span>
+<span class="nc">    return false, tagName .. &#39; must be greater than or equal to zero!&#39;</span>
+  end
+<span class="nc">  if num % 1 ~= 0 then</span>
+<span class="nc">    return false, tagName .. &#39; must be an integer!&#39;</span>
+  end
+
+<span class="nc">  return true</span>
+end
+
+<span class="fc" data-hits="1">return sharedValidation</span>
+</pre>
+      </div>
+
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-02-18 12:47:54
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-02-21 13:23:24
    </footer>
 
    <script type="text/javascript">

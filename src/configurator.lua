@@ -45,7 +45,9 @@ end)
 
 -- Stage Update
 Handlers.add("Stage-Update", Handlers.utils.hasMatchingTag("Action", "Stage-Update"), function(msg)
-  configuratorValidation.updateProcess(msg)
+  local success, err = configuratorValidation.updateProcess(msg)
+  assert(success, err)
+
   local updateTags = msg.Tags.UpdateTags or ""
   local updateData = msg.Tags.UpdateData or ""
   return Configurator:stageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
@@ -53,7 +55,9 @@ end)
 
 -- Unstage Update
 Handlers.add("Unstage-Update", Handlers.utils.hasMatchingTag("Action", "Unstage-Update"), function(msg)
-  configuratorValidation.updateProcess(msg)
+  local success, err = configuratorValidation.updateProcess(msg)
+  assert(success, err)
+
   local updateTags = msg.Tags.UpdateTags or ""
   local updateData = msg.Tags.UpdateData or ""
   return Configurator:unstageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
@@ -61,7 +65,9 @@ end)
 
 -- Action Update
 Handlers.add("Action-Update", Handlers.utils.hasMatchingTag("Action", "Action-Update"), function(msg)
-  configuratorValidation.updateProcess(msg)
+  local success, err = configuratorValidation.updateProcess(msg)
+  assert(success, err)
+
   local updateTags = msg.Tags.UpdateTags or ""
   local updateData = msg.Tags.UpdateData or ""
   return Configurator:actionUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
@@ -73,19 +79,25 @@ end)
 
 -- Stage Update Admin
 Handlers.add("Stage-Update-Admin", Handlers.utils.hasMatchingTag("Action", "Stage-Update-Admin"), function(msg)
-  configuratorValidation.updateAdmin(msg)
+  local success, err = configuratorValidation.updateAdmin(msg)
+  assert(success, err)
+
   return Configurator:stageUpdateAdmin(msg.Tags.UpdateAdmin, msg)
 end)
 
 -- Unstage Update Admin
 Handlers.add("Unstage-Update-Admin", Handlers.utils.hasMatchingTag("Action", "Unstage-Update-Admin"), function(msg)
-  configuratorValidation.updateAdmin(msg)
+  local success, err = configuratorValidation.updateAdmin(msg)
+  assert(success, err)
+
   return Configurator:unstageUpdateAdmin(msg.Tags.UpdateAdmin, msg)
 end)
 
 -- Action Update Admin
 Handlers.add("Action-Update-Admin", Handlers.utils.hasMatchingTag("Action", "Action-Update-Admin"), function(msg)
-  configuratorValidation.updateAdmin(msg)
+  local success, err = configuratorValidation.updateAdmin(msg)
+  assert(success, err)
+
   return Configurator:actionUpdateAdmin(msg.Tags.UpdateAdmin, msg)
 end)
 
@@ -95,18 +107,24 @@ end)
 
 -- Stage Update DelayTime
 Handlers.add("Stage-Update-Delay", Handlers.utils.hasMatchingTag("Action", "Stage-Update-Delay"), function(msg)
-  configuratorValidation.updateDelay(msg)
+  local success, err = configuratorValidation.updateDelay(msg)
+  assert(success, err)
+
   return Configurator:stageUpdateDelay(msg.Tags.UpdateDelay, msg)
 end)
 
 -- Unstage Update DelayTime
 Handlers.add("Unstage-Update-Delay", Handlers.utils.hasMatchingTag("Action", "Unstage-Update-Delay"), function(msg)
-  configuratorValidation.updateDelay(msg)
+  local success, err = configuratorValidation.updateDelay(msg)
+  assert(success, err)
+
   return Configurator:unstageUpdateDelay(msg.Tags.UpdateDelay, msg)
 end)
 
 -- Action Update DelayTime
 Handlers.add("Action-Update-Delay", Handlers.utils.hasMatchingTag("Action", "Action-Update-Delay"), function(msg)
-  configuratorValidation.updateDelay(msg)
+  local success, err = configuratorValidation.updateDelay(msg)
+  assert(success, err)
+
   return Configurator:actionUpdateDelay(msg.Tags.UpdateDelay, msg)
 end)

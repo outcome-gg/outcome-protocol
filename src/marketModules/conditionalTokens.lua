@@ -18,8 +18,6 @@ local ConditionalTokensMethods = {}
 local ConditionalTokensNotices = require('marketModules.conditionalTokensNotices')
 local SemiFungibleTokens = require('marketModules.semiFungibleTokens')
 local bint = require('.bint')(256)
-local crypto = require('.crypto')
-local json = require("json")
 local ao = ao or require('.ao')
 
 --- Represents ConditionalTokens

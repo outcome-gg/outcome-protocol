@@ -372,112 +372,109 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.is.same(lpFee, CPMM.lpFee)
 	end)
 
-  -- it("should addFunding", function()
-  --   -- add funding
-  --   local notice = CPMM:addFunding(
-  --     msgAddFunding.Tags.Sender,
-  --     msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
-  --     msgAddFunding.Tags.Quantity,
-  --     json.decode(msgAddFunding.Tags["X-Distribution"]),
-  --     msgAddFunding
-  --   )
-  --   -- assert state
-  --   -- LP Token balances
-  --   assert.are.same({
-  --     [msgAddFunding.Tags.Sender] = msgAddFunding.Tags.Quantity
-  --   }, CPMM.token.balances)
-  --   -- Conditional Token Balances
-  --   assert.are.same({
-  --     ["1"] = {
-  --       [_G.ao.id] = msgAddFunding.Tags.Quantity,
-  --     },
-  --     ["2"] = {
-  --       [_G.ao.id] = msgAddFunding.Tags.Quantity,
-  --     },
-  --   }, CPMM.tokens.balancesById)
-  --   -- Pool Balances
-  --   local poolBalances = {msgAddFunding.Tags.Quantity, msgAddFunding.Tags.Quantity}
-  --   assert.are.same(poolBalances, CPMM:getPoolBalances())
-  --   local fundingAdded = json.encode({tonumber(msgAddFunding.Tags.Quantity), tonumber(msgAddFunding.Tags.Quantity)})
-  --   -- assert notice
-  --   assert.are.same(noticeAddFunding, notice)
-	-- end)
+  it("should addFunding", function()
+    -- add funding
+    local notice = CPMM:addFunding(
+      msgAddFunding.Tags.Sender,
+      msgAddFunding.Tags.Quantity,
+      json.decode(msgAddFunding.Tags["X-Distribution"]),
+      msgAddFunding
+    )
+    -- assert state
+    -- LP Token balances
+    assert.are.same({
+      [msgAddFunding.Tags.Sender] = msgAddFunding.Tags.Quantity
+    }, CPMM.token.balances)
+    -- Conditional Token Balances
+    assert.are.same({
+      ["1"] = {
+        [_G.ao.id] = msgAddFunding.Tags.Quantity,
+      },
+      ["2"] = {
+        [_G.ao.id] = msgAddFunding.Tags.Quantity,
+      },
+    }, CPMM.tokens.balancesById)
+    -- Pool Balances
+    local poolBalances = {msgAddFunding.Tags.Quantity, msgAddFunding.Tags.Quantity}
+    assert.are.same(poolBalances, CPMM:getPoolBalances())
+    local fundingAdded = json.encode({tonumber(msgAddFunding.Tags.Quantity), tonumber(msgAddFunding.Tags.Quantity)})
+    -- assert notice
+    assert.are.same(noticeAddFunding, notice)
+	end)
 
-  -- it("should addFunding with unbalanced distribution", function()
-  --   -- unbalanced distribution
-  --   local newDistribution = {80, 100}
-  --   msgAddFunding.Tags["X-Distribution"] = json.encode(newDistribution)
-  --   -- calc and update new add funding distribution
-  --   local newQuantity1 = newDistribution[1] * tostring(msgAddFunding.Tags.Quantity) / 100
-  --   local newQuantity2 = newDistribution[2] * tostring(msgAddFunding.Tags.Quantity) / 100
-  --   noticeAddFunding.FundingAdded = json.encode({newQuantity1, newQuantity2})
-  --   -- add funding
-  --   local notice = CPMM:addFunding(
-  --     msgAddFunding.Tags.Sender,
-  --     msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
-  --     msgAddFunding.Tags.Quantity,
-  --     json.decode(msgAddFunding.Tags["X-Distribution"]),
-  --     msgAddFunding
-  --   )
-  --   -- assert state
-  --   -- LP Token balances
-  --   assert.are.same({
-  --     [msgAddFunding.Tags.Sender] = msgAddFunding.Tags.Quantity
-  --   }, CPMM.token.balances)
-  --   -- Conditional Token Balances
-  --   assert.are.same({
-  --     ["1"] = {
-  --       [_G.ao.id] = tostring(newDistribution[1]),
-  --       [msgAddFunding.Tags.Sender] = tostring(newDistribution[2]-newDistribution[1]),
-  --     },
-  --     ["2"] = {
-  --       [_G.ao.id] = msgAddFunding.Tags.Quantity,
-  --     },
-  --   }, CPMM.tokens.balancesById)
-  --   -- Pool Balances
-  --   local poolBalances = {tostring(newDistribution[1]), tostring(newDistribution[2])}
-  --   assert.are.same(poolBalances, CPMM:getPoolBalances())
-  --   -- assert notice
-  --   assert.are.same(noticeAddFunding, notice)
-	-- end)
+  it("should addFunding with unbalanced distribution", function()
+    -- unbalanced distribution
+    local newDistribution = {80, 100}
+    msgAddFunding.Tags["X-Distribution"] = json.encode(newDistribution)
+    -- calc and update new add funding distribution
+    local newQuantity1 = newDistribution[1] * tostring(msgAddFunding.Tags.Quantity) / 100
+    local newQuantity2 = newDistribution[2] * tostring(msgAddFunding.Tags.Quantity) / 100
+    noticeAddFunding.FundingAdded = json.encode({newQuantity1, newQuantity2})
+    -- add funding
+    local notice = CPMM:addFunding(
+      msgAddFunding.Tags.Sender,
+      msgAddFunding.Tags.Quantity,
+      json.decode(msgAddFunding.Tags["X-Distribution"]),
+      msgAddFunding
+    )
+    -- assert state
+    -- LP Token balances
+    assert.are.same({
+      [msgAddFunding.Tags.Sender] = msgAddFunding.Tags.Quantity
+    }, CPMM.token.balances)
+    -- Conditional Token Balances
+    assert.are.same({
+      ["1"] = {
+        [_G.ao.id] = tostring(newDistribution[1]),
+        [msgAddFunding.Tags.Sender] = tostring(newDistribution[2]-newDistribution[1]),
+      },
+      ["2"] = {
+        [_G.ao.id] = msgAddFunding.Tags.Quantity,
+      },
+    }, CPMM.tokens.balancesById)
+    -- Pool Balances
+    local poolBalances = {tostring(newDistribution[1]), tostring(newDistribution[2])}
+    assert.are.same(poolBalances, CPMM:getPoolBalances())
+    -- assert notice
+    assert.are.same(noticeAddFunding, notice)
+	end)
 
-  -- it("should addFunding with highly unbalanced distribution", function()
-  --   -- highly unbalanced distribution
-  --   local newDistribution = {1, 100}
-  --   msgAddFunding.Tags["X-Distribution"] = json.encode(newDistribution)
-  --   -- calc and update new add funding distribution
-  --   local newQuantity1 = newDistribution[1] * tostring(msgAddFunding.Tags.Quantity) / 100
-  --   local newQuantity2 = newDistribution[2] * tostring(msgAddFunding.Tags.Quantity) / 100
-  --   noticeAddFunding.FundingAdded = json.encode({newQuantity1, newQuantity2})
-  --   -- add funding
-  --   local notice = CPMM:addFunding(
-  --     msgAddFunding.Tags.Sender,
-  --     msgAddFunding.Tags.Sender, -- onBehalfOf is the same as sender
-  --     msgAddFunding.Tags.Quantity,
-  --     json.decode(msgAddFunding.Tags["X-Distribution"]),
-  --     msgAddFunding
-  --   )
-  --   -- assert state
-  --   -- LP Token balances
-  --   assert.are.same({
-  --     [msgAddFunding.Tags.Sender] = msgAddFunding.Tags.Quantity
-  --   }, CPMM.token.balances)
-  --   -- Conditional Token Balances
-  --   assert.are.same({
-  --     ["1"] = {
-  --       [_G.ao.id] = tostring(newDistribution[1]),
-  --       [msgAddFunding.Tags.Sender] = tostring(newDistribution[2]-newDistribution[1]),
-  --     },
-  --     ["2"] = {
-  --       [_G.ao.id] = msgAddFunding.Tags.Quantity,
-  --     },
-  --   }, CPMM.tokens.balancesById)
-  --   -- Pool Balances
-  --   local poolBalances = {tostring(newDistribution[1]), tostring(newDistribution[2])}
-  --   assert.are.same(poolBalances, CPMM:getPoolBalances())
-  --   -- assert notice
-  --   assert.are.same(noticeAddFunding, notice)
-	-- end)
+  it("should addFunding with highly unbalanced distribution", function()
+    -- highly unbalanced distribution
+    local newDistribution = {1, 100}
+    msgAddFunding.Tags["X-Distribution"] = json.encode(newDistribution)
+    -- calc and update new add funding distribution
+    local newQuantity1 = newDistribution[1] * tostring(msgAddFunding.Tags.Quantity) / 100
+    local newQuantity2 = newDistribution[2] * tostring(msgAddFunding.Tags.Quantity) / 100
+    noticeAddFunding.FundingAdded = json.encode({newQuantity1, newQuantity2})
+    -- add funding
+    local notice = CPMM:addFunding(
+      msgAddFunding.Tags.Sender,
+      msgAddFunding.Tags.Quantity,
+      json.decode(msgAddFunding.Tags["X-Distribution"]),
+      msgAddFunding
+    )
+    -- assert state
+    -- LP Token balances
+    assert.are.same({
+      [msgAddFunding.Tags.Sender] = msgAddFunding.Tags.Quantity
+    }, CPMM.token.balances)
+    -- Conditional Token Balances
+    assert.are.same({
+      ["1"] = {
+        [_G.ao.id] = tostring(newDistribution[1]),
+        [msgAddFunding.Tags.Sender] = tostring(newDistribution[2]-newDistribution[1]),
+      },
+      ["2"] = {
+        [_G.ao.id] = msgAddFunding.Tags.Quantity,
+      },
+    }, CPMM.tokens.balancesById)
+    -- Pool Balances
+    local poolBalances = {tostring(newDistribution[1]), tostring(newDistribution[2])}
+    assert.are.same(poolBalances, CPMM:getPoolBalances())
+    -- assert notice
+    assert.are.same(noticeAddFunding, notice)
+	end)
 
   it("should fail addFunding with binary distribution", function() -- @dev should not fail!
     -- unbalanced distribution
@@ -559,11 +556,6 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       msgAddFunding
-    )
-    -- calc buy amount
-    local buyAmount = CPMM:calcBuyAmount(
-      tonumber(msgCalcBuyAmount.Tags.InvestmentAmount),
-      msgCalcBuyAmount.Tags.PositionId
     )
     -- buy
     assert.has.no.errors(function()

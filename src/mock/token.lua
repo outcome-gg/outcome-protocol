@@ -184,7 +184,7 @@ Handlers.add('transfer', Handlers.utils.hasMatchingTag('Action', 'Transfer'), fu
     end
   else
     msg.reply({
-      Action = 'Transfer-ErrorMock',
+      Action = 'Transfer-Error',
       ['Message-Id'] = msg.Id,
       Error = 'Insufficient Balance! ' .. Balances[msg.From] .. ' < ' .. msg.Quantity
     })

@@ -5,10 +5,7 @@ local json = require("json")
 local x
 local y
 local sender
-local quantity
-local distribution
 local outcomeSlotCount
-local msg
 
 describe("#market #conditionalTokens #cpmmHelpers", function()
   before_each(function()
@@ -17,17 +14,9 @@ describe("#market #conditionalTokens #cpmmHelpers", function()
     x = 10
     y = 3
     outcomeSlotCount = 3
-    quantity = "100"
-    distribution = {10, 40, 50}
     -- Mock cpmmHelpers object
     cpmmHelpers.token = { totalSupply = "0", balances = {} }
     cpmmHelpers.tokens = { positionIds = { "1", "2", "3" }, getBatchBalance = function() return { "100", "200", "300" } end  }
-    -- create a message object
-    msg = {
-      From = sender,
-
-      reply = function(message) return message end
-    }
   end)
 
   it("should get position ids", function()
@@ -50,68 +39,6 @@ describe("#market #conditionalTokens #cpmmHelpers", function()
     y = 0
     local result = cpmmHelpers.ceildiv(x, y)
     assert.are.same("inf", tostring(result))
-	end)
-
-  it("should validate addFunding when totalSupply == 0 and distribution valid", function()
-    local result = cpmmHelpers:validateAddFunding(
-      sender,
-      quantity,
-      distribution
-    )
-    assert.is_true(result)
-	end)
-
-  it("should not validate addFunding when totalSupply == 0 and distribution invalid", function()
-    distribution = {10, 40}
-    local result = cpmmHelpers:validateAddFunding(
-      sender,
-      quantity,
-      distribution
-    )
-    assert.is_false(result)
-	end)
-
-  it("should validate addFunding when totalSupply ~= 0 and distribution == `nil`", function()
-    cpmmHelpers.token = { totalSupply = "100" }
-    distribution = {}
-    local result = cpmmHelpers:validateAddFunding(
-      sender,
-      quantity,
-      nil
-    )
-    assert.is_true(result)
-	end)
-
-  it("should validate removeFunding when quanlity <= balance", function()
-    cpmmHelpers.token.balances[sender] = "100"
-    local result = cpmmHelpers:validateRemoveFunding(
-      sender,
-      quantity,
-      msg
-    )
-    assert.is_true(result)
-	end)
-
-  it("should not validate removeFunding when quantity > balance", function()
-    local result = cpmmHelpers:validateRemoveFunding(
-      sender,
-      quantity,
-      msg
-    )
-    assert.is_false(result)
-	end)
-
-  it("should not validate removeFunding when sender == creator and market not resolved", function()
-    cpmmHelpers.conditionId = "the-condition-id"
-    cpmmHelpers.payoutDenominator = {}
-    cpmmHelpers.payoutDenominator[cpmmHelpers.conditionId] = 0
-    cpmmHelpers.creatorFeeTarget = sender
-    local result = cpmmHelpers:validateRemoveFunding(
-      sender,
-      quantity,
-      msg
-    )
-    assert.is_false(result)
 	end)
 
   it("should getPoolBalances", function()

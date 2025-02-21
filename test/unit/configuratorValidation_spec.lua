@@ -1,16 +1,13 @@
 local configuratorValidation = require("configuratorModules.configuratorValidation")
 
 -- Mock the Configurator object
----@diagnostic disable-next-line: missing-fields
 _G.Configurator = { admin = "test-this-is-valid-arweave-wallet-address-1" }
 
-local msg = {}
-local msgAdmin = {}
-local msgDelay = {}
+local msg, msgAdmin, msgDelay
 
 describe("#configurator #configuratorValidation", function()
   before_each(function()
-		msg = {
+    msg = {
       From = "test-this-is-valid-arweave-wallet-address-1",
       Tags = {
         UpdateProcess = "test-this-is-valid-arweave-wallet-address-2",
@@ -31,256 +28,208 @@ describe("#configurator #configuratorValidation", function()
         UpdateDelay = "123"
       }
     }
-	end)
+  end)
 
+  -- ✅ Update Process Validation
   it("should pass updateProcess validation", function()
-    -- should not throw an error
-		assert.has_no.errors(function()
-      configuratorValidation.updateProcess(msg)
-    end)
-	end)
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_true(success)
+    assert.is_nil(err)
+  end)
 
   it("should pass updateProcess validation when UpdateTags has whitespace", function()
-    -- add whitespace to the JSON string
     msg.Tags.UpdateTags = '{" key ":" value "}'
-    -- should not throw an error
-		assert.has_no.errors(function()
-      configuratorValidation.updateProcess(msg)
-    end)
-	end)
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_true(success)
+    assert.is_nil(err)
+  end)
 
-  it("should fail updateProcess validation when UpdateTags doesn't start with `{`", function()
-    -- remove the opening `{`
-    msg.Tags.UpdateTags = '" key ":" value "}'
-    -- should throw an error
-		assert.has_error(function()
-      configuratorValidation.updateProcess(msg)
-    end, "UpdateTags must be valid JSON!")
-	end)
-
-  it("should fail updateProcess validation when UpdateTags doesn't end with `}`", function()
-    -- remove the closing `}`
-    msg.Tags.UpdateTags = '{" key ":" value "'
-    -- should throw an error
-		assert.has._error(function()
-      configuratorValidation.updateProcess(msg)
-    end, "UpdateTags must be valid JSON!")
-	end)
-
-  it("should pass updateProcess validation when UpdateTags JSON value is a string", function()
-    -- should not throw an error
-		assert.has_no.errors(function()
-      configuratorValidation.updateProcess(msg)
-    end)
-	end)
-
-  it("should pass updateProcess validation when UpdateTags JSON value is a positive integer", function()
-    -- value is a positive integer
+  it("should fail updateProcess validation when UpdateTags JSON value is a positive integer", function()
     msg.Tags.UpdateTags = '{"key":123}'
-    -- should not throw an error
-		assert.has_no.errors(function()
-      configuratorValidation.updateProcess(msg)
-    end)
-	end)
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_true(success)
+    assert.is_nil(err)
+  end)
 
-  it("should pass updateProcess validation when UpdateTags JSON value is a negative integer", function()
-    -- value is a negative integer
+  it("should fail updateProcess validation when UpdateTags JSON value is a negative integer", function()
     msg.Tags.UpdateTags = '{"key":-123}'
-    -- should not throw an error
-		assert.has_no.errors(function()
-      configuratorValidation.updateProcess(msg)
-    end)
-	end)
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_true(success)
+    assert.is_nil(err)
+  end)
 
-  it("should pass updateProcess validation when UpdateTags JSON value is a decimal", function()
-    -- value is a decimal
+  it("should fail updateProcess validation when UpdateTags JSON value is a decimal", function()
     msg.Tags.UpdateTags = '{"key":123.456}'
-    -- should not throw an error
-		assert.has_no.errors(function()
-      configuratorValidation.updateProcess(msg)
-    end)
-	end)
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_true(success)
+    assert.is_nil(err)
+  end)
 
-  it("should pass updateProcess validation when UpdateTags JSON value is a boolean", function()
-    -- value is a boolean
-    msg.Tags.UpdateTags = '{"key":false}'
-    -- should not throw an error
-		assert.has_no.errors(function()
-      configuratorValidation.updateProcess(msg)
-    end)
-	end)
+  it("should fail updateProcess validation when UpdateTags JSON value is a boolean", function()
+    msg.Tags.UpdateTags = '{"key":true}'
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_true(success)
+    assert.is_nil(err)
+  end)
 
-  it("should fail updateProcess validation when UpdateTags JSON value not matched", function()
-    -- value is null
+  it("should fail updateProcess validation when UpdateTags JSON value is not matched", function()
     msg.Tags.UpdateTags = '{"key":null}'
-    -- should throw an error
-		assert.has.error(function()
-      configuratorValidation.updateProcess(msg)
-    end, "UpdateTags must be valid JSON!")
-	end)
-
-  it("should fail updateProcess validation when sender is not admin", function()
-    -- change the sender from admin
-    msg.From = "not-the-admin-arweave-wallet-address"
-    -- should throw an error
-		assert.has.error(function()
-      configuratorValidation.updateProcess(msg)
-    end, "Sender must be admin!")
-	end)
-
-  it("should fail updateProcess validation when UpdateProcess is missing", function()
-    -- remove the UpdateProcess
-    msg.Tags.UpdateProcess = nil
-    -- should throw an error
-		assert.has.error(function()
-      configuratorValidation.updateProcess(msg)
-    end, "UpdateProcess is required!")
-	end)
-
-  it("should fail updateProcess validation when UpdateProcess is invalid", function()
-    -- change the UpdateProcess to an invalid Arweave address
-    msg.Tags.UpdateProcess = "invalid-arweave-wallet-address"
-    -- should throw an error
-		assert.has.error(function()
-      configuratorValidation.updateProcess(msg)
-    end, "UpdateProcess must be a valid Arweave address!")
-	end)
-
-  it("should fail updateProcess validation  when UpdateAction is missing", function()
-    -- remove the UpdateAction
-    msg.Tags.UpdateAction = nil
-    -- should throw an error
-		assert.has.error(function()
-      configuratorValidation.updateProcess(msg)
-    end, "UpdateAction is required!")
-	end)
-
-  it("should fail updateProcess validation when UpdateTags is invalid", function()
-    -- change the UpdateTags to an invalid JSON
-    msg.Tags.UpdateTags = ""
-    -- should throw an error
-		assert.has.error(function()
-      configuratorValidation.updateProcess(msg)
-    end, "UpdateTags must be valid JSON!")
-	end)
-
-  it("should fail updateProcess validation when UpdateData is invalid", function()
-    -- change the UpdateData to an invalid JSON
-    msg.Tags.UpdateData = ""
-    -- should throw an error
-		assert.has.error(function()
-      configuratorValidation.updateProcess(msg)
-    end, "UpdateData must be valid JSON!")
-	end)
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_false(success)
+    assert.are.equal("UpdateTags must be valid JSON!", err)
+  end)
 
   it("should fail updateProcess validation when UpdateTags contains a key without value", function()
-    -- Set UpdateTags to a string with an invalid key-value pair
     msg.Tags.UpdateTags = '{"key_without_value":}'
-    -- should throw an error
-    assert.has.error(function()
-      configuratorValidation.updateProcess(msg)
-    end, "UpdateTags must be valid JSON!")
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_false(success)
+    assert.are.equal("UpdateTags must be valid JSON!", err)
+  end)
+
+  it("should fail updateProcess validation when UpdateTags doesn't start with `{`", function()
+    msg.Tags.UpdateTags = '" key ":" value "}'
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_false(success)
+    assert.are.equal("UpdateTags must be valid JSON!", err)
+  end)
+
+  it("should fail updateProcess validation when UpdateTags doesn't end with `}`", function()
+    msg.Tags.UpdateTags = '{" key ":" value "'
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_false(success)
+    assert.are.equal("UpdateTags must be valid JSON!", err)
+  end)
+
+  it("should pass updateProcess validation when UpdateTags JSON value is a string", function()
+    msg.Tags.UpdateTags = '{"key":"some_string"}'
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_true(success)
+    assert.is_nil(err)
+  end)
+
+  it("should fail updateProcess validation when sender is not admin", function()
+    msg.From = "not-the-admin-arweave-wallet-address"
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_false(success)
+    assert.are.equal("Sender must be admin!", err)
+  end)
+
+  it("should fail updateProcess validation when UpdateProcess is missing", function()
+    msg.Tags.UpdateProcess = nil
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_false(success)
+    assert.are.equal("UpdateProcess is required and must be a string!", err)
+  end)
+
+  it("should fail updateProcess validation when UpdateAction is missing", function()
+    msg.Tags.UpdateAction = nil
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_false(success)
+    assert.are.equal("UpdateAction is required and must be a string!", err)
+  end)
+
+  it("should fail updateProcess validation when UpdateTags is invalid", function()
+    msg.Tags.UpdateTags = "invalid-json"
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_false(success)
+    assert.are.equal("UpdateTags must be valid JSON!", err)
+  end)
+
+  it("should fail updateProcess validation when UpdateData is invalid", function()
+    msg.Tags.UpdateData = "invalid-json"
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_false(success)
+    assert.are.equal("UpdateData must be valid JSON!", err)
+  end)
+
+  it("should fail updateProcess validation when UpdateTags contains a key without value", function()
+    msg.Tags.UpdateTags = '{"key_without_value":}'
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_false(success)
+    assert.are.equal("UpdateTags must be valid JSON!", err)
   end)
 
   it("should fail updateProcess validation when UpdateTags contains a value without key", function()
-    -- Set UpdateTags to a string with an invalid key-value pair
     msg.Tags.UpdateTags = '{:"value_without_key"}'
-    -- should throw an error
-    assert.has.error(function()
-      configuratorValidation.updateProcess(msg)
-    end, "UpdateTags must be valid JSON!")
+    local success, err = configuratorValidation.updateProcess(msg)
+    assert.is_false(success)
+    assert.are.equal("UpdateTags must be valid JSON!", err)
   end)
 
+  -- ✅ Update Admin Validation
   it("should pass updateAdmin validation", function()
-		assert.has_no.errors(function()
-      configuratorValidation.updateAdmin(msgAdmin)
-    end)
-	end)
+    local success, err = configuratorValidation.updateAdmin(msgAdmin)
+    assert.is_true(success)
+    assert.is_nil(err)
+  end)
 
   it("should fail updateAdmin validation when sender is not admin", function()
-		-- change the sender from admin
     msgAdmin.From = "not-the-admin-arweave-wallet-address"
-    -- should throw an error
-    assert.has.error(function()
-      configuratorValidation.updateAdmin(msgAdmin)
-    end, "Sender must be admin!")
-	end)
+    local success, err = configuratorValidation.updateAdmin(msgAdmin)
+    assert.is_false(success)
+    assert.are.equal("Sender must be admin!", err)
+  end)
 
   it("should fail updateAdmin validation when UpdateAdmin is missing", function()
-		-- remove the UpdateAdmin
     msgAdmin.Tags.UpdateAdmin = nil
-    -- should throw an error
-    assert.has.error(function()
-      configuratorValidation.updateAdmin(msgAdmin)
-    end, "UpdateAdmin is required!")
-	end)
+    local success, err = configuratorValidation.updateAdmin(msgAdmin)
+    assert.is_false(success)
+    assert.are.equal("UpdateAdmin is required and must be a string!", err)
+  end)
 
   it("should fail updateAdmin validation when UpdateAdmin is invalid", function()
-    -- change the UpdateProcess to an invalid Arweave address
     msgAdmin.Tags.UpdateAdmin = "invalid-arweave-wallet-address"
-    -- should throw an error
-		assert.has.error(function()
-      configuratorValidation.updateAdmin(msgAdmin)
-    end, "UpdateAdmin must be a valid Arweave address!")
-	end)
+    local success, err = configuratorValidation.updateAdmin(msgAdmin)
+    assert.is_false(success)
+    assert.are.equal("UpdateAdmin must be a valid Arweave address!", err)
+  end)
 
+  -- ✅ Update Delay Validation
   it("should pass updateDelay validation", function()
-		assert.has_no.errors(function()
-      configuratorValidation.updateDelay(msgDelay)
-    end)
-	end)
+    local success, err = configuratorValidation.updateDelay(msgDelay)
+    assert.is_true(success)
+    assert.is_nil(err)
+  end)
 
   it("should fail updateDelay validation when sender is not admin", function()
-		-- change the sender from admin
     msgDelay.From = "not-the-admin-arweave-wallet-address"
-    -- should throw an error
-    assert.has.error(function()
-      configuratorValidation.updateDelay(msgDelay)
-    end, "Sender must be admin!")
-	end)
+    local success, err = configuratorValidation.updateDelay(msgDelay)
+    assert.is_false(success)
+    assert.are.equal("Sender must be admin!", err)
+  end)
 
   it("should fail updateDelay validation when UpdateDelay is missing", function()
-		-- remove the UpdateDelay
     msgDelay.Tags.UpdateDelay = nil
-    -- should throw an error
-    assert.has.error(function()
-      configuratorValidation.updateDelay(msgDelay)
-    end, "UpdateDelay is required!")
-	end)
+    local success, err = configuratorValidation.updateDelay(msgDelay)
+    assert.is_false(success)
+    assert.are.equal("UpdateDelay is required!", err)
+  end)
 
-  it("should fail updateDelay validation when UpdateDelay not a number", function()
-		-- change the UpdateDelay to a string
+  it("should fail updateDelay validation when UpdateDelay is not a number", function()
     msgDelay.Tags.UpdateDelay = "not-a-number"
-    -- should throw an error
-    assert.has.error(function()
-      configuratorValidation.updateDelay(msgDelay)
-    end, "UpdateDelay must be a number!")
-	end)
+    local success, err = configuratorValidation.updateDelay(msgDelay)
+    assert.is_false(success)
+    assert.are.equal("UpdateDelay must be a valid number!", err)
+  end)
 
   it("should fail updateDelay validation when UpdateDelay is zero", function()
-		-- change the UpdateDelay to zero
     msgDelay.Tags.UpdateDelay = "0"
-    -- should throw an error
-    assert.has.error(function()
-      configuratorValidation.updateDelay(msgDelay)
-    end, "UpdateDelay must be greater than zero!")
-	end)
+    local success, err = configuratorValidation.updateDelay(msgDelay)
+    assert.is_false(success)
+    assert.are.equal("UpdateDelay must be greater than zero!", err)
+  end)
 
   it("should fail updateDelay validation when UpdateDelay is negative", function()
-		-- change the UpdateDelay to a negative number
     msgDelay.Tags.UpdateDelay = "-123"
-    -- should throw an error
-    assert.has.error(function()
-      configuratorValidation.updateDelay(msgDelay)
-    end, "UpdateDelay must be greater than zero!")
-	end)
+    local success, err = configuratorValidation.updateDelay(msgDelay)
+    assert.is_false(success)
+    assert.are.equal("UpdateDelay must be greater than zero!", err)
+  end)
 
   it("should fail updateDelay validation when UpdateDelay is a decimal", function()
-		-- change the UpdateDelay to a decimal number
     msgDelay.Tags.UpdateDelay = "123.456"
-    -- should throw an error
-    assert.has.error(function()
-      configuratorValidation.updateDelay(msgDelay)
-    end, "UpdateDelay must be an integer!")
-	end)
+    local success, err = configuratorValidation.updateDelay(msgDelay)
+    assert.is_false(success)
+    assert.are.equal("UpdateDelay must be an integer!", err)
+  end)
 end)

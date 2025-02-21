@@ -27,7 +27,6 @@ local SemiFungibleTokens = {}
 local SemiFungibleTokensMethods = {}
 local SemiFungibleTokensNotices = require('marketModules.semiFungibleTokensNotices')
 local bint = require('.bint')(256)
-local json = require('json')
 
 -- Represents SemiFungibleTokens
 --- @class SemiFungibleTokens
