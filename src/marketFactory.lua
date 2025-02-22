@@ -87,9 +87,8 @@ INFO HANDLER
 
 --- Info handler
 --- @param msg Message The message to handle
---- @return Message The info message
 Handlers.add("Info", {Action = "Info"}, function(msg)
-  return MarketFactory:info(msg)
+  MarketFactory:info(msg)
 end)
 
 --[[
@@ -98,12 +97,23 @@ WRITE HANDLERS
 ==============
 ]]
 
+-- @dev: TODO Create Market Group aka Event
+
 --- Spawn market handler
 --- @param msg Message The message to handle
---- @return Message spawnedMarketNotice The spawned market notice
 Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
-  marketFactoryValidation.validateSpawnMarket(msg, MarketFactory.approvedCollateralTokens)
-  return MarketFactory:spawnMarket(
+  -- Validate input
+  local success, err = marketFactoryValidation.validateSpawnMarket(msg, MarketFactory.approvedCollateralTokens)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Spawn-Market-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, spawn market.
+  MarketFactory:spawnMarket(
     msg.Tags["CollateralToken"],
     msg.Tags["ResolutionAgent"],
     msg.Tags["Question"],
@@ -122,9 +132,8 @@ end)
 
 --- Init market handler
 --- @param msg Message The message to handle
---- @return Message marketInitNotice The market init notice
 Handlers.add("Init-Market", {Action = "Init-Market"}, function(msg)
-  return MarketFactory:initMarket(msg)
+  MarketFactory:initMarket(msg)
 end)
 
 --[[
@@ -135,47 +144,71 @@ READ HANDLERS
 
 --- Markets pending handler
 --- @param msg Message The message to handle
---- @return Message marketsPending The markets pending
 Handlers.add("Markets-Pending", {Action = "Markets-Pending"}, function(msg)
-  return MarketFactory:marketsPending(msg)
+  MarketFactory:marketsPending(msg)
 end)
 
 --- Markets initialized handler
 --- @param msg Message The message to handle
---- @return Message marketsInitialized The markets initialized
 Handlers.add("Markets-Init", {Action = "Markets-Init"}, function(msg)
-  return MarketFactory:marketsInitialized(msg)
+  MarketFactory:marketsInitialized(msg)
 end)
 
 --- Market groups by creator handler
 --- @param msg Message The message to handle
---- @return Message marketsGroupsByCreator The market groups by creator
 Handlers.add("Market-Groups-By-Creator", {Action = "Market-Groups-By-Creator"}, function(msg)
-  marketFactoryValidation.validateMarketsByCreator(msg)
-  return MarketFactory:marketGroupsByCreator(msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateMarketsByCreator(msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Market-Groups-By-Creator-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, get market groups by creator.
+  MarketFactory:marketGroupsByCreator(msg)
 end)
 
 --- Markets by creator handler
 --- @param msg Message The message to handle
---- @return Message marketsByCreator The markets by creator
 Handlers.add("Markets-By-Creator", {Action = "Markets-By-Creator"}, function(msg)
-  marketFactoryValidation.validateMarketGroupsByCreator(msg)
-  return MarketFactory:marketsByCreator(msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateMarketGroupsByCreator(msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Markets-By-Creator-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, get markets by creator.
+  MarketFactory:marketsByCreator(msg)
 end)
 
 --- Get process ID handler
 --- @param msg Message The message to handle
---- @return Message processId The process ID
 Handlers.add("Get-Process-Id", {Action = "Get-Process-Id"}, function(msg)
-  return MarketFactory:getProcessId(msg)
+  MarketFactory:getProcessId(msg)
 end)
 
 --- Get latest process ID for creator handler
 --- @param msg Message The message to handle
---- @return Message processId The process ID
 Handlers.add("Get-Latest-Process-Id-For-Creator", {Action = "Get-Latest-Process-Id-For-Creator"}, function(msg)
-  marketFactoryValidation.validateGetLatestProcessIdForCreator(msg)
-  return MarketFactory:getLatestProcessIdForCreator(msg.Tags.Creator, msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateGetLatestProcessIdForCreator(msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Get-Latest-Process-Id-For-Creator-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, get latest process ID for creator.
+  MarketFactory:getLatestProcessIdForCreator(msg.Tags.Creator, msg)
 end)
 
 --[[
@@ -186,70 +219,142 @@ CONFIGURATOR HANDLERS
 
 --- Update configurator handler
 --- @param msg Message The message to handle
---- @return Message updateConfiguratorNotice The update configurator notice
 Handlers.add("Update-Configurator", {Action = "Update-Configurator"}, function(msg)
-  marketFactoryValidation.validateUpdateConfigurator(msg, MarketFactory.configurator)
-  return MarketFactory:updateConfigurator(msg.Tags.Configurator, msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateUpdateConfigurator(msg, MarketFactory.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Configurator-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update configurator.
+  MarketFactory:updateConfigurator(msg.Tags.Configurator, msg)
 end)
 
 --- Update incentives handler
 --- @param msg Message The message to handle
---- @return Message updateIncentivesNotice The update incentives notice
 Handlers.add("Update-Incentives", {Action = "Update-Incentives"}, function(msg)
-  marketFactoryValidation.validateUpdateIncentives(msg, MarketFactory.configurator)
-  return MarketFactory:updateIncentives(msg.Tags.Incentives, msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateUpdateIncentives(msg, MarketFactory.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Incentives-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update incentives.
+  MarketFactory:updateIncentives(msg.Tags.Incentives, msg)
 end)
 
 --- Update LpFee handler
 --- @param msg Message The message to handle
---- @return Message updateLpFeeNotice The update LP fee notice
 Handlers.add("Update-Lp-Fee", {Action = "Update-Lp-Fee"}, function(msg)
-  marketFactoryValidation.validateUpdateLpFee(msg, MarketFactory.configurator)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateUpdateLpFee(msg, MarketFactory.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Lp-Fee-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update LpFee.
   local lpFee = tonumber(msg.Tags.LpFee)
-  return MarketFactory:updateLpFee(lpFee, msg)
+  MarketFactory:updateLpFee(lpFee, msg)
 end)
 
 --- Update protocolFee handler
 --- @param msg Message The message to handle
---- @return Message updateProtocolFeeNotice The update protocol fee notice
 Handlers.add("Update-Protocol-Fee", {Action = "Update-Protocol-Fee"}, function(msg)
-  marketFactoryValidation.validateUpdateProtocolFee(msg, MarketFactory.configurator)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateUpdateProtocolFee(msg, MarketFactory.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Protocol-Fee-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update protocolFee.
   local protocolFee = tonumber(msg.Tags.ProtocolFee)
-  return MarketFactory:updateProtocolFee(protocolFee, msg)
+  MarketFactory:updateProtocolFee(protocolFee, msg)
 end)
 
 --- Update protocolFeeTarget handler
 --- @param msg Message The message to handle
---- @return Message updateProtocolFeeTargetNotice The update protocol fee target notice
 Handlers.add("Update-Protocol-Fee-Target", {Action = "Update-Protocol-Fee-Target"}, function(msg)
-  marketFactoryValidation.validateUpdateProtocolFeeTarget(msg, MarketFactory.configurator)
-  return MarketFactory:updateProtocolFeeTarget(msg.Tags.ProtocolFeeTarget, msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateUpdateProtocolFeeTarget(msg, MarketFactory.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Protocol-Fee-Target-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update protocolFeeTarget.
+  MarketFactory:updateProtocolFeeTarget(msg.Tags.ProtocolFeeTarget, msg)
 end)
 
 --- Update maximumTakeFee handler
 --- @param msg Message The message to handle
---- @return Message updateMaximumTakeFeeNotice The update maximum take fee notice
 Handlers.add("Update-Maximum-Take-Fee", {Action = "Update-Maximum-Take-Fee"}, function(msg)
-  marketFactoryValidation.validateUpdateMaximumTakeFee(msg, MarketFactory.configurator)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateUpdateMaximumTakeFee(msg, MarketFactory.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Maximum-Take-Fee-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update maximumTakeFee.
   local maximumTakeFee = tonumber(msg.Tags.MaximumTakeFee)
-  return MarketFactory:updateMaximumTakeFee(maximumTakeFee, msg)
+  MarketFactory:updateMaximumTakeFee(maximumTakeFee, msg)
 end)
 
 --- Approve collateralToken handler
 --- @param msg Message The message to handle
---- @return Message approveCollateralTokenNotice The approve collateral token notice
 Handlers.add("Approve-Collateral-Token", {Action = "Approve-Collateral-Token"}, function(msg)
-  marketFactoryValidation.validateApproveCollateralToken(msg, MarketFactory.configurator)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateApproveCollateralToken(msg, MarketFactory.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Approve-Collateral-Token-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, approve collateralToken.
   local approved = string.lower(msg.Tags.Approved) == "true"
-  return MarketFactory:approveCollateralToken(msg.Tags.CollateralToken, approved, msg)
+  MarketFactory:approveCollateralToken(msg.Tags.CollateralToken, approved, msg)
 end)
 
 --- Transfer handler
 --- @param msg Message The message to handle
---- @return Message transferNotice The transfer notice
 Handlers.add("Transfer", {Action = "Transfer"}, function(msg)
-  marketFactoryValidation.validateTransfer(msg, MarketFactory.configurator)
-  return MarketFactory:transfer(msg.Tags.Token, msg.Tags.Recipient, msg.Tags.Quantity, msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateTransfer(msg, MarketFactory.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Transfer-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, transfer.
+  MarketFactory:transfer(msg.Tags.Token, msg.Tags.Recipient, msg.Tags.Quantity, msg)
 end)
 
 --[[
@@ -260,16 +365,18 @@ CALLBACK HANDLERS
 
 --- Spawned market handler
 --- @param msg Message The message to handle
---- @return boolean success True if successful, false otherwise
 Handlers.add("Market-Spawned", {Action = "Spawned", From = ao.id}, function(msg)
-  return MarketFactory:spawnedMarket(msg)
+  MarketFactory:spawnedMarket(msg)
 end)
 
 --- Debit notice handler
 --- @param msg Message The message to handle
 Handlers.add("Debit-Notice", {Action = "Debit-Notice"}, function(msg)
-  marketFactoryValidation.validateDebitNotice(msg)
-  return msg.forward( msg.Tags["X-Sender"], {
+  -- Validate input and raise error if invalid
+  local success, err = marketFactoryValidation.validateDebitNotice(msg)
+  assert(success, err)
+  -- Forward success message to original sender
+  msg.forward( msg.Tags["X-Sender"], {
     Action = "Debit-Success-Notice",
     Token = msg.From,
     Quantity = msg.Tags.Quantity,

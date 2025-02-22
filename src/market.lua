@@ -159,9 +159,8 @@ INFO HANDLER
 
 --- Info handler
 --- @param msg Message The message received
---- @return Message infoNotice The info notice
 Handlers.add("Info", {Action = "Info"}, function(msg)
-  return Market:info(msg)
+  Market:info(msg)
 end)
 
 --[[

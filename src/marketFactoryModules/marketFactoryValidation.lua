@@ -18,32 +18,60 @@ WRITE METHODS
 
 --- Validates a createMarketGroup message
 --- @param msg Message The message received
+--- @param approvedCollateralTokens table<string, boolean> A set of approved collateral tokens
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
 function marketFactoryValidation.validateCreateMarketGroup(msg, approvedCollateralTokens)
   -- TODO @dev: check staking balance or sender == approved
-  sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
-  assert(approvedCollateralTokens[msg.Tags.CollateralToken], "CollateralToken not approved!")
-  assert(type(msg.Tags.Question) == "string", "Question is required!")
-  assert(type(msg.Tags.Rules) == "string", "Rules is required!")
-  assert(type(msg.Tags.Category) == "string", "Category is required!")
-  assert(type(msg.Tags.Subcategory) == "string", "Subcategory is required!")
-  assert(type(msg.Tags.Logo) == "string", "Logo is required!")
+  local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
+  if not success then return false, err end
+
+  if not approvedCollateralTokens[msg.Tags.CollateralToken] then
+    return false, "CollateralToken not approved!"
+  end
+
+  local requiredFields = { "Question", "Rules", "Category", "Subcategory", "Logo" }
+  for _, field in ipairs(requiredFields) do
+    if type(msg.Tags[field]) ~= "string" then
+      return false, field .. " is required!"
+    end
+  end
+
+  return true
 end
 
 --- Validates a spawnMarket message
 --- @param msg Message The message received
+--- @param approvedCollateralTokens table<string, boolean> A set of approved collateral tokens
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
 function marketFactoryValidation.validateSpawnMarket(msg, approvedCollateralTokens)
   -- TODO @dev: check staking balance or sender == approved
-  sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
-  assert(approvedCollateralTokens[msg.Tags.CollateralToken], "CollateralToken not approved!")
-  sharedValidation.validateAddress(msg.Tags.ResolutionAgent, "ResolutionAgent")
-  assert(type(msg.Tags.Question) == "string", "Question is required!")
-  assert(type(msg.Tags.Rules) == "string", "Rules is required!")
-  sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")
-  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, "CreatorFee")
-  sharedValidation.validateAddress(msg.Tags.CreatorFeeTarget, "CreatorFeeTarget")
-  assert(type(msg.Tags.Category) == "string", "Category is required!")
-  assert(type(msg.Tags.Subcategory) == "string", "Subcategory is required!")
-  assert(type(msg.Tags.Logo) == "string", "Logo is required!")
+  local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
+  if not success then return false, err end
+
+  if not approvedCollateralTokens[msg.Tags.CollateralToken] then
+    return false, "CollateralToken not approved!"
+  end
+
+  success, err = sharedValidation.validateAddress(msg.Tags.ResolutionAgent, "ResolutionAgent")
+  if not success then return false, err end
+
+  success, err = sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")
+  if not success then return false, err end
+
+  success, err = sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, "CreatorFee")
+  if not success then return false, err end
+
+  success, err = sharedValidation.validateAddress(msg.Tags.CreatorFeeTarget, "CreatorFeeTarget")
+  if not success then return false, err end
+
+  local requiredFields = { "Question", "Rules", "Category", "Subcategory", "Logo" }
+  for _, field in ipairs(requiredFields) do
+    if type(msg.Tags[field]) ~= "string" then
+      return false, field .. " is required!"
+    end
+  end
+
+  return true
 end
 
 --[[
@@ -54,20 +82,23 @@ READ METHODS
 
 --- Validates a marketsByCreator message
 --- @param msg Message The message received
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
 function marketFactoryValidation.validateMarketsByCreator(msg)
-  sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
+  return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
 end
 
 --- Validates a marketGroupsByCreator message
 --- @param msg Message The message received
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
 function marketFactoryValidation.validateMarketGroupsByCreator(msg)
-  sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
+  return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
 end
 
 --- Validates a getLatestProcessIdForCreator message
 --- @param msg Message The message received
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
 function marketFactoryValidation.validateGetLatestProcessIdForCreator(msg)
-  sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
+  return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
 end
 
 --[[
@@ -78,74 +109,100 @@ CONFIGURATOR METHODS
 
 --- Validates an update configurator message
 --- @param msg Message The message received
+--- @param configurator string The current configurator
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
 function marketFactoryValidation.validateUpdateConfigurator(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.Configurator, "Configurator")
+  if msg.From ~= configurator then
+    return false, "Sender must be configurator!"
+  end
+  return sharedValidation.validateAddress(msg.Tags.Configurator, "Configurator")
 end
 
 --- Validates an update incentives message
 --- @param msg Message The message received
---- @param configurator string The configurator address
+--- @param configurator string The current configurator
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
 function marketFactoryValidation.validateUpdateIncentives(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.Incentives, "Incentives")
+  if msg.From ~= configurator then
+    return false, "Sender must be configurator!"
+  end
+  return sharedValidation.validateAddress(msg.Tags.Incentives, "Incentives")
 end
 
 --- Validates an update lpFee message
 --- @param msg Message The message received
---- @param configurator string The configurator address
+--- @param configurator string The current configurator
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
 function marketFactoryValidation.validateUpdateLpFee(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.LpFee, "LpFee")
+  if msg.From ~= configurator then
+    return false, "Sender must be configurator!"
+  end
+  return sharedValidation.validatePositiveIntegerOrZero(msg.Tags.LpFee, "LpFee")
 end
 
 --- Validates an update protocolFee message
 --- @param msg Message The message received
---- @param configurator string The configurator address
+--- @param configurator string The current configurator
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
 function marketFactoryValidation.validateUpdateProtocolFee(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.ProtocolFee, "ProtocolFee")
+  if msg.From ~= configurator then
+    return false, "Sender must be configurator!"
+  end
+  return sharedValidation.validatePositiveIntegerOrZero(msg.Tags.ProtocolFee, "ProtocolFee")
 end
 
 --- Validates an update protocolFeeTarget message
 --- @param msg Message The message received
---- @param configurator string The configurator address
+--- @param configurator string The current configurator
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
 function marketFactoryValidation.validateUpdateProtocolFeeTarget(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.ProtocolFeeTarget, "ProtocolFeeTarget")
+  if msg.From ~= configurator then
+    return false, "Sender must be configurator!"
+  end
+  return sharedValidation.validateAddress(msg.Tags.ProtocolFeeTarget, "ProtocolFeeTarget")
 end
 
 --- Validates an update maximumTakeFee message
---- @param msg Message The message received
---- @param configurator string The configurator address
 function marketFactoryValidation.validateUpdateMaximumTakeFee(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.MaximumTakeFee, "MaximumTakeFee")
+  if msg.From ~= configurator then
+    return false, "Sender must be configurator!"
+  end
+  return sharedValidation.validatePositiveIntegerOrZero(msg.Tags.MaximumTakeFee, "MaximumTakeFee")
 end
 
---- Validates an approve collateralToken message
---- @param msg Message The message received
---- @param configurator string The configurator address
+--- Validates an approveCollateralToken message
 function marketFactoryValidation.validateApproveCollateralToken(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
-  assert(sharedUtils.isValidBooleanString(msg.Tags.Approved), "Approved must be a boolean!")
+  if msg.From ~= configurator then
+    return false, "Sender must be configurator!"
+  end
+  local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
+  if not success then return false, err end
+
+  if not sharedUtils.isValidBooleanString(msg.Tags.Approved) then
+    return false, "Approved must be a boolean string!"
+  end
+
+  return true
 end
 
 --- Validates a transfer message
---- @param msg Message The message received
---- @param configurator string The configurator address
 function marketFactoryValidation.validateTransfer(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.Token, "Token")
-  sharedValidation.validateAddress(msg.Tags.Recipient, "Recipient")
-  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  if msg.From ~= configurator then
+    return false, "Sender must be configurator!"
+  end
+
+  local success, err = sharedValidation.validateAddress(msg.Tags.Token, "Token")
+  if not success then return false, err end
+
+  success, err = sharedValidation.validateAddress(msg.Tags.Recipient, "Recipient")
+  if not success then return false, err end
+
+  return sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
 end
 
---- Validates a debit notice
---- @param msg Message The message received
+--- Validates a debit notice message
 function marketFactoryValidation.validateDebitNotice(msg)
-  sharedValidation.validateAddress(msg.Tags["X-Sender"], "X-Sender")
+  return sharedValidation.validateAddress(msg.Tags["X-Sender"], "X-Sender")
 end
 
 return marketFactoryValidation
