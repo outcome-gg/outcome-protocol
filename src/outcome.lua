@@ -697,8 +697,6 @@ end
 --- @param quantity string The quantity of LP tokens to transfer, i.e. the amount of shares to burn
 --- @note **Emits the following notices:**  
 --- **🔄 Execution Transfers**  
---- - `Debit-Notice`: **market → ao.id**          -- Transfers LP tokens from the provider
---- - `Credit-Notice`: **market → market**        -- Transfers LP tokens to the market
 --- - `Withdraw-Fees-Notice`: **market → ao.id**  -- Distributes accrued LP fees to the provider
 --- **🔥 Burning LP Shares**  
 --- - `Burn-Notice`: **market → market**          -- Burns the returned LP tokens

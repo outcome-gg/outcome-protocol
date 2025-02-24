@@ -423,6 +423,213 @@ end
 
 _G.package.loaded["json"] = _loaded_mod_json()
 
+-- module: "marketModules.cpmmHelpers"
+local function _loaded_mod_marketModules_cpmmHelpers()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See cpmm.lua for full license details.
+=========================================================
+]]
+
+local bint = require('.bint')(256)
+-- local ao = require('.ao') @dev required for unit tests?
+
+local CPMMHelpers = {}
+
+--- Calculate the ceildiv of x / y
+--- @param x number The numerator
+--- @param y number The denominator
+--- @return number The ceil div of x / y
+function CPMMHelpers.ceildiv(x, y)
+  if x > 0 then
+    return math.floor((x - 1) / y) + 1
+  end
+  return math.floor(x / y)
+end
+
+--- Generate position IDs
+--- @param outcomeSlotCount number The number of outcome slots
+--- @return table<string> A basic partition based on outcomeSlotCount
+function CPMMHelpers.getPositionIds(outcomeSlotCount)
+  local positionIds = {}
+  for i = 1, outcomeSlotCount do
+    table.insert(positionIds, tostring(i))
+  end
+  return positionIds
+end
+
+--- Gets pool balances
+--- @return table<string> Pool balances for each ID
+function CPMMHelpers:getPoolBalances()
+  -- Get poolBalances
+  local selves = {}
+  for _ = 1, #self.tokens.positionIds do
+    table.insert(selves, ao.id)
+  end
+  local poolBalances = self.tokens:getBatchBalance(selves, self.tokens.positionIds)
+  return poolBalances
+end
+
+return CPMMHelpers
+end
+
+_G.package.loaded["marketModules.cpmmHelpers"] = _loaded_mod_marketModules_cpmmHelpers()
+
+-- module: "marketModules.cpmmNotices"
+local function _loaded_mod_marketModules_cpmmNotices()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See cpmm.lua for full license details.
+=========================================================
+]]
+
+-- local ao = require('.ao') @dev required for unit tests?
+local json = require('json')
+
+local CPMMNotices = {}
+
+--- Sends an add funding notice
+--- @param fundingAdded table The funding added
+--- @param mintAmount number The mint amount
+--- @param msg Message The message received
+--- @return Message The funding added notice
+function CPMMNotices.addFundingNotice(fundingAdded, mintAmount, msg)
+  return msg.forward(msg.Tags.Sender, {
+    Action = "Add-Funding-Notice",
+    FundingAdded = json.encode(fundingAdded),
+    MintAmount = tostring(mintAmount),
+    Data = "Successfully added funding"
+  })
+end
+
+--- Sends a remove funding notice
+--- @param sendAmounts table The send amounts
+--- @param collateralRemovedFromFeePool string The collateral removed from the fee pool
+--- @param sharesToBurn string The shares to burn
+--- @param msg Message The message received
+--- @return Message The funding removed notice
+function CPMMNotices.removeFundingNotice(sendAmounts, collateralRemovedFromFeePool, sharesToBurn, msg)
+  return msg.reply({
+    Action = "Remove-Funding-Notice",
+    SendAmounts = json.encode(sendAmounts),
+    CollateralRemovedFromFeePool = collateralRemovedFromFeePool,
+    SharesToBurn = sharesToBurn,
+    Data = "Successfully removed funding"
+  })
+end
+
+--- Sends a buy notice
+--- @param from string The address that bought
+--- @param onBehalfOf string The address that receives the outcome tokens
+--- @param investmentAmount number The investment amount
+--- @param feeAmount number The fee amount
+--- @param positionId string The position ID
+--- @param positionTokensBought number The outcome position tokens bought
+--- @param msg Message The message received
+--- @return Message The buy notice
+function CPMMNotices.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, positionTokensBought, msg)
+  return msg.forward(from, {
+    Action = "Buy-Notice",
+    OnBehalfOf = onBehalfOf,
+    InvestmentAmount = tostring(investmentAmount),
+    FeeAmount = tostring(feeAmount),
+    PositionId = positionId,
+    PositionTokensBought = tostring(positionTokensBought),
+    Data = "Successful buy order"
+  })
+end
+
+--- Sends a sell notice
+--- @param from string The address that sold
+--- @param returnAmount number The return amount
+--- @param feeAmount number The fee amount
+--- @param positionId string The position ID
+--- @param positionTokensSold number The outcome position tokens sold
+--- @param msg Message The message received
+--- @return Message The sell notice
+function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, positionTokensSold, msg)
+  return msg.forward(from, {
+    Action = "Sell-Notice",
+    ReturnAmount = tostring(returnAmount),
+    FeeAmount = tostring(feeAmount),
+    PositionId = positionId,
+    PositionTokensSold = tostring(positionTokensSold),
+    Data = "Successful sell order"
+  })
+end
+
+--- Sends a withdraw fees notice
+--- @notice Returns notice with `msg.reply` if `useReply` is true, otherwise uses `ao.send`
+--- @dev Ensures the final notice is sent to the user, preventing unintended message handling 
+--- @param feeAmount number The fee amount
+--- @param msg Message The message received
+--- @param useReply boolean Whether to use `msg.reply` or `ao.send`
+--- @return Message The withdraw fees notice
+function CPMMNotices.withdrawFeesNotice(feeAmount, msg, useReply)
+  local notice = {
+    Action = "Withdraw-Fees-Notice",
+    FeeAmount = tostring(feeAmount),
+    Data = "Successfully withdrew fees"
+  }
+  if useReply then return msg.reply(notice) end
+  notice.Target = msg.Sender and msg.Sender or msg.From
+  return ao.send(notice)
+end
+
+--- Sends an update configurator notice
+--- @param configurator string The updated configurator address
+--- @param msg Message The message received
+--- @return Message The configurator updated notice
+function CPMMNotices.updateConfiguratorNotice(configurator, msg)
+  return msg.reply({
+    Action = "Update-Configurator-Notice",
+    Data = configurator
+  })
+end
+
+--- Sends an update take fee notice
+--- @param creatorFee string The updated creator fee
+--- @param protocolFee string The updated protocol fee
+--- @param takeFee string The updated take fee
+--- @param msg Message The message received
+function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)
+  return msg.reply({
+    Action = "Update-Take-Fee-Notice",
+    CreatorFee = tostring(creatorFee),
+    ProtocolFee = tostring(protocolFee),
+    Data = tostring(takeFee)
+  })
+end
+
+--- Sends an update protocol fee target notice
+--- @param protocolFeeTarget string The updated protocol fee target
+--- @param msg Message The message received
+--- @return Message The protocol fee target updated notice
+function CPMMNotices.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)
+  return msg.reply({
+    Action = "Update-Protocol-Fee-Target-Notice",
+    Data = protocolFeeTarget
+  })
+end
+
+--- Sends an update logo notice
+--- @param logo string The updated logo
+--- @param msg Message The message received
+--- @return Message The logo updated notice
+function CPMMNotices.updateLogoNotice(logo, msg)
+  return msg.reply({
+    Action = "Update-Logo-Notice",
+    Data = logo
+  })
+end
+
+return CPMMNotices
+end
+
+_G.package.loaded["marketModules.cpmmNotices"] = _loaded_mod_marketModules_cpmmNotices()
+
 -- module: ".utils"
 local function _loaded_mod_utils()
 --- The Utils module provides a collection of utility functions for functional programming in Lua. It includes functions for array manipulation such as concatenation, mapping, reduction, filtering, and finding elements, as well as a property equality checker.
@@ -796,294 +1003,6 @@ end
 
 _G.package.loaded[".utils"] = _loaded_mod_utils()
 
--- module: "marketModules.cpmmHelpers"
-local function _loaded_mod_marketModules_cpmmHelpers()
---[[
-=========================================================
-Part of the Outcome codebase © 2025. All Rights Reserved.
-See cpmm.lua for full license details.
-=========================================================
-]]
-
-local bint = require('.bint')(256)
--- local ao = require('.ao') @dev required for unit tests?
-
-local CPMMHelpers = {}
-
---- Calculate the ceildiv of x / y
---- @param x number The numerator
---- @param y number The denominator
---- @return number The ceil div of x / y
-function CPMMHelpers.ceildiv(x, y)
-  if x > 0 then
-    return math.floor((x - 1) / y) + 1
-  end
-  return math.floor(x / y)
-end
-
---- Generate position IDs
---- @param outcomeSlotCount number The number of outcome slots
---- @return table<string> A basic partition based on outcomeSlotCount
-function CPMMHelpers.getPositionIds(outcomeSlotCount)
-  local positionIds = {}
-  for i = 1, outcomeSlotCount do
-    table.insert(positionIds, tostring(i))
-  end
-  return positionIds
-end
-
---- Validate add funding
---- Returns funding to sender on error
---- @param from string The address of the sender
---- @param quantity number The amount of funding to add
---- @param distribution table<number>|nil The distribution of funding or `nil`
---- @return boolean True if error
-function CPMMHelpers:validateAddFunding(from, quantity, distribution)
-  local error = false
-  local errorMessage = ''
-
-  if distribution then
-    -- Ensure distribution set only for initial funding
-    if not error and not bint.iszero(bint(self.token.totalSupply)) then
-      error = true
-      errorMessage = "Cannot specify distribution after initial funding"
-    end
-    -- Ensure distribution is set across all position ids
-    if not error and #distribution ~= #self.tokens.positionIds then
-      error = true
-      errorMessage = "Distribution length mismatch"
-    end
-    if not error then
-      -- Ensure distribution content is valid
-      local distributionSum = 0
-      for i = 1, #distribution do
-        if not error and type(distribution[i]) ~= "number" then
-          error = true
-          errorMessage = "Distribution item must be number"
-        else
-          distributionSum = distributionSum + distribution[i]
-        end
-      end
-      if not error and distributionSum == 0 then
-        error = true
-        errorMessage = "Distribution sum must be greater than zero"
-      end
-    end
-  else
-    if bint.iszero(bint(self.token.totalSupply)) then
-      error = true
-      errorMessage = "Must specify distribution for inititial funding"
-    end
-  end
-
-  if error then
-    -- Return funds and assert error
-    ao.send({
-      Target = self.tokens.collateralToken,
-      Action = 'Transfer',
-      Recipient = from,
-      Quantity = tostring(quantity),
-      ['X-Error'] = 'Add-Funding Error: ' .. errorMessage
-    })
-  end
-  return not error
-end
-
---- Validate remove funding
---- Returns LP tokens to sender on error
---- @param from string The address of the sender
---- @param quantity number The amount of funding to remove
---- @return boolean True if error
-function CPMMHelpers:validateRemoveFunding(from, quantity, msg)
-  local error = false
-  local errorMessage = ""
-  -- Get balance
-  local balance = self.token.balances[from] or '0'
-  if not bint.__le(bint(quantity), bint(balance)) then
-    error = true
-    errorMessage = "Quantity must be less than balance!"
-  end
-  if error then
-    -- Return funds and assert error
-    msg.reply({
-      Action = "Remove-Funding-Error",
-      Error = errorMessage
-    })
-  end
-  return not error
-end
-
---- Gets pool balances
---- @return table<string> Pool balances for each ID
-function CPMMHelpers:getPoolBalances()
-  -- Get poolBalances
-  local selves = {}
-  for _ = 1, #self.tokens.positionIds do
-    table.insert(selves, ao.id)
-  end
-  local poolBalances = self.tokens:getBatchBalance(selves, self.tokens.positionIds)
-  return poolBalances
-end
-
-return CPMMHelpers
-end
-
-_G.package.loaded["marketModules.cpmmHelpers"] = _loaded_mod_marketModules_cpmmHelpers()
-
--- module: "marketModules.cpmmNotices"
-local function _loaded_mod_marketModules_cpmmNotices()
---[[
-=========================================================
-Part of the Outcome codebase © 2025. All Rights Reserved.
-See cpmm.lua for full license details.
-=========================================================
-]]
-
--- local ao = require('.ao') @dev required for unit tests?
-local json = require('json')
-
-local CPMMNotices = {}
-
---- Sends an add funding notice
---- @param fundingAdded table The funding added
---- @param mintAmount number The mint amount
---- @param msg Message The message received
---- @return Message The funding added notice
-function CPMMNotices.addFundingNotice(fundingAdded, mintAmount, msg)
-  return msg.forward(msg.Tags.Sender, {
-    Action = "Add-Funding-Notice",
-    FundingAdded = json.encode(fundingAdded),
-    MintAmount = tostring(mintAmount),
-    Data = "Successfully added funding"
-  })
-end
-
---- Sends a remove funding notice
---- @param sendAmounts table The send amounts
---- @param collateralRemovedFromFeePool string The collateral removed from the fee pool
---- @param sharesToBurn string The shares to burn
---- @param msg Message The message received
---- @return Message The funding removed notice
-function CPMMNotices.removeFundingNotice(sendAmounts, collateralRemovedFromFeePool, sharesToBurn, msg)
-  return msg.reply({
-    Action = "Remove-Funding-Notice",
-    SendAmounts = json.encode(sendAmounts),
-    CollateralRemovedFromFeePool = collateralRemovedFromFeePool,
-    SharesToBurn = sharesToBurn,
-    Data = "Successfully removed funding"
-  })
-end
-
---- Sends a buy notice
---- @param from string The address that bought
---- @param onBehalfOf string The address that receives the outcome tokens
---- @param investmentAmount number The investment amount
---- @param feeAmount number The fee amount
---- @param positionId string The position ID
---- @param positionTokensBought number The outcome position tokens bought
---- @param msg Message The message received
---- @return Message The buy notice
-function CPMMNotices.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, positionTokensBought, msg)
-  return msg.forward(from, {
-    Action = "Buy-Notice",
-    OnBehalfOf = onBehalfOf,
-    InvestmentAmount = tostring(investmentAmount),
-    FeeAmount = tostring(feeAmount),
-    PositionId = positionId,
-    PositionTokensBought = tostring(positionTokensBought),
-    Data = "Successful buy order"
-  })
-end
-
---- Sends a sell notice
---- @param from string The address that sold
---- @param returnAmount number The return amount
---- @param feeAmount number The fee amount
---- @param positionId string The position ID
---- @param positionTokensSold number The outcome position tokens sold
---- @param msg Message The message received
---- @return Message The sell notice
-function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, positionTokensSold, msg)
-  return msg.forward(from, {
-    Action = "Sell-Notice",
-    ReturnAmount = tostring(returnAmount),
-    FeeAmount = tostring(feeAmount),
-    PositionId = positionId,
-    PositionTokensSold = tostring(positionTokensSold),
-    Data = "Successful sell order"
-  })
-end
-
---- Sends a withdraw fees notice
---- @notice Returns notice with `msg.reply` if `useReply` is true, otherwise uses `ao.send`
---- @dev Ensures the final notice is sent to the user, preventing unintended message handling 
---- @param feeAmount number The fee amount
---- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
---- @return Message The withdraw fees notice
-function CPMMNotices.withdrawFeesNotice(feeAmount, msg, useReply)
-  local notice = {
-    Action = "Withdraw-Fees-Notice",
-    FeeAmount = tostring(feeAmount),
-    Data = "Successfully withdrew fees"
-  }
-  if useReply then return msg.reply(notice) end
-  notice.Target = msg.Sender and msg.Sender or msg.From
-  return ao.send(notice)
-end
-
---- Sends an update configurator notice
---- @param configurator string The updated configurator address
---- @param msg Message The message received
---- @return Message The configurator updated notice
-function CPMMNotices.updateConfiguratorNotice(configurator, msg)
-  return msg.reply({
-    Action = "Update-Configurator-Notice",
-    Data = configurator
-  })
-end
-
---- Sends an update take fee notice
---- @param creatorFee string The updated creator fee
---- @param protocolFee string The updated protocol fee
---- @param takeFee string The updated take fee
---- @param msg Message The message received
-function CPMMNotices.updateTakeFeeNotice(creatorFee, protocolFee, takeFee, msg)
-  return msg.reply({
-    Action = "Update-Take-Fee-Notice",
-    CreatorFee = tostring(creatorFee),
-    ProtocolFee = tostring(protocolFee),
-    Data = tostring(takeFee)
-  })
-end
-
---- Sends an update protocol fee target notice
---- @param protocolFeeTarget string The updated protocol fee target
---- @param msg Message The message received
---- @return Message The protocol fee target updated notice
-function CPMMNotices.updateProtocolFeeTargetNotice(protocolFeeTarget, msg)
-  return msg.reply({
-    Action = "Update-Protocol-Fee-Target-Notice",
-    Data = protocolFeeTarget
-  })
-end
-
---- Sends an update logo notice
---- @param logo string The updated logo
---- @param msg Message The message received
---- @return Message The logo updated notice
-function CPMMNotices.updateLogoNotice(logo, msg)
-  return msg.reply({
-    Action = "Update-Logo-Notice",
-    Data = logo
-  })
-end
-
-return CPMMNotices
-end
-
-_G.package.loaded["marketModules.cpmmNotices"] = _loaded_mod_marketModules_cpmmNotices()
-
 -- module: "marketModules.tokenNotices"
 local function _loaded_mod_marketModules_tokenNotices()
 --[[
@@ -1186,7 +1105,6 @@ local Token = {}
 local TokenMethods = {}
 local TokenNotices = require('marketModules.tokenNotices')
 local bint = require('.bint')(256)
-local json = require("json")
 
 --- Represents a Token
 --- @class Token
@@ -2178,7 +2096,6 @@ local SemiFungibleTokens = {}
 local SemiFungibleTokensMethods = {}
 local SemiFungibleTokensNotices = require('marketModules.semiFungibleTokensNotices')
 local bint = require('.bint')(256)
-local json = require('json')
 
 -- Represents SemiFungibleTokens
 --- @class SemiFungibleTokens
@@ -2467,8 +2384,6 @@ local ConditionalTokensMethods = {}
 local ConditionalTokensNotices = require('marketModules.conditionalTokensNotices')
 local SemiFungibleTokens = require('marketModules.semiFungibleTokens')
 local bint = require('.bint')(256)
-local crypto = require('.crypto')
-local json = require("json")
 local ao = ao or require('.ao')
 
 --- Represents ConditionalTokens
@@ -2725,8 +2640,6 @@ local CPMMMethods = {}
 local CPMMHelpers = require('marketModules.cpmmHelpers')
 local CPMMNotices = require('marketModules.cpmmNotices')
 local bint = require('.bint')(256)
-local json = require('json')
--- local ao = require('.ao') @dev required for unit tests?
 local utils = require(".utils")
 local token = require('marketModules.token')
 local constants = require("marketModules.constants")
@@ -2900,10 +2813,6 @@ function CPMMMethods:removeFunding(from, sharesToBurn, msg)
   self:burn(from, sharesToBurn, msg)
   local poolFeeBalance = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
   collateralRemovedFromFeePool = tostring(math.floor(poolFeeBalance - collateralRemovedFromFeePool))
-  -- Send collateralRemovedFromFeePool
-  if bint(collateralRemovedFromFeePool) > 0 then
-    ao.send({Target = self.tokens.collateralToke, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
-  end
   -- Send conditionalTokens amounts
   self.tokens:transferBatch(ao.id, from, self.tokens.positionIds, sendAmounts, false, msg)
   -- Send notice
@@ -3152,445 +3061,6 @@ end
 
 _G.package.loaded["marketModules.cpmm"] = _loaded_mod_marketModules_cpmm()
 
--- module: "marketModules.sharedUtils"
-local function _loaded_mod_marketModules_sharedUtils()
---[[
-=========================================================
-Part of the Outcome codebase © 2025. All Rights Reserved.
-See market.lua for full license details.
-=========================================================
-]]
-
-local sharedUtils = {}
-
---- Verify if extracted value is a JSON simple value
---- @param value any
---- @return boolean
-local function isSimpleValue(value)
-  -- Trim whitespace
-  value = value:match("^%s*(.-)%s*$") or value
-  -- Check for a quoted string: "someValue"
-  if value:match('^"[^"]*"$') then
-    return true
-  end
-  -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
-  if value:match('^[-]?%d+%.?%d*$') then
-    return true
-  end
-  -- Check for boolean
-  if string.lower(value) == "true" or string.lower(value) == "false" then
-    return true
-  end
-  return false
-end
-
---- Verify if a valid JSON object
---- @param str any
---- @return boolean
-function sharedUtils.isValidKeyValueJSON(str)
-  if type(str) ~= "string" then return false end
-  -- Trim whitespace
-  str = str:match("^%s*(.-)%s*$")
-  -- Ensure it starts with `{` and ends with `}`
-  local isObject = str:match("^%{%s*(.-)%s*%}$")
-  if not isObject then return false end
-  -- This pattern only extracts the key and the entire raw value
-  local keyValuePattern = '^%s*"([^"]+)"%s*:%s*(.-)%s*$'
-  -- Check all key-value pairs
-  for keyValue in isObject:gmatch("[^,]+") do
-    local key, rawValue = keyValue:match(keyValuePattern)
-    if not key or not rawValue then
-      return false
-    end
-    -- Now validate that rawValue is a valid JSON simple value
-    if not isSimpleValue(rawValue) then
-      return false
-    end
-  end
-  return true
-end
-
---- Verify if a valid JSON array
---- @param str any
---- @return boolean
-function sharedUtils.isJSONArray(str)
-  if type(str) ~= "string" then return false end
-  -- Trim whitespace
-  str = str:match("^%s*(.-)%s*$")
-  -- Ensure it starts with `[` and ends with `]`
-  local isArray = str:match("^%[%s*(.-)%s*%]$")
-  if not isArray then return false end
-  -- Split the array elements and validate each one
-  for value in isArray:gmatch("[^,]+") do
-    value = value:match("^%s*(.-)%s*$") -- Trim whitespace around each value
-    if not isSimpleValue(value) then
-      return false
-    end
-  end
-  return true
-end
-
---- Verify if a valid Arweave address
---- @param address any
---- @return boolean
-function sharedUtils.isValidArweaveAddress(address)
-	return type(address) == "string" and #address == 43 and string.match(address, "^[%w-_]+$") ~= nil
-end
-
---- Verify if a valid boolean string
---- @param value any
---- @return boolean
-function sharedUtils.isValidBooleanString(value)
-  return type(value) == "string" and (string.lower(value) == "true" or string.lower(value) == "false")
-end
-
-return sharedUtils
-end
-
-_G.package.loaded["marketModules.sharedUtils"] = _loaded_mod_marketModules_sharedUtils()
-
--- module: "marketModules.sharedValidation"
-local function _loaded_mod_marketModules_sharedValidation()
---[[
-=========================================================
-Part of the Outcome codebase © 2025. All Rights Reserved.
-See market.lua for full license details.
-=========================================================
-]]
-
-local sharedValidation = {}
-local sharedUtils = require('marketModules.sharedUtils')
-local utils = require('.utils')
-
---- Validates address
---- @param address any The address to be validated
---- @param tagName string The name of the tag being validated
-function sharedValidation.validateAddress(address, tagName)
-  assert(type(address) == 'string', tagName .. ' is required!')
-  assert(sharedUtils.isValidArweaveAddress(address), tagName .. ' must be a valid Arweave address!')
-end
-
---- Validates array item
---- @param item any The item to be validated
---- @param validItems table<string> The array of valid items
---- @param tagName string The name of the tag being validated
-function sharedValidation.validateItem(item, validItems, tagName)
-  assert(type(item) == 'string', tagName .. ' is required!')
-  assert(utils.includes(item, validItems), 'Invalid ' .. tagName .. '!')
-end
-
---- Validates positive integer
---- @param quantity any The quantity to be validated
---- @param tagName string The name of the tag being validated
-function sharedValidation.validatePositiveInteger(quantity, tagName)
-  assert(type(quantity) == 'string', tagName .. ' is required!')
-  assert(tonumber(quantity), tagName .. ' must be a number!')
-  assert(tonumber(quantity) > 0, tagName .. ' must be greater than zero!')
-  assert(tonumber(quantity) % 1 == 0, tagName .. ' must be an integer!')
-end
-
---- Validates positive integer or zero
---- @param quantity any The quantity to be validated
---- @param tagName string The name of the tag being validated
-function sharedValidation.validatePositiveIntegerOrZero(quantity, tagName)
-  assert(type(quantity) == 'string', tagName .. ' is required!')
-  assert(tonumber(quantity), tagName .. ' must be a number!')
-  assert(tonumber(quantity) >= 0, tagName .. ' must be greater than or equal to zero!')
-  assert(tonumber(quantity) % 1 == 0, tagName .. ' must be an integer!')
-end
-
-return sharedValidation
-end
-
-_G.package.loaded["marketModules.sharedValidation"] = _loaded_mod_marketModules_sharedValidation()
-
--- module: "marketModules.cpmmValidation"
-local function _loaded_mod_marketModules_cpmmValidation()
---[[
-=========================================================
-Part of the Outcome codebase © 2025. All Rights Reserved.
-See cpmm.lua for full license details.
-=========================================================
-]]
-
-local cpmmValidation = {}
-local sharedValidation = require('marketModules.sharedValidation')
-local sharedUtils = require('marketModules.sharedUtils')
-local bint = require('.bint')(256)
-local json = require('json')
-
---- Validates add funding
---- @param msg Message The message to be validated
-function cpmmValidation.addFunding(msg)
-  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
-end
-
---- Validates remove funding
---- @param msg Message The message to be validated
-function cpmmValidation.removeFunding(msg)
-  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
-end
-
---- Validates buy
---- @param msg Message The message to be validated
---- @param validPositionIds table<string> The array of valid position IDs
-function cpmmValidation.buy(msg, validPositionIds)
-  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "X-PositionId")
-  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
-  sharedValidation.validatePositiveInteger(msg.Tags["X-MinPositionTokensToBuy"], "X-MinPositionTokensToBuy")
-end
-
---- Validates sell
---- @param msg Message The message to be validated
---- @param validPositionIds table<string> The array of valid position IDs
-function cpmmValidation.sell(msg, validPositionIds)
-  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
-  sharedValidation.validatePositiveInteger(msg.Tags.MaxPositionTokensToSell, "MaxPositionTokensToSell")
-  sharedValidation.validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
-end
-
---- Validates calc buy amount
---- @param msg Message The message to be validated
---- @param validPositionIds table<string> The array of valid position IDs
-function cpmmValidation.calcBuyAmount(msg, validPositionIds)
-  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
-  sharedValidation.validatePositiveInteger(msg.Tags.InvestmentAmount, "InvestmentAmount")
-end
-
---- Validates calc sell amount
---- @param msg Message The message to be validated
---- @param validPositionIds table<string> The array of valid position IDs
-function cpmmValidation.calcSellAmount(msg, validPositionIds)
-  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
-  sharedValidation.validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
-end
-
---- Validates update configurator
---- @param msg Message The message to be validated
---- @param configurator string The configurator address
-function cpmmValidation.updateConfigurator(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.Configurator, 'Configurator')
-end
-
---- Validates update take fee
---- @param msg Message The message to be validated
---- @param configurator string The configurator address
-function cpmmValidation.updateTakeFee(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, 'CreatorFee')
-  sharedValidation.validatePositiveIntegerOrZero(msg.Tags.ProtocolFee, 'ProtocolFee')
-  assert(bint.__le(bint.__add(bint(msg.Tags.CreatorFee), bint(msg.Tags.ProtocolFee)), 1000), 'Net fee must be less than or equal to 1000 bps')
-end
-
---- Validates update protocol fee target
---- @param msg Message The message to be validated
---- @param configurator string The configurator address
-function cpmmValidation.updateProtocolFeeTarget(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  assert(msg.Tags.ProtocolFeeTarget, 'ProtocolFeeTarget is required!')
-end
-
---- Validates update logo
---- @param msg Message The message to be validated
---- @param configurator string The configurator address
-function cpmmValidation.updateLogo(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  assert(msg.Tags.Logo, 'Logo is required!')
-end
-
-return cpmmValidation
-end
-
-_G.package.loaded["marketModules.cpmmValidation"] = _loaded_mod_marketModules_cpmmValidation()
-
--- module: "marketModules.tokenValidation"
-local function _loaded_mod_marketModules_tokenValidation()
---[[
-=========================================================
-Part of the Outcome codebase © 2025. All Rights Reserved.
-See tokens.lua for full license details.
-=========================================================
-]]
-
-local tokenValidation = {}
-local sharedValidation = require('marketModules.sharedValidation')
-
---- Validates a transfer message
---- @param msg Message The message received
-function tokenValidation.transfer(msg)
-  sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
-  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
-end
-
-return tokenValidation
-end
-
-_G.package.loaded["marketModules.tokenValidation"] = _loaded_mod_marketModules_tokenValidation()
-
--- module: "marketModules.marketValidation"
-local function _loaded_mod_marketModules_marketValidation()
-local MarketValidation = {}
-local sharedValidation = require('marketModules.sharedValidation')
-
---- Validates update data index
---- @param msg Message The message to be validated
---- @param configurator string The configurator address
-function MarketValidation.updateDataIndex(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.DataIndex, 'DataIndex')
-end
-
---- Validates update incentives
---- @param msg Message The message to be validated
---- @param configurator string The configurator address
-function MarketValidation.updateIncentives(msg, configurator)
-  assert(msg.From == configurator, 'Sender must be configurator!')
-  sharedValidation.validateAddress(msg.Tags.Incentives, 'Incentives')
-end
-
-return MarketValidation
-end
-
-_G.package.loaded["marketModules.marketValidation"] = _loaded_mod_marketModules_marketValidation()
-
--- module: "marketModules.semiFungibleTokensValidation"
-local function _loaded_mod_marketModules_semiFungibleTokensValidation()
---[[
-=========================================================
-Part of the Outcome codebase © 2025. All Rights Reserved.
-See semiFungibleTokens.lua for full license details.
-=========================================================
-]]
-
-local semiFungibleTokensValidation = {}
-local sharedValidation = require('marketModules.sharedValidation')
-local json = require("json")
-
---- Validates a transferSingle message
---- @param msg Message The message received
---- @param validPositionIds table<string> The array of valid token IDs
-function semiFungibleTokensValidation.transferSingle(msg, validPositionIds)
-  sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
-  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
-  sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
-end
-
---- Validates a transferBatch message
---- @param msg Message The message received
---- @param validPositionIds table<string> The array of valid token IDs
-function semiFungibleTokensValidation.transferBatch(msg, validPositionIds)
-  sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
-  assert(type(msg.Tags.PositionIds) == 'string', 'PositionIds is required!')
-  local positionIds = json.decode(msg.Tags.PositionIds)
-  assert(type(msg.Tags.Quantities) == 'string', 'Quantities is required!')
-  local quantities = json.decode(msg.Tags.Quantities)
-  assert(#positionIds == #quantities, 'Input array lengths must match!')
-  assert(#positionIds > 0, "Input array length must be greater than zero!")
-  for i = 1, #positionIds do
-    sharedValidation.validateItem(positionIds[i], validPositionIds, "PositionId")
-    sharedValidation.validatePositiveInteger(quantities[i], "Quantity")
-  end
-end
-
---- Validates a balanceById message
---- @param msg Message The message received
---- @param validPositionIds table<string> The array of valid token IDs
-function semiFungibleTokensValidation.balanceById(msg, validPositionIds)
-  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
-end
-
---- Validates a balancesById message
---- @param msg Message The message received
---- @param validPositionIds table<string> The array of valid token IDs
-function semiFungibleTokensValidation.balancesById(msg, validPositionIds)
-  sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
-end
-
---- Validates a batchBalance message
---- @param msg Message The message received
---- @param validPositionIds table<string> The array of valid token IDs
-function semiFungibleTokensValidation.batchBalance(msg, validPositionIds)
-  assert(msg.Tags.Recipients, "Recipients is required!")
-  local recipients = json.decode(msg.Tags.Recipients)
-  assert(msg.Tags.PositionIds, "PositionIds is required!")
-  local positionIds = json.decode(msg.Tags.PositionIds)
-  assert(#recipients == #positionIds, "Input array lengths must match!")
-  assert(#recipients > 0, "Input array length must be greater than zero!")
-  for i = 1, #positionIds do
-    sharedValidation.validateAddress(recipients[i], 'Recipient')
-    sharedValidation.validateItem(positionIds[i], validPositionIds, "PositionId")
-  end
-end
-
---- Validates a batchBalances message
---- @param msg Message The message received
---- @param validPositionIds table<string> The array of valid token IDs
-function semiFungibleTokensValidation.batchBalances(msg, validPositionIds)
-  assert(msg.Tags.PositionIds, "PositionIds is required!")
-  local positionIds = json.decode(msg.Tags.PositionIds)
-  assert(#positionIds > 0, "Input array length must be greater than zero!")
-  for i = 1, #positionIds do
-    sharedValidation.validateItem(positionIds[i], validPositionIds, "PositionId")
-  end
-end
-
-return semiFungibleTokensValidation
-end
-
-_G.package.loaded["marketModules.semiFungibleTokensValidation"] = _loaded_mod_marketModules_semiFungibleTokensValidation()
-
--- module: "marketModules.conditionalTokensValidation"
-local function _loaded_mod_marketModules_conditionalTokensValidation()
---[[
-=========================================================
-Part of the Outcome codebase © 2025. All Rights Reserved.
-See conditionalTokens.lua for full license details.
-=========================================================
-]]
-
-local ConditionalTokensValidation = {}
-local sharedUtils = require('marketModules.sharedUtils')
-local json = require('json')
-
---- Validates quantity
---- @param quantity any The quantity to be validated
-local function validateQuantity(quantity)
-  assert(type(quantity) == 'string', 'Quantity is required!')
-  assert(tonumber(quantity), 'Quantity must be a number!')
-  assert(tonumber(quantity) > 0, 'Quantity must be greater than zero!')
-  assert(tonumber(quantity) % 1 == 0, 'Quantity must be an integer!')
-end
-
---- Validates payouts
---- @param payouts any The payouts to be validated
-local function validatePayouts(payouts)
-  assert(payouts, "Payouts is required!")
-  assert(sharedUtils.isJSONArray(payouts), "Payouts must be valid JSON Array!")
-  for _, payout in ipairs(json.decode(payouts)) do
-    assert(tonumber(payout), "Payouts item must be a number!")
-  end
-end
-
---- Validates the mergePositions message
---- @param msg Message The message to be validated
-function ConditionalTokensValidation.mergePositions(msg)
-  validateQuantity(msg.Tags.Quantity)
-end
-
---- Validates the reporrtPayouts message
---- @param msg Message The message to be validated
---- @param resolutionAgent string The resolution agent process ID
-function ConditionalTokensValidation.reportPayouts(msg, resolutionAgent)
-  assert(msg.From == resolutionAgent, "Sender must be resolution agent!")
-  validatePayouts(msg.Tags.Payouts)
-end
-
-return ConditionalTokensValidation
-end
-
-_G.package.loaded["marketModules.conditionalTokensValidation"] = _loaded_mod_marketModules_conditionalTokensValidation()
-
 -- module: "marketModules.market"
 local function _loaded_mod_marketModules_market()
 --[[
@@ -3611,16 +3081,9 @@ without explicit written permission from Outcome.
 local Market = {}
 local MarketMethods = {}
 local MarketNotices = require('marketModules.marketNotices')
--- local ao = require('.ao') @dev required for unit tests?
 local json = require('json')
 local bint = require('.bint')(256)
-local utils = require('.utils')
 local cpmm = require('marketModules.cpmm')
-local cpmmValidation = require('marketModules.cpmmValidation')
-local tokenValidation = require('marketModules.tokenValidation')
-local marketValidation = require('marketModules.marketValidation')
-local semiFungibleTokensValidation = require('marketModules.semiFungibleTokensValidation')
-local conditionalTokensValidation = require('marketModules.conditionalTokensValidation')
 
 --- Represents a Market
 --- @class Market
@@ -3800,100 +3263,55 @@ CPMM WRITE METHODS
 --- Add funding
 --- Message forwarded from the collateral token
 --- @param msg Message The message received
---- @return nil -- TODO: send/specify notice
 function MarketMethods:addFunding(msg)
-  cpmmValidation.addFunding(msg)
   local distribution = msg.Tags['X-Distribution'] and json.decode(msg.Tags['X-Distribution']) or nil
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
-  -- @dev returns collateral tokens if invalid
-  if self.cpmm:validateAddFunding(msg.Tags.Sender, msg.Tags.Quantity, distribution) then
-    self.cpmm:addFunding(onBehalfOf, msg.Tags.Quantity, distribution, msg)
-    -- log funding
-    logFunding(self.incentives, self.dataIndex, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
-  end
+  -- Add funding to the CPMM
+  self.cpmm:addFunding(onBehalfOf, msg.Tags.Quantity, distribution, msg)
+  -- Log funding update to incentives controller and data index
+  logFunding(self.incentives, self.dataIndex, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
 end
 
 --- Remove funding
 --- Message forwarded from the LP token
 --- @param msg Message The message received
---- @return nil -- TODO: send/specify notice
 function MarketMethods:removeFunding(msg)
-  cpmmValidation.removeFunding(msg)
-  -- @dev returns LP tokens if invalid
-  if self.cpmm:validateRemoveFunding(msg.From, msg.Tags.Quantity, msg) then
-    self.cpmm:removeFunding(msg.From, msg.Tags.Quantity, msg)
-    -- log funding
-    logFunding(self.incentives, self.dataIndex, msg.From, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
-  end
+  -- Remove funding from the CPMM
+  self.cpmm:removeFunding(msg.From, msg.Tags.Quantity, msg)
+  -- Log funding update to incentives controller and data index
+  logFunding(self.incentives, self.dataIndex, msg.From, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
 end
 
 --- Buy
 --- Message forwarded from the collateral token
 --- @param msg Message The message received
---- @return Message buyNotice The buy notice
 function MarketMethods:buy(msg)
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
-
-  local error = false
-  local errorMessage = ''
-
-  local positionTokensToBuy = '0'
-
-  if not msg.Tags['X-PositionId'] then
-    error = true
-    errorMessage = 'X-PositionId is required!'
-  elseif not utils.includes(msg.Tags['X-PositionId'], self.cpmm.tokens.positionIds) then
-    error = true
-    errorMessage = 'Invalid X-PositionId!'
-  elseif not msg.Tags['X-MinPositionTokensToBuy'] then
-    error = true
-    errorMessage = 'X-MinPositionTokensToBuy is required!'
-  else
-    positionTokensToBuy = self.cpmm:calcBuyAmount(msg.Tags.Quantity, msg.Tags['X-PositionId'])
-    if not bint.__le(bint(msg.Tags['X-MinPositionTokensToBuy']), bint(positionTokensToBuy)) then
-      error = true
-      errorMessage = 'minimum buy amount not reached'
-    end
-  end
-  -- @dev returns collateral tokens on error
-  if error then
-    ao.send({
-      Target = ao.id,
-      Action = 'Transfer',
-      Recipient = msg.Tags.Sender,
-      Quantity = msg.Tags.Quantity,
-      Error = 'Buy Error: ' .. errorMessage
-    })
-    assert(false, errorMessage)
-  end
-  local notice = self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinPositionTokensToBuy']), msg)
-  -- log prediction and probabilities
+  local positionTokensToBuy = self.cpmm:calcBuyAmount(msg.Tags.Quantity, msg.Tags['X-PositionId'])
+  -- Buy position tokens from the CPMM
+  self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinPositionTokensToBuy']), msg)
+  -- Log prediction and probability update to incentives controller and data index
   local price = tostring(bint.__div(bint(positionTokensToBuy), bint(msg.Tags.Quantity)))
   logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], positionTokensToBuy, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
-  return notice
 end
 
 --- Sell
 --- @param msg Message The message received
---- @return Message sellNotice The sell notice
 function MarketMethods:sell(msg)
-  cpmmValidation.sell(msg, self.cpmm.tokens.positionIds)
   local positionTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
-  assert(bint.__le(bint(positionTokensToSell), bint(msg.Tags.MaxPositionTokensToSell)), 'Max position tokens to sell not sufficient!')
-  local notice = self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.MaxPositionTokensToSell, msg)
-  -- log prediction and probabilities
+  -- Sell position tokens to the CPMM
+  self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.MaxPositionTokensToSell, msg)
+  -- Log prediction and probability update to incentives controller and data index
   local price = tostring(bint.__div(positionTokensToSell, bint(msg.Tags.ReturnAmount)))
   logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.ReturnAmount, msg.Tags.PositionId, positionTokensToSell, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
-  return notice
 end
 
 --- Withdraw fees
 --- @param msg Message The message received
---- @return Message withdrawFees The amount withdrawn
 function MarketMethods:withdrawFees(msg)
-  return self.cpmm:withdrawFees(msg.From, msg, true)
+  self.cpmm:withdrawFees(msg.From, msg, true)
 end
 
 --[[
@@ -3906,7 +3324,6 @@ CPMM READ METHODS
 --- @param msg Message The message received
 --- @return Message calcBuyAmountNotice The calc buy amount notice
 function MarketMethods:calcBuyAmount(msg)
-  cpmmValidation.calcBuyAmount(msg, self.cpmm.tokens.positionIds)
   local buyAmount = self.cpmm:calcBuyAmount(msg.Tags.InvestmentAmount, msg.Tags.PositionId)
   return msg.reply({
     BuyAmount = buyAmount,
@@ -3920,7 +3337,6 @@ end
 --- @param msg Message The message received
 --- @return Message calcSellAmountNotice The calc sell amount notice
 function MarketMethods:calcSellAmount(msg)
-  cpmmValidation.calcSellAmount(msg, self.cpmm.tokens.positionIds)
   local sellAmount = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   return msg.reply({
     SellAmount = sellAmount,
@@ -3961,10 +3377,8 @@ LP TOKEN WRITE METHODS
 
 --- Transfer
 --- @param msg Message The message received
---- @return table<Message>|Message|nil transferNotices The transfer notices, error notice or nothing
 function MarketMethods:transfer(msg)
-  tokenValidation.transfer(msg)
-  return self.cpmm:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg)
+  self.cpmm:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg)
 end
 
 --[[
@@ -4020,53 +3434,22 @@ CONDITIONAL TOKENS WRITE METHODS
 
 --- Merge positions
 --- @param msg Message The message received
---- @return Message mergePositionsNotice The positions merge notice or error message
 function MarketMethods:mergePositions(msg)
-  conditionalTokensValidation.mergePositions(msg)
   local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
-  -- Check user balances
-  local error = false
-  local errorMessage = ''
-  for i = 1, #self.cpmm.tokens.positionIds do
-    if not error then
-      if not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ] then
-        error = true
-        errorMessage = "Invalid position! PositionId: " .. self.cpmm.tokens.positionIds[i]
-      elseif not self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From] then
-        error = true
-        errorMessage = "Invalid user position! PositionId: " .. self.cpmm.tokens.positionIds[i]
-      elseif bint.__lt(bint(self.cpmm.tokens.balancesById[ self.cpmm.tokens.positionIds[i] ][msg.From]), bint(msg.Tags.Quantity)) then
-        error = true
-        errorMessage = "Insufficient tokens! PositionId: " .. self.cpmm.tokens.positionIds[i]
-      end
-    end
-  end
-  -- Revert on error
-  if error then
-    return msg.reply({
-      Action = 'Merge-Positions-Error',
-      Error = errorMessage,
-      Data = errorMessage
-    })
-  end
-  return self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg, true)
+  self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg, true)
 end
 
 --- Report payouts
 --- @param msg Message The message received
---- @return Message reportPayoutsNotice The condition resolution notice 
--- TODO: sync on naming conventions
 function MarketMethods:reportPayouts(msg)
-  conditionalTokensValidation.reportPayouts(msg, self.cpmm.tokens.resolutionAgent)
   local payouts = json.decode(msg.Tags.Payouts)
-  return self.cpmm.tokens:reportPayouts(payouts, msg)
+  self.cpmm.tokens:reportPayouts(payouts, msg)
 end
 
 --- Redeem positions
 --- @param msg Message The message received
---- @return Message payoutRedemptionNotice The payout redemption notice
 function MarketMethods:redeemPositions(msg)
-  return self.cpmm.tokens:redeemPositions(msg)
+  self.cpmm.tokens:redeemPositions(msg)
 end
 
 --[[
@@ -4097,17 +3480,14 @@ SEMI-FUNGIBLE TOKENS WRITE METHODS
 
 --- Transfer single
 --- @param msg Message The message received
---- @return table<Message>|Message|nil transferSingleNotices The transfer notices, error notice or nothing
 function MarketMethods:transferSingle(msg)
-  semiFungibleTokensValidation.transferSingle(msg, self.cpmm.tokens.positionIds)
-  return self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.PositionId, msg.Tags.Quantity, msg.Tags.Cast, msg, true)
+  self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.PositionId, msg.Tags.Quantity, msg.Tags.Cast, msg, true)
 end
 
 --- Transfer batch
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil transferBatchNotices The transfer notices, error notice or nothing
 function MarketMethods:transferBatch(msg)
-  semiFungibleTokensValidation.transferBatch(msg, self.cpmm.tokens.positionIds)
   local positionIds = json.decode(msg.Tags.PositionIds)
   local quantities = json.decode(msg.Tags.Quantities)
   return self.cpmm.tokens:transferBatch(msg.From, msg.Tags.Recipient, positionIds, quantities, msg.Tags.Cast, msg, true)
@@ -4123,7 +3503,6 @@ SEMI-FUNGIBLE TOKENS READ METHODS
 --- @param msg Message The message received
 --- @return Message balanceById The balance of the account filtered by ID
 function MarketMethods:balanceById(msg)
-  semiFungibleTokensValidation.balanceById(msg, self.cpmm.tokens.positionIds)
   local account = msg.Tags.Recipient or msg.From
   local bal = self.cpmm.tokens:getBalance(msg.From, account, msg.Tags.PositionId)
   return msg.reply({
@@ -4138,7 +3517,6 @@ end
 --- @param msg Message The message received
 --- @return Message balancesById The balances of all accounts filtered by ID
 function MarketMethods:balancesById(msg)
-  semiFungibleTokensValidation.balancesById(msg, self.cpmm.tokens.positionIds)
   local bals = self.cpmm.tokens:getBalances(msg.Tags.PositionId)
   return msg.reply({
     PositionId = msg.Tags.PositionId,
@@ -4150,7 +3528,6 @@ end
 --- @param msg Message The message received
 --- @return Message batchBalance The balance accounts filtered by IDs
 function MarketMethods:batchBalance(msg)
-  semiFungibleTokensValidation.batchBalance(msg, self.cpmm.tokens.positionIds)
   local recipients = json.decode(msg.Tags.Recipients)
   local positionIds = json.decode(msg.Tags.PositionIds)
   local bals = self.cpmm.tokens:getBatchBalance(recipients, positionIds)
@@ -4165,7 +3542,6 @@ end
 --- @param msg Message The message received
 --- @return Message batchBalances The balances of all accounts filtered by IDs
 function MarketMethods:batchBalances(msg)
-  semiFungibleTokensValidation.batchBalances(msg, self.cpmm.tokens.positionIds)
   local positionIds = json.decode(msg.Tags.PositionIds)
   local bals = self.cpmm.tokens:getBatchBalances(positionIds)
   return msg.reply({ Data = json.encode(bals) })
@@ -4186,17 +3562,15 @@ CONFIGURATOR WRITE METHODS
 
 --- Update configurator
 --- @param msg Message The message received
---- @return Message configuratorUpdateNotice The configurator update notice
+--- @return Message updateConfiguratorNotice The update configurator notice
 function MarketMethods:updateConfigurator(msg)
-  cpmmValidation.updateConfigurator(msg, self.cpmm.configurator)
   return self.cpmm:updateConfigurator(msg.Tags.Configurator, msg)
 end
 
 --- Update data index
 --- @param msg Message The message received
---- @return Message dataIndexUpdateNotice The incentives update notice
+--- @return Message updateDataIndexNotice The update data index notice
 function MarketMethods:updateDataIndex(msg)
-  marketValidation.updateDataIndex(msg, self.cpmm.configurator)
   self.dataIndex = msg.Tags.DataIndex
   return self.updateDataIndexNotice(msg.Tags.DataIndex, msg)
 end
@@ -4205,32 +3579,28 @@ end
 --- @param msg Message The message received
 --- @return Message incentivesUpdateNotice The incentives update notice
 function MarketMethods:updateIncentives(msg)
-  marketValidation.updateIncentives(msg, self.cpmm.configurator)
   self.incentives = msg.Tags.Incentives
   return self.updateIncentivesNotice(msg.Tags.Incentives, msg)
 end
 
 --- Update take fee
 --- @param msg Message The message received
---- @return Message takeFeeUpdateNotice The take fee update notice
+--- @return Message updateTakeFeeNotice The update take fee notice
 function MarketMethods:updateTakeFee(msg)
-  cpmmValidation.updateTakeFee(msg, self.cpmm.configurator)
   return self.cpmm:updateTakeFee(tonumber(msg.Tags.CreatorFee), tonumber(msg.Tags.ProtocolFee), msg)
 end
 
 --- Update protocol fee target
 --- @param msg Message The message received
---- @return Message protocolTargetUpdateNotice The protocol fee target update notice
+--- @return Message
 function MarketMethods:updateProtocolFeeTarget(msg)
-  cpmmValidation.updateProtocolFeeTarget(msg, self.cpmm.configurator)
   return self.cpmm:updateProtocolFeeTarget(msg.Tags.ProtocolFeeTarget, msg)
 end
 
 --- Update logo
 --- @param msg Message The message received
---- @return Message logoUpdateNotice The logo update notice
+--- @return Message updateLogoNotice The update logo notice
 function MarketMethods:updateLogo(msg)
-  cpmmValidation.updateLogo(msg, self.cpmm.configurator)
   return self.cpmm:updateLogo(msg.Tags.Logo, msg)
 end
 
@@ -4239,6 +3609,793 @@ return Market
 end
 
 _G.package.loaded["marketModules.market"] = _loaded_mod_marketModules_market()
+
+-- module: "marketModules.sharedUtils"
+local function _loaded_mod_marketModules_sharedUtils()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See market.lua for full license details.
+=========================================================
+]]
+
+local sharedUtils = {}
+
+--- Verify if extracted value is a JSON simple value
+--- @param value any
+--- @return boolean
+local function isSimpleValue(value)
+  -- Trim whitespace
+  value = value:match("^%s*(.-)%s*$") or value
+  -- Check for a quoted string: "someValue"
+  if value:match('^"[^"]*"$') then
+    return true
+  end
+  -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
+  if value:match('^[-]?%d+%.?%d*$') then
+    return true
+  end
+  -- Check for boolean
+  if string.lower(value) == "true" or string.lower(value) == "false" then
+    return true
+  end
+  return false
+end
+
+--- Verify if a valid JSON object
+--- @param str any
+--- @return boolean
+function sharedUtils.isValidKeyValueJSON(str)
+  if type(str) ~= "string" then return false end
+  -- Trim whitespace
+  str = str:match("^%s*(.-)%s*$")
+  -- Ensure it starts with `{` and ends with `}`
+  local isObject = str:match("^%{%s*(.-)%s*%}$")
+  if not isObject then return false end
+  -- This pattern only extracts the key and the entire raw value
+  local keyValuePattern = '^%s*"([^"]+)"%s*:%s*(.-)%s*$'
+  -- Check all key-value pairs
+  for keyValue in isObject:gmatch("[^,]+") do
+    local key, rawValue = keyValue:match(keyValuePattern)
+    if not key or not rawValue then
+      return false
+    end
+    -- Now validate that rawValue is a valid JSON simple value
+    if not isSimpleValue(rawValue) then
+      return false
+    end
+  end
+  return true
+end
+
+--- Verify if a valid JSON array
+--- @param str any
+--- @return boolean
+function sharedUtils.isJSONArray(str)
+  if type(str) ~= "string" then return false end
+  -- Trim whitespace
+  str = str:match("^%s*(.-)%s*$")
+  -- Ensure it starts with `[` and ends with `]`
+  local isArray = str:match("^%[%s*(.-)%s*%]$")
+  if not isArray then return false end
+  -- Split the array elements and validate each one
+  for value in isArray:gmatch("[^,]+") do
+    value = value:match("^%s*(.-)%s*$") -- Trim whitespace around each value
+    if not isSimpleValue(value) then
+      return false
+    end
+  end
+  return true
+end
+
+--- Verify if a valid Arweave address
+--- @param address any
+--- @return boolean
+function sharedUtils.isValidArweaveAddress(address)
+	return type(address) == "string" and #address == 43 and string.match(address, "^[%w-_]+$") ~= nil
+end
+
+--- Verify if a valid boolean string
+--- @param value any
+--- @return boolean
+function sharedUtils.isValidBooleanString(value)
+  return type(value) == "string" and (string.lower(value) == "true" or string.lower(value) == "false")
+end
+
+return sharedUtils
+end
+
+_G.package.loaded["marketModules.sharedUtils"] = _loaded_mod_marketModules_sharedUtils()
+
+-- module: "marketModules.sharedValidation"
+local function _loaded_mod_marketModules_sharedValidation()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See market.lua for full license details.
+=========================================================
+]]
+
+local sharedValidation = {}
+local sharedUtils = require('marketModules.sharedUtils')
+local utils = require('.utils')
+
+--- Validates address
+--- @param address any The address to be validated
+--- @param tagName string The name of the tag being validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function sharedValidation.validateAddress(address, tagName)
+  if type(address) ~= 'string' then
+    return false, tagName .. ' is required and must be a string!'
+  end
+  if not sharedUtils.isValidArweaveAddress(address) then
+    return false, tagName .. ' must be a valid Arweave address!'
+  end
+  return true
+end
+
+--- Validates array item
+--- @param item any The item to be validated
+--- @param validItems table<string> The array of valid items
+--- @param tagName string The name of the tag being validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function sharedValidation.validateItem(item, validItems, tagName)
+  if type(item) ~= 'string' then
+    return false, tagName .. ' is required and must be a string!'
+  end
+  if not utils.includes(item, validItems) then
+    return false, 'Invalid ' .. tagName .. '!'
+  end
+  return true
+end
+
+--- Validates positive integer
+--- @param quantity any The quantity to be validated
+--- @param tagName string The name of the tag being validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function sharedValidation.validatePositiveInteger(quantity, tagName)
+  if type(quantity) ~= 'string' then
+    return false, tagName .. ' is required and must be a string!'
+  end
+
+  local num = tonumber(quantity)
+  if not num then
+    return false, tagName .. ' must be a valid number!'
+  end
+  if num <= 0 then
+    return false, tagName .. ' must be greater than zero!'
+  end
+  if num % 1 ~= 0 then
+    return false, tagName .. ' must be an integer!'
+  end
+
+  return true
+end
+
+--- Validates positive integer or zero
+--- @param quantity any The quantity to be validated
+--- @param tagName string The name of the tag being validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function sharedValidation.validatePositiveIntegerOrZero(quantity, tagName)
+  if type(quantity) ~= 'string' then
+    return false, tagName .. ' is required and must be a string!'
+  end
+
+  local num = tonumber(quantity)
+  if not num then
+    return false, tagName .. ' must be a valid number!'
+  end
+  if num < 0 then
+    return false, tagName .. ' must be greater than or equal to zero!'
+  end
+  if num % 1 ~= 0 then
+    return false, tagName .. ' must be an integer!'
+  end
+
+  return true
+end
+
+return sharedValidation
+
+end
+
+_G.package.loaded["marketModules.sharedValidation"] = _loaded_mod_marketModules_sharedValidation()
+
+-- module: "marketModules.cpmmValidation"
+local function _loaded_mod_marketModules_cpmmValidation()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See cpmm.lua for full license details.
+=========================================================
+]]
+
+local cpmmValidation = {}
+local sharedValidation = require('marketModules.sharedValidation')
+local bint = require('.bint')(256)
+local json = require("json")
+local utils = require('.utils')
+
+--- Validates add funding
+--- @param msg Message The message to be validated
+--- @param totalSupply string The LP token total supply
+--- @param positionIds table<string> The outcome position IDs
+--- @return boolean, string|nil
+function cpmmValidation.addFunding(msg, totalSupply, positionIds)
+  local isValid, err = sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  if not isValid then
+    return false, err
+  end
+
+  -- Extract distribution
+  local distribution = msg.Tags["X-Distribution"] and json.decode(msg.Tags["X-Distribution"]) or nil
+
+  -- Check if distribution is required or must be omitted
+  local isFirstFunding = bint.iszero(bint(totalSupply))
+  if distribution then
+    -- Ensure distribution is set only for initial funding
+    if not isFirstFunding then
+      return false, "Cannot specify distribution after initial funding"
+    end
+
+    -- Ensure distribution includes all position IDs
+    if #distribution ~= #positionIds then
+      return false, "Distribution length mismatch"
+    end
+
+    -- Validate distribution content
+    local distributionSum = 0
+    for i = 1, #distribution do
+      if type(distribution[i]) ~= "number" then
+        return false, "Distribution item must be a number"
+      end
+      distributionSum = distributionSum + distribution[i]
+    end
+
+    -- Ensure the distribution sum is greater than zero
+    if distributionSum == 0 then
+      return false, "Distribution sum must be greater than zero"
+    end
+  else
+    -- Ensure distribution is provided for the first funding call
+    if isFirstFunding then
+      return false, "Must specify distribution for initial funding"
+    end
+  end
+
+  return true
+end
+
+--- Validates remove funding
+--- @param msg Message The message to be validated
+--- @param balance string The balance of the sender's LP tokens
+--- @return boolean, string|nil True if validation passes, otherwise false with an error message
+function cpmmValidation.removeFunding(msg, balance)
+  -- Validate that Quantity is a positive integer
+  local isValid, err = sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  if not isValid then
+    return false, err
+  end
+
+  -- Ensure Quantity is within the sender's balance
+  local quantity = bint(msg.Tags.Quantity)
+  local userBalance = bint(balance or "0") -- Default to "0" if balance is nil
+
+  if quantity > userBalance then
+    return false, "Quantity must be less than or equal to balance!"
+  end
+
+  return true
+end
+
+--- Validates buy
+--- @param msg Message The message to be validated
+--- @param cpmm CPMM The CPMM instance for calculations
+--- @return boolean, string|nil True if validation passes, otherwise false with an error message
+function cpmmValidation.buy(msg, cpmm)
+  local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
+  local positionIds = cpmm.tokens.positionIds
+
+  local success, err = sharedValidation.validateAddress(onBehalfOf, 'onBehalfOf')
+  if not success then return false, err end
+
+  success, err = sharedValidation.validateItem(msg.Tags['X-PositionId'], positionIds, "X-PositionId")
+  if not success then return false, err end
+
+  success, err = sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  if not success then return false, err end
+
+  success, err = sharedValidation.validatePositiveInteger(msg.Tags["X-MinPositionTokensToBuy"], "X-MinPositionTokensToBuy")
+  if not success then return false, err end
+
+  -- Calculate the actual buy amount
+  local positionTokensToBuy = cpmm:calcBuyAmount(msg.Tags.Quantity, msg.Tags['X-PositionId'])
+
+  -- Ensure minimum buy amount is met
+  if bint(msg.Tags['X-MinPositionTokensToBuy']) > bint(positionTokensToBuy) then
+    return false, 'Minimum buy amount not reached'
+  end
+
+  return true
+end
+
+--- Validates sell
+--- @param msg Message The message to be validated
+--- @param cpmm CPMM The CPMM instance for calculations
+--- @return boolean, string|nil
+function cpmmValidation.sell(msg, cpmm)
+  local positionIds = cpmm.tokens.positionIds
+
+  local success, err = sharedValidation.validateItem(msg.Tags.PositionId, positionIds, "PositionId")
+  if not success then return false, err end
+
+  success, err = sharedValidation.validatePositiveInteger(msg.Tags.MaxPositionTokensToSell, "MaxPositionTokensToSell")
+  if not success then return false, err end
+
+  success, err = sharedValidation.validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
+  if not success then return false, err end
+
+  -- Calculate the actual position tokens to sell
+  local positionTokensToSell = cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
+
+ -- Ensure the sell amount does not exceed the maximum allowed
+ if bint(positionTokensToSell) > bint(msg.Tags.MaxPositionTokensToSell) then
+  return false, "Max position tokens to sell not sufficient!"
+end
+
+  return true
+end
+
+--- Validates calc buy amount
+--- @param msg Message The message to be validated
+--- @param validPositionIds table<string> The array of valid position IDs
+--- @return boolean, string|nil
+function cpmmValidation.calcBuyAmount(msg, validPositionIds)
+  local success, err = sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+  if not success then return false, err end
+
+  return sharedValidation.validatePositiveInteger(msg.Tags.InvestmentAmount, "InvestmentAmount")
+end
+
+--- Validates calc sell amount
+--- @param msg Message The message to be validated
+--- @param validPositionIds table<string> The array of valid position IDs
+--- @return boolean, string|nil
+function cpmmValidation.calcSellAmount(msg, validPositionIds)
+  local success, err = sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+  if not success then return false, err end
+
+  return sharedValidation.validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
+end
+
+--- Validates fees withdrawable
+--- @param msg Message The message to be validated
+--- @return boolean, string|nil
+function cpmmValidation.feesWithdrawable(msg)
+  if msg.Tags['Recipient'] then
+    return sharedValidation.validateAddress(msg.Tags['Recipient'], 'Recipient')
+  end
+
+  return true
+end
+
+--- Validates update configurator
+--- @param msg Message The message to be validated
+--- @param configurator string The configurator address
+--- @return boolean, string|nil
+function cpmmValidation.updateConfigurator(msg, configurator)
+  if msg.From ~= configurator then
+    return false, 'Sender must be configurator!'
+  end
+
+  return sharedValidation.validateAddress(msg.Tags.Configurator, 'Configurator')
+end
+
+--- Validates update take fee
+--- @param msg Message The message to be validated
+--- @param configurator string The configurator address
+--- @return boolean, string|nil
+function cpmmValidation.updateTakeFee(msg, configurator)
+  if msg.From ~= configurator then
+    return false, 'Sender must be configurator!'
+  end
+
+  local success, err = sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, 'CreatorFee')
+  if not success then return false, err end
+
+  success, err = sharedValidation.validatePositiveIntegerOrZero(msg.Tags.ProtocolFee, 'ProtocolFee')
+  if not success then return false, err end
+
+  local totalFee = bint.__add(bint(msg.Tags.CreatorFee), bint(msg.Tags.ProtocolFee))
+  if not bint.__lt(totalFee, 1000) then
+    return false, 'Net fee must be less than or equal to 1000 bps'
+  end
+
+  return true
+end
+
+--- Validates update protocol fee target
+--- @param msg Message The message to be validated
+--- @param configurator string The configurator address
+--- @return boolean, string|nil
+function cpmmValidation.updateProtocolFeeTarget(msg, configurator)
+  if msg.From ~= configurator then
+    return false, 'Sender must be configurator!'
+  end
+
+  if not msg.Tags.ProtocolFeeTarget then
+    return false, 'ProtocolFeeTarget is required!'
+  end
+
+  return true
+end
+
+--- Validates update logo
+--- @param msg Message The message to be validated
+--- @param configurator string The configurator address
+--- @return boolean, string|nil
+function cpmmValidation.updateLogo(msg, configurator)
+  if msg.From ~= configurator then
+    return false, 'Sender must be configurator!'
+  end
+
+  if not msg.Tags.Logo then
+    return false, 'Logo is required!'
+  end
+
+  return true
+end
+
+return cpmmValidation
+end
+
+_G.package.loaded["marketModules.cpmmValidation"] = _loaded_mod_marketModules_cpmmValidation()
+
+-- module: "marketModules.tokenValidation"
+local function _loaded_mod_marketModules_tokenValidation()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See tokens.lua for full license details.
+=========================================================
+]]
+
+local tokenValidation = {}
+local sharedValidation = require('marketModules.sharedValidation')
+
+--- Validates a transfer message
+--- @param msg Message The message received
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function tokenValidation.transfer(msg)
+  local success, err = sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
+  if not success then return false, err end
+
+  success, err = sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  if not success then return false, err end
+
+  return true
+end
+
+--- Validates balance
+--- @param msg Message The message to be validated
+--- @return boolean, string|nil
+function tokenValidation.balance(msg)
+  if msg.Tags['Recipient'] then
+    return sharedValidation.validateAddress(msg.Tags['Recipient'], 'Recipient')
+  elseif msg.Tags['Target'] then
+    return sharedValidation.validateAddress(msg.Tags['Target'], 'Target')
+  end
+
+  return true
+end
+
+return tokenValidation
+end
+
+_G.package.loaded["marketModules.tokenValidation"] = _loaded_mod_marketModules_tokenValidation()
+
+-- module: "marketModules.marketValidation"
+local function _loaded_mod_marketModules_marketValidation()
+local MarketValidation = {}
+local sharedValidation = require('marketModules.sharedValidation')
+
+--- Validates update data index
+--- @param msg Message The message to be validated
+--- @param configurator string The configurator address
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function MarketValidation.updateDataIndex(msg, configurator)
+  if msg.From ~= configurator then
+    return false, 'Sender must be configurator!'
+  end
+
+  local success, err = sharedValidation.validateAddress(msg.Tags.DataIndex, 'DataIndex')
+  if not success then return false, err end
+
+  return true
+end
+
+--- Validates update incentives
+--- @param msg Message The message to be validated
+--- @param configurator string The configurator address
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function MarketValidation.updateIncentives(msg, configurator)
+  if msg.From ~= configurator then
+    return false, 'Sender must be configurator!'
+  end
+
+  local success, err = sharedValidation.validateAddress(msg.Tags.Incentives, 'Incentives')
+  if not success then return false, err end
+
+  return true
+end
+
+return MarketValidation
+end
+
+_G.package.loaded["marketModules.marketValidation"] = _loaded_mod_marketModules_marketValidation()
+
+-- module: "marketModules.semiFungibleTokensValidation"
+local function _loaded_mod_marketModules_semiFungibleTokensValidation()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See semiFungibleTokens.lua for full license details.
+=========================================================
+]]
+
+local semiFungibleTokensValidation = {}
+local sharedValidation = require('marketModules.sharedValidation')
+local json = require("json")
+
+--- Validates a transferSingle message
+--- @param msg Message The message received
+--- @param validPositionIds table<string> The array of valid token IDs
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function semiFungibleTokensValidation.transferSingle(msg, validPositionIds)
+  local success, err = sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
+  if not success then return false, err end
+
+  success, err = sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+  if not success then return false, err end
+
+  success, err = sharedValidation.validatePositiveInteger(msg.Tags.Quantity, "Quantity")
+  if not success then return false, err end
+
+  return true
+end
+
+--- Validates a transferBatch message
+--- @param msg Message The message received
+--- @param validPositionIds table<string> The array of valid token IDs
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function semiFungibleTokensValidation.transferBatch(msg, validPositionIds)
+  local success, err = sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
+  if not success then return false, err end
+
+  if type(msg.Tags.PositionIds) ~= 'string' then
+    return false, 'PositionIds is required!'
+  end
+  local positionIds = json.decode(msg.Tags.PositionIds)
+
+  if type(msg.Tags.Quantities) ~= 'string' then
+    return false, 'Quantities is required!'
+  end
+  local quantities = json.decode(msg.Tags.Quantities)
+
+  if #positionIds ~= #quantities then
+    return false, 'Input array lengths must match!'
+  end
+  if #positionIds == 0 then
+    return false, "Input array length must be greater than zero!"
+  end
+
+  for i = 1, #positionIds do
+    success, err = sharedValidation.validateItem(positionIds[i], validPositionIds, "PositionId")
+    if not success then return false, err end
+
+    success, err = sharedValidation.validatePositiveInteger(quantities[i], "Quantity")
+    if not success then return false, err end
+  end
+
+  return true
+end
+
+--- Validates a balanceById message
+--- @param msg Message The message received
+--- @param validPositionIds table<string> The array of valid token IDs
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function semiFungibleTokensValidation.balanceById(msg, validPositionIds)
+  if msg.Tags.Recipient then
+    local success, err = sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
+    if not success then return false, err end
+  end
+  return sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+end
+
+--- Validates a balancesById message
+--- @param msg Message The message received
+--- @param validPositionIds table<string> The array of valid token IDs
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function semiFungibleTokensValidation.balancesById(msg, validPositionIds)
+  if msg.Tags.Recipient then
+    local success, err = sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
+    if not success then return false, err end
+  end
+  return sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+end
+
+--- Validates a batchBalance message
+--- @param msg Message The message received
+--- @param validPositionIds table<string> The array of valid token IDs
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function semiFungibleTokensValidation.batchBalance(msg, validPositionIds)
+  if not msg.Tags.Recipients then
+    return false, "Recipients is required!"
+  end
+  local recipients = json.decode(msg.Tags.Recipients)
+
+  if not msg.Tags.PositionIds then
+    return false, "PositionIds is required!"
+  end
+  local positionIds = json.decode(msg.Tags.PositionIds)
+
+  if #recipients ~= #positionIds then
+    return false, "Input array lengths must match!"
+  end
+  if #recipients == 0 then
+    return false, "Input array length must be greater than zero!"
+  end
+
+  for i = 1, #positionIds do
+    local success, err = sharedValidation.validateAddress(recipients[i], 'Recipient')
+    if not success then return false, err end
+
+    success, err = sharedValidation.validateItem(positionIds[i], validPositionIds, "PositionId")
+    if not success then return false, err end
+  end
+
+  return true
+end
+
+--- Validates a batchBalances message
+--- @param msg Message The message received
+--- @param validPositionIds table<string> The array of valid token IDs
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function semiFungibleTokensValidation.batchBalances(msg, validPositionIds)
+  if not msg.Tags.PositionIds then
+    return false, "PositionIds is required!"
+  end
+  local positionIds = json.decode(msg.Tags.PositionIds)
+
+  if #positionIds == 0 then
+    return false, "Input array length must be greater than zero!"
+  end
+
+  for i = 1, #positionIds do
+    local success, err = sharedValidation.validateItem(positionIds[i], validPositionIds, "PositionId")
+    if not success then return false, err end
+  end
+
+  return true
+end
+
+return semiFungibleTokensValidation
+end
+
+_G.package.loaded["marketModules.semiFungibleTokensValidation"] = _loaded_mod_marketModules_semiFungibleTokensValidation()
+
+-- module: "marketModules.conditionalTokensValidation"
+local function _loaded_mod_marketModules_conditionalTokensValidation()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See conditionalTokens.lua for full license details.
+=========================================================
+]]
+
+local ConditionalTokensValidation = {}
+local sharedValidation = require('marketModules.sharedValidation')
+local sharedUtils = require('marketModules.sharedUtils')
+local bint = require('.bint')(256)
+local json = require('json')
+
+--- Validates quantity
+--- @param quantity any The quantity to be validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+local function validateQuantity(quantity)
+  if type(quantity) ~= 'string' then
+    return false, 'Quantity is required and must be a string!'
+  end
+
+  local num = tonumber(quantity)
+  if not num then
+    return false, 'Quantity must be a valid number!'
+  end
+  if num <= 0 then
+    return false, 'Quantity must be greater than zero!'
+  end
+  if num % 1 ~= 0 then
+    return false, 'Quantity must be an integer!'
+  end
+
+  return true
+end
+
+--- Validates payouts
+--- @param payouts any The payouts to be validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+local function validatePayouts(payouts)
+  if not payouts then
+    return false, "Payouts is required!"
+  end
+  if not sharedUtils.isJSONArray(payouts) then
+    return false, "Payouts must be a valid JSON Array!"
+  end
+
+  local decodedPayouts = json.decode(payouts)
+  for _, payout in ipairs(decodedPayouts) do
+    if not tonumber(payout) then
+      return false, "Payouts item must be a valid number!"
+    end
+  end
+
+  return true
+end
+
+--- Validates the mergePositions message.
+--- @param msg Message The message to be validated
+--- @param cpmm CPMM The CPMM instance for checking token balances
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function ConditionalTokensValidation.mergePositions(msg, cpmm)
+  local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
+  local success, err
+
+  if not onBehalfOf then
+    success, err = sharedValidation.validateAddress(onBehalfOf, 'onBehalfOf')
+    if not success then return false, err end
+  end
+
+  success, err = validateQuantity(msg.Tags.Quantity)
+  if not success then return false, err end
+
+  -- Check user balances for each position
+  for i = 1, #cpmm.tokens.positionIds do
+    local positionId = cpmm.tokens.positionIds[i]
+
+    if not cpmm.tokens.balancesById[positionId] then
+      return false, "Invalid position! PositionId: " .. positionId
+    end
+
+    if not cpmm.tokens.balancesById[positionId][onBehalfOf] then
+      return false, "Invalid user position! PositionId: " .. positionId
+    end
+
+    if bint(cpmm.tokens.balancesById[positionId][onBehalfOf]) < bint(msg.Tags.Quantity) then
+      return false, "Insufficient tokens! PositionId: " .. positionId
+    end
+  end
+
+  return true
+end
+
+
+--- Validates the reportPayouts message
+--- @param msg Message The message to be validated
+--- @param resolutionAgent string The resolution agent process ID
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function ConditionalTokensValidation.reportPayouts(msg, resolutionAgent)
+  if msg.From ~= resolutionAgent then
+    return false, "Sender must be the resolution agent!"
+  end
+
+  return validatePayouts(msg.Tags.Payouts)
+end
+
+return ConditionalTokensValidation
+
+end
+
+_G.package.loaded["marketModules.conditionalTokensValidation"] = _loaded_mod_marketModules_conditionalTokensValidation()
 
 --[[
 ======================================================================================
@@ -4258,6 +4415,11 @@ without explicit written permission from Outcome.
 local market = require('marketModules.market')
 local constants = require('marketModules.constants')
 local json = require('json')
+local cpmmValidation = require('marketModules.cpmmValidation')
+local tokenValidation = require('marketModules.tokenValidation')
+local marketValidation = require('marketModules.marketValidation')
+local semiFungibleTokensValidation = require('marketModules.semiFungibleTokensValidation')
+local conditionalTokensValidation = require('marketModules.conditionalTokensValidation')
 
 --[[
 ======
@@ -4396,9 +4558,8 @@ INFO HANDLER
 
 --- Info handler
 --- @param msg Message The message received
---- @return Message infoNotice The info notice
 Handlers.add("Info", {Action = "Info"}, function(msg)
-  return Market:info(msg)
+  Market:info(msg)
 end)
 
 --[[
@@ -4408,38 +4569,89 @@ CPMM WRITE HANDLERS
 ]]
 
 --- Add funding handler
---- @param msg Message The message received
---- @return Message addFundingNotice The add funding notice
-Handlers.add('Add-Funding', isAddFunding, function(msg)
-  return Market:addFunding(msg)
+--- @param msg Message The message received, expected to contain:
+---   - msg.Tags.Quantity (string): The amount of funding to add (numeric string).
+---   - msg.Tags.Distribution (stringified table): 
+---     * JSON-encoded table specifying the initial distribution of funding.
+---     * Required on the first call to `addFunding`.
+---     * Must NOT be included in subsequent calls, or the operation will fail.
+---   - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the LP tokens.
+Handlers.add("Add-Funding", isAddFunding, function(msg)
+  -- Validate input
+  local success, err = cpmmValidation.addFunding(msg, Market.cpmm.token.totalSupply, Market.cpmm.tokens.positionIds)
+  -- If validation fails, return funds to sender and provide error response.
+  if not success then
+    msg.reply({
+      Action = "Transfer",
+      Recipient = msg.Tags.Sender,
+      Quantity = msg.Tags.Quantity,
+      ["X-Error"] = "Add-Funding-Error",
+      ["X-Error-Message"] = err
+    })
+    return
+  end
+  -- If validation passes, add funding to the CPMM.
+  Market:addFunding(msg)
 end)
 
 --- Remove funding handler
 --- @param msg Message The message received
---- @return Message removeFundingNotice The remove funding notice
 Handlers.add("Remove-Funding", {Action = "Remove-Funding"}, function(msg)
-  return Market:removeFunding(msg)
+  -- Validate input
+  local success, err = cpmmValidation.removeFunding(msg, Market.cpmm.token.balances[msg.From])
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Remove-Funding-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, remove funding from the CPMM.
+  Market:removeFunding(msg)
 end)
 
 --- Buy handler
 --- @param msg Message The message received
---- @return Message buyNotice The buy notice
 Handlers.add("Buy", isBuy, function(msg)
-  return Market:buy(msg)
+  -- Validate input
+  local success, err = cpmmValidation.buy(msg, Market.cpmm)
+  -- If validation fails, return funds to sender and provide error response.
+  if not success then
+    msg.reply({
+      Action = "Transfer",
+      Recipient = msg.Tags.Sender,
+      Quantity = msg.Tags.Quantity,
+      ["X-Error"] = "Buy-Error",
+      ["X-Error-Message"] = err
+    })
+    return
+  end
+  -- If validation passes, buy from the CPMM.
+  Market:buy(msg)
 end)
 
 --- Sell handler
 --- @param msg Message The message received
---- @return Message sellNotice The sell notice
 Handlers.add("Sell", {Action = "Sell"}, function(msg)
-  return Market:sell(msg)
+  -- Validate input
+  local success, err = cpmmValidation.sell(msg, Market.cpmm)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Sell-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, sell to the CPMM.
+  Market:sell(msg)
 end)
 
 --- Withdraw fees handler
 --- @param msg Message The message received
---- @return Message withdrawFees The amount withdrawn
 Handlers.add("Withdraw-Fees", {Action = "Withdraw-Fees"}, function(msg)
-  return Market:withdrawFees(msg)
+  Market:withdrawFees(msg)
 end)
 
 --[[
@@ -4450,30 +4662,59 @@ CPMM READ HANDLERS
 
 --- Calc buy amount handler
 --- @param msg Message The message received
---- @return Message buyAmount The amount of tokens to be purchased
 Handlers.add("Calc-Buy-Amount", {Action = "Calc-Buy-Amount"}, function(msg)
-  return Market:calcBuyAmount(msg)
+  -- Validate input
+  local success, err = cpmmValidation.calcBuyAmount(msg, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Calc-Buy-Amount-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, calculate the buy amount.
+  Market:calcBuyAmount(msg)
 end)
 
 --- Calc sell amount handler
 --- @param msg Message The message received
---- @return Message sellAmount The amount of tokens to be sold
 Handlers.add("Calc-Sell-Amount", {Action = "Calc-Sell-Amount"}, function(msg)
-  return Market:calcSellAmount(msg)
+  -- Validate input
+  local success, err = cpmmValidation.calcSellAmount(msg, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Calc-Sell-Amount-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, calculate the sell amount.
+  Market:calcSellAmount(msg)
 end)
 
 --- Colleced fees handler
 --- @param msg Message The message received
---- @return Message collectedFees The total unwithdrawn fees collected by the CPMM
 Handlers.add("Collected-Fees", {Action = "Collected-Fees"}, function(msg)
-  return Market:collectedFees(msg)
+  Market:collectedFees(msg)
 end)
 
 --- Fees withdrawable handler
 --- @param msg Message The message received
---- @return Message feesWithdrawable The fees withdrawable by the account
 Handlers.add("Fees-Withdrawable", {Action = "Fees-Withdrawable"}, function(msg)
-  return Market:feesWithdrawable(msg)
+  -- Validate input
+  local success, err = cpmmValidation.feesWithdrawable(msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Fees-Withdrawable-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, get fees withdrawable.
+  Market:feesWithdrawable(msg)
 end)
 
 --[[
@@ -4484,9 +4725,19 @@ LP TOKEN WRITE HANDLERS
 
 --- Transfer handler
 --- @param msg Message The message received
---- @return table<Message>|Message|nil transferNotices The transfer notices, error notice or nothing
 Handlers.add('Transfer', {Action = "Transfer"}, function(msg)
-  return Market:transfer(msg)
+  -- Validate input
+  local success, err = tokenValidation.transfer(msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Transfer-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, transfer the LP tokens.
+  Market:transfer(msg)
 end)
 
 --[[
@@ -4497,23 +4748,31 @@ LP TOKEN READ HANDLERS
 
 --- Balance handler
 --- @param msg Message The message received
---- @return Message balance The balance of the account
 Handlers.add('Balance', {Action = "Balance"}, function(msg)
-  return Market:balance(msg)
+  -- Validate input
+  local success, err = tokenValidation.balance(msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Balance-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, get the LP token balance.
+  Market:balance(msg)
 end)
 
 --- Balances handler
 --- @param msg Message The message received
---- @return Message balances The balances of all accounts
 Handlers.add('Balances', {Action = "Balances"}, function(msg)
-  return Market:balances(msg)
+  Market:balances(msg)
 end)
 
 --- Total supply handler
 --- @param msg Message The message received
---- @return Message totalSupply The total supply of the LP token
 Handlers.add('Total-Supply', {Action = "Total-Supply"}, function(msg)
-  return Market:totalSupply(msg)
+  Market:totalSupply(msg)
 end)
 
 --[[
@@ -4524,23 +4783,42 @@ CONDITIONAL TOKENS WRITE HANDLERS
 
 --- Merge positions handler
 --- @param msg Message The message received
---- @return Message mergePositionsNotice The positions merge notice or error message
 Handlers.add("Merge-Positions", {Action = "Merge-Positions"}, function(msg)
-  return Market:mergePositions(msg)
+  -- Validate input
+  local success, err = conditionalTokensValidation.mergePositions(msg, Market.cpmm)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Merge-Positions-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, merge the positions.
+  Market:mergePositions(msg)
 end)
 
 --- Report payouts handler
 --- @param msg Message The message received
---- @return Message reportPayoutsNotice The condition resolution notice 
 Handlers.add("Report-Payouts", {Action = "Report-Payouts"}, function(msg)
-  return Market:reportPayouts(msg)
+  -- Validate input
+  local success, err = conditionalTokensValidation.reportPayouts(msg, Market.cpmm.tokens.resolutionAgent)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Report-Payouts-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, report the payouts.
+  Market:reportPayouts(msg)
 end)
 
 --- Redeem positions handler
 --- @param msg Message The message received
---- @return Message payoutRedemptionNotice The payout redemption notice
 Handlers.add("Redeem-Positions", {Action = "Redeem-Positions"}, function(msg)
-  return Market:redeemPositions(msg)
+  Market:redeemPositions(msg)
 end)
 
 --[[
@@ -4551,16 +4829,14 @@ CONDITIONAL TOKENS READ HANDLERS
 
 --- Get payout numerators handler
 --- @param msg Message The message received
---- @return Message payoutNumerators payout numerators for the condition
 Handlers.add("Get-Payout-Numerators", {Action = "Get-Payout-Numerators"}, function(msg)
-  return Market:getPayoutNumerators(msg)
+  Market:getPayoutNumerators(msg)
 end)
 
 --- Get payout denominator handler
 --- @param msg Message The message received
---- @return Message payoutDenominator The payout denominator for the condition
 Handlers.add("Get-Payout-Denominator", {Action = "Get-Payout-Denominator"}, function(msg)
-  return Market:getPayoutDenominator(msg)
+  Market:getPayoutDenominator(msg)
 end)
 
 --[[
@@ -4571,16 +4847,36 @@ SEMI-FUNGIBLE TOKENS WRITE HANDLERS
 
 --- Transfer single handler
 --- @param msg Message The message received
---- @return table<Message>|Message|nil transferSingleNotices The transfer notices, error notice or nothing
-Handlers.add('Transfer-Single', {Action = "Transfer-Single"}, function(msg)
-  return Market:transferSingle(msg)
+Handlers.add("Transfer-Single", {Action = "Transfer-Single"}, function(msg)
+  -- Validate input
+  local success, err = semiFungibleTokensValidation.transferSingle(msg, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Transfer-Single-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, execute transfer single.
+  Market:transferSingle(msg)
 end)
 
 --- Transfer batch handler
 --- @param msg Message The message received
---- @return table<Message>|Message|nil transferBatchNotices The transfer notices, error notice or nothing
 Handlers.add('Transfer-Batch', {Action = "Transfer-Batch"}, function(msg)
-  return Market:transferBatch(msg)
+  -- Validate input
+  local success, err = semiFungibleTokensValidation.transferBatch(msg, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Transfer-Batch-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, execute transfer batch.
+  Market:transferBatch(msg)
 end)
 
 --[[
@@ -4591,37 +4887,77 @@ SEMI-FUNGIBLE TOKENS READ HANDLERS
 
 --- Balance by ID handler
 --- @param msg Message The message received
---- @return Message balanceById The balance of the account filtered by ID
 Handlers.add("Balance-By-Id", {Action = "Balance-By-Id"}, function(msg)
-  return Market:balanceById(msg)
+  -- Validate input
+  local success, err = semiFungibleTokensValidation.balanceById(msg, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Balance-By-Id-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, get the balance by ID.
+  Market:balanceById(msg)
 end)
 
 --- Balances by ID handler
 --- @param msg Message The message received
---- @return Message balancesById The balances of all accounts filtered by ID
 Handlers.add('Balances-By-Id', {Action = "Balances-By-Id"}, function(msg)
-  return Market:balancesById(msg)
+  -- Validate input
+  local success, err = semiFungibleTokensValidation.balancesById(msg, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Balances-By-Id-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, get the balances by ID.
+  Market:balancesById(msg)
 end)
 
 --- Batch balance handler
 --- @param msg Message The message received
---- @return Message batchBalance The balance accounts filtered by IDs
 Handlers.add("Batch-Balance", {Action = "Batch-Balance"}, function(msg)
-  return Market:batchBalance(msg)
+  -- Validate input
+  local success, err = semiFungibleTokensValidation.batchBalance(msg, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Batch-Balance-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, get the batch balance.
+  Market:batchBalance(msg)
 end)
 
 --- Batch balances hanlder
 --- @param msg Message The message received
---- @return Message batchBalances The balances of all accounts filtered by IDs
 Handlers.add('Batch-Balances', {Action = "Batch-Balances"}, function(msg)
-  return Market:batchBalances(msg)
+  -- Validate input
+  local success, err = semiFungibleTokensValidation.batchBalances(msg, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Batch-Balances-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, get the batch balances.
+  Market:batchBalances(msg)
 end)
 
 --- Balances all handler
+--- @warning Not recommended for production use; returns an unbounded amount of data.
 --- @param msg Message The message received
---- @return Message balances The balances of all accounts
 Handlers.add('Balances-All', {Action = "Balances-All"}, function(msg)
-  return Market:balancesAll(msg)
+  Market:balancesAll(msg)
 end)
 
 --[[
@@ -4632,37 +4968,104 @@ CONFIGURATOR WRITE HANDLERS
 
 --- Update configurator handler
 --- @param msg Message The message received
---- @return Message configuratorUpdateNotice The configurator update notice
 Handlers.add('Update-Configurator', {Action = "Update-Configurator"}, function(msg)
-  return Market:updateConfigurator(msg)
+  -- Validate input
+  local success, err = cpmmValidation.updateConfigurator(msg, Market.cpmm.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Configurator-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update the configurator.
+  Market:updateConfigurator(msg)
+end)
+
+--- Update data index handler
+--- @param msg Message The message received
+Handlers.add("Update-Data-Index", {Action = "Update-Data-Index"}, function(msg)
+  -- Validate input
+  local success, err = marketValidation.updateDataIndex(msg, Market.cpmm.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Data-Index-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update the data index.
+  Market:updateDataIndex(msg)
 end)
 
 --- Update incentives handler
 --- @param msg Message The message received
---- @return Message incentivesUpdateNotice The incentives update notice
-Handlers.add('Update-Incentives', {Action = "Update-Incentives"}, function(msg)
-  return Market:updateIncentives(msg)
+Handlers.add("Update-Incentives", {Action = "Update-Incentives"}, function(msg)
+  -- Validate input
+  local success, err = marketValidation.updateIncentives(msg, Market.cpmm.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Incentives-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update the incentives.
+  Market:updateIncentives(msg)
 end)
 
 --- Update take fee handler
 --- @param msg Message The message received
---- @return Message takeFeeUpdateNotice The take fee update notice
 Handlers.add('Update-Take-Fee', {Action = "Update-Take-Fee"}, function(msg)
-  return Market:updateTakeFee(msg)
+  -- Validate input
+  local success, err = cpmmValidation.updateTakeFee(msg, Market.cpmm.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Take-Fee-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update the take fee.
+  Market:updateTakeFee(msg)
 end)
 
 --- Update protocol fee target handler
 --- @param msg Message The message received
---- @return Message protocolTargetUpdateNotice The protocol fee target update notice
 Handlers.add('Update-Protocol-Fee-Target', {Action = "Update-Protocol-Fee-Target"}, function(msg)
-  return Market:updateProtocolFeeTarget(msg)
+  -- Validate input
+  local success, err = cpmmValidation.updateProtocolFeeTarget(msg, Market.cpmm.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Protocol-Fee-Target-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update the protocol fee target.
+  Market:updateProtocolFeeTarget(msg)
 end)
 
 --- Update logo handler
 --- @param msg Message The message received
---- @return Message logoUpdateNotice The logo update notice
 Handlers.add('Update-Logo', {Action = "Update-Logo"}, function(msg)
-  return Market:updateLogo(msg)
+  -- Validate input
+  local success, err = cpmmValidation.updateLogo(msg, Market.cpmm.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Logo-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update the logo.
+  Market:updateLogo(msg)
 end)
 
 return "ok"

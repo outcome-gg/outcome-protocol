@@ -191,10 +191,6 @@ function CPMMMethods:removeFunding(from, sharesToBurn, msg)
   self:burn(from, sharesToBurn, msg)
   local poolFeeBalance = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
   collateralRemovedFromFeePool = tostring(math.floor(poolFeeBalance - collateralRemovedFromFeePool))
-  -- Send collateralRemovedFromFeePool
-  if bint(collateralRemovedFromFeePool) > 0 then
-    ao.send({Target = self.tokens.collateralToke, Action = "Transfer", Recipient=from, Quantity=collateralRemovedFromFeePool})
-  end
   -- Send conditionalTokens amounts
   self.tokens:transferBatch(ao.id, from, self.tokens.positionIds, sendAmounts, false, msg)
   -- Send notice
