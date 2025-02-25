@@ -185,8 +185,8 @@ Handlers.add("Add-Funding", isAddFunding, function(msg)
       Action = "Transfer",
       Recipient = msg.Tags.Sender,
       Quantity = msg.Tags.Quantity,
-      ["X-Error"] = "Add-Funding-Error",
-      ["X-Error-Message"] = err
+      ["X-Action"] = "Add-Funding-Error",
+      ["X-Error"] = err
     })
     return
   end
@@ -222,8 +222,8 @@ Handlers.add("Buy", isBuy, function(msg)
       Action = "Transfer",
       Recipient = msg.Tags.Sender,
       Quantity = msg.Tags.Quantity,
-      ["X-Error"] = "Buy-Error",
-      ["X-Error-Message"] = err
+      ["X-Action"] = "Buy-Error",
+      ["X-Error"] = err
     })
     return
   end

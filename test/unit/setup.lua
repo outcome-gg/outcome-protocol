@@ -46,7 +46,7 @@ _G.Handlers = {
 	end,
   process = function(msg)
     for _, handler in ipairs(_G.Handlers.registered) do
-      if handler.condition(msg) then
+      if handler.condition.Action == msg.Tags.Action then
         return handler.callback(msg)
       end
     end
