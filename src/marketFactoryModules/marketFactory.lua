@@ -33,7 +33,7 @@ local json = require('json')
 
 --- Create a new MarketFactory instance
 --- @return MarketFactory marketFactory The new MarketFactory instance
-function MarketFactory:new(
+function MarketFactory.new(
   configurator,
   incentives,
   dataIndex,
@@ -126,7 +126,23 @@ ACTIVITY LOGS
 =============
 ]]
 
-local function logMarket(dataIndex, market, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateralToken, resolutionAgent, category, subcategory, logo, groupId, msg)
+local function logMarket(
+  dataIndex,
+  market,
+  creator,
+  creatorFee,
+  creatorFeeTarget,
+  question,
+  rules,
+  outcomeSlotCount,
+  collateralToken,
+  resolutionAgent,
+  category,
+  subcategory,
+  logo,
+  groupId,
+  msg
+)
   -- create notice
   local notice = {
     Action = "Log-Market-Notice",
@@ -208,7 +224,21 @@ end
 --- @param groupId string|nil The group ID or nil
 --- @param msg Message The message received
 --- @return Message marketSpawnedNotice The market spawned notice
-function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, question, rules, outcomeSlotCount, creator, creatorFee, creatorFeeTarget, category, subcategory, logo, groupId, msg)
+function MarketFactoryMethods:spawnMarket(
+  collateralToken,
+  resolutionAgent,
+  question,
+  rules,
+  outcomeSlotCount,
+  creator,
+  creatorFee,
+  creatorFeeTarget,
+  category,
+  subcategory,
+  logo,
+  groupId,
+  msg
+)
   -- set defaults
   rules = rules or ""
   category = category or ""
@@ -223,7 +253,7 @@ function MarketFactoryMethods:spawnMarket(collateralToken, resolutionAgent, ques
     if not self.marketGroupCollateralByCreator[creator][groupId] then
       return msg.reply({Error = "Group not found"})
     end
-    if not self.marketGroupCollateralByCreator[msg.From][msg.Id] == collateralToken then
+    if self.marketGroupCollateralByCreator[msg.From][msg.Id] ~= collateralToken then
       return msg.reply({Error = "Collateral token does not match group"})
     end
     if outcomeSlotCount ~= 2 then

@@ -47,7 +47,21 @@ end
 --- @param groupId string The group ID
 --- @param msg Message The message received
 --- @return Message spawnMarketNotice The spawn market notice
-function MarketFactoryNotices.spawnMarketNotice(resolutionAgent, collateralToken, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, groupId, msg)
+function MarketFactoryNotices.spawnMarketNotice(
+  resolutionAgent,
+  collateralToken,
+  creator,
+  creatorFee,
+  creatorFeeTarget,
+  question,
+  rules,
+  outcomeSlotCount,
+  category,
+  subcategory,
+  logo,
+  groupId,
+  msg
+)
   return msg.reply({
     Action = "Spawn-Market-Notice",
     ResolutionAgent = resolutionAgent,

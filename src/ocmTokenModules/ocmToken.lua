@@ -41,10 +41,10 @@ local json = require("json")
 --- @param monthlyEmissionRate number The percentage of remaining tokens to distribute monthly
 --- @param emissionStart number The timestamp from when to start emissions
 --- @return Token token The new Token instance
-function OcmToken:new(name, ticker, logo, balances, totalSupply, denomination, maximumSupply, monthlyEmissionRate, emissionStart)
+function OcmToken.new(name, ticker, logo, balances, totalSupply, denomination, maximumSupply, monthlyEmissionRate, emissionStart)
   local ocmToken = {
-    token = token:new(name, ticker, logo, balances, totalSupply, denomination),
-    incentives = incentives:new(),
+    token = token.new(name, ticker, logo, balances, totalSupply, denomination),
+    incentives = incentives.new(),
     claimBalances = {},
     maximumSupply = maximumSupply,
     monthlyEmissionRate = monthlyEmissionRate,
@@ -91,7 +91,7 @@ end
 
 --- Transfer a quantity of tokens
 --- @param from string The process ID that will send the token
---- @param recipient string The process ID that will receive the token 
+--- @param recipient string The process ID that will receive the token
 --- @param quantity string The quantity of tokens to transfer
 --- @param cast boolean The cast is set to true to silence the transfer notice
 --- @param msg Message The message received

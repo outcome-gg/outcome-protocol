@@ -45,7 +45,7 @@ local bint = require('.bint')(256)
 --- @param totalSupplyById table<string, string> The total supply of the token by ID
 --- @param denomination number The number of decimals
 --- @return SemiFungibleTokens semiFungibleTokens The new SemiFungibleTokens instance
-function SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)
+function SemiFungibleTokens.new(name, ticker, logo, balancesById, totalSupplyById, denomination)
   local semiFungibleTokens = {
     name = name,
     ticker = ticker,

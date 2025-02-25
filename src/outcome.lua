@@ -247,8 +247,8 @@ CONFIGURATOR: WRITE
 --- @param updateTags table|nil The update message tags or `nil`
 --- @param updateData table|nil The update message data or `nil`
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Stage-Update-Notice`: **configurator → ao.id**   -- Logs the stage update action
+--- **📊 Logging & Analytics**
+--- - `Stage-Update-Notice`: **configurator → ao.id**-- Logs the stage update action
 --- @return ConfiguratorStageUpdateNotice The configurator stage update notice
 function Outcome.configuratorStageUpdate(updateProcess, updateAction, updateTags, updateData)
   -- Validate input
@@ -294,8 +294,8 @@ end
 --- @param updateTags table|nil The update message tags or `nil`
 --- @param updateData table|nil The update message data or `nil`
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Unstage-Update-Notice`: **configurator → ao.id**   -- Logs the unstage update action
+--- **📊 Logging & Analytics**
+--- - `Unstage-Update-Notice`: **configurator → ao.id**-- Logs the unstage update action
 --- @return ConfiguratorUnstageUpdateNotice The configurator unstage update notice
 function Outcome.configuratorUnstageUpdate(updateProcess, updateAction, updateTags, updateData)
   -- Validate input
@@ -337,8 +337,8 @@ end
 --- @param updateTags table|nil The update message tags or `nil`
 --- @param updateData table|nil The update message data or `nil`
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Action-Update-Notice`: **configurator → ao.id**    -- Logs the action update action
+--- **📊 Logging & Analytics**
+--- - `Action-Update-Notice`: **configurator → ao.id** -- Logs the action update action
 --- @return ConfiguratorActionUpdateNotice The configurator action update notice
 function Outcome.configuratorActionUpdate(updateProcess, updateAction, updateTags, updateData)
   -- Validate input
@@ -377,8 +377,8 @@ end
 --- @warning Only callable by the configurator admin
 --- @param updateAdmin string The admin to update
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Stage-Update-Admin-Notice`: **configurator → ao.id**   -- Logs the stage update admin action
+--- **📊 Logging & Analytics**
+--- - `Stage-Update-Admin-Notice`: **configurator → ao.id**-- Logs the stage update admin action
 --- @return ConfiguratorStageUpdateAdminNotice The configurator stage update admin notice
 function Outcome.configuratorStageUpdateAdmin(updateAdmin)
   -- Validate input
@@ -407,8 +407,8 @@ end
 --- @warning Only callable by the configurator admin
 --- @param updateAdmin string The admin to update
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Unstage-Update-Admin-Notice`: **configurator → ao.id**   -- Logs the unstage update admin action
+--- **📊 Logging & Analytics**
+--- - `Unstage-Update-Admin-Notice`: **configurator → ao.id**-- Logs the unstage update admin action
 --- @return ConfiguratorUnstageUpdateAdminNotice The configurator unstage update admin notice
 function Outcome.configuratorUnstageUpdateAdmin(updateAdmin)
   -- Validate input
@@ -436,8 +436,8 @@ end
 --- @warning Only callable by the configurator admin
 --- @param updateAdmin string The admin to update
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Action-Update-Admin-Notice`: **configurator → ao.id**    -- Logs the action update admin action
+--- **📊 Logging & Analytics**
+--- - `Action-Update-Admin-Notice`: **configurator → ao.id** -- Logs the action update admin action
 --- @return ConfiguratorActionUpdateAdminNotice The configurator action update admin notice
 function Outcome.configuratorActionUpdateAdmin(updateAdmin)
   -- Validate input
@@ -466,8 +466,8 @@ end
 --- @warning Only callable by the configurator admin
 --- @param updateDelay number The delay to update (in days)
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Stage-Update-Delay-Notice`: **configurator → ao.id**   -- Logs the stage update delay action
+--- **📊 Logging & Analytics**
+--- - `Stage-Update-Delay-Notice`: **configurator → ao.id**-- Logs the stage update delay action
 --- @return ConfiguratorStageUpdateDelayNotice The configurator stage update delay notice
 function Outcome.configuratorStageUpdateDelay(updateDelay)
   -- Validate input
@@ -496,8 +496,8 @@ end
 --- @warning Only callable by the configurator admin
 --- @param updateDelay number The delay to update (in days)
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Unstage-Update-Delay-Notice`: **configurator → ao.id**   -- Logs the unstage update delay action
+--- **📊 Logging & Analytics**
+--- - `Unstage-Update-Delay-Notice`: **configurator → ao.id**-- Logs the unstage update delay action
 --- @return ConfiguratorUnstageUpdateDelayNotice The configurator unstage update delay notice
 function Outcome.configuratorUnstageUpdateDelay(updateDelay)
   -- Validate input
@@ -525,8 +525,8 @@ end
 --- @warning Only callable by the configurator admin
 --- @param updateDelay number The delay to update (in days)
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Action-Update-Delay-Notice`: **configurator → ao.id**    -- Logs the action update delay action
+--- **📊 Logging & Analytics**
+--- - `Action-Update-Delay-Notice`: **configurator → ao.id** -- Logs the action update delay action
 --- @return ConfiguratorActionUpdateDelayNotice The configurator action update delay notice
 function Outcome.configuratorActionUpdateDelay(updateDelay)
   -- Validate input
@@ -640,17 +640,17 @@ MARKET: CPMM WRITE
 --- @param quantity string The quantity of collateral tokens to transfer, a.k.a. the funding amount
 --- @param distribution table<number>|nil The initial probability distribution. **Pass `nil` for subsequent funding**
 --- @param onBehalfOf string? The recipient of the outcome position tokens. **Defaults to the sender if omitted.**
---- @note **Emits the following notices:**  
---- **🔄 Execution Transfers**  
---- - `Debit-Notice`: **collateral → ao.id**        -- Transfers collateral tokens from the provider
---- - `Credit-Notice`: **collateral → market**      -- Transfers collateral tokens to the market
---- **✨ Minting & Splitting Position**  
---- - `Mint-Batch-Notice`: **market → market**      -- Mints position tokens to the market
---- - `Split-Position-Notice`: **market → market**  -- Splits collateral into position tokens
---- - `Mint-Notice`: **market → ao.id**             -- Mints LP tokens to the provider
---- **📊 Logging & Analytics**  
---- - `Add-Funding-Notice`: **market → ao.id**                                              -- Logs the add funding action          
---- - `Log-Funding-Notice`: **market → Outcome.token** and **market → Outcome.dataIndex**   -- Logs the funding
+--- @note **Emits the following notices:**
+--- **🔄 Execution Transfers**
+--- - `Debit-Notice`: **collateral → ao.id**     -- Transfers collateral tokens from the provider
+--- - `Credit-Notice`: **collateral → market**   -- Transfers collateral tokens to the market
+--- **✨ Minting & Splitting Position**
+--- - `Mint-Batch-Notice`: **market → market**   -- Mints position tokens to the market
+--- - `Split-Position-Notice`: **market → market**-- Splits collateral into position tokens
+--- - `Mint-Notice`: **market → ao.id**          -- Mints LP tokens to the provider
+--- **📊 Logging & Analytics**
+--- - `Add-Funding-Notice`: **market → ao.id**                                           -- Logs the add funding action
+--- - `Log-Funding-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex**-- Logs the funding
 --- @return MarketAddFundingDebitNotice The market add funding debit notice
 function Outcome.marketAddFunding(market, collateral, quantity, distribution, onBehalfOf)
   -- Validate input
@@ -695,17 +695,17 @@ end
 --- @notice Calling `marketRemoveFunding` will simultaneously return the liquidity provider's share of accrued fees
 --- @param market string The market process ID
 --- @param quantity string The quantity of LP tokens to transfer, i.e. the amount of shares to burn
---- @note **Emits the following notices:**  
---- **🔄 Execution Transfers**  
---- - `Withdraw-Fees-Notice`: **market → ao.id**  -- Distributes accrued LP fees to the provider
---- **🔥 Burning LP Shares**  
---- - `Burn-Notice`: **market → market**          -- Burns the returned LP tokens
---- **🔄 Settlement Transfers**  
---- - `Debit-Batch-Notice`: **market → market**   -- Transfers position tokens from the market
---- - `Credit-Batch-Notice`: **market → ao.id**   -- Transfers position tokens to the provider
---- **📊 Logging & Analytics**  
---- - `Remove-Funding-Notice`: **market → ao.id**                                           -- Logs the remove funding action       
---- - `Log-Funding-Notice`: **market → Outcome.token** and **market → Outcome.dataIndex**   -- Logs the funding
+--- @note **Emits the following notices:**
+--- **🔄 Execution Transfers**
+--- - `Withdraw-Fees-Notice`: **market → ao.id**-- Distributes accrued LP fees to the provider
+--- **🔥 Burning LP Shares**
+--- - `Burn-Notice`: **market → market**       -- Burns the returned LP tokens
+--- **🔄 Settlement Transfers**
+--- - `Debit-Batch-Notice`: **market → market**-- Transfers position tokens from the market
+--- - `Credit-Batch-Notice`: **market → ao.id**-- Transfers position tokens to the provider
+--- **📊 Logging & Analytics**
+--- - `Remove-Funding-Notice`: **market → ao.id**                                        -- Logs the remove funding action
+--- - `Log-Funding-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex**-- Logs the funding
 --- @return MarketRemoveFundingtNotice The market remove funding notice
 function Outcome.marketRemoveFunding(market, quantity)
   -- Validate input
@@ -748,20 +748,20 @@ end
 --- @param positionId string The outcome position token position ID
 --- @param minPositionTokensToBuy string The minimum outcome position tokens to buy
 --- @param onBehalfOf string? The recipient of the outcome position tokens (optional)
---- @note **Emits the following notices:**  
---- **🔄 Execution Transfers**  
---- - `Debit-Notice`: **collateral → ao.id**        -- Transfers collateral from the buyer
---- - `Credit-Notice`: **collateral → market**      -- Transfers collateral to the market
---- **✨ Minting & Spliting Position**  
---- - `Mint-Batch-Notice`: **market → market**      -- Mints new position tokens
---- - `Split-Position-Notice`: **market → market**  -- Splits collateral into position tokens
---- **🔄 Settlement Transfers**  
---- - `Debit-Single-Notice`: **market → market**    -- Transfers position tokens from the market
---- - `Credit-Single-Notice`: **market → ao.id**    -- Transfers position tokens to the buyer
---- **📊 Logging & Analytics**  
---- - `Buy-Notice`: **market → ao.id**                                                          -- Logs the buy action
---- - `Log-Prediction-Notice`: **market → Outcome.token** and **market → Outcome.dataIndex**    -- Logs the prediction
---- - `Log-Probabilities-Notice`: **market → Outcome.dataIndex**                                -- Logs the updated probabilities
+--- @note **Emits the following notices:**
+--- **🔄 Execution Transfers**
+--- - `Debit-Notice`: **collateral → ao.id**     -- Transfers collateral from the buyer
+--- - `Credit-Notice`: **collateral → market**   -- Transfers collateral to the market
+--- **✨ Minting & Spliting Position**
+--- - `Mint-Batch-Notice`: **market → market**   -- Mints new position tokens
+--- - `Split-Position-Notice`: **market → market**-- Splits collateral into position tokens
+--- **🔄 Settlement Transfers**
+--- - `Debit-Single-Notice`: **market → market** -- Transfers position tokens from the market
+--- - `Credit-Single-Notice`: **market → ao.id** -- Transfers position tokens to the buyer
+--- **📊 Logging & Analytics**
+--- - `Buy-Notice`: **market → ao.id**                                                       -- Logs the buy action
+--- - `Log-Prediction-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the prediction
+--- - `Log-Probabilities-Notice`: **market → Outcome.dataIndex**                             -- Logs the updated probabilities
 --- @return MarketBuyCollateralDebitNotice The market buy collateral debit notice
 function Outcome.marketBuy(market, collateral, quantity, positionId, minPositionTokensToBuy, onBehalfOf)
   -- Validate input
@@ -813,22 +813,22 @@ end
 --- @param returnAmount string The quantity of collateral tokens to receive
 --- @param positionId string The outcome position token position ID
 --- @param maxPositionTokensToSell string The max outcome position tokens to sell
---- @note **Emits the following notices:**  
---- **🔄 Execution Transfers**  
---- - `Debit-Single-Notice`: **market → ao.id**       -- Transfers sold position tokens from the seller
---- - `Credit-Single-Notice`: **market → market**     -- Transfers sold position tokens to the market
---- **🔥 Burning & Merging Positions**  
---- - `Batch-Burn-Notice`: **market → market**        -- Burns sold position tokens
---- - `Merge-Positions-Notice`: **market → market**   -- Merges sold position tokens back to collateral
---- **🔄 Settlement Transfers**  
---- - `Debit-Notice`: **collateral → market**         -- Transfers collateral from the seller
---- - `Credit-Notice`: **collateral → ao.id**         -- Transfers collateral to the buyer
---- - `Debit-Single-Notice`: **market → ao.id**       -- Returns unburned position tokens from the market
---- - `Credit-Single-Notice`: **market → market**     -- Returns unburned position tokens to the seller
---- **📊 Logging & Analytics**  
---- - `Sell-Notice`: **market → ao.id**                                                         -- Logs the sell action
---- - `Log-Prediction-Notice`: **market → Outcome.token** and **market → Outcome.dataIndex**    -- Logs the prediction
---- - `Log-Probabilities-Notice`: **market → Outcome.dataIndex**                                -- Logs the updated probabilities
+--- @note **Emits the following notices:**
+--- **🔄 Execution Transfers**
+--- - `Debit-Single-Notice`: **market → ao.id**    -- Transfers sold position tokens from the seller
+--- - `Credit-Single-Notice`: **market → market**  -- Transfers sold position tokens to the market
+--- **🔥 Burning & Merging Positions**
+--- - `Batch-Burn-Notice`: **market → market**     -- Burns sold position tokens
+--- - `Merge-Positions-Notice`: **market → market**-- Merges sold position tokens back to collateral
+--- **🔄 Settlement Transfers**
+--- - `Debit-Notice`: **collateral → market**      -- Transfers collateral from the seller
+--- - `Credit-Notice`: **collateral → ao.id**      -- Transfers collateral to the buyer
+--- - `Debit-Single-Notice`: **market → ao.id**    -- Returns unburned position tokens from the market
+--- - `Credit-Single-Notice`: **market → market**  -- Returns unburned position tokens to the seller
+--- **📊 Logging & Analytics**
+--- - `Sell-Notice`: **market → ao.id**                                                      -- Logs the sell action
+--- - `Log-Prediction-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the prediction
+--- - `Log-Probabilities-Notice`: **market → Outcome.dataIndex**                             -- Logs the updated probabilities
 --- @return MarketSellNotice The market sell notice
 function Outcome.marketSell(market, returnAmount, positionId, maxPositionTokensToSell)
   -- Validate input
@@ -864,11 +864,11 @@ end
 --- Market withdraw fees
 --- @param market string The market process ID
 --- @note **Emits the following notices:**
---- **🔄 Settlement Transfers**    
---- - `Debit-Notice`: **collateral → market**     -- Transfers LP fees from the market
---- - `Credit-Notice`: **collateral → ao.id**     -- Transfers LP fees to the provider
+--- **🔄 Settlement Transfers**
+--- - `Debit-Notice`: **collateral → market**  -- Transfers LP fees from the market
+--- - `Credit-Notice`: **collateral → ao.id**  -- Transfers LP fees to the provider
 --- **📊 Logging & Analytics**
---- - `Withdraw-Fees-Notice`: **market → ao.id**  -- Logs the withdraw fees action  
+--- - `Withdraw-Fees-Notice`: **market → ao.id**-- Logs the withdraw fees action
 --- @return MarketWithdrawFeesNotice The market withdraw fees notice
 function Outcome.marketWithdrawFees(market)
   -- Validate input
@@ -1030,10 +1030,10 @@ MARKET: LP TOKEN WRITE
 --- @param market string The market process ID
 --- @param recipient string The recipient process ID
 --- @param quantity string The quantity of LP tokens to transfer
---- @note **Emits the following notices:**  
---- **🔄 Execution Transfers**  
---- - `Debit-Notice`: **market → ao.id**        -- Transfers LP tokens from the sender
---- - `Credit-Notice`: **market → recipient**   -- Transfers LP tokens to the recipient
+--- @note **Emits the following notices:**
+--- **🔄 Execution Transfers**
+--- - `Debit-Notice`: **market → ao.id**     -- Transfers LP tokens from the sender
+--- - `Credit-Notice`: **market → recipient**-- Transfers LP tokens to the recipient
 --- @return MarketLpTokenDebitNotice The market LP token debit notice
 function Outcome.marketLpTokenTransfer(market, recipient, quantity)
   -- Validate input
@@ -1154,19 +1154,19 @@ MARKET: POSITIONS WRITE
 --- @field Quantity string The quantity of collateral tokens to return to user
 
 --- Market outcome position tokens merge positions
---- @warning User must have stated quantity of outcome position tokens from each position ID, 
+--- @warning User must have stated quantity of outcome position tokens from each position ID,
 --- and their must be sufficient liquidity to merge for collateral, or the transaction will fail
 --- @param market string The market process ID
 --- @param quantity string The quantity of outcome position tokens from each position ID to merge for collataral
 --- @param onBehalfOf string? The recipient of the collateral tokens, or `nil` for the sender
---- @note **Emits the following notices:**  
---- **🔥 Burning Position Tokens**   
---- - `Burn-Batch-Notice`: **market → ao.id**       -- Burns the position tokens
---- **🔄 Settlement Transfers**  
---- - `Debit-Notice`: **collateral → market**       -- Transfers collateral from the market
---- - `Credit-Notice`: **collateral → ao.id**       -- Transfers collateral to the recipient 
+--- @note **Emits the following notices:**
+--- **🔥 Burning Position Tokens**
+--- - `Burn-Batch-Notice`: **market → ao.id**    -- Burns the position tokens
+--- **🔄 Settlement Transfers**
+--- - `Debit-Notice`: **collateral → market**    -- Transfers collateral from the market
+--- - `Credit-Notice`: **collateral → ao.id**    -- Transfers collateral to the recipient
 --- **📊 Logging & Analytics**
---- - `Merge-Positions-Notice`: **market → ao.id**  -- Logs the merge positions action
+--- - `Merge-Positions-Notice`: **market → ao.id**-- Logs the merge positions action
 --- @return MarketMergePositionsNotice The market merge positions notice
 function Outcome.marketMergePositions(market, quantity, onBehalfOf)
   -- Validate input
@@ -1201,9 +1201,9 @@ end
 --- @warning Only callable by the resolution agent, and once, or the transaction will fail
 --- @param market string The market process ID
 --- @param payouts table<number> The payout numerators
---- @note **Emits the following notices:**  
+--- @note **Emits the following notices:**
 --- **📊 Logging & Analytics**
----  - `Report-Payouts-Notice`: **market → ao.id**    -- Logs the report payouts action
+---  - `Report-Payouts-Notice`: **market → ao.id** -- Logs the report payouts action
 --- @return MarketReportPayoutsNotice The market report payouts notice
 function Outcome.marketReportPayouts(market, payouts)
   -- Validate input
@@ -1234,14 +1234,14 @@ end
 --- Market redeem positions
 --- @warning Market must be resolve or the transaction will fail
 --- @param market string The market process ID
---- @note **Emits the following notices:** 
---- **🔥 Burning Position Tokens**  
---- - `Burn-Single-Notice`: **market → ao.id**       -- Burns redeemed position tokens (for each position ID held by the sender)
---- **🔄 Settlement Transfers** 
---- - `Debit-Notice`: **collateral → market**        -- Transfers collateral from the market
---- - `Credit-Notice`: **collateral → ao.id**        -- Transfers collateral to the sender
---- **📊 Logging & Analytics**  
---- - `Redeem-Positions-Notice`: **market → ao.id**  -- Logs the redeem positions action
+--- @note **Emits the following notices:**
+--- **🔥 Burning Position Tokens**
+--- - `Burn-Single-Notice`: **market → ao.id**    -- Burns redeemed position tokens (for each position ID held by the sender)
+--- **🔄 Settlement Transfers**
+--- - `Debit-Notice`: **collateral → market**     -- Transfers collateral from the market
+--- - `Credit-Notice`: **collateral → ao.id**     -- Transfers collateral to the sender
+--- **📊 Logging & Analytics**
+--- - `Redeem-Positions-Notice`: **market → ao.id**-- Logs the redeem positions action
 --- @return MarketRedeemPositionsNotice The market redeem positions notice
 function Outcome.marketRedeemPositions(market)
   -- Validate input
@@ -1274,10 +1274,10 @@ end
 --- @param quantity string The quantity of outcome position tokens to transfer
 --- @param positionId string The outcome position token position ID
 --- @param recipient string The recipient of the outcome position tokens
---- @note **Emits the following notices:**  
---- **🔄 Execution Transfers** 
----  - `Debit-Single-Notice`: **market → ao.id**        -- Transfers position tokens from the sender
----  - `Credit-Single-Notice`: **market → recipient**   -- Transfers position tokens to the recipient
+--- @note **Emits the following notices:**
+--- **🔄 Execution Transfers**
+---  - `Debit-Single-Notice`: **market → ao.id**     -- Transfers position tokens from the sender
+---  - `Credit-Single-Notice`: **market → recipient**-- Transfers position tokens to the recipient
 --- @return MarketPositionDebitSingleNotice The market outcome position token debit single notice
 function Outcome.marketPositionTransfer(market, quantity, positionId, recipient)
   -- Validate input
@@ -1319,9 +1319,9 @@ end
 --- @param positionIds table<string> The outcome position token position IDs
 --- @param recipient string The recipient of the outcome position tokens
 --- @note **Emits the following notices:**
---- **🔄 Execution Transfers** 
---- - `Debit-Batch-Notice`: **market → ao.id**        -- Transfers position tokens from the sender
---- - `Credit-Batch-Notice`: **market → recipient**   -- Transfers position tokens to the recipient
+--- **🔄 Execution Transfers**
+--- - `Debit-Batch-Notice`: **market → ao.id**     -- Transfers position tokens from the sender
+--- - `Credit-Batch-Notice`: **market → recipient**-- Transfers position tokens to the recipient
 --- @return MarketPositionDebitBatchNotice The market outcome position token debit batch notice
 function Outcome.marketPositionTransferBatch(market, quantities, positionIds, recipient)
   -- Validate input
@@ -1499,7 +1499,7 @@ function Outcome.marketPositionBatchBalance(market, positionIds, recipients)
 end
 
 --- @class MarketPositionBatchBalancesResponse: BaseMessage
---- @field Balances table<string, table<string, string>> The user outcome position tokens balances for the position IDs provided, mapping position IDs to user process IDs to their balances
+--- @field Balances table<string, table<string, string>> The user outcome position tokens balances, mapping position IDs to user process IDs to their balances
 --- @field PositionIds table<string> The outcome position token position IDs
 
 --- Market outcome position tokens batch balances
@@ -1538,9 +1538,9 @@ MARKET: CONFIGURATOR
 --- @warning Only callable by the market configurator, or the transaction will fail
 --- @param market string The market process ID
 --- @param configurator string The new configurator process ID
---- @note **Emits the following notices:** 
---- **📊 Logging & Analytics**  
---- - `Update-Configurator-Notice`: **market → ao.id**    -- Logs the update configurator action
+--- @note **Emits the following notices:**
+--- **📊 Logging & Analytics**
+--- - `Update-Configurator-Notice`: **market → ao.id** -- Logs the update configurator action
 --- @return MarketUpdateConfiguratorNotice The market update configurator notice
 function Outcome.marketUpdateConfigurator(market, configurator)
   -- Validate input
@@ -1569,9 +1569,9 @@ end
 --- @warning Only callable by the market configurator, or the transaction will fail
 --- @param market string The market process ID
 --- @param incentives string The new incentives process ID
---- @note **Emits the following notices:**  
---- **📊 Logging & Analytics**  
---- - `Update-Incentives-Notice`: **market → ao.id**    -- Logs the update incentives action
+--- @note **Emits the following notices:**
+--- **📊 Logging & Analytics**
+--- - `Update-Incentives-Notice`: **market → ao.id** -- Logs the update incentives action
 --- @return MarketUpdateIncentivesNotice The market update incentives notice
 function Outcome.marketUpdateIncentives(market, incentives)
   -- Validate input
@@ -1604,9 +1604,9 @@ end
 --- @param market string The market process ID
 --- @param creatorFee number The new creator fee, in basis points
 --- @param protocolFee number The new protocol fee, in basis points
---- @note **Emits the following notices:**  
---- **📊 Logging & Analytics**  
---- - `Update-Take-Fee-Notice`: **market → ao.id**    -- Logs the update take fee action
+--- @note **Emits the following notices:**
+--- **📊 Logging & Analytics**
+--- - `Update-Take-Fee-Notice`: **market → ao.id** -- Logs the update take fee action
 --- @return MarketUpdateTakeFeeNotice The market update take fee notice
 function Outcome.marketUpdateTakeFee(market, creatorFee, protocolFee)
   -- Validate input
@@ -1640,9 +1640,9 @@ end
 --- @warning Only callable by the market configurator, or the transaction will fail
 --- @param market string The market process ID
 --- @param protocolFeeTarget string The new protocol fee target
---- @note **Emits the following notices:**  
---- **📊 Logging & Analytics**  
---- - `Update-Take-Fee-Target-Notice`: **market → ao.id**   -- Logs the update protocol fee target action
+--- @note **Emits the following notices:**
+--- **📊 Logging & Analytics**
+--- - `Update-Take-Fee-Target-Notice`: **market → ao.id**-- Logs the update protocol fee target action
 --- @return MarketUpdateProtocolFeeTargetNotice The market update protocol fee target notice
 function Outcome.marketUpdateProtocolFeeTarget(market, protocolFeeTarget)
   -- Validate input
@@ -1671,9 +1671,9 @@ end
 --- @warning Only callable by the market configurator, or the transaction will fail
 --- @param market string The market process ID
 --- @param logo string The new logo Arweave TxID
---- @note **Emits the following notices:**  
---- **📊 Logging & Analytics**  
---- - `Update-Logo-Notice`: **market → ao.id**    -- Logs the update logo action
+--- @note **Emits the following notices:**
+--- **📊 Logging & Analytics**
+--- - `Update-Logo-Notice`: **market → ao.id** -- Logs the update logo action
 --- @return MarketUpdateLogoNotice The market update logo notice
 function Outcome.marketUpdateLogo(market, logo)
   -- Validate input
@@ -1768,11 +1768,11 @@ MARKET FACTORY: WRITE
 --- @param rules string The market rules
 --- @param creatorFee number The creator fee in basis points
 --- @param creatorFeeTarget string The creator fee target process ID
---- @note **Emits the following notices:** 
---- **✨ Market Creation**  
---- - `Spawned`: **marketFactory → marketFactory**      -- Spawns a new market process
---- **📊 Logging & Analytics**  
---- - `Spawn-Market-Notice`: **marketFactory → ao.id**  -- Logs the spawn market action
+--- @note **Emits the following notices:**
+--- **✨ Market Creation**
+--- - `Spawned`: **marketFactory → marketFactory**   -- Spawns a new market process
+--- **📊 Logging & Analytics**
+--- - `Spawn-Market-Notice`: **marketFactory → ao.id**-- Logs the spawn market action
 --- @return MarketFactorySpawnMarketNotice The market factory spawn market notice
 function Outcome.marketFactorySpawnMarket(
   resolutionAgent,
@@ -1843,10 +1843,10 @@ end
 --- @field MarketProcessIds table<string> The init market process IDs
 
 --- Market factory init market
---- @note **Emits the following notices:**  
---- **📊 Logging & Analytics**  
---- - `Log-Market-Notice`: **marketFactory → dataIndex** and **marketFactory → ao.id**  -- Logs the market
---- - `Init-Market-Notice`: **marketFactory → ao.id**                                   -- Logs the init market action
+--- @note **Emits the following notices:**
+--- **📊 Logging & Analytics**
+--- - `Log-Market-Notice`: **marketFactory → dataIndex**and **marketFactory → ao.id**-- Logs the market
+--- - `Init-Market-Notice`: **marketFactory → ao.id**                                -- Logs the init market action
 --- @return MarketFactoryInitMarketNotice The market factory init market notice
 function Outcome.marketFactoryInitMarket()
   -- Send and receive response
@@ -1999,8 +1999,8 @@ MARKET FACTORY: CONFIGURATOR
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param configurator string The new configurator process ID
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Update-Configurator-Notice`: **marketFactory → ao.id**   -- Logs the update configurator action
+--- **📊 Logging & Analytics**
+--- - `Update-Configurator-Notice`: **marketFactory → ao.id**-- Logs the update configurator action
 --- @return MarketFactoryUpdateConfiguratorNotice The market factory update configurator notice
 function Outcome.marketFactoryUpdateConfigurator(configurator)
   -- Validate input
@@ -2028,8 +2028,8 @@ end
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param incentives string The new incentives process ID
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Update-Incentives-Notice`: **marketFactory → ao.id**   -- Logs the update incentives action
+--- **📊 Logging & Analytics**
+--- - `Update-Incentives-Notice`: **marketFactory → ao.id**-- Logs the update incentives action
 --- @return MarketFactoryUpdateIncentivesNotice The market factory update incentives notice
 function Outcome.marketFactoryUpdateIncentives(incentives)
   -- Validate input
@@ -2057,8 +2057,8 @@ end
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param lpFee number The new LP fee, in basis points
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Update-Lp-Fee-Notice`: **marketFactory → ao.id**   -- Logs the update LP fee action
+--- **📊 Logging & Analytics**
+--- - `Update-Lp-Fee-Notice`: **marketFactory → ao.id**-- Logs the update LP fee action
 --- @return MarketFactoryUpdateLpFeeNotice The market factory update LP fee notice
 function Outcome.marketFactoryUpdateLpFee(lpFee)
   -- Validate input
@@ -2086,8 +2086,8 @@ end
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param protocolFee number The new protocol fee, in basis points
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Update-Protocol-Fee-Notice`: **marketFactory → ao.id**   -- Logs the update protocol fee action
+--- **📊 Logging & Analytics**
+--- - `Update-Protocol-Fee-Notice`: **marketFactory → ao.id**-- Logs the update protocol fee action
 --- @return MarketFactoryUpdateProtocolFeeNotice The market factory update protocol fee notice
 function Outcome.marketFactoryUpdateProtocolFee(protocolFee)
   -- Validate input
@@ -2115,8 +2115,8 @@ end
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param protocolFeeTarget string The new protocol fee target
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Update-Protocol-Fee-Target-Notice`: **marketFactory → ao.id**    -- Logs the update protocol fee target action
+--- **📊 Logging & Analytics**
+--- - `Update-Protocol-Fee-Target-Notice`: **marketFactory → ao.id** -- Logs the update protocol fee target action
 --- @return MarketFactoryUpdateProtocolFeeTargetNotice The market factory update protocol fee target notice
 function Outcome.marketFactoryUpdateProtocolFeeTarget(protocolFeeTarget)
   -- Validate input
@@ -2144,8 +2144,8 @@ end
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param maximumTakeFee number The new maximum take fee, in basis points
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Update-Maximum-Take-Fee-Notice`: **marketFactory → ao.id**   -- Logs the update maximum take fee action
+--- **📊 Logging & Analytics**
+--- - `Update-Maximum-Take-Fee-Notice`: **marketFactory → ao.id**-- Logs the update maximum take fee action
 --- @return MarketFactoryUpdateMaximumTakeFeeNotice The market factory update maximum take fee notice
 function Outcome.marketFactoryUpdateMaximumTakeFee(maximumTakeFee)
   -- Validate input
@@ -2175,8 +2175,8 @@ end
 --- @param collateral string The collateral token process ID
 --- @param approved boolean The approval status
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Approve-Collateral-Token-Notice`: **marketFactory → ao.id**    -- Logs the approve collateral token action
+--- **📊 Logging & Analytics**
+--- - `Approve-Collateral-Token-Notice`: **marketFactory → ao.id** -- Logs the approve collateral token action
 --- @return MarketFactoryApproveCollateralTokenNotice The market factory approve collateral token notice
 function Outcome.marketFactoryApproveCollateralToken(collateral, approved)
   -- Validate input
@@ -2213,12 +2213,12 @@ end
 --- @param quantity string The quantity of tokens to transfer
 --- @param recipient string The recipient process ID
 --- @note **Emits the following notices:**
---- **🔄 Administrative Transfers** 
---- - `Debit-Notice`: **token → marketFactory**               -- Transfers token quantity from the market factory
---- - `Credit-Notice`: **token → recipient**                  -- Transfers token quantity to the recipient
---- **📊 Logging & Analytics**  
---- - `Transfer-Notice`: **marketFactory → ao.id**            -- Logs the transfer action
---- - `Transfer-Success-Notice`: **marketFactory → ao.id**    -- Logs on transfer success
+--- **🔄 Administrative Transfers**
+--- - `Debit-Notice`: **token → marketFactory**            -- Transfers token quantity from the market factory
+--- - `Credit-Notice`: **token → recipient**               -- Transfers token quantity to the recipient
+--- **📊 Logging & Analytics**
+--- - `Transfer-Notice`: **marketFactory → ao.id**         -- Logs the transfer action
+--- - `Transfer-Success-Notice`: **marketFactory → ao.id** -- Logs on transfer success
 --- @return MarketFactoryTransferNotice The market factory transfer notice
 function Outcome.marketFactoryTransfer(token, quantity, recipient)
   -- Validate input
@@ -2283,18 +2283,18 @@ function Outcome.tokenInfo(target)
   }
 end
 
---- @class TokenClaimNotice: BaseNotice 
+--- @class TokenClaimNotice: BaseNotice
 --- @field Quantity string The quantity of tokens claimed
 --- @field Recipient string The recipient process ID
 
 --- Token claim
 --- @param onBehalfOf string? The recipient process ID or `nil` for the sender
 --- @note **Emits the following notices:**
---- **🔄 Settlement Transfers** 
---- - `Debit-Notice`: **token → token**         -- Transfers token claim from the token
---- - `Credit-Notice`: **token → recipient**    -- Transfers token claim to the recipient
---- **📊 Logging & Analytics**  
---- - `Token-Claim-Notice`: **token → ao.id**   -- Logs the token claim action
+--- **🔄 Settlement Transfers**
+--- - `Debit-Notice`: **token → token**      -- Transfers token claim from the token
+--- - `Credit-Notice`: **token → recipient** -- Transfers token claim to the recipient
+--- **📊 Logging & Analytics**
+--- - `Token-Claim-Notice`: **token → ao.id**-- Logs the token claim action
 --- @return TokenClaimNotice The token claim notice
 function Outcome.tokenClaim(onBehalfOf)
   -- Validate input
@@ -2326,9 +2326,9 @@ end
 --- @param recipient string The recipient process ID
 --- @param target string? The token process ID or `nil` to use Outcome.token
 --- @note **Emits the following notices:**
---- **🔄 Execution Transfers** 
---- - `Debit-Notice`: **token → ao.id**       -- Transfers token quantity from the sender
---- - `Credit-Notice`: **token → recipient**  -- Transfers token quantity to the recipient
+--- **🔄 Execution Transfers**
+--- - `Debit-Notice`: **token → ao.id**    -- Transfers token quantity from the sender
+--- - `Credit-Notice`: **token → recipient**-- Transfers token quantity to the recipient
 --- @return TokenTransferDebitNotice The token transfer debit notice
 function Outcome.tokenTransfer(quantity, recipient, target)
   -- Validate input
@@ -2362,8 +2362,8 @@ end
 --- @param target string The token process ID
 --- @param quantity string The quantity of tokens to mint
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Mint-Notice`: **token → recipient**    -- Mints tokens to the sender
+--- **📊 Logging & Analytics**
+--- - `Mint-Notice`: **token → recipient** -- Mints tokens to the sender
 --- @return TokenMintNotice The test collateral mint notice
 function Outcome.tokenMint(target, quantity)
   -- Validate input
@@ -2396,8 +2396,8 @@ end
 --- @param quantity string The quantity of tokens to burn
 --- @param target string? The token process ID or `nil` to use Outcome.token
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Burn-Notice`: **token → ao.id**    -- Logs the token burn action
+--- **📊 Logging & Analytics**
+--- - `Burn-Notice`: **token → ao.id** -- Logs the token burn action
 --- @return TokenBurnNotice The token burn notice
 function Outcome.tokenBurn(quantity, target)
   -- Validate input
@@ -2546,8 +2546,8 @@ end
 --- @warning Only callable by the token configurator, or the transaction will fail
 --- @param configurator string The new configurator process ID
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Update-Configurator-Notice`: **token → ao.id**   -- Logs the token update configurator action
+--- **📊 Logging & Analytics**
+--- - `Update-Configurator-Notice`: **token → ao.id**-- Logs the token update configurator action
 --- @return TokenUpdateConfiguratorNotice The token update configurator notice
 function Outcome.tokenUpdateConfigurator(configurator)
   -- Validate input
@@ -2575,8 +2575,8 @@ end
 --- @warning Only callable by the token configurator, or the transaction will fail
 --- @param ratio string The new LP to Holder ratio
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Update-Lp-To-Holder-Ratio-Notice`: **token → ao.id**   -- Logs the token update LP to holder ratio action
+--- **📊 Logging & Analytics**
+--- - `Update-Lp-To-Holder-Ratio-Notice`: **token → ao.id**-- Logs the token update LP to holder ratio action
 --- @return TokenUpdateLpToHolderRatioNotice The token update LP to Holder ratio notice
 function Outcome.tokenUpdateLpToHolderRatio(ratio)
   -- Validate input
@@ -2604,8 +2604,8 @@ end
 --- @warning Only callable by the token configurator, or the transaction will fail
 --- @param collateralPrices table<string, string> The new mapping of collateral prices
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Update-Collateral-Prices-Notice`: **token → ao.id**    -- Logs the token update collateral prices action
+--- **📊 Logging & Analytics**
+--- - `Update-Collateral-Prices-Notice`: **token → ao.id** -- Logs the token update collateral prices action
 --- @return TokenUpdateCollateralPricesNotice The token update collateral prices notice
 function Outcome.tokenUpdateCollateralPrices(collateralPrices)
   -- Validate input
@@ -2633,8 +2633,8 @@ end
 --- @warning Only callable by the token configurator, or the transaction will fail
 --- @param collateralFactors table<string, string> The new mapping of collateral factors
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
----  - `Update-Collateral-Factors-Notice`: **token → ao.id**    -- Logs the token update collateral factors action
+--- **📊 Logging & Analytics**
+---  - `Update-Collateral-Factors-Notice`: **token → ao.id** -- Logs the token update collateral factors action
 --- @return TokenUpdateCollateralFactorsNotice The token update collateral factors notice
 function Outcome.tokenUpdateCollateralFactors(collateralFactors)
   -- Validate input
@@ -2662,8 +2662,8 @@ end
 --- @warning Only callable by the token configurator, or the transaction will fail
 --- @param collateralDenominations table<string, string> The new mapping of collateral denominations
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**  
---- - `Update-Collateral-Denominations-Notice`: **token → ao.id**   -- Logs the token update collateral denominations action
+--- **📊 Logging & Analytics**
+--- - `Update-Collateral-Denominations-Notice`: **token → ao.id**-- Logs the token update collateral denominations action
 --- @return TokenUpdateCollateralDenominationsNotice The token update collateral denominations notice
 function Outcome.tokenUpdateCollateralDenominations(collateralDenominations)
   -- Validate input

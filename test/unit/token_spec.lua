@@ -51,7 +51,7 @@ describe("#market #token #tokenInternal", function()
     -- set denomination
     denomination = 12
     -- instantiate token
-		Token = token:new(
+		Token = token.new(
       name,
       ticker,
       logo,

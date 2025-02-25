@@ -149,7 +149,7 @@ PLATFORM DATA
 ]]
 
 Env = "DEV"
-Version = "1.0.1"
+
 if not Db or Env == "DEV" then Db = sqlite3.open_memory() end
 DbAdmin = require('platformDataModules.dbAdmin').new(Db)
 
@@ -189,7 +189,7 @@ end
 --- @dev Reset PlatformData state during development mode or if uninitialized
 if not PlatformData or Env == 'DEV' then
   local platformDataConfig = retrievePlatformDataConfig()
-  PlatformData = platformData:new(
+  PlatformData = platformData.new(
     DbAdmin,
     platformDataConfig.configurator,
     platformDataConfig.moderators,
@@ -224,7 +224,24 @@ Handlers.add("Log-Market", {Action = "Log-Market-Notice"}, function(msg)
   local cast = msg.Tags.Cast == "true"
   local creatorFee = tonumber(msg.Tags.CreatorFee)
   local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
-  return PlatformData.activity:logMarket(msg.Tags.Market, msg.Tags.Creator, creatorFee, msg.Tags.CreatorFeeTarget, msg.Tags.Question, msg.Tags.Rules, outcomeSlotCount, msg.Tags.Collateral, msg.Tags.ResolutionAgent, msg.Tags.Category, msg.Tags.Subcategory, msg.Tags.Logo, msg.Tags.GroupId, os.time(), cast, msg)
+  return PlatformData.activity:logMarket(
+    msg.Tags.Market,
+    msg.Tags.Creator,
+    creatorFee,
+    msg.Tags.CreatorFeeTarget,
+    msg.Tags.Question,
+    msg.Tags.Rules,
+    outcomeSlotCount,
+    msg.Tags.Collateral,
+    msg.Tags.ResolutionAgent,
+    msg.Tags.Category,
+    msg.Tags.Subcategory,
+    msg.Tags.Logo,
+    msg.Tags.GroupId,
+    os.time(),
+    cast,
+    msg
+  )
 end)
 
 --- Log market group handler
@@ -233,7 +250,20 @@ end)
 Handlers.add("Log-Market-Group", {Action = "Log-Market-Group-Notice"}, function(msg)
   activityValidation.validateLogMarket(msg)
   local cast = msg.Tags.Cast == "true"
-  return PlatformData.activity:logMarketGroup(msg.Tags.GroupId, msg.Tags.Collateral, msg.Tags.Creator, msg.Tags.Question, msg.Tags.Rules, msg.Tags.Collateral, msg.Tags.Category, msg.Tags.Subcategory, msg.Tags.Logo, os.time(), cast, msg)
+  return PlatformData.activity:logMarketGroup(
+    msg.Tags.GroupId,
+    msg.Tags.Collateral,
+    msg.Tags.Creator,
+    msg.Tags.Question,
+    msg.Tags.Rules,
+    msg.Tags.Collateral,
+    msg.Tags.Category,
+    msg.Tags.Subcategory,
+    msg.Tags.Logo,
+    os.time(),
+    cast,
+    msg
+  )
 end)
 
 --- Log funding handler
@@ -251,7 +281,18 @@ end)
 Handlers.add("Log-Prediction", {Action = "Log-Prediction-Notice"}, function(msg)
   activityValidation.validateLogPrediction(msg)
   local cast = msg.Tags.Cast == "true"
-  return PlatformData.activity:logPrediction(msg.Tags.User, msg.Tags.Operation, msg.Tags.Collateral, msg.Tags.Quantity, msg.Tags.Outcome, msg.Tags.Shares, msg.Tags.Price, os.time(), cast, msg)
+  return PlatformData.activity:logPrediction(
+    msg.Tags.User,
+    msg.Tags.Operation,
+    msg.Tags.Collateral,
+    msg.Tags.Quantity,
+    msg.Tags.Outcome,
+    msg.Tags.Shares,
+    msg.Tags.Price,
+    os.time(),
+    cast,
+    msg
+  )
 end)
 
 --- Log probabilities handler

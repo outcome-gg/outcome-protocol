@@ -53,7 +53,7 @@ local ao = ao or require('.ao')
 --- @param protocolFee number The protocol fee to be paid, in basis points
 --- @param protocolFeeTarget string The process ID to receive the protocol fee
 --- @return ConditionalTokens conditionalTokens The new ConditionalTokens instance
-function ConditionalTokens:new(
+function ConditionalTokens.new(
   name,
   ticker,
   logo,
@@ -69,7 +69,7 @@ function ConditionalTokens:new(
   protocolFeeTarget
 )
   ---@class ConditionalTokens : SemiFungibleTokens
-  local conditionalTokens = SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)
+  local conditionalTokens = SemiFungibleTokens.new(name, ticker, logo, balancesById, totalSupplyById, denomination)
   conditionalTokens.resolutionAgent = resolutionAgent
   conditionalTokens.collateralToken = collateralToken
   conditionalTokens.positionIds = positionIds
@@ -138,7 +138,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
   end
   -- Burn equal quantiies from user positions.
   self:batchBurn(from, self.positionIds, quantities, msg, false)
-  -- @dev below already handled within the sell method. 
+  -- @dev below already handled within the sell method.
   -- sell method w/ a different quantity and recipient.
   if not isSell then
     -- Return the collateral to the user.
@@ -201,7 +201,7 @@ function ConditionalTokensMethods:redeemPositions(msg)
   -- Return total payout minus take fee.
   if totalPayout > 0 then
     totalPayout = math.floor(totalPayout)
-    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout, msg)
+    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)
   end
   -- Send notice.
   return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, msg)
@@ -212,9 +212,8 @@ end
 --- @param collateralToken string The collateral token
 --- @param from string The account to receive the payout minus fees
 --- @param totalPayout number The total payout assciated with the acount stake
---- @param msg Message The message received
 --- @return string The total payout minus fee amount
-function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, msg)
+function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)
   local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))
   local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))
   local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))

@@ -31,12 +31,11 @@ Denomination = 12
 MaximumSupply = "1000000000000000000000"
 MonthlyEmissionRate = 0.01425 -- same as AO
 EmissionStart = os.time()
-Version = '1.0.1'
 Env = 'DEV'
 
 -- @dev Reset state while in DEV mode
 if not OcmToken or Env == 'DEV' then
-  OcmToken = ocmToken:new(
+  OcmToken = ocmToken.new(
     Name,
     Ticker,
     Logo,

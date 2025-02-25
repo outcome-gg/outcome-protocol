@@ -24,9 +24,8 @@ CRON RUNNER
 ]]
 
 Env = "DEV"
-Version = "1.0.1"
 
-if not CronRunner or Env == "DEV" then CronRunner = cronRunner:new() end
+if not CronRunner or Env == "DEV" then CronRunner = cronRunner.new() end
 
 --[[
 ============
@@ -80,7 +79,6 @@ Handlers.add("Remove-Jobs", {Action = "Remove-Jobs"}, function(msg)
 end)
 
 --- Run jobs
---- @param msg Message The message to handle
-Handlers.add("Run-Jobs", {Action = "Run-Jobs"}, function(msg)
+Handlers.add("Run-Jobs", {Action = "Run-Jobs"}, function()
   CronRunner:runJobs()
 end)

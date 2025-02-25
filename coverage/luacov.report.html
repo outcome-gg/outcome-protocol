@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 33.41%"></span>
-                  <span><strong>33.41%</strong> Coverage</span>
+                  <span class="bg" style="width: 33.25%"></span>
+                  <span><strong>33.25%</strong> Coverage</span>
                </span>
                <span class="hits"><strong>138</strong> Hits</span>
-               <span class="miss"><strong>275</strong> Missed</span>
+               <span class="miss"><strong>277</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -397,7 +397,7 @@ without explicit written permission from Outcome.
 --- @param protocolFee number The protocol fee to be paid, in basis points
 --- @param protocolFeeTarget string The process ID to receive the protocol fee
 --- @return ConditionalTokens conditionalTokens The new ConditionalTokens instance
-<span class="fc" data-hits="1">function ConditionalTokens:new(</span>
+<span class="fc" data-hits="1">function ConditionalTokens.new(</span>
   name,
   ticker,
   logo,
@@ -413,7 +413,7 @@ without explicit written permission from Outcome.
   protocolFeeTarget
 )
   ---@class ConditionalTokens : SemiFungibleTokens
-<span class="nc">  local conditionalTokens = SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)</span>
+<span class="nc">  local conditionalTokens = SemiFungibleTokens.new(name, ticker, logo, balancesById, totalSupplyById, denomination)</span>
 <span class="nc">  conditionalTokens.resolutionAgent = resolutionAgent</span>
 <span class="nc">  conditionalTokens.collateralToken = collateralToken</span>
 <span class="nc">  conditionalTokens.positionIds = positionIds</span>
@@ -482,7 +482,7 @@ end
   end
   -- Burn equal quantiies from user positions.
 <span class="nc">  self:batchBurn(from, self.positionIds, quantities, msg, false)</span>
-  -- @dev below already handled within the sell method. 
+  -- @dev below already handled within the sell method.
   -- sell method w&#47; a different quantity and recipient.
 <span class="nc">  if not isSell then</span>
     -- Return the collateral to the user.
@@ -545,7 +545,7 @@ end
   -- Return total payout minus take fee.
 <span class="nc">  if totalPayout &gt; 0 then</span>
 <span class="nc">    totalPayout = math.floor(totalPayout)</span>
-<span class="nc">    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout, msg)</span>
+<span class="nc">    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)</span>
   end
   -- Send notice.
 <span class="nc">  return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, msg)</span>
@@ -556,9 +556,8 @@ end
 --- @param collateralToken string The collateral token
 --- @param from string The account to receive the payout minus fees
 --- @param totalPayout number The total payout assciated with the acount stake
---- @param msg Message The message received
 --- @return string The total payout minus fee amount
-<span class="fc" data-hits="1">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, msg)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)</span>
 <span class="nc">  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))</span>
 <span class="nc">  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))</span>
 <span class="nc">  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))</span>
@@ -872,7 +871,7 @@ THE SOFTWARE.
 --- @param totalSupplyById table&lt;string, string&gt; The total supply of the token by ID
 --- @param denomination number The number of decimals
 --- @return SemiFungibleTokens semiFungibleTokens The new SemiFungibleTokens instance
-<span class="fc" data-hits="1">function SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokens.new(name, ticker, logo, balancesById, totalSupplyById, denomination)</span>
 <span class="nc">  local semiFungibleTokens = {</span>
     name = name,
     ticker = ticker,
@@ -1123,11 +1122,11 @@ end
             src/marketModules/semiFungibleTokensNotices.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 17.86%"></span>
-                  <span><strong>17.86%</strong> Coverage</span>
+                  <span class="bg" style="width: 17.24%"></span>
+                  <span><strong>17.24%</strong> Coverage</span>
                </span>
                <span class="hits"><strong>10</strong> Hits</span>
-               <span class="miss"><strong>46</strong> Missed</span>
+               <span class="miss"><strong>48</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -1249,7 +1248,8 @@ end
     Recipient = to,
     PositionId = tostring(id),
     Quantity = tostring(quantity),
-<span class="nc">    Data = Colors.gray .. &quot;You transferred &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; to &quot; .. Colors.green .. to .. Colors.reset</span>
+<span class="nc">    Data = Colors.gray .. &quot;You transferred &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot;</span>
+<span class="nc">      .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; to &quot; .. Colors.green .. to .. Colors.reset</span>
   }
   -- Prepare credit notice
 <span class="nc">  local creditNotice = {</span>
@@ -1257,7 +1257,8 @@ end
     Sender = from,
     PositionId = tostring(id),
     Quantity = tostring(quantity),
-<span class="nc">    Data = Colors.gray .. &quot;You received &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; from &quot; .. Colors.green .. from .. Colors.reset</span>
+<span class="nc">    Data = Colors.gray .. &quot;You received &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot;</span>
+<span class="nc">      .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; from &quot; .. Colors.green .. from .. Colors.reset</span>
   }
   -- Forward X-Tags
 <span class="nc">  for tagName, tagValue in pairs(msg) do</span>
@@ -1541,7 +1542,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-02-24 11:32:57
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-02-25 07:19:12
    </footer>
 
    <script type="text/javascript">

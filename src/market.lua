@@ -29,33 +29,32 @@ MARKET
 ]]
 
 Env = "DEV"
-Version = "1.0.1"
 
---- Represents the Market Configuration  
---- @class MarketConfiguration  
---- @field configurator string The Configurator process ID  
---- @field incentives string The Incentives process ID  
+--- Represents the Market Configuration
+--- @class MarketConfiguration
+--- @field configurator string The Configurator process ID
+--- @field incentives string The Incentives process ID
 --- @field dataIndex string The Data Index process ID
---- @field collateralToken string The Collateral Token process ID  
+--- @field collateralToken string The Collateral Token process ID
 --- @field resolutionAgent string The Resolution Agent process ID
 --- @field creator string The Creator address
---- @field question string The Market question 
+--- @field question string The Market question
 --- @field rules string The Market rules
 --- @field category string The Market category
 --- @field subcategory string The Market subcategory
---- @field positionIds table<string> The Position process IDs  
---- @field name string The Market name  
---- @field ticker string The Market ticker  
---- @field logo string The Market logo  
---- @field lpFee number The LP fee  
---- @field creatorFee number The Creator fee  
---- @field creatorFeeTarget string The Creator fee target  
---- @field protocolFee number The Protocol fee  
---- @field protocolFeeTarget string The Protocol fee target  
+--- @field positionIds table<string> The Position process IDs
+--- @field name string The Market name
+--- @field ticker string The Market ticker
+--- @field logo string The Market logo
+--- @field lpFee number The LP fee
+--- @field creatorFee number The Creator fee
+--- @field creatorFeeTarget string The Creator fee target
+--- @field protocolFee number The Protocol fee
+--- @field protocolFeeTarget string The Protocol fee target
 
---- Retrieve Market Configuration  
+--- Retrieve Market Configuration
 --- Fetches configuration parameters from the environment, set by the market factory
---- @return MarketConfiguration marketConfiguration The market configuration  
+--- @return MarketConfiguration marketConfiguration The market configuration
 local function retrieveMarketConfig()
   local config = {
     configurator = ao.env.Process.Tags.Configurator or constants.marketConfig[Env].configurator,
@@ -89,7 +88,7 @@ end
 --- @dev Reset Market state during development mode or if uninitialized
 if not Market or Env == 'DEV' then
   local marketConfig = retrieveMarketConfig()
-  Market = market:new(
+  Market = market.new(
     marketConfig.configurator,
     marketConfig.incentives,
     marketConfig.dataIndex,
@@ -172,7 +171,7 @@ CPMM WRITE HANDLERS
 --- Add funding handler
 --- @param msg Message The message received, expected to contain:
 ---   - msg.Tags.Quantity (string): The amount of funding to add (numeric string).
----   - msg.Tags.Distribution (stringified table): 
+---   - msg.Tags.Distribution (stringified table):
 ---     * JSON-encoded table specifying the initial distribution of funding.
 ---     * Required on the first call to `addFunding`.
 ---     * Must NOT be included in subsequent calls, or the operation will fail.

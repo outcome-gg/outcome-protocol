@@ -32,11 +32,11 @@ ConfiguratorDelay = {
 --- @field delay number The update delay in seconds
 --- @field Staged table<string, number> A mapping of update hashes to their staged timestamps
 
---- Creates a new Constructor instance 
+--- Creates a new Constructor instance
 --- @param admin string The admin process ID
 --- @param env string The environment
---- @return Configurator configurator The new Configurator instance 
-function Configurator:new(admin, env)
+--- @return Configurator configurator The new Configurator instance
+function Configurator.new(admin, env)
   assert(type(admin) == "string", 'Admin process ID is required!')
   assert(sharedUtils.isValidArweaveAddress(admin), 'Admin must be a valid Arweave address!')
   assert(env == "DEV" or env == "PROD", 'Invalid environment! Must be "DEV" or "PROD".')
@@ -47,7 +47,7 @@ function Configurator:new(admin, env)
     staged = {},
   }
   setmetatable(configurator, {
-    __index = function(t, k)
+    __index = function(_, k)
       if ConfiguratorMethods[k] then
         return ConfiguratorMethods[k]
       elseif ConfiguratorNotices[k] then
@@ -138,7 +138,7 @@ end
 function ConfiguratorMethods:unstageUpdateAdmin(updateAdmin, msg)
   local hash = crypto.digest.keccak256(updateAdmin).asHex()
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
-  -- unstage 
+  -- unstage
   self.staged[hash] = nil
   -- unstage notice
   return self.unstageUpdateAdminNotice(hash, msg)

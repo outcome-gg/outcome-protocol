@@ -62,7 +62,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
     -- set denomination
     denomination = 12
     -- instantiate semiFungibleTokens
-		SemiFungibleTokens = semiFungibleTokens:new(
+		SemiFungibleTokens = semiFungibleTokens.new(
       name,
       ticker,
       logo,

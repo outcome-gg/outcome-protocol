@@ -130,7 +130,7 @@ TESTS
 ]]
 
 local function runTests()
-  local testName, res, collateralBalance, lpBalance, positionBalance, binaryMarket, categoricalMarket, largeCategoricalMarket
+  local testName, res, collateralBalance, lpBalance, positionBalance, binaryMarket
 
   print("🚀 STARTING TESTS\n")
 
@@ -170,7 +170,7 @@ local function runTests()
   --   res ~= nil and res.ProcessId~=nil,
   --   res and res.MessageId or "Unknown"
   -- )
-  -- categoricalMarket = res and res.ProcessId or nil
+  -- local categoricalMarket = res and res.ProcessId or nil
 
   -- testName = "Create Large Categorical Market"
   -- print("➤ " .. testName)
@@ -180,7 +180,7 @@ local function runTests()
   --   res ~= nil and res.ProcessId~=nil,
   --   res and res.MessageId or "Unknown"
   -- )
-  -- largeCategoricalMarket = res and res.ProcessId or nil
+  -- local largeCategoricalMarket = res and res.ProcessId or nil
 
   if not binaryMarket then
     error("Binary market creation failed")

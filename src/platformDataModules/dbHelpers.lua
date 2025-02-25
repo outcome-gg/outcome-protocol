@@ -136,7 +136,7 @@ function DbHelpers.buildProbabilitiesQuery(params, isCount, isFinalizedQuery)
     FROM Probabilities PE
     JOIN ProbabilitySets PS ON PE.set_id = PS.id
   ]] or [[
-    SELECT 
+    SELECT
       PE.id AS id,
       PE.set_id AS set_id,
       PE.outcome AS outcome,
@@ -152,7 +152,7 @@ function DbHelpers.buildProbabilitiesQuery(params, isCount, isFinalizedQuery)
 end
 
 -- Execute a count query and return the result
-function DbHelpers:executeCountQuery(dbAdmin, query, bindings)
+function DbHelpers.executeCountQuery(dbAdmin, query, bindings)
   local result = dbAdmin:safeExec(query, true, table.unpack(bindings))
   return #result
 end

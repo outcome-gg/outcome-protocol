@@ -117,7 +117,8 @@ function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity,
     Recipient = to,
     PositionId = tostring(id),
     Quantity = tostring(quantity),
-    Data = Colors.gray .. "You transferred " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.gray .. " to " .. Colors.green .. to .. Colors.reset
+    Data = Colors.gray .. "You transferred " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id "
+      .. Colors.blue .. tostring(id) .. Colors.gray .. " to " .. Colors.green .. to .. Colors.reset
   }
   -- Prepare credit notice
   local creditNotice = {
@@ -125,7 +126,8 @@ function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity,
     Sender = from,
     PositionId = tostring(id),
     Quantity = tostring(quantity),
-    Data = Colors.gray .. "You received " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.gray .. " from " .. Colors.green .. from .. Colors.reset
+    Data = Colors.gray .. "You received " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id "
+      .. Colors.blue .. tostring(id) .. Colors.gray .. " from " .. Colors.green .. from .. Colors.reset
   }
   -- Forward X-Tags
   for tagName, tagValue in pairs(msg) do

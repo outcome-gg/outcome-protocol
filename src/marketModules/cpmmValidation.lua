@@ -9,7 +9,6 @@ local cpmmValidation = {}
 local sharedValidation = require('marketModules.sharedValidation')
 local bint = require('.bint')(256)
 local json = require("json")
-local utils = require('.utils')
 
 --- Validates add funding
 --- @param msg Message The message to be validated

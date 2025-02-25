@@ -6,7 +6,6 @@ See market.lua for full license details.
 ]]
 
 local constants = {}
-local json = require('json')
 
 -- Incentives
 constants.incentives = {

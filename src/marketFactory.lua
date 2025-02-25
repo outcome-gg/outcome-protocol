@@ -16,7 +16,6 @@ without explicit written permission from Outcome.
 local marketFactory = require('marketFactoryModules.marketFactory')
 local marketFactoryValidation = require('marketFactoryModules.marketFactoryValidation')
 local constants = require('marketFactoryModules.constants')
-local json = require('json')
 
 --[[
 ==============
@@ -25,25 +24,24 @@ MARKET FACTORY
 ]]
 
 Name = "Outcome Market Factory"
-Version = '1.0.1'
 Env = 'DEV'
 
---- Represents the Market Factory Configuration  
---- @class MarketFactoryConfiguration  
---- @field configurator string The Configurator process ID  
---- @field incentives string The Incentives process ID  
+--- Represents the Market Factory Configuration
+--- @class MarketFactoryConfiguration
+--- @field configurator string The Configurator process ID
+--- @field incentives string The Incentives process ID
 --- @field dataIndex string The Data Index process ID
 --- @field namePrefix string The Market name prefix
 --- @field tickerPrefix string The Market ticker prefix
---- @field logo string The Market default logo  
---- @field lpFee number The Market LP fee  
---- @field protocolFee number The Market Protocol fee  
---- @field protocolFeeTarget string The Market Protocol fee target  
+--- @field logo string The Market default logo
+--- @field lpFee number The Market LP fee
+--- @field protocolFee number The Market Protocol fee
+--- @field protocolFeeTarget string The Market Protocol fee target
 --- @field approvedCollateralTokens table The approved collateral tokens
 
---- Retrieve Market Factory Configuration  
+--- Retrieve Market Factory Configuration
 --- Fetches configuration parameters, stored as constants
---- @return MarketFactoryConfiguration marketFactoryConfiguration The market factory configuration  
+--- @return MarketFactoryConfiguration marketFactoryConfiguration The market factory configuration
 local function retrieveMarketFactoryConfig()
   local config = {
     configurator = Env == 'DEV' and constants.dev.configurator or constants.prod.configurator,
@@ -64,7 +62,7 @@ end
 -- @dev Reset state while in DEV mode
 if not MarketFactory or Env == 'DEV' then
   local marketFactoryConfig = retrieveMarketFactoryConfig()
-  MarketFactory = marketFactory:new(
+  MarketFactory = marketFactory.new(
     marketFactoryConfig.configurator,
     marketFactoryConfig.incentives,
     marketFactoryConfig.dataIndex,

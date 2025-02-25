@@ -63,7 +63,7 @@ describe("#market #conditionalTokens", function()
     protocolFee = 250 -- basis points
     protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-5"
     -- instantiate conditionalTokens
-		ConditionalTokens = conditionalTokens:new(
+		ConditionalTokens = conditionalTokens.new(
       name,
       ticker,
       logo,

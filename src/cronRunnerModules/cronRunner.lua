@@ -7,7 +7,7 @@ local CronRunnerNotices = require("cronRunnerModules.cronRunnerNotices")
 --- @field processIds table<string> The list of process IDs to call
 --- @return table CronRunner The CronRunner object
 
-function CronRunner:new()
+function CronRunner.new()
   local cronRunner = {
     processIds = {}
   }

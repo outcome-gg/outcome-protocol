@@ -19,7 +19,7 @@ local ChatroomNotices = require('platformDataModules.chatroomNotices')
 local json = require('json')
 
 --- Creates a new Chatroom instance
-function Chatroom:new(dbAdmin)
+function Chatroom.new(dbAdmin)
   local chatroom = {
     dbAdmin = dbAdmin
   }
@@ -51,7 +51,7 @@ WRITE METHODS
 --- @param timestamp string The message timestamp
 --- @param cast boolean Whether to cast the message
 --- @param msg Message The message received
---- @return Message|nil broadcastNotice The broadcast notice or nil if cast is false 
+--- @return Message|nil broadcastNotice The broadcast notice or nil if cast is false
 function ChatroomMethods:broadcast(market, user, body, timestamp, cast, msg)
   -- Create user if doesn't exists
   local users = self.dbAdmin:safeExec("SELECT * FROM Users WHERE id = ?;", true, user)
@@ -67,7 +67,7 @@ function ChatroomMethods:broadcast(market, user, body, timestamp, cast, msg)
   -- Insert message
   self.dbAdmin:safeExec(
     [[
-      INSERT INTO Messages (id, market, user, body, timestamp) 
+      INSERT INTO Messages (id, market, user, body, timestamp)
       VALUES (?, ?, ?, ?, ?);
     ]], false, msg.Id, market, user, body, timestamp
   )
@@ -87,52 +87,52 @@ READ METHODS
 --- @return Message broadcasts The broadcasts
 function ChatroomMethods:getBroadcasts(params, msg)
   local query = [[
-    SELECT 
+    SELECT
       COALESCE(me.user, '') AS user,
       COALESCE(me.body, '') AS message,
       COALESCE(me.timestamp, 0) AS timestamp,
       COALESCE(p.net_shares, '{}') AS net_shares,
       COALESCE(f.net_funding, 0) AS net_funding
-    FROM 
+    FROM
       Messages me
     LEFT JOIN (
-      SELECT 
-        market, 
+      SELECT
+        market,
         user,
         SUM(CASE WHEN operation = 'add' THEN amount
                  WHEN operation = 'remove' THEN -amount
                  ELSE 0 END) AS net_funding
-      FROM 
+      FROM
         Fundings
-      GROUP BY 
+      GROUP BY
         market, user
     ) f ON me.market = f.market AND me.user = f.user
     LEFT JOIN (
-      SELECT 
-        market, 
+      SELECT
+        market,
         user,
         json_group_object(outcome, net_shares) AS net_shares
-      FROM 
+      FROM
         (
-          SELECT 
-            market, 
+          SELECT
+            market,
             user,
             outcome,
-            SUM(CASE 
+            SUM(CASE
               WHEN operation = 'buy' THEN shares
               WHEN operation = 'sell' THEN -shares
               ELSE 0 END) AS net_shares
-          FROM 
+          FROM
             Predictions
-          GROUP BY 
+          GROUP BY
             market, user, outcome
         ) grouped_predictions
-      GROUP BY 
+      GROUP BY
         market, user
     ) p ON me.market = p.market AND me.user = p.user
-    WHERE 
+    WHERE
       me.visible = 1
-    ORDER BY 
+    ORDER BY
       me.timestamp
   ]]
 
@@ -283,7 +283,7 @@ function ChatroomMethods:deleteOldMessages(days, msg)
   end
   -- Query with a placeholder
   local query = [[
-    DELETE FROM Messages 
+    DELETE FROM Messages
     WHERE timestamp < datetime('now', ?);
   ]]
   -- Execute query with parameter binding

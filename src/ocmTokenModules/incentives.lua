@@ -4,7 +4,7 @@ local IncentivesNotices = {}
 local bint = require('.bint')(256)
 local constants = require("ocmTokenModules.constants")
 
-function Incentives:new()
+function Incentives.new()
   local incentives = {
     configurator = constants.incentives.configurator,
     lpToHolderRatio = constants.incentives.lpToHolderRatio,
@@ -64,7 +64,7 @@ function IncentivesMethods:logFunding(user, operation, collateral, quantity, tim
   local fundingBalance = self.normalizedCollateralFundingBalances[collateral][user]
   -- normalize quantity irrespective of collateral denomination
   local normalizedQuantity = quantity * (10 ^ (12 - self.collateralDenominations[collateral]))
-  -- calculate new balance 
+  -- calculate new balance
   local newBalance = operation == "add" and tostring(bint.__add(fundingBalance, normalizedQuantity)) or tostring(bint.__sub(fundingBalance, normalizedQuantity))
   -- update balances
   self:updateBalanceAndTWAB(user, collateral, "funding", newBalance, timestamp)
@@ -79,11 +79,11 @@ function IncentivesMethods:logPrediction(user, operation, collateral, quantity, 
   local predictionBalance = self.normalizedCollateralPredictionBalances[collateral][user]
   -- normalize quantity irrespective of collateral denomination
   local normalizedQuantity = quantity * (10 ^ (12 - self.collateralDenominations[collateral]))
-  -- calculate new balance 
+  -- calculate new balance
   local newBalance = operation == "buy" and tostring(bint.__add(predictionBalance, normalizedQuantity)) or tostring(bint.__sub(predictionBalance, normalizedQuantity))
   -- update balances
   self:updateBalanceAndTWAB(user, collateral, "prediction", newBalance, timestamp)
-  -- send notice 
+  -- send notice
   self.logPredictionNotice(user, operation, collateral, quantity, msg)
 end
 

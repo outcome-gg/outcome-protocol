@@ -36,16 +36,16 @@ local conditionalTokens = require('marketModules.conditionalTokens')
 --- @param collateralToken string The process ID of the collateral token
 --- @param resolutionAgent string The process ID of the resolution agent
 --- @param positionIds table<string, ...> The position IDs
---- @param name string The CPMM token(s) name 
---- @param ticker string The CPMM token(s) ticker 
---- @param logo string The CPMM token(s) logo 
+--- @param name string The CPMM token(s) name
+--- @param ticker string The CPMM token(s) ticker
+--- @param logo string The CPMM token(s) logo
 --- @param lpFee number The liquidity provider fee
 --- @param creatorFee number The market creator fee
 --- @param creatorFeeTarget string The market creator fee target
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
---- @return CPMM cpmm The new CPMM instance 
-function CPMM:new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
+--- @return CPMM cpmm The new CPMM instance
+function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
   local cpmm = {
     configurator = configurator,
     poolBalances = {},
@@ -54,7 +54,7 @@ function CPMM:new(configurator, collateralToken, resolutionAgent, positionIds, n
     totalWithdrawnFees = "0",
     lpFee = tonumber(lpFee)
   }
-  cpmm.token = token:new(
+  cpmm.token = token.new(
     name .. " LP Token",
     ticker,
     logo,
@@ -62,7 +62,7 @@ function CPMM:new(configurator, collateralToken, resolutionAgent, positionIds, n
     "0", -- totalSupply
     constants.denomination
   )
-  cpmm.tokens = conditionalTokens:new(
+  cpmm.tokens = conditionalTokens.new(
     name .. " Conditional Tokens",
     ticker,
     logo,
@@ -103,7 +103,7 @@ function CPMMMethods:addFunding(onBehalfOf, addedFunds, distributionHint, msg)
   assert(bint.__lt(0, bint(addedFunds)), "funding must be non-zero")
   local sendBackAmounts = {}
   local poolShareSupply = self.token.totalSupply
-  local mintAmount = '0'
+  local mintAmount
 
   if bint.iszero(bint(poolShareSupply)) then
     assert(distributionHint, "must use distribution hint for initial funding")
@@ -126,7 +126,7 @@ function CPMMMethods:addFunding(onBehalfOf, addedFunds, distributionHint, msg)
     -- Calculate mintAmount
     mintAmount = tostring(addedFunds)
   else
-    -- Additional Liquidity 
+    -- Additional Liquidity
     assert(not distributionHint, "cannot use distribution hint after initial funding")
     -- Get poolBalances
     local poolBalances = self:getPoolBalances()
@@ -329,7 +329,7 @@ function CPMMMethods:collectedFees()
   return tostring(math.ceil(self.feePoolWeight - self.totalWithdrawnFees))
 end
 
---- Fees withdrawable 
+--- Fees withdrawable
 --- @param account string The process ID of the account
 --- @return string The fees withdrawable by the account
 function CPMMMethods:feesWithdrawableBy(account)
@@ -375,20 +375,20 @@ function CPMMMethods:_beforeTokenTransfer(from, to, amount, msg)
   end
 end
 
---- @dev See `Mint` in modules.token 
+--- @dev See `Mint` in modules.token
 function CPMMMethods:mint(to, quantity, msg)
   self:_beforeTokenTransfer(nil, to, quantity, msg)
   return self.token:mint(to, quantity, msg)
 end
 
---- @dev See `Burn` in modules.token 
+--- @dev See `Burn` in modules.token
 -- @dev See tokenMethods:burn & _beforeTokenTransfer
 function CPMMMethods:burn(from, quantity, msg)
   self:_beforeTokenTransfer(from, nil, quantity, msg)
   return self.token:burn(from, quantity, msg)
 end
 
---- @dev See `Transfer` in modules.token 
+--- @dev See `Transfer` in modules.token
 -- @dev See tokenMethods:transfer & _beforeTokenTransfer
 function CPMMMethods:transfer(from, recipient, quantity, cast, msg)
   self:_beforeTokenTransfer(from, recipient, quantity, msg)

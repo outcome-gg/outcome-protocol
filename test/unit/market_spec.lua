@@ -140,7 +140,7 @@ describe("#market", function()
     quantities = { "100", "200" }
     remainingBalances = { "0", "0" }
     -- Instantiate objects
-    Market = market:new(
+    Market = market.new(
       configurator,
       incentives,
       dataIndex,
@@ -529,7 +529,7 @@ describe("#market", function()
 	end)
 
   it("should have initial state", function()
-    local token_ = token:new(
+    local token_ = token.new(
       name .. " LP Token",
       ticker,
       logo,
@@ -537,7 +537,7 @@ describe("#market", function()
       totalSupply,
       denomination
     )
-    local tokens_ = tokens:new(
+    local tokens_ = tokens.new(
       name .. " Conditional Tokens",
       ticker,
       logo,

@@ -3,12 +3,12 @@ local json = require("json")
 local bint = require(".bint")(256)
 
 --[[
-    CONDITION 
+    CONDITION
   ]]
 --
 
 --[[
-    Types 
+    Types
   ]]
 --
 local CONDITION_TYPE = {
@@ -20,12 +20,12 @@ local CONDITION_TYPE = {
 }
 
 --[[
-    RESOLUTION 
+    RESOLUTION
   ]]
 --
 
 --[[
-    Definition 
+    Definition
   ]]
 --
 RESOLUTION = RESOLUTION or {
@@ -52,7 +52,7 @@ RESOLUTION = RESOLUTION or {
     --   value = 0 -- can be number, string or boolean
     -- },
   },
-  CONTINUOUS = true, -- true to resolve at anytime, false to resolve after market close 
+  CONTINUOUS = true, -- true to resolve at anytime, false to resolve after market close
   DATA_AGENT = '9876',
   MARKET_CLOSE = 10000 -- ao msg timestamp
 }
@@ -121,7 +121,7 @@ LOGS = LOGS or {}
 ERROR_LOGS = ERROR_LOGS or {}
 
 --[[
-    DATA AGENT 
+    DATA AGENT
   ]]
 --
 
@@ -196,12 +196,12 @@ Handlers.add('dataAgentFeed', Handlers.utils.hasMatchingTag('Action', 'Data-Agen
 end)
 
 --[[
-    RESOLUTION  
+    RESOLUTION
   ]]
 --
 
 --[[
-    Definition  
+    Definition
   ]]
 --
 Handlers.add('resolutionDefinition', Handlers.utils.hasMatchingTag('Action', 'Resolution-Definition'), function(msg)
@@ -209,7 +209,7 @@ Handlers.add('resolutionDefinition', Handlers.utils.hasMatchingTag('Action', 'Re
 end)
 
 --[[
-    State  
+    State
   ]]
 --
 Handlers.add('resolutionState', Handlers.utils.hasMatchingTag('Action', 'Resolution-State'), function(msg)
@@ -218,7 +218,7 @@ end)
 
 
 --[[
-    Resolve  
+    Resolve
   ]]
 --
 Handlers.add('resolve', Handlers.utils.hasMatchingTag('Action', 'Resolve'), function(msg)

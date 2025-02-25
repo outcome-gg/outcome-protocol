@@ -5,9 +5,6 @@ See cpmm.lua for full license details.
 =========================================================
 ]]
 
-local bint = require('.bint')(256)
--- local ao = require('.ao') @dev required for unit tests?
-
 local CPMMHelpers = {}
 
 --- Calculate the ceildiv of x / y

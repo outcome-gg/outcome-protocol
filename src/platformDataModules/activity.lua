@@ -19,7 +19,7 @@ local ActivityNotices = require('platformDataModules.activityNotices')
 local constants = require('platformDataModules.constants')
 local json = require('json')
 
-function Activity:new(dbAdmin)
+function Activity.new(dbAdmin)
   local activity = {
     dbAdmin = dbAdmin,
     intervals = constants.intervals,
@@ -67,7 +67,7 @@ function ActivityMethods:logMarketGroup(groupId, collateral, creator, question, 
   -- Insert group
   self.dbAdmin:safeExec(
     [[
-      INSERT INTO Groups (id, collateral, creator, question, rules, category, subcategory, logo, timestamp) 
+      INSERT INTO Groups (id, collateral, creator, question, rules, category, subcategory, logo, timestamp)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
     ]], false, groupId, collateral, creator, question, rules, category, subcategory, logo, timestamp
   )
@@ -95,17 +95,66 @@ end
 --- @param cast boolean Whether to cast the message
 --- @param msg Message The message received
 --- @return Message|nil logMarketNotice The log market notice or nil if cast is false
-function ActivityMethods:logMarket(market, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, groupId, timestamp, cast, msg)
+function ActivityMethods:logMarket(
+  market,
+  creator,
+  creatorFee,
+  creatorFeeTarget,
+  question,
+  rules,
+  outcomeSlotCount,
+  collateral,
+  resolutionAgent,
+  category,
+  subcategory,
+  logo,
+  groupId,
+  timestamp,
+  cast,
+  msg
+)
   -- Insert market
   self.dbAdmin:safeExec(
     [[
-      INSERT INTO Markets (id, status, creator, creator_fee, creator_fee_target, question, rules, outcome_slot_count, collateral, resolution_agent, category, subcategory, logo, group_id, timestamp) 
+      INSERT INTO Markets (
+        id,
+        status,
+        creator,
+        creator_fee,
+        creator_fee_target,
+        question,
+        rules,
+        outcome_slot_count,
+        collateral,
+        resolution_agent,
+        category,
+        subcategory,
+        logo,
+        group_id,
+        timestamp
+      )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, groupId, timestamp
   )
   -- Send notice if cast is true
   if cast then
-    return self.logMarketNotice(msg.From, market, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, groupId, msg)
+    return self.logMarketNotice(
+      msg.From,
+      market,
+      creator,
+      creatorFee,
+      creatorFeeTarget,
+      question,
+      rules,
+      outcomeSlotCount,
+      collateral,
+      resolutionAgent,
+      category,
+      subcategory,
+      logo,
+      groupId,
+      msg
+    )
   end
 end
 
@@ -127,7 +176,7 @@ function ActivityMethods:logFunding(user, operation, collateral, amount, timesta
   -- Insert funding
   self.dbAdmin:safeExec(
     [[
-      INSERT INTO Fundings (id, market, user, operation, collateral, amount, timestamp) 
+      INSERT INTO Fundings (id, market, user, operation, collateral, amount, timestamp)
       VALUES (?, ?, ?, ?, ?, ?, ?);
     ]], false, msg.Id, msg.From, user, operation, collateral, amount, timestamp
   )
@@ -180,7 +229,7 @@ function ActivityMethods:logProbabilities(probabilities, timestamp, cast, msg)
   )
   -- Insert into Probabilities
   local probability_query = [[
-    INSERT INTO Probabilities (id, set_id, outcome, probability) 
+    INSERT INTO Probabilities (id, set_id, outcome, probability)
     VALUES (?, ?, ?, ?);
   ]]
   for positionId, probability in pairs(probabilities) do
@@ -253,7 +302,7 @@ READ METHODS
 --     SELECT
 --       user,
 --       market,
---       SUM(CASE WHEN operation = 'add' THEN amount ELSE 0 END) 
+--       SUM(CASE WHEN operation = 'add' THEN amount ELSE 0 END)
 --       - SUM(CASE WHEN operation = 'remove' THEN amount ELSE 0 END) AS net_funding
 --     FROM FilteredFunding
 --     GROUP BY user, market
@@ -281,7 +330,7 @@ READ METHODS
 --     SELECT
 --       user,
 --       market,
---       SUM(CASE WHEN operation = 'add' THEN amount ELSE 0 END) 
+--       SUM(CASE WHEN operation = 'add' THEN amount ELSE 0 END)
 --       - SUM(CASE WHEN operation = 'remove' THEN amount ELSE 0 END) AS net_funding
 --     FROM FilteredFunding
 --     GROUP BY user, market
@@ -342,7 +391,7 @@ READ METHODS
 --   local query = [[
 --     UNION ALL
 --     -- Active Prediction Users
---     SELECT user, timestamp 
+--     SELECT user, timestamp
 --     FROM Predictions
 --   ]]
 --   query = self.buildTimeFilter(query, bindings, hours, startTimestamp)
@@ -362,7 +411,7 @@ READ METHODS
 --   end
 --   query = query .. [[
 --     GROUP BY user
---     HAVING SUM(CASE WHEN operation = 'add' THEN amount ELSE 0 END) 
+--     HAVING SUM(CASE WHEN operation = 'add' THEN amount ELSE 0 END)
 --           > SUM(CASE WHEN operation = 'remove' THEN amount ELSE 0 END)
 --     ) AS active_users;
 --   ]]
@@ -401,10 +450,10 @@ READ METHODS
 --   print("query: " .. tostring(query))
 --   -- Add GROUP BY and ORDER BY clauses
 --   -- query = query .. string.format([[
---   --   GROUP BY 
+--   --   GROUP BY
 --   --     strftime('%%Y-%%m-%%d %%H:%%M', PS.timestamp, 'start of minute', '-(strftime('%%M', PS.timestamp) %% %s) minute'),
 --   --     PE.outcome
---   --   ORDER BY 
+--   --   ORDER BY
 --   --     PS.timestamp ASC;
 --   -- ]], interval)
 --   -- local probabilities = self.dbAdmin:safeExec(query, true, table.unpack(bindings))

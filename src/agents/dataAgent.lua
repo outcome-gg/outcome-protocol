@@ -8,14 +8,14 @@ db = db or sqlite3.open_memory()
 dbAdmin = require('dbAdmin').new(db)
 
 --[[
-     ADMIN  
+     ADMIN
    ]]
 --
 if not Admin then Admin = ao.id end
 if not Protocol then Protocol = ao.id end
 
 --[[
-    ORACLE 
+    ORACLE
   ]]
 --
 ORACLE = ORACLE or {
@@ -183,7 +183,7 @@ end
     Data Fetch
   ]]
 --
-local function dataFetch(msg)
+local function dataFetch()
   fetchPrice()
 end
 
@@ -257,7 +257,7 @@ local function subscriptions(msg)
     end,
     dbAdmin:exec(string.format([[
       SELECT * FROM Subscriptions WHERE
-      end_timestamp > datetime('now'); 
+      end_timestamp > datetime('now');
     ]]))
   )
 
@@ -294,12 +294,12 @@ Handlers.add('dataFetch', Handlers.utils.hasMatchingTag('Action', 'Data-Fetch'),
 
 
 --[[
-    ADMIN  
+    ADMIN
   ]]
 --
 
 --[[
-    Subscription Update  
+    Subscription Update
   ]]
 --
 Handlers.add('subscriptionUpdate', Handlers.utils.hasMatchingTag('Action', 'Subscription-Update'),
@@ -307,7 +307,7 @@ Handlers.add('subscriptionUpdate', Handlers.utils.hasMatchingTag('Action', 'Subs
 )
 
 --[[
-    Subscriptions  
+    Subscriptions
   ]]
 --
 Handlers.add('subscriptions', Handlers.utils.hasMatchingTag('Action', 'Subscriptions'),
@@ -315,12 +315,12 @@ Handlers.add('subscriptions', Handlers.utils.hasMatchingTag('Action', 'Subscript
 )
 
 --[[
-    ORACLE  
+    ORACLE
   ]]
 --
 
 --[[
-    Oracle Response  
+    Oracle Response
   ]]
 --
 Handlers.add('oracleResponse', Handlers.utils.hasMatchingTag('Action', 'Oracle-Response'),

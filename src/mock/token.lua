@@ -60,10 +60,9 @@ ResetState = true
      ao.id is equal to the Process.Id
    ]]
 --
-Variant = "0.0.3"
 Denomination = 12
 
-if not Balances or ResetState then Balances = { 
+if not Balances or ResetState then Balances = {
   ['XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I'] = utils.toBalanceValue(10000 * 10 ^ Denomination),
   ['m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0'] = utils.toBalanceValue(20000 * 10 ^ Denomination),
 } end
@@ -212,13 +211,13 @@ Handlers.add('mint', Handlers.utils.hasMatchingTag('Action', 'Mint'), function(m
       Recipient = msg.From,
       Data = Colors.gray .. "Successfully minted " .. Colors.blue .. msg.Quantity .. Colors.reset
     })
-  else
-    ao.send({
-      Target = msg.From,
-      Action = 'Mint-Error',
-      ['Message-Id'] = msg.Id,
-      Error = 'Only the Process Id can mint new ' .. Ticker .. ' tokens!'
-    })
+  -- else
+  --   ao.send({
+  --     Target = msg.From,
+  --     Action = 'Mint-Error',
+  --     ['Message-Id'] = msg.Id,
+  --     Error = 'Only the Process Id can mint new ' .. Ticker .. ' tokens!'
+  --   })
   end
 end)
 

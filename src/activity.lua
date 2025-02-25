@@ -24,7 +24,6 @@ ACTIVITY
 ]]
 
 Env = "DEV"
-Version = "1.0.1"
 
 --- Represents the Activity Configuration
 --- @class ActivityConfiguration
@@ -43,7 +42,7 @@ end
 --- @dev Reset Activity state during development mode or if uninitialized
 if not Activity or Env == 'DEV' then
   local activityConfig = retrieveActivityConfig()
-  Activity = activity:new(
+  Activity = activity.new(
     activityConfig.configurator
   )
 end

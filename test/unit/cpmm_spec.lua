@@ -103,7 +103,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     positionIds = {"1", "2"}
     distribution = {50, 50}
     -- Instantiate objects
-    CPMM = cpmm:new(
+    CPMM = cpmm.new(
       configurator,
       collateralToken,
       conditionId,
@@ -338,7 +338,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
 	end)
 
   it("should have initial state", function()
-    local token_ = token:new(
+    local token_ = token.new(
       name .. " LP Token",
       ticker,
       logo,
@@ -346,7 +346,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       totalSupply,
       denomination
     )
-    local tokens_ = tokens:new(
+    local tokens_ = tokens.new(
       name .. " Conditional Tokens",
       ticker,
       logo,

@@ -82,7 +82,7 @@ end
 
 --- Sends a withdraw fees notice
 --- @notice Returns notice with `msg.reply` if `useReply` is true, otherwise uses `ao.send`
---- @dev Ensures the final notice is sent to the user, preventing unintended message handling 
+--- @dev Ensures the final notice is sent to the user, preventing unintended message handling
 --- @param feeAmount number The fee amount
 --- @param msg Message The message received
 --- @param useReply boolean Whether to use `msg.reply` or `ao.send`

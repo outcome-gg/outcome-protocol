@@ -36,16 +36,16 @@ local cpmm = require('marketModules.cpmm')
 --- @param category string The market category
 --- @param subcategory string The market subcategory
 --- @param positionIds table<string, ...> The position IDs
---- @param name string The CPMM token(s) name 
---- @param ticker string The CPMM token(s) ticker 
---- @param logo string The CPMM token(s) logo 
+--- @param name string The CPMM token(s) name
+--- @param ticker string The CPMM token(s) ticker
+--- @param logo string The CPMM token(s) logo
 --- @param lpFee number The liquidity provider fee
 --- @param creatorFee number The market creator fee
 --- @param creatorFeeTarget string The market creator fee target
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
---- @return Market market The new Market instance 
-function Market:new(
+--- @return Market market The new Market instance
+function Market.new(
   configurator,
   incentives,
   dataIndex,
@@ -67,7 +67,7 @@ function Market:new(
   protocolFeeTarget
 )
   local market = {
-    cpmm = cpmm:new(
+    cpmm = cpmm.new(
       configurator,
       collateralToken,
       resolutionAgent,
@@ -291,7 +291,7 @@ function MarketMethods:collectedFees(msg)
   })
 end
 
---- Fees withdrawable 
+--- Fees withdrawable
 --- @param msg Message The message received
 --- @return Message feesWithdrawable The fees withdrawable by the account
 function MarketMethods:feesWithdrawable(msg)

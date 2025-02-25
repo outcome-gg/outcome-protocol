@@ -37,7 +37,7 @@ describe("#marketFactory", function()
     creatorFee = "100"
     creatorFeeTarget = 'test-this-is-valid-arweave-wallet-address-3'
     -- create a market factory object
-    FACTORY = marketFactory:new(
+    FACTORY = marketFactory.new(
       constants.configurator,
       constants.incentives,
       constants.dataIndex,

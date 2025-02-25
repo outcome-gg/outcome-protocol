@@ -30,11 +30,11 @@ local json = require('json')
 --- @field moderators table<string> The moderators
 
 --- Creates a new PlatformData instance
-function PlatformData:new(dbAdmin, configurator, moderators, viewers)
+function PlatformData.new(dbAdmin, configurator, moderators, viewers)
   local platformData = {
     dbAdmin = dbAdmin,
-    activity = activity:new(dbAdmin),
-    chatroom = chatroom:new(dbAdmin),
+    activity = activity.new(dbAdmin),
+    chatroom = chatroom.new(dbAdmin),
     configurator = configurator,
     moderators = moderators,
     viewers = viewers
@@ -89,52 +89,52 @@ end
 --- @return Message market The get market results
 function PlatformDataMethods:getMarket(market, msg)
   local query = [[
-    SELECT 
-      m.*, 
+    SELECT
+      m.*,
       m.timestamp AS timestamp,
       m.creator_fee AS creator_fee,
       COALESCE(f.net_funding, 0) AS net_funding,
       COALESCE(p.bet_volume, 0) AS bet_volume,
       (
-        SELECT 
+        SELECT
           json_group_object(
-            pr.key, 
+            pr.key,
             ROUND(pr.value, 2) -- Round to 2 decimal places
           )
-        FROM 
+        FROM
           ProbabilitySets ps
         INNER JOIN (
-          SELECT 
-            market, 
+          SELECT
+            market,
             MAX(timestamp) AS latest_timestamp
-          FROM 
+          FROM
             ProbabilitySets
-          GROUP BY 
+          GROUP BY
             market
         ) latest_ps ON ps.market = latest_ps.market AND ps.timestamp = latest_ps.latest_timestamp
         CROSS JOIN json_each(ps.probabilities) pr
         WHERE ps.market = m.id
       ) AS probabilities
-    FROM 
+    FROM
       Markets m
     LEFT JOIN (
-      SELECT 
-        market, 
+      SELECT
+        market,
         SUM(CASE WHEN operation = 'add' THEN amount
                  WHEN operation = 'remove' THEN -amount
                  ELSE 0 END) AS net_funding
-      FROM 
+      FROM
         Fundings
-      GROUP BY 
+      GROUP BY
         market
     ) f ON m.id = f.market
     LEFT JOIN (
-      SELECT 
-        market, 
+      SELECT
+        market,
         SUM(amount) AS bet_volume
-      FROM 
+      FROM
         Predictions
-      GROUP BY 
+      GROUP BY
         market
     ) p ON m.id = p.market
     WHERE m.id = ?;
@@ -149,52 +149,52 @@ end
 --- @return Message getMarkets The get markets results
 function PlatformDataMethods:getMarkets(params, msg)
   local query = [[
-    SELECT 
-      m.*, 
+    SELECT
+      m.*,
       m.timestamp AS timestamp,
       m.creator_fee AS creator_fee,
       COALESCE(f.net_funding, 0) AS net_funding,
       COALESCE(p.bet_volume, 0) AS bet_volume,
       (
-        SELECT 
+        SELECT
           json_group_object(
-            pr.key, 
+            pr.key,
             ROUND(pr.value, 2) -- Round to 2 decimal places
           )
-        FROM 
+        FROM
           ProbabilitySets ps
         INNER JOIN (
-          SELECT 
-            market, 
+          SELECT
+            market,
             MAX(timestamp) AS latest_timestamp
-          FROM 
+          FROM
             ProbabilitySets
-          GROUP BY 
+          GROUP BY
             market
         ) latest_ps ON ps.market = latest_ps.market AND ps.timestamp = latest_ps.latest_timestamp
         CROSS JOIN json_each(ps.probabilities) pr
         WHERE ps.market = m.id
       ) AS probabilities
-    FROM 
+    FROM
       Markets m
     LEFT JOIN (
-      SELECT 
-        market, 
+      SELECT
+        market,
         SUM(CASE WHEN operation = 'add' THEN amount
                  WHEN operation = 'remove' THEN -amount
                  ELSE 0 END) AS net_funding
-      FROM 
+      FROM
         Fundings
-      GROUP BY 
+      GROUP BY
         market
     ) f ON m.id = f.market
     LEFT JOIN (
-      SELECT 
-        market, 
+      SELECT
+        market,
         SUM(amount) AS bet_volume
-      FROM 
+      FROM
         Predictions
-      GROUP BY 
+      GROUP BY
         market
     ) p ON m.id = p.market
   ]]
