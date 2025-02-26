@@ -8,19 +8,28 @@ description: |
 ---
 
 graph TD
+  %% Configurator 
+  Configurator[Configurator] --> |Update| Market
+  Configurator[Configurator] --> |Update| MarketFactory
+
   %% Market Creator -> Market Factory -> Market
   MarketCreator((Market Creator)) -->|Spawn/Init| MarketFactory[Market Factory Process]
-  MarketFactory -->|Spawns| Market@{ shape: procs, label: "Market Process"}
+  MarketFactory -->|Creates| Market@{ shape: procs, label: "Market Process"}
 
   %% Market Creator -> Resolution Agent Factory -> Resolution Agent
   MarketCreator -->|Spawn/Init| ResolutionAgentFactory
-  ResolutionAgentFactory -->|Spawns| ResolutionAgent@{ shape: procs, label: "Market Process"}
+  ResolutionAgentFactory -->|Creates| ResolutionAgent@{ shape: procs, label: "Market Process"}
 
   %% Liqudity Provider -> Market
-  LiquidityProvider((Liquidity Provider)) -->|Add/Remove Funding| Market
+  LiquidityProvider((Liquidity Provider)) -->|Remove Funding| Market
+  LiquidityProvider((Liquidity Provider)) -->|X-Action: Add-Funding| CollateralTokens[(Collateral Tokens)]
+  CollateralTokens -->|Add Funding| Market
 
   %% Trader-> Market
-  Trader((Trader))  -->|Buy/Sell/Redeem| Market
+  Trader((Trader))  -->|X-Action: Buy| CollateralTokens
+  CollateralTokens -->|Buy| Market
+  Trader((Trader))  -->|Sell/Redeem| Market
+
 
   %% Define Market Process Modules
   subgraph MarketSubgraph[Market Process Modules]
