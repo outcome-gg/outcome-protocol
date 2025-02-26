@@ -29,7 +29,6 @@ Env = 'DEV'
 --- Represents the Market Factory Configuration
 --- @class MarketFactoryConfiguration
 --- @field configurator string The Configurator process ID
---- @field incentives string The Incentives process ID
 --- @field dataIndex string The Data Index process ID
 --- @field namePrefix string The Market name prefix
 --- @field tickerPrefix string The Market ticker prefix
@@ -45,7 +44,6 @@ Env = 'DEV'
 local function retrieveMarketFactoryConfig()
   local config = {
     configurator = Env == 'DEV' and constants.dev.configurator or constants.prod.configurator,
-    incentives = Env == 'DEV' and constants.dev.incentives or constants.prod.incentives,
     dataIndex = Env == 'DEV' and constants.dev.dataIndex or constants.prod.dataIndex,
     namePrefix = constants.namePrefix,
     tickerPrefix = constants.tickerPrefix,
@@ -64,7 +62,6 @@ if not MarketFactory or Env == 'DEV' then
   local marketFactoryConfig = retrieveMarketFactoryConfig()
   MarketFactory = marketFactory.new(
     marketFactoryConfig.configurator,
-    marketFactoryConfig.incentives,
     marketFactoryConfig.dataIndex,
     marketFactoryConfig.namePrefix,
     marketFactoryConfig.tickerPrefix,
@@ -230,23 +227,6 @@ Handlers.add("Update-Configurator", {Action = "Update-Configurator"}, function(m
   end
   -- If validation passes, update configurator.
   MarketFactory:updateConfigurator(msg.Tags.Configurator, msg)
-end)
-
---- Update incentives handler
---- @param msg Message The message to handle
-Handlers.add("Update-Incentives", {Action = "Update-Incentives"}, function(msg)
-  -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateIncentives(msg, MarketFactory.configurator)
-  -- If validation fails, provide error response.
-  if not success then
-    msg.reply({
-      Action = "Update-Incentives-Error",
-      Error = err
-    })
-    return
-  end
-  -- If validation passes, update incentives.
-  MarketFactory:updateIncentives(msg.Tags.Incentives, msg)
 end)
 
 --- Update LpFee handler

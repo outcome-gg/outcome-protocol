@@ -34,7 +34,6 @@ constants.db = {
 -- Market Factory
 constants.marketFactory = {
   configurator = "test-this-is-valid-arweave-wallet-address-1",
-  incentives = "test-this-is-valid-arweave-wallet-address-2",
   namePrefix = "Outcome Market",
   tickerPrefix = "OUTCOME",
   logo = "https://test.com/logo.png",
@@ -49,7 +48,6 @@ constants.marketFactory = {
 -- Market
 constants.testMarketConfig = {
   configurator = "test-this-is-valid-arweave-wallet-address-6",
-  incentives = "test-this-is-valid-arweave-wallet-address-8",
   collateralToken = "test-this-is-valid-arweave-wallet-address-2",
   conditionId = "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
   positionIds = json.encode({"1", "2"}),
@@ -72,7 +70,6 @@ constants.denomination = 12
 constants.marketConfig = {}
 constants.marketConfig["DEV"] = {
   configurator = "b9hj1yVw3eWGIggQgJxRDj1t8SZFCezctYD-7U5nYFk",
-  incentives = "haUOiKKmYMGum59nWZx5TVFEkDgI5LakIEY7jgfQgAI",
   dataIndex = "rXSAUKwZhJkIBTIEyBl1rf8Gtk_88RKQFsx5JvDOwlE",
   collateralToken = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
   resolutionAgent = "ukmrCFkEWdFH_xS4UicCErwCqGT2RJjr1qlk4U720C8",
@@ -93,7 +90,6 @@ constants.marketConfig["DEV"] = {
 }
 constants.marketConfig["PROD"] = {
   configurator = '',
-  incentives = '',
   dataIndex = '',
   collateralToken = '',
   question = '',

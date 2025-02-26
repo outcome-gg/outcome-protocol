@@ -33,7 +33,6 @@ Env = "DEV"
 --- Represents the Market Configuration
 --- @class MarketConfiguration
 --- @field configurator string The Configurator process ID
---- @field incentives string The Incentives process ID
 --- @field dataIndex string The Data Index process ID
 --- @field collateralToken string The Collateral Token process ID
 --- @field resolutionAgent string The Resolution Agent process ID
@@ -58,7 +57,6 @@ Env = "DEV"
 local function retrieveMarketConfig()
   local config = {
     configurator = ao.env.Process.Tags.Configurator or constants.marketConfig[Env].configurator,
-    incentives = ao.env.Process.Tags.Incentives or constants.marketConfig[Env].incentives,
     dataIndex = ao.env.Process.Tags.DataIndex or constants.marketConfig[Env].dataIndex,
     collateralToken = ao.env.Process.Tags.CollateralToken or constants.marketConfig[Env].collateralToken,
     resolutionAgent = ao.env.Process.Tags.ResolutionAgent or constants.marketConfig[Env].resolutionAgent,
@@ -90,7 +88,6 @@ if not Market or Env == 'DEV' then
   local marketConfig = retrieveMarketConfig()
   Market = market.new(
     marketConfig.configurator,
-    marketConfig.incentives,
     marketConfig.dataIndex,
     marketConfig.collateralToken,
     marketConfig.resolutionAgent,
@@ -598,23 +595,6 @@ Handlers.add("Update-Data-Index", {Action = "Update-Data-Index"}, function(msg)
   end
   -- If validation passes, update the data index.
   Market:updateDataIndex(msg)
-end)
-
---- Update incentives handler
---- @param msg Message The message received
-Handlers.add("Update-Incentives", {Action = "Update-Incentives"}, function(msg)
-  -- Validate input
-  local success, err = marketValidation.updateIncentives(msg, Market.cpmm.configurator)
-  -- If validation fails, provide error response.
-  if not success then
-    msg.reply({
-      Action = "Update-Incentives-Error",
-      Error = err
-    })
-    return
-  end
-  -- If validation passes, update the incentives.
-  Market:updateIncentives(msg)
 end)
 
 --- Update take fee handler

@@ -39,7 +39,6 @@ describe("#marketFactory", function()
     -- create a market factory object
     FACTORY = marketFactory.new(
       constants.configurator,
-      constants.incentives,
       constants.dataIndex,
       constants.namePrefix,
       constants.tickerPrefix,
@@ -124,7 +123,6 @@ describe("#marketFactory", function()
     -- assert correct response
     assert.are.same({
       Configurator = constants.configurator,
-      Incentives = constants.incentives,
       DataIndex = constants.dataIndex,
       LpFee = tostring(constants.lpFee),
       ProtocolFee = tostring(constants.protocolFee),
@@ -394,25 +392,6 @@ describe("#marketFactory", function()
     assert.are.same({
       Action = "Update-Configurator-Notice",
       Data = newConfigurator
-    }, notice)
-  end)
-
-  it("should update incentives", function()
-    local notice = {}
-    -- should not throw an error
-    local newIncentives = "test-this-is-valid-arweave-wallet-address-5"
-    assert.has_no.errors(function()
-      notice = FACTORY:updateIncentives(
-        newIncentives,
-        msg
-      )
-    end)
-    -- assert state change
-    assert.are.same(newIncentives, FACTORY.incentives)
-    -- assert notice
-    assert.are.same({
-      Action = "Update-Incentives-Notice",
-      Data = newIncentives
     }, notice)
   end)
 

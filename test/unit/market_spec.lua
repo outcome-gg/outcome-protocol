@@ -32,8 +32,6 @@ local protocolFeeTarget = ""
 local newProtocolFeeTarget = ""
 local configurator = ""
 local newConfigurator = ""
-local incentives = ""
-local newIncentives = ""
 local dataIndex = ""
 local newDataIndex = ""
 local quantity = ""
@@ -66,7 +64,6 @@ local msgTransferBatch = {}
 local msgTransferError = {}
 local msgUpdateConfigurator = {}
 local msgUpdateDataIndex = {}
-local msgUpdateIncentives = {}
 local msgUpdateTakeFee = {}
 local msgUpdateProtocolFeeTarget = {}
 local msgUpdateLogo = {}
@@ -123,8 +120,6 @@ describe("#market", function()
     newProtocolFeeTarget = "test-this-is-valid-arweave-wallet-address-5"
     configurator = "test-this-is-valid-arweave-wallet-address-6"
     newConfigurator = "test-this-is-valid-arweave-wallet-address-7"
-    incentives = "test-this-is-valid-arweave-wallet-address-8"
-    newIncentives = "test-this-is-valid-arweave-wallet-address-9"
     dataIndex = "test-this-is-valid-arweave-wallet-address10"
     newDataIndex = "test-this-is-valid-arweave-wallet-address11"
     quantity = "100"
@@ -142,7 +137,6 @@ describe("#market", function()
     -- Instantiate objects
     Market = market.new(
       configurator,
-      incentives,
       dataIndex,
       collateralToken,
       resolutionAgent,
@@ -178,7 +172,6 @@ describe("#market", function()
         ProtocolFee = protocolFee,
         ProtocolFeeTarget = protocolFeeTarget,
         Configurator = configurator,
-        Incentives = incentives,
         DataIndex = dataIndex,
       },
       reply = function(message) return message end
@@ -416,15 +409,6 @@ describe("#market", function()
       From = configurator,
       Tags = {
         Configurator = newConfigurator
-      },
-      reply = function(message) return message end,
-      forward = function(target, message) return message end
-    }
-    -- create a message object
-    msgUpdateIncentives = {
-      From = configurator,
-      Tags = {
-        Incentives = newIncentives
       },
       reply = function(message) return message end,
       forward = function(target, message) return message end
@@ -1287,21 +1271,6 @@ describe("#market", function()
     -- assert notice
     assert.are.equal("Update-Data-Index-Notice", notice.Action)
     assert.are.equal(msgUpdateDataIndex.Tags.DataIndex, notice.Data)
-	end)
-
-  it("should update incentives", function()
-    local notice = {}
-    -- should not throw an error
-		assert.has.no.error(function()
-      notice = Market:updateIncentives(
-        msgUpdateIncentives
-      )
-    end)
-    -- assert state
-    assert.are.equal(msgUpdateIncentives.Tags.Incentives, Market.incentives)
-    -- assert notice
-    assert.are.equal("Update-Incentives-Notice", notice.Action)
-    assert.are.equal(msgUpdateIncentives.Tags.Incentives, notice.Data)
 	end)
 
   it("should update take fee" , function()

@@ -117,17 +117,6 @@ function marketFactoryValidation.validateUpdateConfigurator(msg, configurator)
   return sharedValidation.validateAddress(msg.Tags.Configurator, "Configurator")
 end
 
---- Validates an update incentives message
---- @param msg Message The message received
---- @param configurator string The current configurator
---- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateUpdateIncentives(msg, configurator)
-  if msg.From ~= configurator then
-    return false, "Sender must be configurator!"
-  end
-  return sharedValidation.validateAddress(msg.Tags.Incentives, "Incentives")
-end
-
 --- Validates an update lpFee message
 --- @param msg Message The message received
 --- @param configurator string The current configurator

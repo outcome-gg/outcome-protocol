@@ -26,7 +26,6 @@ local cpmm = require('marketModules.cpmm')
 
 --- Creates a new Market instance
 --- @param configurator string The process ID of the configurator
---- @param incentives string The process ID of the incentives controller
 --- @param dataIndex string The process ID of the data index process
 --- @param collateralToken string The process ID of the collateral token
 --- @param resolutionAgent string The process ID of the resolution agent
@@ -47,7 +46,6 @@ local cpmm = require('marketModules.cpmm')
 --- @return Market market The new Market instance
 function Market.new(
   configurator,
-  incentives,
   dataIndex,
   collateralToken,
   resolutionAgent,
@@ -86,7 +84,6 @@ function Market.new(
     category = category,
     subcategory = subcategory,
     creator = creator,
-    incentives = incentives,
     dataIndex = dataIndex
   }
   setmetatable(market, {
@@ -115,7 +112,6 @@ function MarketMethods:info(msg)
     PositionIds = json.encode(self.cpmm.tokens.positionIds),
     CollateralToken = self.cpmm.tokens.collateralToken,
     Configurator = self.cpmm.configurator,
-    Incentives = self.incentives,
     DataIndex = self.dataIndex,
     ResolutionAgent = self.cpmm.tokens.resolutionAgent,
     Question = self.question,
@@ -139,17 +135,7 @@ ACTIVITY LOGS
 =============
 ]]
 
-local function logFunding(incentives, dataIndex, user, operation, collateral, quantity, msg)
-  -- log funding for incentives
-  ao.send({
-    Target = incentives,
-    Action = 'Log-Funding',
-    User = user,
-    Operation = operation,
-    Collateral = collateral,
-    Quantity = quantity
-  })
-  -- log funding for dataIndex
+local function logFunding(dataIndex, user, operation, collateral, quantity, msg)
   return msg.forward(dataIndex, {
     Action = "Log-Funding",
     User = user,
@@ -159,17 +145,7 @@ local function logFunding(incentives, dataIndex, user, operation, collateral, qu
   })
 end
 
-local function logPrediction(incentives, dataIndex, user, operation, collateral, quantity, outcome, shares, price, msg)
-  -- log prediction for incentives
-  ao.send({
-    Target = incentives,
-    Action = 'Log-Prediction',
-    User = user,
-    Operation = operation,
-    Collateral = collateral,
-    Quantity = quantity
-  })
-  -- log prediction for dataIndex
+local function logPrediction(dataIndex, user, operation, collateral, quantity, outcome, shares, price, msg)
   return msg.forward(dataIndex, {
     Action = "Log-Prediction",
     User = user,
@@ -203,8 +179,8 @@ function MarketMethods:addFunding(msg)
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
   -- Add funding to the CPMM
   self.cpmm:addFunding(onBehalfOf, msg.Tags.Quantity, distribution, msg)
-  -- Log funding update to incentives controller and data index
-  logFunding(self.incentives, self.dataIndex, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
+  -- Log funding update to data index
+  logFunding(self.dataIndex, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
 end
 
 --- Remove funding
@@ -213,8 +189,8 @@ end
 function MarketMethods:removeFunding(msg)
   -- Remove funding from the CPMM
   self.cpmm:removeFunding(msg.From, msg.Tags.Quantity, msg)
-  -- Log funding update to incentives controller and data index
-  logFunding(self.incentives, self.dataIndex, msg.From, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
+  -- Log funding update to data index
+  logFunding(self.dataIndex, msg.From, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
 end
 
 --- Buy
@@ -225,9 +201,9 @@ function MarketMethods:buy(msg)
   local positionTokensToBuy = self.cpmm:calcBuyAmount(msg.Tags.Quantity, msg.Tags['X-PositionId'])
   -- Buy position tokens from the CPMM
   self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinPositionTokensToBuy']), msg)
-  -- Log prediction and probability update to incentives controller and data index
+  -- Log prediction and probability update to data index
   local price = tostring(bint.__div(bint(positionTokensToBuy), bint(msg.Tags.Quantity)))
-  logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], positionTokensToBuy, price, msg)
+  logPrediction(self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], positionTokensToBuy, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
 end
 
@@ -237,9 +213,9 @@ function MarketMethods:sell(msg)
   local positionTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   -- Sell position tokens to the CPMM
   self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.MaxPositionTokensToSell, msg)
-  -- Log prediction and probability update to incentives controller and data index
+  -- Log prediction and probability update to data index
   local price = tostring(bint.__div(positionTokensToSell, bint(msg.Tags.ReturnAmount)))
-  logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.ReturnAmount, msg.Tags.PositionId, positionTokensToSell, price, msg)
+  logPrediction(self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.ReturnAmount, msg.Tags.PositionId, positionTokensToSell, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
 end
 
@@ -508,14 +484,6 @@ end
 function MarketMethods:updateDataIndex(msg)
   self.dataIndex = msg.Tags.DataIndex
   return self.updateDataIndexNotice(msg.Tags.DataIndex, msg)
-end
-
---- Update incentives
---- @param msg Message The message received
---- @return Message incentivesUpdateNotice The incentives update notice
-function MarketMethods:updateIncentives(msg)
-  self.incentives = msg.Tags.Incentives
-  return self.updateIncentivesNotice(msg.Tags.Incentives, msg)
 end
 
 --- Update take fee

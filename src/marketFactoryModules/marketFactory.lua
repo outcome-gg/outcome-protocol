@@ -35,7 +35,6 @@ local json = require('json')
 --- @return MarketFactory marketFactory The new MarketFactory instance
 function MarketFactory.new(
   configurator,
-  incentives,
   dataIndex,
   namePrefix,
   tickerPrefix,
@@ -48,7 +47,6 @@ function MarketFactory.new(
 )
   local marketFactory = {
     configurator = configurator,
-    incentives = incentives,
     dataIndex = dataIndex,
     namePrefix = namePrefix,
     tickerPrefix = tickerPrefix,
@@ -93,7 +91,6 @@ INFO METHOD
 function MarketFactoryMethods:info(msg)
   return msg.reply({
     Configurator = self.configurator,
-    Incentives = self.incentives,
     DataIndex = self.dataIndex,
     LpFee = tostring(self.lpFee),
     ProtocolFee = tostring(self.protocolFee),
@@ -271,7 +268,6 @@ function MarketFactoryMethods:spawnMarket(
     ["Logo"] = logo,
     ["LpFee"] = tostring(self.lpFee),
     ["Configurator"] = self.configurator,
-    ["Incentives"] = self.incentives,
     ["DataIndex"] = self.dataIndex,
     ["ProtocolFee"] = tostring(self.protocolFee),
     ["ProtocolFeeTarget"] = self.protocolFeeTarget,
@@ -410,15 +406,6 @@ CONFIGURATOR METHODS
 function MarketFactoryMethods:updateConfigurator(configurator, msg)
   self.configurator = configurator
   return self.updateConfiguratorNotice(configurator, msg)
-end
-
---- Update incentives
---- @param incentives string The new incentives address
---- @param msg Message The message received
---- @return Message updateIncentivesNotice The update incentives notice
-function MarketFactoryMethods:updateIncentives(incentives, msg)
-  self.incentives = incentives
-  return self.updateIncentivesNotice(incentives, msg)
 end
 
 --- Update lpFee

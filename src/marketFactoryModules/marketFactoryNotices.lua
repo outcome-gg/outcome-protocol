@@ -102,17 +102,6 @@ function MarketFactoryNotices.updateConfiguratorNotice(configurator, msg)
   })
 end
 
---- Update incentives notice
---- @param incentives string The new incentives address
---- @param msg Message The message received
---- @return Message updateIncentivesNotice The update incentives notice
-function MarketFactoryNotices.updateIncentivesNotice(incentives, msg)
-  return msg.reply({
-    Action = "Update-Incentives-Notice",
-    Data = incentives
-  })
-end
-
 --- Update lpFee notice
 --- @param lpFee number The new lp fee
 --- @param msg Message The message received
