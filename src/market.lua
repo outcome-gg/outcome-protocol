@@ -28,7 +28,12 @@ MARKET
 ======
 ]]
 
-Env = "DEV"
+Env = ao.env.Process.Tags.Env or "DEV"
+
+-- Revoke ownership if the Market is not in development mode
+if Env ~= 'DEV' then
+  Owner = ""
+end
 
 --- Represents the Market Configuration
 --- @class MarketConfiguration
@@ -56,24 +61,24 @@ Env = "DEV"
 --- @return MarketConfiguration marketConfiguration The market configuration
 local function retrieveMarketConfig()
   local config = {
-    configurator = ao.env.Process.Tags.Configurator or constants.marketConfig[Env].configurator,
-    dataIndex = ao.env.Process.Tags.DataIndex or constants.marketConfig[Env].dataIndex,
-    collateralToken = ao.env.Process.Tags.CollateralToken or constants.marketConfig[Env].collateralToken,
-    resolutionAgent = ao.env.Process.Tags.ResolutionAgent or constants.marketConfig[Env].resolutionAgent,
-    creator = ao.env.Process.Tags.Creator or constants.marketConfig[Env].creator,
-    question = ao.env.Process.Tags.Question or constants.marketConfig[Env].question,
-    rules = ao.env.Process.Tags.Rules or constants.marketConfig[Env].rules,
-    category = ao.env.Process.Tags.Category or constants.marketConfig[Env].category,
-    subcategory = ao.env.Process.Tags.Subcategory or constants.marketConfig[Env].subcategory,
-    positionIds = json.decode(ao.env.Process.Tags.PositionIds or constants.marketConfig[Env].positionIds),
-    name = ao.env.Process.Tags.Name or constants.marketConfig[Env].name,
-    ticker = ao.env.Process.Tags.Ticker or constants.marketConfig[Env].ticker,
-    logo = ao.env.Process.Tags.Logo or constants.marketConfig[Env].logo,
-    lpFee = tonumber(ao.env.Process.Tags.LpFee or constants.marketConfig[Env].lpFee),
-    creatorFee = tonumber(ao.env.Process.Tags.CreatorFee or constants.marketConfig[Env].creatorFee),
-    creatorFeeTarget = ao.env.Process.Tags.CreatorFeeTarget or constants.marketConfig[Env].creatorFeeTarget,
-    protocolFee = tonumber(ao.env.Process.Tags.ProtocolFee or constants.marketConfig[Env].protocolFee),
-    protocolFeeTarget = ao.env.Process.Tags.ProtocolFeeTarget or constants.marketConfig[Env].protocolFeeTarget
+    configurator = ao.env.Process.Tags.Configurator or constants.marketConfig.configurator,
+    dataIndex = ao.env.Process.Tags.DataIndex or constants.marketConfig.dataIndex,
+    collateralToken = ao.env.Process.Tags.CollateralToken or constants.marketConfig.collateralToken,
+    resolutionAgent = ao.env.Process.Tags.ResolutionAgent or constants.marketConfig.resolutionAgent,
+    creator = ao.env.Process.Tags.Creator or constants.marketConfig.creator,
+    question = ao.env.Process.Tags.Question or constants.marketConfig.question,
+    rules = ao.env.Process.Tags.Rules or constants.marketConfig.rules,
+    category = ao.env.Process.Tags.Category or constants.marketConfig.category,
+    subcategory = ao.env.Process.Tags.Subcategory or constants.marketConfig.subcategory,
+    positionIds = json.decode(ao.env.Process.Tags.PositionIds or constants.marketConfig.positionIds),
+    name = ao.env.Process.Tags.Name or constants.marketConfig.name,
+    ticker = ao.env.Process.Tags.Ticker or constants.marketConfig.ticker,
+    logo = ao.env.Process.Tags.Logo or constants.marketConfig.logo,
+    lpFee = tonumber(ao.env.Process.Tags.LpFee or constants.marketConfig.lpFee),
+    creatorFee = tonumber(ao.env.Process.Tags.CreatorFee or constants.marketConfig.creatorFee),
+    creatorFeeTarget = ao.env.Process.Tags.CreatorFeeTarget or constants.marketConfig.creatorFeeTarget,
+    protocolFee = tonumber(ao.env.Process.Tags.ProtocolFee or constants.marketConfig.protocolFee),
+    protocolFeeTarget = ao.env.Process.Tags.ProtocolFeeTarget or constants.marketConfig.protocolFeeTarget
   }
   -- update name and ticker with a unique postfix
   local postfix = string.sub(ao.id, 1, 4) .. string.sub(ao.id, -4)

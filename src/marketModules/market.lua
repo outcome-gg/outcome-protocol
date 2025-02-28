@@ -125,7 +125,8 @@ function MarketMethods:info(msg)
     CreatorFee = tostring(self.cpmm.tokens.creatorFee),
     CreatorFeeTarget = self.cpmm.tokens.creatorFeeTarget,
     ProtocolFee = tostring(self.cpmm.tokens.protocolFee),
-    ProtocolFeeTarget = self.cpmm.tokens.protocolFeeTarget
+    ProtocolFeeTarget = self.cpmm.tokens.protocolFeeTarget,
+    Owner = Owner
   })
 end
 

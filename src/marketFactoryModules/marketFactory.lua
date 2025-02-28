@@ -282,7 +282,9 @@ function MarketFactoryMethods:spawnMarket(
     ["Category"] = category,
     ["Subcategory"] = subcategory,
     ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount)),
-    ["GroupId"] = groupId
+    ["GroupId"] = groupId,
+    -- Environment set to PROD to renounce process owner on eval
+    ["Env"] = "PROD"
   })
   -- add mapping
   local marketConfig = {

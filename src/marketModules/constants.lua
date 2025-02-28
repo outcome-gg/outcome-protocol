@@ -67,8 +67,7 @@ constants.activity = {
 -- CPMM
 constants.denomination = 12
 -- Market Config
-constants.marketConfig = {}
-constants.marketConfig["DEV"] = {
+constants.marketConfig = {
   configurator = "b9hj1yVw3eWGIggQgJxRDj1t8SZFCezctYD-7U5nYFk",
   dataIndex = "rXSAUKwZhJkIBTIEyBl1rf8Gtk_88RKQFsx5JvDOwlE",
   collateralToken = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
@@ -87,21 +86,6 @@ constants.marketConfig["DEV"] = {
   creatorFeeTarget = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0",
   protocolFee = "250",
   protocolFeeTarget = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0"
-}
-constants.marketConfig["PROD"] = {
-  configurator = '',
-  dataIndex = '',
-  collateralToken = '',
-  question = '',
-  positionIds = {},
-  name = '',
-  ticker = '',
-  logo ='',
-  lpFee = 0,
-  creatorFee = 0,
-  creatorFeeTarget = '',
-  protocolFee = 0,
-  protocolFeeTarget = ''
 }
 
 return constants

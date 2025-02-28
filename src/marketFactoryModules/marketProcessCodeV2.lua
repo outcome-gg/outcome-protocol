@@ -11,17 +11,6 @@ See market.lua for full license details.
 
 local MarketNotices = {}
 
---- Sends an update incentives notice
---- @param incentives string The updated incentives address
---- @param msg Message The message received
---- @return Message The incentives updated notice
-function MarketNotices.updateIncentivesNotice(incentives, msg)
-  return msg.reply({
-    Action = "Update-Incentives-Notice",
-    Data = incentives
-  })
-end
-
 --- Sends a update data index notice
 --- @param dataIndex string The updated data index
 --- @param msg Message The message received
@@ -432,9 +421,6 @@ See cpmm.lua for full license details.
 =========================================================
 ]]
 
-local bint = require('.bint')(256)
--- local ao = require('.ao') @dev required for unit tests?
-
 local CPMMHelpers = {}
 
 --- Calculate the ceildiv of x / y
@@ -562,7 +548,7 @@ end
 
 --- Sends a withdraw fees notice
 --- @notice Returns notice with `msg.reply` if `useReply` is true, otherwise uses `ao.send`
---- @dev Ensures the final notice is sent to the user, preventing unintended message handling 
+--- @dev Ensures the final notice is sent to the user, preventing unintended message handling
 --- @param feeAmount number The fee amount
 --- @param msg Message The message received
 --- @param useReply boolean Whether to use `msg.reply` or `ao.send`
@@ -1078,25 +1064,25 @@ https://cookbook_ao.g8way.io/guides/aos/blueprints/token.html
 Licensed under the Business Source License 1.1 (BSL 1.1)
 ================================================================================
 
-Licensor:          Forward Research  
-Licensed Work:     aos codebase. The Licensed Work is (c) 2024 Forward Research  
-Official License:  https://github.com/permaweb/aos/blob/main/LICENSE  
-Additional Use Grant:  
-  The aos codebases are offered under the BSL 1.1 license for the duration  
-  of the testnet period. After the testnet phase is over, the code will be  
-  made available under either a new evolutionary forking license or a  
-  traditional OSS license (GPLv3/v2, MIT, etc).  
-  More info: https://arweave.medium.com/arweave-is-an-evolutionary-protocol-e072f5e69eaa  
-Change Date:       Four years from the date the Licensed Work is published.  
-Change License:    MPL 2.0  
+Licensor:          Forward Research
+Licensed Work:     aos codebase. The Licensed Work is (c) 2024 Forward Research
+Official License:  https://github.com/permaweb/aos/blob/main/LICENSE
+Additional Use Grant:
+  The aos codebases are offered under the BSL 1.1 license for the duration
+  of the testnet period. After the testnet phase is over, the code will be
+  made available under either a new evolutionary forking license or a
+  traditional OSS license (GPLv3/v2, MIT, etc).
+  More info: https://arweave.medium.com/arweave-is-an-evolutionary-protocol-e072f5e69eaa
+Change Date:       Four years from the date the Licensed Work is published.
+Change License:    MPL 2.0
 
-Notice:  
-This code is provided under the Business Source License 1.1. Redistribution,  
-modification, or unauthorized use of this code must comply with the terms of  
+Notice:
+This code is provided under the Business Source License 1.1. Redistribution,
+modification, or unauthorized use of this code must comply with the terms of
 the Business Source License.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
 ================================================================================
 ]]
@@ -1123,7 +1109,7 @@ local bint = require('.bint')(256)
 --- @param totalSupply string The total supply of the token
 --- @param denomination number The number of decimals
 --- @return Token token The new Token instance
-function Token:new(name, ticker, logo, balances, totalSupply, denomination)
+function Token.new(name, ticker, logo, balances, totalSupply, denomination)
   local token = {
     name = name,
     ticker = ticker,
@@ -1180,7 +1166,7 @@ end
 
 --- Transfer a quantity of tokens
 --- @param from string The process ID that will send the token
---- @param recipient string The process ID that will receive the token 
+--- @param recipient string The process ID that will receive the token
 --- @param quantity string The quantity of tokens to transfer
 --- @param cast boolean The cast is set to true to silence the transfer notice
 --- @param msg Message The message received
@@ -1279,7 +1265,6 @@ constants.db = {
 -- Market Factory
 constants.marketFactory = {
   configurator = "test-this-is-valid-arweave-wallet-address-1",
-  incentives = "test-this-is-valid-arweave-wallet-address-2",
   namePrefix = "Outcome Market",
   tickerPrefix = "OUTCOME",
   logo = "https://test.com/logo.png",
@@ -1294,7 +1279,6 @@ constants.marketFactory = {
 -- Market
 constants.testMarketConfig = {
   configurator = "test-this-is-valid-arweave-wallet-address-6",
-  incentives = "test-this-is-valid-arweave-wallet-address-8",
   collateralToken = "test-this-is-valid-arweave-wallet-address-2",
   conditionId = "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
   positionIds = json.encode({"1", "2"}),
@@ -1314,10 +1298,8 @@ constants.activity = {
 -- CPMM
 constants.denomination = 12
 -- Market Config
-constants.marketConfig = {}
-constants.marketConfig["DEV"] = {
+constants.marketConfig = {
   configurator = "b9hj1yVw3eWGIggQgJxRDj1t8SZFCezctYD-7U5nYFk",
-  incentives = "haUOiKKmYMGum59nWZx5TVFEkDgI5LakIEY7jgfQgAI",
   dataIndex = "rXSAUKwZhJkIBTIEyBl1rf8Gtk_88RKQFsx5JvDOwlE",
   collateralToken = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
   resolutionAgent = "ukmrCFkEWdFH_xS4UicCErwCqGT2RJjr1qlk4U720C8",
@@ -1335,22 +1317,6 @@ constants.marketConfig["DEV"] = {
   creatorFeeTarget = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0",
   protocolFee = "250",
   protocolFeeTarget = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0"
-}
-constants.marketConfig["PROD"] = {
-  configurator = '',
-  incentives = '',
-  dataIndex = '',
-  collateralToken = '',
-  question = '',
-  positionIds = {},
-  name = '',
-  ticker = '',
-  logo ='',
-  lpFee = 0,
-  creatorFee = 0,
-  creatorFeeTarget = '',
-  protocolFee = 0,
-  protocolFeeTarget = ''
 }
 
 return constants
@@ -1981,7 +1947,8 @@ function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity,
     Recipient = to,
     PositionId = tostring(id),
     Quantity = tostring(quantity),
-    Data = Colors.gray .. "You transferred " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.gray .. " to " .. Colors.green .. to .. Colors.reset
+    Data = Colors.gray .. "You transferred " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id "
+      .. Colors.blue .. tostring(id) .. Colors.gray .. " to " .. Colors.green .. to .. Colors.reset
   }
   -- Prepare credit notice
   local creditNotice = {
@@ -1989,7 +1956,8 @@ function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity,
     Sender = from,
     PositionId = tostring(id),
     Quantity = tostring(quantity),
-    Data = Colors.gray .. "You received " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.gray .. " from " .. Colors.green .. from .. Colors.reset
+    Data = Colors.gray .. "You received " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id "
+      .. Colors.blue .. tostring(id) .. Colors.gray .. " from " .. Colors.green .. from .. Colors.reset
   }
   -- Forward X-Tags
   for tagName, tagValue in pairs(msg) do
@@ -2114,7 +2082,7 @@ local bint = require('.bint')(256)
 --- @param totalSupplyById table<string, string> The total supply of the token by ID
 --- @param denomination number The number of decimals
 --- @return SemiFungibleTokens semiFungibleTokens The new SemiFungibleTokens instance
-function SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)
+function SemiFungibleTokens.new(name, ticker, logo, balancesById, totalSupplyById, denomination)
   local semiFungibleTokens = {
     name = name,
     ticker = ticker,
@@ -2419,7 +2387,7 @@ local ao = ao or require('.ao')
 --- @param protocolFee number The protocol fee to be paid, in basis points
 --- @param protocolFeeTarget string The process ID to receive the protocol fee
 --- @return ConditionalTokens conditionalTokens The new ConditionalTokens instance
-function ConditionalTokens:new(
+function ConditionalTokens.new(
   name,
   ticker,
   logo,
@@ -2435,7 +2403,7 @@ function ConditionalTokens:new(
   protocolFeeTarget
 )
   ---@class ConditionalTokens : SemiFungibleTokens
-  local conditionalTokens = SemiFungibleTokens:new(name, ticker, logo, balancesById, totalSupplyById, denomination)
+  local conditionalTokens = SemiFungibleTokens.new(name, ticker, logo, balancesById, totalSupplyById, denomination)
   conditionalTokens.resolutionAgent = resolutionAgent
   conditionalTokens.collateralToken = collateralToken
   conditionalTokens.positionIds = positionIds
@@ -2504,7 +2472,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
   end
   -- Burn equal quantiies from user positions.
   self:batchBurn(from, self.positionIds, quantities, msg, false)
-  -- @dev below already handled within the sell method. 
+  -- @dev below already handled within the sell method.
   -- sell method w/ a different quantity and recipient.
   if not isSell then
     -- Return the collateral to the user.
@@ -2567,7 +2535,7 @@ function ConditionalTokensMethods:redeemPositions(msg)
   -- Return total payout minus take fee.
   if totalPayout > 0 then
     totalPayout = math.floor(totalPayout)
-    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout, msg)
+    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)
   end
   -- Send notice.
   return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, msg)
@@ -2578,9 +2546,8 @@ end
 --- @param collateralToken string The collateral token
 --- @param from string The account to receive the payout minus fees
 --- @param totalPayout number The total payout assciated with the acount stake
---- @param msg Message The message received
 --- @return string The total payout minus fee amount
-function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, msg)
+function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)
   local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))
   local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))
   local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))
@@ -2658,16 +2625,16 @@ local conditionalTokens = require('marketModules.conditionalTokens')
 --- @param collateralToken string The process ID of the collateral token
 --- @param resolutionAgent string The process ID of the resolution agent
 --- @param positionIds table<string, ...> The position IDs
---- @param name string The CPMM token(s) name 
---- @param ticker string The CPMM token(s) ticker 
---- @param logo string The CPMM token(s) logo 
+--- @param name string The CPMM token(s) name
+--- @param ticker string The CPMM token(s) ticker
+--- @param logo string The CPMM token(s) logo
 --- @param lpFee number The liquidity provider fee
 --- @param creatorFee number The market creator fee
 --- @param creatorFeeTarget string The market creator fee target
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
---- @return CPMM cpmm The new CPMM instance 
-function CPMM:new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
+--- @return CPMM cpmm The new CPMM instance
+function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
   local cpmm = {
     configurator = configurator,
     poolBalances = {},
@@ -2676,7 +2643,7 @@ function CPMM:new(configurator, collateralToken, resolutionAgent, positionIds, n
     totalWithdrawnFees = "0",
     lpFee = tonumber(lpFee)
   }
-  cpmm.token = token:new(
+  cpmm.token = token.new(
     name .. " LP Token",
     ticker,
     logo,
@@ -2684,7 +2651,7 @@ function CPMM:new(configurator, collateralToken, resolutionAgent, positionIds, n
     "0", -- totalSupply
     constants.denomination
   )
-  cpmm.tokens = conditionalTokens:new(
+  cpmm.tokens = conditionalTokens.new(
     name .. " Conditional Tokens",
     ticker,
     logo,
@@ -2725,7 +2692,7 @@ function CPMMMethods:addFunding(onBehalfOf, addedFunds, distributionHint, msg)
   assert(bint.__lt(0, bint(addedFunds)), "funding must be non-zero")
   local sendBackAmounts = {}
   local poolShareSupply = self.token.totalSupply
-  local mintAmount = '0'
+  local mintAmount
 
   if bint.iszero(bint(poolShareSupply)) then
     assert(distributionHint, "must use distribution hint for initial funding")
@@ -2748,7 +2715,7 @@ function CPMMMethods:addFunding(onBehalfOf, addedFunds, distributionHint, msg)
     -- Calculate mintAmount
     mintAmount = tostring(addedFunds)
   else
-    -- Additional Liquidity 
+    -- Additional Liquidity
     assert(not distributionHint, "cannot use distribution hint after initial funding")
     -- Get poolBalances
     local poolBalances = self:getPoolBalances()
@@ -2951,7 +2918,7 @@ function CPMMMethods:collectedFees()
   return tostring(math.ceil(self.feePoolWeight - self.totalWithdrawnFees))
 end
 
---- Fees withdrawable 
+--- Fees withdrawable
 --- @param account string The process ID of the account
 --- @return string The fees withdrawable by the account
 function CPMMMethods:feesWithdrawableBy(account)
@@ -2997,20 +2964,20 @@ function CPMMMethods:_beforeTokenTransfer(from, to, amount, msg)
   end
 end
 
---- @dev See `Mint` in modules.token 
+--- @dev See `Mint` in modules.token
 function CPMMMethods:mint(to, quantity, msg)
   self:_beforeTokenTransfer(nil, to, quantity, msg)
   return self.token:mint(to, quantity, msg)
 end
 
---- @dev See `Burn` in modules.token 
+--- @dev See `Burn` in modules.token
 -- @dev See tokenMethods:burn & _beforeTokenTransfer
 function CPMMMethods:burn(from, quantity, msg)
   self:_beforeTokenTransfer(from, nil, quantity, msg)
   return self.token:burn(from, quantity, msg)
 end
 
---- @dev See `Transfer` in modules.token 
+--- @dev See `Transfer` in modules.token
 -- @dev See tokenMethods:transfer & _beforeTokenTransfer
 function CPMMMethods:transfer(from, recipient, quantity, cast, msg)
   self:_beforeTokenTransfer(from, recipient, quantity, msg)
@@ -3091,7 +3058,6 @@ local cpmm = require('marketModules.cpmm')
 
 --- Creates a new Market instance
 --- @param configurator string The process ID of the configurator
---- @param incentives string The process ID of the incentives controller
 --- @param dataIndex string The process ID of the data index process
 --- @param collateralToken string The process ID of the collateral token
 --- @param resolutionAgent string The process ID of the resolution agent
@@ -3101,18 +3067,17 @@ local cpmm = require('marketModules.cpmm')
 --- @param category string The market category
 --- @param subcategory string The market subcategory
 --- @param positionIds table<string, ...> The position IDs
---- @param name string The CPMM token(s) name 
---- @param ticker string The CPMM token(s) ticker 
---- @param logo string The CPMM token(s) logo 
+--- @param name string The CPMM token(s) name
+--- @param ticker string The CPMM token(s) ticker
+--- @param logo string The CPMM token(s) logo
 --- @param lpFee number The liquidity provider fee
 --- @param creatorFee number The market creator fee
 --- @param creatorFeeTarget string The market creator fee target
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
---- @return Market market The new Market instance 
-function Market:new(
+--- @return Market market The new Market instance
+function Market.new(
   configurator,
-  incentives,
   dataIndex,
   collateralToken,
   resolutionAgent,
@@ -3132,7 +3097,7 @@ function Market:new(
   protocolFeeTarget
 )
   local market = {
-    cpmm = cpmm:new(
+    cpmm = cpmm.new(
       configurator,
       collateralToken,
       resolutionAgent,
@@ -3151,7 +3116,6 @@ function Market:new(
     category = category,
     subcategory = subcategory,
     creator = creator,
-    incentives = incentives,
     dataIndex = dataIndex
   }
   setmetatable(market, {
@@ -3180,7 +3144,6 @@ function MarketMethods:info(msg)
     PositionIds = json.encode(self.cpmm.tokens.positionIds),
     CollateralToken = self.cpmm.tokens.collateralToken,
     Configurator = self.cpmm.configurator,
-    Incentives = self.incentives,
     DataIndex = self.dataIndex,
     ResolutionAgent = self.cpmm.tokens.resolutionAgent,
     Question = self.question,
@@ -3194,7 +3157,8 @@ function MarketMethods:info(msg)
     CreatorFee = tostring(self.cpmm.tokens.creatorFee),
     CreatorFeeTarget = self.cpmm.tokens.creatorFeeTarget,
     ProtocolFee = tostring(self.cpmm.tokens.protocolFee),
-    ProtocolFeeTarget = self.cpmm.tokens.protocolFeeTarget
+    ProtocolFeeTarget = self.cpmm.tokens.protocolFeeTarget,
+    Owner = Owner
   })
 end
 
@@ -3204,17 +3168,7 @@ ACTIVITY LOGS
 =============
 ]]
 
-local function logFunding(incentives, dataIndex, user, operation, collateral, quantity, msg)
-  -- log funding for incentives
-  ao.send({
-    Target = incentives,
-    Action = 'Log-Funding',
-    User = user,
-    Operation = operation,
-    Collateral = collateral,
-    Quantity = quantity
-  })
-  -- log funding for dataIndex
+local function logFunding(dataIndex, user, operation, collateral, quantity, msg)
   return msg.forward(dataIndex, {
     Action = "Log-Funding",
     User = user,
@@ -3224,17 +3178,7 @@ local function logFunding(incentives, dataIndex, user, operation, collateral, qu
   })
 end
 
-local function logPrediction(incentives, dataIndex, user, operation, collateral, quantity, outcome, shares, price, msg)
-  -- log prediction for incentives
-  ao.send({
-    Target = incentives,
-    Action = 'Log-Prediction',
-    User = user,
-    Operation = operation,
-    Collateral = collateral,
-    Quantity = quantity
-  })
-  -- log prediction for dataIndex
+local function logPrediction(dataIndex, user, operation, collateral, quantity, outcome, shares, price, msg)
   return msg.forward(dataIndex, {
     Action = "Log-Prediction",
     User = user,
@@ -3268,8 +3212,8 @@ function MarketMethods:addFunding(msg)
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
   -- Add funding to the CPMM
   self.cpmm:addFunding(onBehalfOf, msg.Tags.Quantity, distribution, msg)
-  -- Log funding update to incentives controller and data index
-  logFunding(self.incentives, self.dataIndex, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
+  -- Log funding update to data index
+  logFunding(self.dataIndex, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
 end
 
 --- Remove funding
@@ -3278,8 +3222,8 @@ end
 function MarketMethods:removeFunding(msg)
   -- Remove funding from the CPMM
   self.cpmm:removeFunding(msg.From, msg.Tags.Quantity, msg)
-  -- Log funding update to incentives controller and data index
-  logFunding(self.incentives, self.dataIndex, msg.From, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
+  -- Log funding update to data index
+  logFunding(self.dataIndex, msg.From, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
 end
 
 --- Buy
@@ -3290,9 +3234,9 @@ function MarketMethods:buy(msg)
   local positionTokensToBuy = self.cpmm:calcBuyAmount(msg.Tags.Quantity, msg.Tags['X-PositionId'])
   -- Buy position tokens from the CPMM
   self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinPositionTokensToBuy']), msg)
-  -- Log prediction and probability update to incentives controller and data index
+  -- Log prediction and probability update to data index
   local price = tostring(bint.__div(bint(positionTokensToBuy), bint(msg.Tags.Quantity)))
-  logPrediction(self.incentives, self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], positionTokensToBuy, price, msg)
+  logPrediction(self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], positionTokensToBuy, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
 end
 
@@ -3302,9 +3246,9 @@ function MarketMethods:sell(msg)
   local positionTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   -- Sell position tokens to the CPMM
   self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.MaxPositionTokensToSell, msg)
-  -- Log prediction and probability update to incentives controller and data index
+  -- Log prediction and probability update to data index
   local price = tostring(bint.__div(positionTokensToSell, bint(msg.Tags.ReturnAmount)))
-  logPrediction(self.incentives, self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.ReturnAmount, msg.Tags.PositionId, positionTokensToSell, price, msg)
+  logPrediction(self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.ReturnAmount, msg.Tags.PositionId, positionTokensToSell, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
 end
 
@@ -3356,7 +3300,7 @@ function MarketMethods:collectedFees(msg)
   })
 end
 
---- Fees withdrawable 
+--- Fees withdrawable
 --- @param msg Message The message received
 --- @return Message feesWithdrawable The fees withdrawable by the account
 function MarketMethods:feesWithdrawable(msg)
@@ -3573,14 +3517,6 @@ end
 function MarketMethods:updateDataIndex(msg)
   self.dataIndex = msg.Tags.DataIndex
   return self.updateDataIndexNotice(msg.Tags.DataIndex, msg)
-end
-
---- Update incentives
---- @param msg Message The message received
---- @return Message incentivesUpdateNotice The incentives update notice
-function MarketMethods:updateIncentives(msg)
-  self.incentives = msg.Tags.Incentives
-  return self.updateIncentivesNotice(msg.Tags.Incentives, msg)
 end
 
 --- Update take fee
@@ -3814,7 +3750,6 @@ local cpmmValidation = {}
 local sharedValidation = require('marketModules.sharedValidation')
 local bint = require('.bint')(256)
 local json = require("json")
-local utils = require('.utils')
 
 --- Validates add funding
 --- @param msg Message The message to be validated
@@ -4109,21 +4044,6 @@ function MarketValidation.updateDataIndex(msg, configurator)
   end
 
   local success, err = sharedValidation.validateAddress(msg.Tags.DataIndex, 'DataIndex')
-  if not success then return false, err end
-
-  return true
-end
-
---- Validates update incentives
---- @param msg Message The message to be validated
---- @param configurator string The configurator address
---- @return boolean, string|nil Returns true on success, or false and an error message on failure
-function MarketValidation.updateIncentives(msg, configurator)
-  if msg.From ~= configurator then
-    return false, 'Sender must be configurator!'
-  end
-
-  local success, err = sharedValidation.validateAddress(msg.Tags.Incentives, 'Incentives')
   if not success then return false, err end
 
   return true
@@ -4427,55 +4347,58 @@ MARKET
 ======
 ]]
 
-Env = "DEV"
-Version = "1.0.1"
+Env = ao.env.Process.Tags.Env or "DEV"
 
---- Represents the Market Configuration  
---- @class MarketConfiguration  
---- @field configurator string The Configurator process ID  
---- @field incentives string The Incentives process ID  
+-- Revoke ownership if the Market is not in development mode
+if Env ~= 'DEV' then
+  ---@diagnostic disable-next-line: assign-type-mismatch
+  Owner = "null"
+end
+
+--- Represents the Market Configuration
+--- @class MarketConfiguration
+--- @field configurator string The Configurator process ID
 --- @field dataIndex string The Data Index process ID
---- @field collateralToken string The Collateral Token process ID  
+--- @field collateralToken string The Collateral Token process ID
 --- @field resolutionAgent string The Resolution Agent process ID
 --- @field creator string The Creator address
---- @field question string The Market question 
+--- @field question string The Market question
 --- @field rules string The Market rules
 --- @field category string The Market category
 --- @field subcategory string The Market subcategory
---- @field positionIds table<string> The Position process IDs  
---- @field name string The Market name  
---- @field ticker string The Market ticker  
---- @field logo string The Market logo  
---- @field lpFee number The LP fee  
---- @field creatorFee number The Creator fee  
---- @field creatorFeeTarget string The Creator fee target  
---- @field protocolFee number The Protocol fee  
---- @field protocolFeeTarget string The Protocol fee target  
+--- @field positionIds table<string> The Position process IDs
+--- @field name string The Market name
+--- @field ticker string The Market ticker
+--- @field logo string The Market logo
+--- @field lpFee number The LP fee
+--- @field creatorFee number The Creator fee
+--- @field creatorFeeTarget string The Creator fee target
+--- @field protocolFee number The Protocol fee
+--- @field protocolFeeTarget string The Protocol fee target
 
---- Retrieve Market Configuration  
+--- Retrieve Market Configuration
 --- Fetches configuration parameters from the environment, set by the market factory
---- @return MarketConfiguration marketConfiguration The market configuration  
+--- @return MarketConfiguration marketConfiguration The market configuration
 local function retrieveMarketConfig()
   local config = {
-    configurator = ao.env.Process.Tags.Configurator or constants.marketConfig[Env].configurator,
-    incentives = ao.env.Process.Tags.Incentives or constants.marketConfig[Env].incentives,
-    dataIndex = ao.env.Process.Tags.DataIndex or constants.marketConfig[Env].dataIndex,
-    collateralToken = ao.env.Process.Tags.CollateralToken or constants.marketConfig[Env].collateralToken,
-    resolutionAgent = ao.env.Process.Tags.ResolutionAgent or constants.marketConfig[Env].resolutionAgent,
-    creator = ao.env.Process.Tags.Creator or constants.marketConfig[Env].creator,
-    question = ao.env.Process.Tags.Question or constants.marketConfig[Env].question,
-    rules = ao.env.Process.Tags.Rules or constants.marketConfig[Env].rules,
-    category = ao.env.Process.Tags.Category or constants.marketConfig[Env].category,
-    subcategory = ao.env.Process.Tags.Subcategory or constants.marketConfig[Env].subcategory,
-    positionIds = json.decode(ao.env.Process.Tags.PositionIds or constants.marketConfig[Env].positionIds),
-    name = ao.env.Process.Tags.Name or constants.marketConfig[Env].name,
-    ticker = ao.env.Process.Tags.Ticker or constants.marketConfig[Env].ticker,
-    logo = ao.env.Process.Tags.Logo or constants.marketConfig[Env].logo,
-    lpFee = tonumber(ao.env.Process.Tags.LpFee or constants.marketConfig[Env].lpFee),
-    creatorFee = tonumber(ao.env.Process.Tags.CreatorFee or constants.marketConfig[Env].creatorFee),
-    creatorFeeTarget = ao.env.Process.Tags.CreatorFeeTarget or constants.marketConfig[Env].creatorFeeTarget,
-    protocolFee = tonumber(ao.env.Process.Tags.ProtocolFee or constants.marketConfig[Env].protocolFee),
-    protocolFeeTarget = ao.env.Process.Tags.ProtocolFeeTarget or constants.marketConfig[Env].protocolFeeTarget
+    configurator = ao.env.Process.Tags.Configurator or constants.marketConfig.configurator,
+    dataIndex = ao.env.Process.Tags.DataIndex or constants.marketConfig.dataIndex,
+    collateralToken = ao.env.Process.Tags.CollateralToken or constants.marketConfig.collateralToken,
+    resolutionAgent = ao.env.Process.Tags.ResolutionAgent or constants.marketConfig.resolutionAgent,
+    creator = ao.env.Process.Tags.Creator or constants.marketConfig.creator,
+    question = ao.env.Process.Tags.Question or constants.marketConfig.question,
+    rules = ao.env.Process.Tags.Rules or constants.marketConfig.rules,
+    category = ao.env.Process.Tags.Category or constants.marketConfig.category,
+    subcategory = ao.env.Process.Tags.Subcategory or constants.marketConfig.subcategory,
+    positionIds = json.decode(ao.env.Process.Tags.PositionIds or constants.marketConfig.positionIds),
+    name = ao.env.Process.Tags.Name or constants.marketConfig.name,
+    ticker = ao.env.Process.Tags.Ticker or constants.marketConfig.ticker,
+    logo = ao.env.Process.Tags.Logo or constants.marketConfig.logo,
+    lpFee = tonumber(ao.env.Process.Tags.LpFee or constants.marketConfig.lpFee),
+    creatorFee = tonumber(ao.env.Process.Tags.CreatorFee or constants.marketConfig.creatorFee),
+    creatorFeeTarget = ao.env.Process.Tags.CreatorFeeTarget or constants.marketConfig.creatorFeeTarget,
+    protocolFee = tonumber(ao.env.Process.Tags.ProtocolFee or constants.marketConfig.protocolFee),
+    protocolFeeTarget = ao.env.Process.Tags.ProtocolFeeTarget or constants.marketConfig.protocolFeeTarget
   }
   -- update name and ticker with a unique postfix
   local postfix = string.sub(ao.id, 1, 4) .. string.sub(ao.id, -4)
@@ -4488,9 +4411,8 @@ end
 --- @dev Reset Market state during development mode or if uninitialized
 if not Market or Env == 'DEV' then
   local marketConfig = retrieveMarketConfig()
-  Market = market:new(
+  Market = market.new(
     marketConfig.configurator,
-    marketConfig.incentives,
     marketConfig.dataIndex,
     marketConfig.collateralToken,
     marketConfig.resolutionAgent,
@@ -4571,7 +4493,7 @@ CPMM WRITE HANDLERS
 --- Add funding handler
 --- @param msg Message The message received, expected to contain:
 ---   - msg.Tags.Quantity (string): The amount of funding to add (numeric string).
----   - msg.Tags.Distribution (stringified table): 
+---   - msg.Tags.Distribution (stringified table):
 ---     * JSON-encoded table specifying the initial distribution of funding.
 ---     * Required on the first call to `addFunding`.
 ---     * Must NOT be included in subsequent calls, or the operation will fail.
@@ -4585,8 +4507,8 @@ Handlers.add("Add-Funding", isAddFunding, function(msg)
       Action = "Transfer",
       Recipient = msg.Tags.Sender,
       Quantity = msg.Tags.Quantity,
-      ["X-Error"] = "Add-Funding-Error",
-      ["X-Error-Message"] = err
+      ["X-Action"] = "Add-Funding-Error",
+      ["X-Error"] = err
     })
     return
   end
@@ -4622,8 +4544,8 @@ Handlers.add("Buy", isBuy, function(msg)
       Action = "Transfer",
       Recipient = msg.Tags.Sender,
       Quantity = msg.Tags.Quantity,
-      ["X-Error"] = "Buy-Error",
-      ["X-Error-Message"] = err
+      ["X-Action"] = "Buy-Error",
+      ["X-Error"] = err
     })
     return
   end
@@ -4998,23 +4920,6 @@ Handlers.add("Update-Data-Index", {Action = "Update-Data-Index"}, function(msg)
   end
   -- If validation passes, update the data index.
   Market:updateDataIndex(msg)
-end)
-
---- Update incentives handler
---- @param msg Message The message received
-Handlers.add("Update-Incentives", {Action = "Update-Incentives"}, function(msg)
-  -- Validate input
-  local success, err = marketValidation.updateIncentives(msg, Market.cpmm.configurator)
-  -- If validation fails, provide error response.
-  if not success then
-    msg.reply({
-      Action = "Update-Incentives-Error",
-      Error = err
-    })
-    return
-  end
-  -- If validation passes, update the incentives.
-  Market:updateIncentives(msg)
 end)
 
 --- Update take fee handler

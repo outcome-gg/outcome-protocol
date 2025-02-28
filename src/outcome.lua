@@ -16,7 +16,7 @@ without explicit written permission from Outcome.
 Outcome = { _version = "0.0.1"}
 Outcome.__index = Outcome
 Outcome.configurator = "XZrrfWA17ljL8msjXvG3kYx2mo5odhlgJJ8bWo6lxwo"
-Outcome.marketFactory = "l9l7DorUAeRQ5KYmg1Kh3ZfBwQBIqVHbVl2hnBGG9Tc"
+Outcome.marketFactory = "nhewZ6N_JQuNAALXVtAHq4fXk_4ndgYq3Y6MoCaeREU"
 Outcome.token = "haUOiKKmYMGum59nWZx5TVFEkDgI5LakIEY7jgfQgAI"
 Outcome.testCollateral = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU"
 
