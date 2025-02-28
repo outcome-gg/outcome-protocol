@@ -100,13 +100,15 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
     local notice = conditionalTokensNotices.positionsMergeNotice(
       msgPositionsMerge.Tags.CollateralToken,
       msgPositionsMerge.Tags.Quantity,
+      msgPositionsMerge.From,
       msgPositionsMerge,
       true
     )
     assert.are.same({
       Action = 'Merge-Positions-Notice',
       CollateralToken = msgPositionsMerge.Tags.CollateralToken,
-      Quantity = msgPositionsMerge.Tags.Quantity
+      Quantity = msgPositionsMerge.Tags.Quantity,
+      OnBehalfOf = msgPositionsMerge.From
     }, notice)
   end)
 
@@ -115,13 +117,15 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
       msgPayoutRedemption.Tags.CollateralToken,
       msgPayoutRedemption.Tags.Payout,
       tostring(msgPayoutRedemption.Tags.Payout),
+      msgPayoutRedemption.From,
       msgPayoutRedemption
     )
     assert.are.same({
       Action = 'Redeem-Positions-Notice',
       CollateralToken = msgPayoutRedemption.Tags.CollateralToken,
       GrossPayout = tostring(msgPayoutRedemption.Tags.Payout),
-      NetPayout = tostring(msgPayoutRedemption.Tags.Payout)
+      NetPayout = tostring(msgPayoutRedemption.Tags.Payout),
+      OnBehalfOf = msgPayoutRedemption.From
     }, notice)
   end)
 end)

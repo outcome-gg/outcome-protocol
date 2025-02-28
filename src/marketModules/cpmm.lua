@@ -169,15 +169,15 @@ function CPMMMethods:addFunding(onBehalfOf, addedFunds, distributionHint, msg)
     sendBackAmounts[i] = addedFunds - sendBackAmounts[i]
   end
   -- Send notice with amounts added
-  return self.addFundingNotice(sendBackAmounts, mintAmount, msg)
+  return self.addFundingNotice(sendBackAmounts, mintAmount, onBehalfOf, msg)
 end
 
 --- Remove funding
---- @param from string The process ID of the account that removed the funding
+--- @param onBehalfOf string The process ID of the account to receive the position tokens
 --- @param sharesToBurn string The amount of shares to burn
 --- @param msg Message The message received
 --- @return Message The funding removed notice
-function CPMMMethods:removeFunding(from, sharesToBurn, msg)
+function CPMMMethods:removeFunding(onBehalfOf, sharesToBurn, msg)
   assert(bint.__lt(0, bint(sharesToBurn)), "funding must be non-zero")
   -- Get poolBalances
   local poolBalances = self:getPoolBalances()
@@ -188,13 +188,13 @@ function CPMMMethods:removeFunding(from, sharesToBurn, msg)
   end
   -- Calculate collateralRemovedFromFeePool
   local collateralRemovedFromFeePool = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
-  self:burn(from, sharesToBurn, msg)
+  self:burn(msg.From, sharesToBurn, msg)
   local poolFeeBalance = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
   collateralRemovedFromFeePool = tostring(math.floor(poolFeeBalance - collateralRemovedFromFeePool))
   -- Send conditionalTokens amounts
-  self.tokens:transferBatch(ao.id, from, self.tokens.positionIds, sendAmounts, false, msg)
+  self.tokens:transferBatch(ao.id, onBehalfOf, self.tokens.positionIds, sendAmounts, false, msg)
   -- Send notice
-  return self.removeFundingNotice(sendAmounts, collateralRemovedFromFeePool, sharesToBurn, msg)
+  return self.removeFundingNotice(sendAmounts, collateralRemovedFromFeePool, sharesToBurn, onBehalfOf, msg)
 end
 
 --- Calc buy amount
@@ -292,11 +292,12 @@ end
 
 --- Sell
 --- @param from string The process ID of the account that initiates the sell
+--- @param onBehalfOf string The process ID of the account to receive the tokens
 --- @param returnAmount number The amount to unstake from an outcome
 --- @param positionId string The position ID of the outcome
 --- @param maxPositionTokensToSell number The max outcome tokens to sell
 --- @return Message The sell notice
-function CPMMMethods:sell(from, returnAmount, positionId, maxPositionTokensToSell, msg)
+function CPMMMethods:sell(from, onBehalfOf, returnAmount, positionId, maxPositionTokensToSell, msg)
   -- Calculate outcome tokens to sell.
   local positionTokensToSell = self:calcSellAmount(returnAmount, positionId)
   assert(bint.__le(bint(positionTokensToSell), bint(maxPositionTokensToSell)), "Maximum sell amount exceeded!")
@@ -313,14 +314,14 @@ function CPMMMethods:sell(from, returnAmount, positionId, maxPositionTokensToSel
   self.tokens:transferSingle(from, ao.id, positionId, positionTokensToSell, true, msg, false)
   -- Merge positions through all conditions (burns returnAmountPlusFees).
   self.tokens:mergePositions(ao.id, '', positionTokensToSell, true, msg, false)
-  -- Returns collateral to the user
+  -- Returns collateral to the user / onBehalfOf address
   msg.forward(self.tokens.collateralToken,{
     Action = "Transfer",
     Quantity = tostring(returnAmount),
-    Recipient = from
+    Recipient = onBehalfOf
   })
   -- Send notice (Process continued via "SellOrderCompletionCollateralToken" and "SellOrderCompletionConditionalTokens" handlers)
-  return self.sellNotice(from, returnAmount, feeAmount, positionId, positionTokensToSell, msg)
+  return self.sellNotice(from, onBehalfOf, returnAmount, feeAmount, positionId, positionTokensToSell, msg)
 end
 
 --- Colleced fees
@@ -343,17 +344,18 @@ end
 
 --- Withdraw fees
 --- @param sender string The process ID of the sender
+--- @param onBehalfOf string The process ID of the account to receive the fees
 --- @param msg Message The message received
 --- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The withdraw fees message
-function CPMMMethods:withdrawFees(sender, msg, useReply)
+function CPMMMethods:withdrawFees(sender, onBehalfOf, msg, useReply)
   local feeAmount = self:feesWithdrawableBy(sender)
   if bint.__lt(0, bint(feeAmount)) then
     self.withdrawnFees[sender] = feeAmount
     self.totalWithdrawnFees = tostring(bint.__add(bint(self.totalWithdrawnFees), bint(feeAmount)))
-    msg.forward(self.tokens.collateralToken, {Action = 'Transfer', Recipient = sender, Quantity = feeAmount})
+    msg.forward(self.tokens.collateralToken, {Action = 'Transfer', Recipient = onBehalfOf, Quantity = feeAmount})
   end
-  return self.withdrawFeesNotice(feeAmount, msg, useReply)
+  return self.withdrawFeesNotice(feeAmount, onBehalfOf, msg, useReply)
 end
 
 --- Before token transfer
@@ -364,7 +366,7 @@ end
 --- @param msg Message The message received
 function CPMMMethods:_beforeTokenTransfer(from, to, amount, msg)
   if from ~= nil and from ~= ao.id then
-    self:withdrawFees(from, msg, false)
+    self:withdrawFees(from, from, msg, false)
   end
   local totalSupply = self.token.totalSupply
   local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self:collectedFees()), bint(amount)), totalSupply)))

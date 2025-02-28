@@ -118,9 +118,13 @@ end
 --- @param cpmm CPMM The CPMM instance for calculations
 --- @return boolean, string|nil
 function cpmmValidation.sell(msg, cpmm)
+  local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.From
   local positionIds = cpmm.tokens.positionIds
 
-  local success, err = sharedValidation.validateItem(msg.Tags.PositionId, positionIds, "PositionId")
+  local success, err = sharedValidation.validateAddress(onBehalfOf, 'onBehalfOf')
+  if not success then return false, err end
+
+  success, err = sharedValidation.validateItem(msg.Tags.PositionId, positionIds, "PositionId")
   if not success then return false, err end
 
   success, err = sharedValidation.validatePositiveInteger(msg.Tags.MaxPositionTokensToSell, "MaxPositionTokensToSell")
@@ -166,8 +170,19 @@ end
 --- @param msg Message The message to be validated
 --- @return boolean, string|nil
 function cpmmValidation.feesWithdrawable(msg)
-  if msg.Tags['Recipient'] then
+  if msg.Tags["Recipient"] then
     return sharedValidation.validateAddress(msg.Tags['Recipient'], 'Recipient')
+  end
+
+  return true
+end
+
+--- Validates withdraw fees
+--- @param msg Message The message to be validated
+--- @return boolean, string|nil
+function cpmmValidation.withdrawFees(msg)
+  if msg.Tags["OnBehalfOf"] then
+    return sharedValidation.validateAddress(msg.Tags['OnBehalfOf'], 'OnBehalfOf')
   end
 
   return true

@@ -576,6 +576,8 @@ describe("#market", function()
     -- @dev update expected notice
     noticeAddFunding.FundingAdded = fundingAdded
     -- assert notice
+    -- @dev update onBehalfOf
+    noticeAddFunding.OnBehalfOf = msgAddFunding.Tags.Sender
     assert.are.same(noticeAddFunding, notice)
 	end)
 
@@ -640,6 +642,8 @@ describe("#market", function()
     noticeRemoveFunding.SharesToBurn = msgAddFunding.Tags.Quantity
     noticeRemoveFunding.CollateralRemovedFromFeePool = "0"
     -- assert notice
+    -- @dev update onBehalfOf
+    noticeRemoveFunding.OnBehalfOf = msgRemoveFunding.From
     assert.are.same(noticeRemoveFunding, notice)
 	end)
 
@@ -817,6 +821,7 @@ describe("#market", function()
     assert.has.no.errors(function()
       notice = Market.cpmm:sell(
         msgSell.From,
+        msgSell.From, -- onBehalfOf is the same as sender
         msgSell.Tags.ReturnAmount,
         msgSell.Tags.PositionId,
         msgSell.Tags.MaxPositionTokensToSell,
@@ -843,6 +848,8 @@ describe("#market", function()
     }
     assert.are.same(poolBalances, Market.cpmm:getPoolBalances())
     -- assert notice
+    -- @dev update onBehalfOf
+    noticeSell.OnBehalfOf = msgSell.From
     assert.are.same(noticeSell, notice)
   end)
 
@@ -949,7 +956,7 @@ describe("#market", function()
     local withdrawnFeesNotice = {}
     -- should not throw an error
 		assert.has.no.error(function()
-      withdrawnFeesNotice = Market.cpmm:withdrawFees(sender, msgBuy, true) -- useReply
+      withdrawnFeesNotice = Market.cpmm:withdrawFees(sender, sender, msgBuy, true) -- useReply
     end)
     -- assert withdrawn fees
     assert.are.equal("1", feesWithdrawable)

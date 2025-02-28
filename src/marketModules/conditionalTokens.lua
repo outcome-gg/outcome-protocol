@@ -150,7 +150,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     })
   end
   -- Send notice.
-  return self.positionsMergeNotice(self.collateralToken, quantity, msg, useReply)
+  return self.positionsMergeNotice(self.collateralToken, quantity, onBehalfOf, msg, useReply)
 end
 
 --- Report payouts
@@ -177,9 +177,10 @@ end
 
 --- Redeem positions
 --- Transfers any payout minus fees to the message sender
+--- @param onBehalfOf string The process ID of the account to receive the collateral
 --- @param msg Message The message received
 --- @return Message The payout redemption notice
-function ConditionalTokensMethods:redeemPositions(msg)
+function ConditionalTokensMethods:redeemPositions(onBehalfOf, msg)
   local den = self.payoutDenominator
   assert(den > 0, "market not resolved")
   assert(self.payoutNumerators and #self.payoutNumerators > 0, "market not initialized")
@@ -201,10 +202,10 @@ function ConditionalTokensMethods:redeemPositions(msg)
   -- Return total payout minus take fee.
   if totalPayout > 0 then
     totalPayout = math.floor(totalPayout)
-    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, msg.From, totalPayout)
+    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, onBehalfOf, totalPayout)
   end
   -- Send notice.
-  return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, msg)
+  return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, onBehalfOf, msg)
 end
 
 --- Return total payout minus take fee

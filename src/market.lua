@@ -253,6 +253,17 @@ end)
 --- Withdraw fees handler
 --- @param msg Message The message received
 Handlers.add("Withdraw-Fees", {Action = "Withdraw-Fees"}, function(msg)
+  -- Validate input
+  local success, err = cpmmValidation.withdrawFees(msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Withdraw-Fees-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, withdraw fees from the CPMM.
   Market:withdrawFees(msg)
 end)
 

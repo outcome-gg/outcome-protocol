@@ -13,13 +13,15 @@ local CPMMNotices = {}
 --- Sends an add funding notice
 --- @param fundingAdded table The funding added
 --- @param mintAmount number The mint amount
+--- @param onBehalfOf string The address to receive the LP tokens
 --- @param msg Message The message received
 --- @return Message The funding added notice
-function CPMMNotices.addFundingNotice(fundingAdded, mintAmount, msg)
+function CPMMNotices.addFundingNotice(fundingAdded, mintAmount, onBehalfOf, msg)
   return msg.forward(msg.Tags.Sender, {
     Action = "Add-Funding-Notice",
     FundingAdded = json.encode(fundingAdded),
     MintAmount = tostring(mintAmount),
+    OnBehalfOf = onBehalfOf,
     Data = "Successfully added funding"
   })
 end
@@ -28,14 +30,16 @@ end
 --- @param sendAmounts table The send amounts
 --- @param collateralRemovedFromFeePool string The collateral removed from the fee pool
 --- @param sharesToBurn string The shares to burn
+--- @param onBehalfOf string The address to receive the position tokens
 --- @param msg Message The message received
 --- @return Message The funding removed notice
-function CPMMNotices.removeFundingNotice(sendAmounts, collateralRemovedFromFeePool, sharesToBurn, msg)
+function CPMMNotices.removeFundingNotice(sendAmounts, collateralRemovedFromFeePool, sharesToBurn, onBehalfOf, msg)
   return msg.reply({
     Action = "Remove-Funding-Notice",
     SendAmounts = json.encode(sendAmounts),
     CollateralRemovedFromFeePool = collateralRemovedFromFeePool,
     SharesToBurn = sharesToBurn,
+    OnBehalfOf = onBehalfOf,
     Data = "Successfully removed funding"
   })
 end
@@ -63,15 +67,17 @@ end
 
 --- Sends a sell notice
 --- @param from string The address that sold
+--- @param onBehalfOf string The address that receives the collateral
 --- @param returnAmount number The return amount
 --- @param feeAmount number The fee amount
 --- @param positionId string The position ID
 --- @param positionTokensSold number The outcome position tokens sold
 --- @param msg Message The message received
 --- @return Message The sell notice
-function CPMMNotices.sellNotice(from, returnAmount, feeAmount, positionId, positionTokensSold, msg)
+function CPMMNotices.sellNotice(from, onBehalfOf, returnAmount, feeAmount, positionId, positionTokensSold, msg)
   return msg.forward(from, {
     Action = "Sell-Notice",
+    OnBehalfOf = onBehalfOf,
     ReturnAmount = tostring(returnAmount),
     FeeAmount = tostring(feeAmount),
     PositionId = positionId,
@@ -84,12 +90,14 @@ end
 --- @notice Returns notice with `msg.reply` if `useReply` is true, otherwise uses `ao.send`
 --- @dev Ensures the final notice is sent to the user, preventing unintended message handling
 --- @param feeAmount number The fee amount
+--- @param onBehalfOf string The address to receive the fees
 --- @param msg Message The message received
 --- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The withdraw fees notice
-function CPMMNotices.withdrawFeesNotice(feeAmount, msg, useReply)
+function CPMMNotices.withdrawFeesNotice(feeAmount, onBehalfOf, msg, useReply)
   local notice = {
     Action = "Withdraw-Fees-Notice",
+    OnBehalfOf = onBehalfOf,
     FeeAmount = tostring(feeAmount),
     Data = "Successfully withdrew fees"
   }

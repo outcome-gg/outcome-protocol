@@ -136,20 +136,22 @@ ACTIVITY LOGS
 =============
 ]]
 
-local function logFunding(dataIndex, user, operation, collateral, quantity, msg)
+local function logFunding(dataIndex, user, onBehalfOf, operation, collateral, quantity, msg)
   return msg.forward(dataIndex, {
     Action = "Log-Funding",
     User = user,
+    OnBehalfOf = onBehalfOf,
     Operation = operation,
     Collateral = collateral,
     Quantity = quantity,
   })
 end
 
-local function logPrediction(dataIndex, user, operation, collateral, quantity, outcome, shares, price, msg)
+local function logPrediction(dataIndex, user, onBehalfOf, operation, collateral, quantity, outcome, shares, price, msg)
   return msg.forward(dataIndex, {
     Action = "Log-Prediction",
     User = user,
+    OnBehalfOf = onBehalfOf,
     Operation = operation,
     Collateral = collateral,
     Quantity = quantity,
@@ -181,30 +183,31 @@ function MarketMethods:addFunding(msg)
   -- Add funding to the CPMM
   self.cpmm:addFunding(onBehalfOf, msg.Tags.Quantity, distribution, msg)
   -- Log funding update to data index
-  logFunding(self.dataIndex, msg.Tags.Sender, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
+  logFunding(self.dataIndex, msg.Tags.Sender, onBehalfOf, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
 end
 
 --- Remove funding
 --- Message forwarded from the LP token
 --- @param msg Message The message received
 function MarketMethods:removeFunding(msg)
+  local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
   -- Remove funding from the CPMM
-  self.cpmm:removeFunding(msg.From, msg.Tags.Quantity, msg)
+  self.cpmm:removeFunding(onBehalfOf, msg.Tags.Quantity, msg)
   -- Log funding update to data index
-  logFunding(self.dataIndex, msg.From, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
+  logFunding(self.dataIndex, msg.From, onBehalfOf, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
 end
 
 --- Buy
 --- Message forwarded from the collateral token
 --- @param msg Message The message received
 function MarketMethods:buy(msg)
-  local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
   local positionTokensToBuy = self.cpmm:calcBuyAmount(msg.Tags.Quantity, msg.Tags['X-PositionId'])
+  local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
   -- Buy position tokens from the CPMM
   self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinPositionTokensToBuy']), msg)
   -- Log prediction and probability update to data index
   local price = tostring(bint.__div(bint(positionTokensToBuy), bint(msg.Tags.Quantity)))
-  logPrediction(self.dataIndex, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], positionTokensToBuy, price, msg)
+  logPrediction(self.dataIndex, msg.Tags.Sender, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], positionTokensToBuy, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
 end
 
@@ -212,18 +215,20 @@ end
 --- @param msg Message The message received
 function MarketMethods:sell(msg)
   local positionTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
+  local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
   -- Sell position tokens to the CPMM
-  self.cpmm:sell(msg.From, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.MaxPositionTokensToSell, msg)
+  self.cpmm:sell(msg.From, onBehalfOf, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.MaxPositionTokensToSell, msg)
   -- Log prediction and probability update to data index
   local price = tostring(bint.__div(positionTokensToSell, bint(msg.Tags.ReturnAmount)))
-  logPrediction(self.dataIndex, msg.From, "sell", self.cpmm.tokens.collateralToken, msg.Tags.ReturnAmount, msg.Tags.PositionId, positionTokensToSell, price, msg)
+  logPrediction(self.dataIndex, msg.From, onBehalfOf, "sell", self.cpmm.tokens.collateralToken, msg.Tags.ReturnAmount, msg.Tags.PositionId, positionTokensToSell, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
 end
 
 --- Withdraw fees
 --- @param msg Message The message received
 function MarketMethods:withdrawFees(msg)
-  self.cpmm:withdrawFees(msg.From, msg, true)
+  local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
+  self.cpmm:withdrawFees(msg.From, onBehalfOf, msg, true)
 end
 
 --[[
@@ -272,7 +277,7 @@ end
 --- @param msg Message The message received
 --- @return Message feesWithdrawable The fees withdrawable by the account
 function MarketMethods:feesWithdrawable(msg)
-  local account = msg.Tags['Recipient'] or msg.From
+  local account = msg.Tags["Recipient"] or msg.From
   local fees = self.cpmm:feesWithdrawableBy(account)
   return msg.reply({
     FeesWithdrawable = fees,
@@ -347,7 +352,7 @@ CONDITIONAL TOKENS WRITE METHODS
 --- Merge positions
 --- @param msg Message The message received
 function MarketMethods:mergePositions(msg)
-  local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
+  local onBehalfOf = msg.Tags["OnBehalfOf"] or msg.From
   self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg, true)
 end
 
@@ -361,7 +366,8 @@ end
 --- Redeem positions
 --- @param msg Message The message received
 function MarketMethods:redeemPositions(msg)
-  self.cpmm.tokens:redeemPositions(msg)
+  local onBehalfOf = msg.Tags["OnBehalfOf"] or msg.From
+  self.cpmm.tokens:redeemPositions(onBehalfOf, msg)
 end
 
 --[[

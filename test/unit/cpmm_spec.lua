@@ -397,8 +397,9 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- Pool Balances
     local poolBalances = {msgAddFunding.Tags.Quantity, msgAddFunding.Tags.Quantity}
     assert.are.same(poolBalances, CPMM:getPoolBalances())
-    local fundingAdded = json.encode({tonumber(msgAddFunding.Tags.Quantity), tonumber(msgAddFunding.Tags.Quantity)})
     -- assert notice
+    -- @dev: updated onBehalfOf
+    noticeAddFunding.OnBehalfOf = msgAddFunding.Tags.Sender
     assert.are.same(noticeAddFunding, notice)
 	end)
 
@@ -436,6 +437,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     local poolBalances = {tostring(newDistribution[1]), tostring(newDistribution[2])}
     assert.are.same(poolBalances, CPMM:getPoolBalances())
     -- assert notice
+    -- @dev: updated onBehalfOf
+    noticeAddFunding.OnBehalfOf = msgAddFunding.Tags.Sender
     assert.are.same(noticeAddFunding, notice)
 	end)
 
@@ -473,6 +476,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     local poolBalances = {tostring(newDistribution[1]), tostring(newDistribution[2])}
     assert.are.same(poolBalances, CPMM:getPoolBalances())
     -- assert notice
+    -- @dev: updated onBehalfOf
+    noticeAddFunding.OnBehalfOf = msgAddFunding.Tags.Sender
     assert.are.same(noticeAddFunding, notice)
 	end)
 
@@ -544,6 +549,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- Pool Balances
     assert.are.same({"0", "0"}, CPMM:getPoolBalances())
     -- assert notice
+    -- @dev: updated onBehalfOf
+    noticeRemoveFunding.OnBehalfOf = msgSell.From
     assert.are.same(noticeRemoveFunding, notice)
     -- restore ao.send
     _G.ao.send = backupAoSend
@@ -610,6 +617,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     -- assert notice
     -- @dev: updated send amounts due to buy
     noticeRemoveFunding.SendAmounts = json.encode({"51", "199"})
+    -- @dev: updated onBehalfOf
+    noticeRemoveFunding.OnBehalfOf = msgRemoveFunding.From
     assert.are.same(noticeRemoveFunding, notice)
     -- restore ao.send
     _G.ao.send = backupAoSend
@@ -872,6 +881,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.has.no.errors(function()
       notice = CPMM:sell(
         msgSell.From,
+        msgSell.From, -- onBehalfOf is the same as sender
         msgSell.Tags.ReturnAmount,
         msgSell.Tags.PositionId,
         msgSell.Tags.MaxPositionTokensToSell,
@@ -901,6 +911,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     }
     assert.are.same(poolBalances, CPMM:getPoolBalances())
     -- assert notice
+    -- @dev: updated onBehalfOf
+    noticeSell.OnBehalfOf = msgSell.From
     assert.are.same(noticeSell, notice)
   end)
 
@@ -928,6 +940,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.has.error(function()
       CPMM:sell(
       msgSell.From,
+      msgSell.From, -- onBehalfOf is the same as sender
       msgSell.Tags.ReturnAmount,
       msgSell.Tags.PositionId,
       msgSell.Tags.Quantity,
@@ -966,6 +979,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.has.error(function()
       CPMM:sell(
       msgSell.From,
+      msgSell.From, -- onBehalfOf is the same as sender
       msgSell.Tags.ReturnAmount,
       msgSell.Tags.PositionId,
       msgSell.Tags.Quantity,
@@ -1007,6 +1021,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.has.error(function()
       CPMM:sell(
       msgSell.From,
+      msgSell.From, -- onBehalfOf is the same as sender
       msgSell.Tags.ReturnAmount,
       msgSell.Tags.PositionId,
       msgSell.Tags.MaxPositionTokensToSell,
@@ -1119,7 +1134,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     local withdrawnFeesNotice = {}
     -- should not throw an error
 		assert.has.no.error(function()
-      withdrawnFeesNotice = CPMM:withdrawFees(sender, msgBuy, true) -- useReply
+      withdrawnFeesNotice = CPMM:withdrawFees(sender, sender, msgBuy, true) -- useReply
     end)
     -- assert withdrawn fees
     assert.are.equal("1", feesWithdrawable)

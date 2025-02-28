@@ -383,6 +383,7 @@ describe("#market #conditionalTokens", function()
     )
     -- redeem positions
     local notice = ConditionalTokens:redeemPositions(
+      msgRedeemPositions.From,
       msgRedeemPositions
     )
     -- asert state change

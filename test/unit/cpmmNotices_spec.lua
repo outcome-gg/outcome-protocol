@@ -215,9 +215,11 @@ describe("#market #conditionalTokens #cpmmNotices", function()
 
   it("should send fundingAddedNotice", function()
     local fundingAdded = {10, 50}
+    noticeAddFunding.OnBehalfOf = msgAddFunding.From
     local notice = cpmmNotices.addFundingNotice(
       fundingAdded,
       msgAddFunding.Tags.Quantity,
+      msgAddFunding.From, -- onBehalfOf
       msgAddFunding
     )
     -- @dev update fundingAdded
@@ -233,10 +235,12 @@ describe("#market #conditionalTokens #cpmmNotices", function()
     noticeRemoveFunding.SendAmounts = json.encode(sendAmounts)
     noticeRemoveFunding.SharesToBurn = tostring(sharesToBurn)
     noticeRemoveFunding.CollateralRemovedFromFeePool = tostring(collateralRemovedFromFeePool)
+    noticeRemoveFunding.OnBehalfOf = msgRemoveFunding.From
     local notice = cpmmNotices.removeFundingNotice(
       sendAmounts,
       tostring(collateralRemovedFromFeePool),
       tostring(sharesToBurn),
+      msgRemoveFunding.From, -- onBehalfOf
       msgRemoveFunding
     )
     assert.are.same(noticeRemoveFunding, notice)
@@ -264,8 +268,10 @@ describe("#market #conditionalTokens #cpmmNotices", function()
     -- @dev update expected notice
     noticeSell.FeeAmount = tostring(feeAmount)
     noticeSell.PositionTokensSold = msgSell.Tags.Quantity
+    noticeSell.OnBehalfOf = msgSell.From
     local notice = cpmmNotices.sellNotice(
       msgSell.From,
+      msgSell.From, -- onBehalfOf
       msgSell.Tags.ReturnAmount,
       feeAmount,
       msgSell.Tags.PositionId,

@@ -51,12 +51,14 @@ end
 --- Positions merge notice
 --- @param collateralToken string The address of the collateral token
 --- @param quantity string The quantity
+--- @param onBehalfOf string The address of the account to receive the collateral
 --- @param msg Message The message received
 --- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The positions merge notice
-function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, msg, useReply)
+function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, onBehalfOf, msg, useReply)
   local notice = {
     Action = "Merge-Positions-Notice",
+    OnBehalfOf = onBehalfOf,
     CollateralToken = collateralToken,
     Quantity = quantity
   }
@@ -69,14 +71,16 @@ end
 --- @param collateralToken string The address of the collateral token
 --- @param payout number The payout amount
 --- @param netPayout string The net payout amount (after fees)
+--- @param onBehalfOf string The address of the account to receive the payout
 --- @param msg Message The message received
 --- @return Message The payout redemption notice
-function ConditionalTokensNotices.redeemPositionsNotice(collateralToken, payout, netPayout, msg)
+function ConditionalTokensNotices.redeemPositionsNotice(collateralToken, payout, netPayout, onBehalfOf, msg)
   return msg.reply({
     Action = "Redeem-Positions-Notice",
     CollateralToken = collateralToken,
     GrossPayout = tostring(payout),
-    NetPayout = netPayout
+    NetPayout = netPayout,
+    OnBehalfOf = onBehalfOf
   })
 end
 
