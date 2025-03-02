@@ -9,23 +9,27 @@ local MarketFactoryNotices = {}
 local json = require('json')
 
 --- Create market group notice
+--- @param dataIndex string The data index address
 --- @param collateral string The collateral token address
 --- @param creator string The creator address
 --- @param question string The group title
 --- @param rules string The group rules
+--- @param outcomeSlotCount string The number of outcome slots
 --- @param category string The group category
 --- @param subcategory string The group subcategory
 --- @param logo string The group logo
 --- @param msg Message The message received
 --- @return Message createGroupNotice The create group notice
-function MarketFactoryNotices.createMarketGroupNotice(collateral, creator, question, rules, category, subcategory, logo, msg)
+function MarketFactoryNotices.createEventNotice(dataIndex, collateral, creator, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
   return msg.reply({
     Action = "Create-Market-Group-Notice",
     GroupId = msg.Id,
+    DataIndex = dataIndex,
     Collateral = collateral,
     Creator = creator,
     Question = question,
     Rules = rules,
+    OutcomeSlotCount = outcomeSlotCount,
     Category = category,
     Subcategory = subcategory,
     Logo = logo
@@ -35,6 +39,7 @@ end
 --- Spawn market notice
 --- @param resolutionAgent string The resolution agent address
 --- @param collateralToken string The collateral token address
+--- @param dataIndex string The data index address
 --- @param creator string The creator address
 --- @param creatorFee number The creator fee
 --- @param creatorFeeTarget string The creator fee target
@@ -50,6 +55,7 @@ end
 function MarketFactoryNotices.spawnMarketNotice(
   resolutionAgent,
   collateralToken,
+  dataIndex,
   creator,
   creatorFee,
   creatorFeeTarget,
@@ -66,6 +72,7 @@ function MarketFactoryNotices.spawnMarketNotice(
     Action = "Spawn-Market-Notice",
     ResolutionAgent = resolutionAgent,
     CollateralToken = collateralToken,
+    DataIndex = dataIndex,
     Creator = creator,
     CreatorFee = tostring(creatorFee),
     CreatorFeeTarget = creatorFeeTarget,

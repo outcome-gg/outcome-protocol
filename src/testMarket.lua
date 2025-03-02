@@ -89,8 +89,9 @@ end
 --- Creates a market
 local function createMarket(outcomeSlotCount)
   local res1 = Outcome.marketFactorySpawnMarket(
-    ao.id,
+    ao.id, -- resolution agent
     Outcome.testCollateral,
+    ao.id, -- data index
     "What will happen?",
     outcomeSlotCount,
     "Category",

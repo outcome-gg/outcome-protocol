@@ -31,7 +31,7 @@ MARKET
 Env = ao.env.Process.Tags.Env or "DEV"
 
 -- Revoke ownership if the Market is not in development mode
-if Env ~= 'DEV' then
+if Env ~= "DEV" then
   Owner = ""
 end
 

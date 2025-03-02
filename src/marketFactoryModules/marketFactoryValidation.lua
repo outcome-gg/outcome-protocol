@@ -19,7 +19,7 @@ WRITE METHODS
 --- @param msg Message The message received
 --- @param approvedCollateralTokens table<string, boolean> A set of approved collateral tokens
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateCreateMarketGroup(msg, approvedCollateralTokens)
+function marketFactoryValidation.validateCreateEvent(msg, approvedCollateralTokens)
   -- TODO @dev: check staking balance or sender == approved
   local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
   if not success then return false, err end
@@ -28,12 +28,15 @@ function marketFactoryValidation.validateCreateMarketGroup(msg, approvedCollater
     return false, "CollateralToken not approved!"
   end
 
-  local requiredFields = { "Question", "Rules", "Category", "Subcategory", "Logo" }
+  local requiredFields = { "Question", "Rules", "OutcomeSlotCount", "Category", "Subcategory", "Logo" }
   for _, field in ipairs(requiredFields) do
     if type(msg.Tags[field]) ~= "string" then
       return false, field .. " is required!"
     end
   end
+
+  success, err = sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")
+  if not success then return false, err end
 
   return true
 end
@@ -52,6 +55,9 @@ function marketFactoryValidation.validateSpawnMarket(msg, approvedCollateralToke
   end
 
   success, err = sharedValidation.validateAddress(msg.Tags.ResolutionAgent, "ResolutionAgent")
+  if not success then return false, err end
+
+  success, err = sharedValidation.validateAddress(msg.Tags.DataIndex, "DataIndex")
   if not success then return false, err end
 
   success, err = sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")

@@ -24,12 +24,16 @@ MARKET FACTORY
 ]]
 
 Name = "Outcome Market Factory"
-Env = 'DEV'
+Env = ao.env.Process.Tags.Env or "DEV"
+
+-- Revoke ownership if the Market is not in development mode
+if Env ~= "DEV" then
+  Owner = ""
+end
 
 --- Represents the Market Factory Configuration
 --- @class MarketFactoryConfiguration
 --- @field configurator string The Configurator process ID
---- @field dataIndex string The Data Index process ID
 --- @field namePrefix string The Market name prefix
 --- @field tickerPrefix string The Market ticker prefix
 --- @field logo string The Market default logo
@@ -44,7 +48,6 @@ Env = 'DEV'
 local function retrieveMarketFactoryConfig()
   local config = {
     configurator = Env == 'DEV' and constants.dev.configurator or constants.prod.configurator,
-    dataIndex = Env == 'DEV' and constants.dev.dataIndex or constants.prod.dataIndex,
     namePrefix = constants.namePrefix,
     tickerPrefix = constants.tickerPrefix,
     logo = constants.logo,
@@ -62,7 +65,6 @@ if not MarketFactory or Env == 'DEV' then
   local marketFactoryConfig = retrieveMarketFactoryConfig()
   MarketFactory = marketFactory.new(
     marketFactoryConfig.configurator,
-    marketFactoryConfig.dataIndex,
     marketFactoryConfig.namePrefix,
     marketFactoryConfig.tickerPrefix,
     marketFactoryConfig.logo,
@@ -92,7 +94,32 @@ WRITE HANDLERS
 ==============
 ]]
 
--- @dev: TODO Create Market Group aka Event
+--- Create Event
+--- @param msg Message The message to handle
+Handlers.add("Create-Event", {Action = "Create-Event"}, function(msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateCreateEvent(msg, MarketFactory.approvedCollateralTokens)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Create-Event-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, create event.
+  MarketFactory:createEvent(
+    msg.Tags["DataIndex"],
+    msg.Tags["CollateralToken"],
+    msg.Tags["Question"],
+    msg.Tags["Rules"],
+    msg.Tags["OutcomeSlotCount"],
+    msg.Tags["Category"],
+    msg.Tags["Subcategory"],
+    msg.Tags["Logo"],
+    msg
+  )
+end)
 
 --- Spawn market handler
 --- @param msg Message The message to handle
@@ -111,6 +138,7 @@ Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
   MarketFactory:spawnMarket(
     msg.Tags["CollateralToken"],
     msg.Tags["ResolutionAgent"],
+    msg.Tags["DataIndex"],
     msg.Tags["Question"],
     msg.Tags["Rules"],
     tonumber(msg.Tags["OutcomeSlotCount"]),

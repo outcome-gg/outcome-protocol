@@ -32,10 +32,18 @@ local json = require('json')
 --- @field approvedCollateralTokens table<string, boolean> Approved collateral tokens
 
 --- Create a new MarketFactory instance
+--- @param configurator string The configurator address
+--- @param namePrefix string The name prefix for markets
+--- @param tickerPrefix string The ticker prefix for markets
+--- @param logo string The default logo for markets
+--- @param lpFee number The default liquidity provider fee
+--- @param protocolFee number The default protocol fee
+--- @param protocolFeeTarget string The default protocol fee target
+--- @param maximumTakeFee number The default maximum take fee
+--- @param approvedCollateralTokens table<string, boolean> The approved collateral tokens
 --- @return MarketFactory marketFactory The new MarketFactory instance
 function MarketFactory.new(
   configurator,
-  dataIndex,
   namePrefix,
   tickerPrefix,
   logo,
@@ -47,7 +55,6 @@ function MarketFactory.new(
 )
   local marketFactory = {
     configurator = configurator,
-    dataIndex = dataIndex,
     namePrefix = namePrefix,
     tickerPrefix = tickerPrefix,
     logo = logo,
@@ -62,7 +69,7 @@ function MarketFactory.new(
     marketsSpawnedByCreator = {},
     marketsPendingInit = {},
     marketsInit = {},
-    marketGroupCollateralByCreator = {},
+    eventConfigByCreator = {},
     marketProcessCode = marketProcessCode
   }
   setmetatable(marketFactory, {
@@ -91,7 +98,6 @@ INFO METHOD
 function MarketFactoryMethods:info(msg)
   return msg.reply({
     Configurator = self.configurator,
-    DataIndex = self.dataIndex,
     LpFee = tostring(self.lpFee),
     ProtocolFee = tostring(self.protocolFee),
     ProtocolFeeTarget = self.protocolFeeTarget,
@@ -137,7 +143,7 @@ local function logMarket(
   category,
   subcategory,
   logo,
-  groupId,
+  eventId,
   msg
 )
   -- create notice
@@ -155,7 +161,7 @@ local function logMarket(
     Category = category,
     Subcategory = subcategory,
     Logo = logo,
-    GroupId = groupId
+    EventId = eventId
   }
   -- log to data index
   msg.forward(dataIndex, notice)
@@ -163,7 +169,7 @@ local function logMarket(
   msg.forward(creator, notice)
 end
 
-local function logGroup(dataIndex, group, creator, collateral, question, rules, category, subcategory, logo, msg)
+local function logGroup(dataIndex, group, creator, collateral, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
   -- create notice
   local notice = {
     Action = "Log-Group-Notice",
@@ -171,6 +177,7 @@ local function logGroup(dataIndex, group, creator, collateral, question, rules, 
     Collateral = collateral,
     Question = question,
     Rules = rules,
+    OutcomeSlotCount = outcomeSlotCount,
     Category = category,
     Subcategory = subcategory,
     Logo = logo,
@@ -188,27 +195,32 @@ WRITE METHODS
 =============
 ]]
 
---- Create Market Group
---- @notice Market groups only support binary outcomes
+--- Create Event
 --- @param msg Message The message received
 --- @return Message The create group message
-function MarketFactoryMethods:createMarketGroup(collateral, question, rules, category, subcategory, logo, msg)
+function MarketFactoryMethods:createEvent(dataIndex, collateral, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
   -- set defaults
   category = category or ""
   subcategory = subcategory or ""
   logo = logo or self.marketLogo
-  -- create group
-  if not self.marketGroupCollateralByCreator[msg.From] then self.marketGroupCollateralByCreator[msg.From] = {} end
-  self.marketGroupCollateralByCreator[msg.From][msg.Id] = collateral
+  -- set config 
+  local config = {
+    collateral = collateral,
+    outcomeSlotCount = outcomeSlotCount,
+  }
+  -- create event
+  if not self.eventConfigByCreator[msg.From] then self.eventConfigByCreator[msg.From] = {} end
+  self.eventConfigByCreator[msg.From][msg.Id] = config
   -- log group
-  logGroup(self.dataIndex, msg.Id, msg.From, collateral, question, rules, category, subcategory, logo, msg)
+  logGroup(dataIndex, msg.Id, msg.From, collateral, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
   -- send notice
-  return self.createMarketGroupNotice(collateral, msg.From, question, rules, category, subcategory, logo, msg)
+  return self.createEventNotice(dataIndex, collateral, msg.From, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
 end
 
 --- Spawn market
 --- @param collateralToken string The collateral token address
 --- @param resolutionAgent string The process assigned to report the market result
+--- @param dataIndex string The data index address for where to log market actions
 --- @param question string The question to be answered by the resolutionAgent
 --- @param rules string The rules of the market
 --- @param outcomeSlotCount number The number of outcome slots which should be used for this condition
@@ -218,12 +230,13 @@ end
 --- @param category string|nil The category of the market
 --- @param subcategory string|nil The subcategory of the market
 --- @param logo string|nil The logo of the market
---- @param groupId string|nil The group ID or nil
+--- @param eventId string|nil The event ID or nil
 --- @param msg Message The message received
 --- @return Message marketSpawnedNotice The market spawned notice
 function MarketFactoryMethods:spawnMarket(
   collateralToken,
   resolutionAgent,
+  dataIndex,
   question,
   rules,
   outcomeSlotCount,
@@ -233,7 +246,7 @@ function MarketFactoryMethods:spawnMarket(
   category,
   subcategory,
   logo,
-  groupId,
+  eventId,
   msg
 )
   -- set defaults
@@ -241,20 +254,20 @@ function MarketFactoryMethods:spawnMarket(
   category = category or ""
   subcategory = subcategory or ""
   logo = logo or self.marketLogo
-  groupId = groupId or ""
-  -- check if group exists, creator is the owner, collateral matches group, and outcomeSlotCount == 2
-  if groupId ~= "" then
-    if not self.marketGroupCollateralByCreator[creator] then
-      return msg.reply({Error = "Group not found"})
+  eventId = eventId or ""
+  -- check if event exists, creator is the owner, and collateral and outcome slot count matches event
+  if eventId ~= "" then
+    if not self.eventConfigByCreator[creator] then
+      return msg.reply({Error = "Event not found"})
     end
-    if not self.marketGroupCollateralByCreator[creator][groupId] then
-      return msg.reply({Error = "Group not found"})
+    if not self.eventConfigByCreator[creator][eventId] then
+      return msg.reply({Error = "Event not found"})
     end
-    if self.marketGroupCollateralByCreator[msg.From][msg.Id] ~= collateralToken then
-      return msg.reply({Error = "Collateral token does not match group"})
+    if self.eventConfigByCreator[msg.From][msg.Id].collateralToken ~= collateralToken then
+      return msg.reply({Error = "Collateral token does not match event"})
     end
-    if outcomeSlotCount ~= 2 then
-      return msg.reply({Error = "Outcome slot count must be 2 for group markets"})
+    if self.eventConfigByCreator[msg.From][msg.Id].outcomeSlotCount ~= outcomeSlotCount then
+      return msg.reply({Error = "Outcome slot count does not match event"})
     end
   end
   -- spawn market
@@ -268,7 +281,7 @@ function MarketFactoryMethods:spawnMarket(
     ["Logo"] = logo,
     ["LpFee"] = tostring(self.lpFee),
     ["Configurator"] = self.configurator,
-    ["DataIndex"] = self.dataIndex,
+    ["DataIndex"] = dataIndex,
     ["ProtocolFee"] = tostring(self.protocolFee),
     ["ProtocolFeeTarget"] = self.protocolFeeTarget,
     -- Creator-controlled parameters
@@ -282,7 +295,7 @@ function MarketFactoryMethods:spawnMarket(
     ["Category"] = category,
     ["Subcategory"] = subcategory,
     ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount)),
-    ["GroupId"] = groupId,
+    ["EventId"] = eventId,
     -- Environment set to PROD to renounce process owner on eval
     ["Env"] = "PROD"
   })
@@ -296,14 +309,15 @@ function MarketFactoryMethods:spawnMarket(
     outcomeSlotCount = outcomeSlotCount,
     collateralToken = collateralToken,
     resolutionAgent = resolutionAgent,
+    dataIndex = dataIndex,
     category = category,
     subcategory = subcategory,
     logo = logo,
-    groupId = groupId
+    eventId = eventId
   }
   self.messageToMarketConfigMapping[msg.Id] = marketConfig
   -- send notice
-  return self.spawnMarketNotice(resolutionAgent, collateralToken, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, groupId, msg)
+  return self.spawnMarketNotice(resolutionAgent, collateralToken, dataIndex, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, eventId, msg)
 end
 
 function MarketFactoryMethods:initMarket(msg)
@@ -326,7 +340,7 @@ function MarketFactoryMethods:initMarket(msg)
     local messageId = self.processToMessageMapping[processId]
     local marketConfig = self.messageToMarketConfigMapping[messageId]
     logMarket(
-      self.dataIndex,
+      marketConfig.dataIndex,
       processId,
       marketConfig.creator,
       marketConfig.creatorFee,
@@ -339,7 +353,7 @@ function MarketFactoryMethods:initMarket(msg)
       marketConfig.category,
       marketConfig.subcategory,
       marketConfig.logo,
-      marketConfig.groupId,
+      marketConfig.eventId,
       msg
     )
   end
@@ -363,11 +377,11 @@ function MarketFactoryMethods:marketsInitialized(msg)
   return msg.reply({Data = json.encode(self.marketsInit)})
 end
 
-function MarketFactoryMethods:marketGroupsByCreator(msg)
-  local creatorMarketGroups = self.marketGroupCollateralByCreator[msg.Tags.Creator] or {}
+function MarketFactoryMethods:eventsByCreator(msg)
+  local creatorMarketEvents = self.eventConfigByCreator[msg.Tags.Creator] or {}
   return msg.reply({
     Creator = msg.Tags.Creator or msg.From,
-    Data = json.encode(creatorMarketGroups)
+    Data = json.encode(creatorMarketEvents)
   })
 end
 
@@ -395,7 +409,7 @@ function MarketFactoryMethods:getLatestProcessIdForCreator(creator, msg)
   })
 end
 
---[[ce
+--[[
 ====================
 CONFIGURATOR METHODS
 ====================

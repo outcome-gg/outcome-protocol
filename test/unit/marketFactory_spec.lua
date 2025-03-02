@@ -6,6 +6,7 @@ local json = require("json")
 local sender = ""
 local collateralToken = ""
 local resolutionAgent = ""
+local dataIndex = ""
 local question = ""
 local outcomeSlotCount = ""
 local creatorFee = ""
@@ -32,14 +33,14 @@ describe("#marketFactory", function()
     sender = "test-this-is-valid-arweave-wallet-address-0"
     collateralToken = 'test-this-is-valid-arweave-wallet-address-1'
     resolutionAgent = 'test-this-is-valid-arweave-wallet-address-2'
+    dataIndex = 'test-this-is-valid-arweave-wallet-address-3'
     question = 'test question'
     outcomeSlotCount = "2"
     creatorFee = "100"
-    creatorFeeTarget = 'test-this-is-valid-arweave-wallet-address-3'
+    creatorFeeTarget = 'test-this-is-valid-arweave-wallet-address-4'
     -- create a market factory object
     FACTORY = marketFactory.new(
       constants.configurator,
-      constants.dataIndex,
       constants.namePrefix,
       constants.tickerPrefix,
       constants.logo,
@@ -67,8 +68,10 @@ describe("#marketFactory", function()
       Tags = {
         ["Action"] = "Create-Market-Group",
         ["Collateral"] = collateralToken,
+        ["DataIndex"] = dataIndex,
         ["Question"] = question,
         ["Rules"] = "test rules",
+        ["OutcomeSlotCount"] = outcomeSlotCount,
         ["CreatorFee"] = creatorFee,
         ["CreatorFeeTarget"] = creatorFeeTarget,
         ["Category"] = "test category",
@@ -87,6 +90,7 @@ describe("#marketFactory", function()
         ["Action"] = "Spawn-Market",
         ["CollateralToken"] = collateralToken,
         ["ResolutionAgent"] = resolutionAgent,
+        ["DataIndex"] = dataIndex,
         ["Question"] = question,
         ["Rules"] = "test rules",
         ["OutcomeSlotCount"] = outcomeSlotCount,
@@ -123,7 +127,6 @@ describe("#marketFactory", function()
     -- assert correct response
     assert.are.same({
       Configurator = constants.configurator,
-      DataIndex = constants.dataIndex,
       LpFee = tostring(constants.lpFee),
       ProtocolFee = tostring(constants.protocolFee),
       ProtocolFeeTarget = constants.protocolFeeTarget,
@@ -137,10 +140,12 @@ describe("#marketFactory", function()
     local notice = {}
     -- should not throw an error
     assert.has_no.errors(function()
-      notice = FACTORY:createMarketGroup(
+      notice = FACTORY:createEvent(
+        msgCreateMarketGroup.Tags["DataIndex"],
         msgCreateMarketGroup.Tags["Collateral"],
         msgCreateMarketGroup.Tags["Question"],
         msgCreateMarketGroup.Tags["Rules"],
+        msgCreateMarketGroup.Tags["OutcomeSlotCount"],
         msgCreateMarketGroup.Tags["Category"],
         msgCreateMarketGroup.Tags["Subcategory"],
         msgCreateMarketGroup.Tags["Logo"],
@@ -152,8 +157,10 @@ describe("#marketFactory", function()
       Action = "Create-Market-Group-Notice",
       GroupId = msgCreateMarketGroup.Id,
       Collateral = msgCreateMarketGroup.Tags["Collateral"],
+      DataIndex = msgCreateMarketGroup.Tags["DataIndex"],
       Creator = msgCreateMarketGroup.From,
       Question = msgCreateMarketGroup.Tags["Question"],
+      OutcomeSlotCount = msgCreateMarketGroup.Tags["OutcomeSlotCount"],
       Rules = msgCreateMarketGroup.Tags["Rules"],
       Category = msgCreateMarketGroup.Tags["Category"],
       Subcategory = msgCreateMarketGroup.Tags["Subcategory"],
@@ -169,6 +176,7 @@ describe("#marketFactory", function()
       notice = FACTORY:spawnMarket(
         msgSpawnMarket.Tags["CollateralToken"],
         msgSpawnMarket.Tags["ResolutionAgent"],
+        msgSpawnMarket.Tags["DataIndex"],
         msgSpawnMarket.Tags["Question"],
         msgSpawnMarket.Tags["Rules"],
         msgSpawnMarket.Tags["OutcomeSlotCount"],
@@ -187,6 +195,7 @@ describe("#marketFactory", function()
       Action = "Spawn-Market-Notice",
       ResolutionAgent = msgSpawnMarket.Tags["ResolutionAgent"],
       CollateralToken = msgSpawnMarket.Tags["CollateralToken"],
+      DataIndex = msgSpawnMarket.Tags["DataIndex"],
       Creator = msgSpawnMarket.From,
       CreatorFee = msgSpawnMarket.Tags["CreatorFee"],
       CreatorFeeTarget = msgSpawnMarket.Tags["CreatorFeeTarget"],
@@ -219,6 +228,7 @@ describe("#marketFactory", function()
       outcomeSlotCount = outcomeSlotCount,
       collateralToken = collateralToken,
       resolutionAgent = resolutionAgent,
+      dataIndex = dataIndex,
       category = "",
       subcategory = "",
       logo = "",
@@ -279,6 +289,7 @@ describe("#marketFactory", function()
       outcomeSlotCount = outcomeSlotCount,
       collateralToken = collateralToken,
       resolutionAgent = resolutionAgent,
+      dataIndex = dataIndex,
       category = "",
       subcategory = "",
       logo = "",
@@ -298,10 +309,12 @@ describe("#marketFactory", function()
   end)
 
   it("should get market groups by creator", function()
-    FACTORY:createMarketGroup(
+    FACTORY:createEvent(
+      msgCreateMarketGroup.Tags["DataIndex"],  
       msgCreateMarketGroup.Tags["Collateral"],
       msgCreateMarketGroup.Tags["Question"],
       msgCreateMarketGroup.Tags["Rules"],
+      msgCreateMarketGroup.Tags["OutcomeSlotCount"],
       msgCreateMarketGroup.Tags["Category"],
       msgCreateMarketGroup.Tags["Subcategory"],
       msgCreateMarketGroup.Tags["Logo"],
@@ -312,11 +325,13 @@ describe("#marketFactory", function()
     msg.Tags = {}
     msg.Tags.Creator = msgCreateMarketGroup.From
     assert.has_no.errors(function()
-      msgReply = FACTORY:marketGroupsByCreator(msg)
+      msgReply = FACTORY:eventsByCreator(msg)
     end)
     -- assert reply
     local expectedResponse = {}
-    expectedResponse[msgCreateMarketGroup.Id] = msgCreateMarketGroup.Tags.Collateral
+    expectedResponse[msgCreateMarketGroup.Id] = {}
+    expectedResponse[msgCreateMarketGroup.Id].collateral = msgCreateMarketGroup.Tags.Collateral
+    expectedResponse[msgCreateMarketGroup.Id].outcomeSlotCount = msgCreateMarketGroup.Tags.OutcomeSlotCount
     assert.are.same(json.encode(expectedResponse), msgReply.Data)
   end)
 

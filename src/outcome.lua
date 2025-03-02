@@ -1745,6 +1745,7 @@ MARKET FACTORY: WRITE
 --- @class MarketFactorySpawnMarketNotice: BaseNotice
 --- @field ResolutionAgent string The resolution agent process ID
 --- @field CollateralToken string The collateral token process ID
+--- @field DataIndex string The data index process ID
 --- @field Question string The market question
 --- @field OutcomeSlotCount number The number of outcome slots
 --- @field Category string The market category
@@ -1760,6 +1761,7 @@ MARKET FACTORY: WRITE
 --- @warning Only callable by utility token stakers with sufficient stake, or the transaction will fail
 --- @param resolutionAgent string The resolution agent process ID
 --- @param collateralToken string The collateral token process ID
+--- @param dataIndex string The data index process ID
 --- @param question string The market question
 --- @param outcomeSlotCount number The number of outcome slots
 --- @param category string The market category
@@ -1777,6 +1779,7 @@ MARKET FACTORY: WRITE
 function Outcome.marketFactorySpawnMarket(
   resolutionAgent,
   collateralToken,
+  dataIndex,
   question,
   outcomeSlotCount,
   category,
@@ -1789,6 +1792,7 @@ function Outcome.marketFactorySpawnMarket(
   -- Validate input
   validateValidArweaveAddress(resolutionAgent, "resolutionAgent")
   validateValidArweaveAddress(collateralToken, "collateralToken")
+  validateValidArweaveAddress(dataIndex, "dataIndex")
   assert(question, "`question` is required.")
   assert(type(question) == "string", "`question` must be a string.")
   validatePositiveIntegerOrZero(tostring(outcomeSlotCount), "outcomeSlotCount")
@@ -1809,6 +1813,7 @@ function Outcome.marketFactorySpawnMarket(
     Action = "Spawn-Market",
     ResolutionAgent = resolutionAgent,
     CollateralToken = collateralToken,
+    DataIndex = dataIndex,
     Question = question,
     OutcomeSlotCount = tostring(outcomeSlotCount),
     Category = category,
@@ -1823,6 +1828,7 @@ function Outcome.marketFactorySpawnMarket(
     Action = notice.Tags.Action,
     ResolutionAgent = notice.Tags.ResolutionAgent,
     CollateralToken = notice.Tags.CollateralToken,
+    DataIndex = notice.Tags.DataIndex,
     Question = notice.Tags.Question,
     OutcomeSlotCount = tonumber(notice.Tags.OutcomeSlotCount),
     Category = notice.Tags.Category,
