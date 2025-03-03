@@ -34,15 +34,16 @@ end
 --- Represents the Market Factory Configuration
 --- @class MarketFactoryConfiguration
 --- @field configurator string The Configurator process ID
---- @field stakedToken string The Staked Token process ID
---- @field minStake string The minimum stake required to spawn a market or create an event
+--- @field veToken string The Voter Escrow Token process ID
 --- @field namePrefix string The Market name prefix
 --- @field tickerPrefix string The Market ticker prefix
 --- @field logo string The Market default logo
 --- @field lpFee number The Market LP fee
 --- @field protocolFee number The Market Protocol fee
 --- @field protocolFeeTarget string The Market Protocol fee target
+--- @field approvedCreators table The approved creators
 --- @field approvedCollateralTokens table The approved collateral tokens
+--- @field testCollateral string The test collateral token
 
 --- Retrieve Market Factory Configuration
 --- Fetches configuration parameters, stored as constants
@@ -50,8 +51,7 @@ end
 local function retrieveMarketFactoryConfig()
   local config = {
     configurator = Env == 'DEV' and constants.dev.configurator or constants.prod.configurator,
-    stakedToken = Env == 'DEV' and constants.dev.stakedToken or constants.prod.stakedToken,
-    minStake = constants.prod.minStake,
+    veToken = Env == 'DEV' and constants.dev.veToken or constants.prod.veToken,
     namePrefix = constants.namePrefix,
     tickerPrefix = constants.tickerPrefix,
     logo = constants.logo,
@@ -59,7 +59,9 @@ local function retrieveMarketFactoryConfig()
     protocolFee = constants.protocolFee,
     protocolFeeTarget = Env == 'DEV' and constants.dev.protocolFeeTarget or constants.prod.protocolFeeTarget,
     maximumTakeFee = constants.maximumTakeFee,
-    approvedCollateralTokens = Env == 'DEV' and constants.dev.approvedCollateralTokens or constants.prod.approvedCollateralTokens
+    approvedCreators = Env == 'DEV' and constants.dev.approvedCreators or constants.prod.approvedCreators,
+    approvedCollateralTokens = Env == 'DEV' and constants.dev.approvedCollateralTokens or constants.prod.approvedCollateralTokens,
+    testCollateral = constants.testCollateral
   }
   return config
 end
@@ -69,8 +71,7 @@ if not MarketFactory or Env == 'DEV' then
   local marketFactoryConfig = retrieveMarketFactoryConfig()
   MarketFactory = marketFactory.new(
     marketFactoryConfig.configurator,
-    marketFactoryConfig.stakedToken,
-    marketFactoryConfig.minStake,
+    marketFactoryConfig.veToken,
     marketFactoryConfig.namePrefix,
     marketFactoryConfig.tickerPrefix,
     marketFactoryConfig.logo,
@@ -78,7 +79,9 @@ if not MarketFactory or Env == 'DEV' then
     marketFactoryConfig.protocolFee,
     marketFactoryConfig.protocolFeeTarget,
     marketFactoryConfig.maximumTakeFee,
-    marketFactoryConfig.approvedCollateralTokens
+    marketFactoryConfig.approvedCreators,
+    marketFactoryConfig.approvedCollateralTokens,
+    marketFactoryConfig.testCollateral
   )
 end
 
@@ -101,7 +104,7 @@ WRITE HANDLERS
 ]]
 
 --- Create Event
---- @warning This action will fail if the sender has an insufficient staked token balance.
+--- @warning This action will fail if the sender is not an approved creator.
 --- @warning This action will fail if the collateral token is not approved.
 --- @param msg Message The message to handle
 ---   - msg.Tags.CollateralToken (string): The collateral token for the event.
@@ -114,7 +117,12 @@ WRITE HANDLERS
 ---   - msg.Tags.Logo (string): The logo of the event.
 Handlers.add("Create-Event", {Action = "Create-Event"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateCreateEvent(msg, MarketFactory.approvedCollateralTokens, MarketFactory.stakedToken, MarketFactory.minStake)
+  local success, err = marketFactoryValidation.validateCreateEvent(
+    MarketFactory.approvedCollateralTokens,
+    MarketFactory.approvedCreators,
+    MarketFactory.testCollateral,
+    msg
+  )
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -138,7 +146,7 @@ Handlers.add("Create-Event", {Action = "Create-Event"}, function(msg)
 end)
 
 --- Spawn market handler
---- @warning This action will fail if the sender has an insufficient staked token balance.
+--- @warning This action will fail if the sender is not an approved creator.
 --- @warning This action will fail if the collateral token is not approved.
 --- @param msg Message The message to handle
 ---   - msg.Tags.CollateralToken (string): The collateral token for the event.
@@ -154,7 +162,14 @@ end)
 ---   - msg.Tags.Logo (string): The logo of the event.
 Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateSpawnMarket(msg, MarketFactory.approvedCollateralTokens, MarketFactory.stakedToken, MarketFactory.minStake)
+  local success, err = marketFactoryValidation.validateSpawnMarket(
+    MarketFactory.approvedCollateralTokens,
+    MarketFactory.approvedCreators,
+    MarketFactory.testCollateral,
+    MarketFactory.protocolFee,
+    MarketFactory.maximumTakeFee,
+    msg
+  )
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -174,7 +189,7 @@ Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
     msg.Tags["Category"],
     msg.Tags["Subcategory"],
     msg.Tags["Logo"],
-    msg.Tags["GroupId"],
+    msg.Tags["EventId"],
     msg.From,
     tonumber(msg.Tags["CreatorFee"]),
     msg.Tags["CreatorFeeTarget"],
@@ -265,6 +280,29 @@ Handlers.add("Get-Latest-Process-Id-For-Creator", {Action = "Get-Latest-Process-
 end)
 
 --[[
+=================
+VE TOKEN HANDLERS
+=================
+]]
+
+--- Approve creator
+--- @param msg Message The message to handle
+Handlers.add("Approve-Creator", {Action = "Approve-Creator"}, function(msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateApproveCreator(MarketFactory.veToken, msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Approve-Creator-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, approve creator.
+  MarketFactory:approveCreator(msg.Tags.Creator, msg)
+end)
+
+--[[
 =====================
 CONFIGURATOR HANDLERS
 =====================
@@ -274,7 +312,7 @@ CONFIGURATOR HANDLERS
 --- @param msg Message The message to handle
 Handlers.add("Update-Configurator", {Action = "Update-Configurator"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateConfigurator(msg, MarketFactory.configurator)
+  local success, err = marketFactoryValidation.validateUpdateConfigurator(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -291,7 +329,7 @@ end)
 --- @param msg Message The message to handle
 Handlers.add("Update-Staked-Token", {Action = "Update-Staked-Token"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateStakedToken(msg, MarketFactory.configurator)
+  local success, err = marketFactoryValidation.validateUpdateStakedToken(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -308,7 +346,7 @@ end)
 --- @param msg Message The message to handle
 Handlers.add("Update-Min-Stake", {Action = "Update-Min-Stake"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateMinStake(msg, MarketFactory.configurator)
+  local success, err = marketFactoryValidation.validateUpdateMinStake(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -326,7 +364,7 @@ end)
 --- @param msg Message The message to handle
 Handlers.add("Update-Lp-Fee", {Action = "Update-Lp-Fee"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateLpFee(msg, MarketFactory.configurator)
+  local success, err = marketFactoryValidation.validateUpdateLpFee(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -344,7 +382,11 @@ end)
 --- @param msg Message The message to handle
 Handlers.add("Update-Protocol-Fee", {Action = "Update-Protocol-Fee"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateProtocolFee(msg, MarketFactory.configurator)
+  local success, err = marketFactoryValidation.validateUpdateProtocolFee(
+    MarketFactory.configurator,
+    MarketFactory.maximumTakeFee,
+    msg
+  )
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -362,7 +404,7 @@ end)
 --- @param msg Message The message to handle
 Handlers.add("Update-Protocol-Fee-Target", {Action = "Update-Protocol-Fee-Target"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateProtocolFeeTarget(msg, MarketFactory.configurator)
+  local success, err = marketFactoryValidation.validateUpdateProtocolFeeTarget(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -379,7 +421,7 @@ end)
 --- @param msg Message The message to handle
 Handlers.add("Update-Maximum-Take-Fee", {Action = "Update-Maximum-Take-Fee"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateMaximumTakeFee(msg, MarketFactory.configurator)
+  local success, err = marketFactoryValidation.validateUpdateMaximumTakeFee(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -397,7 +439,7 @@ end)
 --- @param msg Message The message to handle
 Handlers.add("Approve-Collateral-Token", {Action = "Approve-Collateral-Token"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateApproveCollateralToken(msg, MarketFactory.configurator)
+  local success, err = marketFactoryValidation.validateApproveCollateralToken(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -415,7 +457,7 @@ end)
 --- @param msg Message The message to handle
 Handlers.add("Transfer", {Action = "Transfer"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateTransfer(msg, MarketFactory.configurator)
+  local success, err = marketFactoryValidation.validateTransfer(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({

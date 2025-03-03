@@ -4973,8 +4973,6 @@ Handlers.add('Update-Logo', {Action = "Update-Logo"}, function(msg)
   Market:updateLogo(msg)
 end)
 
-Name
-
 return "ok"
 
 ]===]

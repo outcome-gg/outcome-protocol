@@ -21,6 +21,18 @@ local json = require('json')
 
 --- Represents a MarketFactory
 --- @class MarketFactory
+--- @field configurator string The configurator process ID
+--- @field veToken string The voter escrow token process ID
+--- @field namePrefix string The name prefix for markets
+--- @field tickerPrefix string The ticker prefix for markets
+--- @field logo string The default logo for markets
+--- @field lpFee number The default liquidity provider fee in basis points
+--- @field protocolFee number The default protocol fee in basis points
+--- @field protocolFeeTarget string The default protocol fee target
+--- @field maximumTakeFee number The default maximum take fee in basis points
+--- @field approvedCreators table<string, boolean> Approved creators
+--- @field approvedCollateralTokens table<string, boolean> Approved collateral tokens
+--- @field testCollateral string The test collateral token process ID
 --- @field payoutNumerators table<string, table<number>> Payout Numerators for each outcomeSlot
 --- @field payoutDenominator table<string, number> Payout Denominator
 --- @field messageToProcessMapping table<string, string> Mapping of message IDs to process IDs
@@ -29,12 +41,10 @@ local json = require('json')
 --- @field marketsPendingInit table<string> List of markets pending initialization
 --- @field marketsInit table<string> List of initialized markets
 --- @field marketProcessCode table<string, string> Market process code
---- @field approvedCollateralTokens table<string, boolean> Approved collateral tokens
 
 --- Create a new MarketFactory instance
---- @param configurator string The configurator address
---- @param stakedToken string The staked token address
---- @param minStake string The minimum stake to spawn a market or create an event
+--- @param configurator string The configurator process ID
+--- @param veToken string The voter escrow token process ID
 --- @param namePrefix string The name prefix for markets
 --- @param tickerPrefix string The ticker prefix for markets
 --- @param logo string The default logo for markets
@@ -42,12 +52,13 @@ local json = require('json')
 --- @param protocolFee number The default protocol fee
 --- @param protocolFeeTarget string The default protocol fee target
 --- @param maximumTakeFee number The default maximum take fee
+--- @param approvedCreators table<string, boolean> The approved creators
 --- @param approvedCollateralTokens table<string, boolean> The approved collateral tokens
+--- @param testCollateral string The test collateral token process ID
 --- @return MarketFactory marketFactory The new MarketFactory instance
 function MarketFactory.new(
   configurator,
-  stakedToken,
-  minStake,
+  veToken,
   namePrefix,
   tickerPrefix,
   logo,
@@ -55,12 +66,13 @@ function MarketFactory.new(
   protocolFee,
   protocolFeeTarget,
   maximumTakeFee,
-  approvedCollateralTokens
+  approvedCreators,
+  approvedCollateralTokens,
+  testCollateral
 )
   local marketFactory = {
     configurator = configurator,
-    stakedToken = stakedToken,
-    minStake = minStake,
+    veToken = veToken,
     namePrefix = namePrefix,
     tickerPrefix = tickerPrefix,
     logo = logo,
@@ -68,7 +80,9 @@ function MarketFactory.new(
     protocolFee = protocolFee,
     protocolFeeTarget = protocolFeeTarget,
     maximumTakeFee = maximumTakeFee,
+    approvedCreators = approvedCreators,
     approvedCollateralTokens = approvedCollateralTokens,
+    testCollateral = testCollateral,
     messageToProcessMapping = {},
     processToMessageMapping = {},
     messageToMarketConfigMapping = {},
@@ -104,13 +118,14 @@ INFO METHOD
 function MarketFactoryMethods:info(msg)
   return msg.reply({
     Configurator = self.configurator,
-    StakedToken = self.stakedToken,
-    MinStake = self.minStake,
+    VeToken = self.veToken,
     LpFee = tostring(self.lpFee),
     ProtocolFee = tostring(self.protocolFee),
     ProtocolFeeTarget = self.protocolFeeTarget,
     MaximumTakeFee = tostring(self.maximumTakeFee),
+    ApprovedCreators = json.encode(self.approvedCreators),
     ApprovedCollateralTokens = json.encode(self.approvedCollateralTokens),
+    TestCollateral = self.testCollateral
   })
 end
 
@@ -445,6 +460,22 @@ function MarketFactoryMethods:getLatestProcessIdForCreator(creator, msg)
     Creator = creator,
     Data = creatorMarkets[#creatorMarkets]
   })
+end
+
+--[[
+================
+VE TOKEN METHODS
+================
+]]
+
+--- Approve market creator
+--- @param creator string The creator address
+--- @param approved boolean True to approve, false to disapprove
+--- @param msg Message The message received
+--- @return Message approveMarketCreatorNotice The approve market creator notice
+function MarketFactoryMethods:approveMarketCreator(creator, approved, msg)
+  self.approvedCreators[creator] = approved
+  return self.approveMarketCreatorNotice(creator, approved, msg)
 end
 
 --[[

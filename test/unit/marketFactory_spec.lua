@@ -40,17 +40,18 @@ describe("#marketFactory", function()
     creatorFeeTarget = 'test-this-is-valid-arweave-wallet-address-4'
     -- create a market factory object
     FACTORY = marketFactory.new(
-      constants.configurator,
-      constants.stakedToken,
-      constants.minStake,
+      constants.dev.configurator,
+      constants.dev.veToken,
       constants.namePrefix,
       constants.tickerPrefix,
       constants.logo,
       constants.lpFee,
       constants.protocolFee,
-      constants.protocolFeeTarget,
+      constants.dev.protocolFeeTarget,
       constants.maximumTakeFee,
-      constants.approvedCollateralTokens
+      constants.dev.approvedCreators,
+      constants.dev.approvedCollateralTokens,
+      constants.testCollateral
     )
     -- create a message object
     msg = {
@@ -128,14 +129,15 @@ describe("#marketFactory", function()
     end)
     -- assert correct response
     assert.are.same({
-      Configurator = constants.configurator,
-      StakedToken = constants.stakedToken,
-      MinStake = constants.minStake,
+      Configurator = constants.dev.configurator,
+      VeToken = constants.dev.veToken,
       LpFee = tostring(constants.lpFee),
       ProtocolFee = tostring(constants.protocolFee),
-      ProtocolFeeTarget = constants.protocolFeeTarget,
+      ProtocolFeeTarget = constants.dev.protocolFeeTarget,
       MaximumTakeFee = tostring(constants.maximumTakeFee),
-      ApprovedCollateralTokens = json.encode(constants.approvedCollateralTokens)
+      ApprovedCreators = json.encode(constants.dev.approvedCreators),
+      ApprovedCollateralTokens = json.encode(constants.dev.approvedCollateralTokens),
+      TestCollateral = constants.testCollateral,
     }, info)
   end)
 

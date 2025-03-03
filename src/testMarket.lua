@@ -98,7 +98,7 @@ local function createMarket(outcomeSlotCount)
     "Subcategory",
     "Logo_TxID",
     "Rules",
-    "EventId_123",
+    "", -- eventId (empty string to signify stand-alone market)
     250,
     coinBurner -- creator fee target (to use a valid Arweave address)
   )
