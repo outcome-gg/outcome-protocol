@@ -61,50 +61,44 @@ end
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
 function marketFactoryValidation.validateSpawnMarket(approvedCollateralTokens, approvedCreators, testCollateral, protocolFee, maximumTakeFee, msg)
-  print("approvedCollateralTokens: " .. json.encode(approvedCollateralTokens))
-  print("approvedCreators: " .. json.encode(approvedCreators))
-  print("testCollateral: " .. tostring(testCollateral))
-  print("protocolFee: " .. tostring(protocolFee))
-  print("maximumTakeFee: " .. tostring(maximumTakeFee))
+  local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
+  if not success then return false, err end
 
-  -- local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
-  -- if not success then return false, err end
-
-  -- if not approvedCollateralTokens[msg.Tags.CollateralToken] then
-  --   return false, "CollateralToken not approved!"
-  -- end
+  if not approvedCollateralTokens[msg.Tags.CollateralToken] then
+    return false, "CollateralToken not approved!"
+  end
 
   -- @dev Creator doesn't have to be approved when using test collateral
-  -- if msg.Tags.CollateralToken ~= testCollateral and not approvedCreators[msg.From] then
-  --   return false, "Creator not approved!"
-  -- end
+  if msg.Tags.CollateralToken ~= testCollateral and not approvedCreators[msg.From] then
+    return false, "Creator not approved!"
+  end
 
-  -- success, err = sharedValidation.validateAddress(msg.Tags.ResolutionAgent, "ResolutionAgent")
-  -- if not success then return false, err end
+  success, err = sharedValidation.validateAddress(msg.Tags.ResolutionAgent, "ResolutionAgent")
+  if not success then return false, err end
 
-  -- success, err = sharedValidation.validateAddress(msg.Tags.DataIndex, "DataIndex")
-  -- if not success then return false, err end
+  success, err = sharedValidation.validateAddress(msg.Tags.DataIndex, "DataIndex")
+  if not success then return false, err end
 
-  -- success, err = sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")
-  -- if not success then return false, err end
+  success, err = sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")
+  if not success then return false, err end
 
-  -- success, err = sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, "CreatorFee")
-  -- if not success then return false, err end
+  success, err = sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, "CreatorFee")
+  if not success then return false, err end
 
-  -- success, err = sharedValidation.validateAddress(msg.Tags.CreatorFeeTarget, "CreatorFeeTarget")
-  -- if not success then return false, err end
+  success, err = sharedValidation.validateAddress(msg.Tags.CreatorFeeTarget, "CreatorFeeTarget")
+  if not success then return false, err end
 
-  -- local totalFee = bint.__add(bint(msg.Tags.CreatorFee), bint(protocolFee))
-  -- if not bint.__le(totalFee, bint(maximumTakeFee)) then
-  --   return false, 'Total fee must be less than or equal to maximum take fee'
-  -- end
+  local totalFee = bint.__add(bint(msg.Tags.CreatorFee), bint(protocolFee))
+  if not bint.__le(totalFee, bint(maximumTakeFee)) then
+    return false, 'Total fee must be less than or equal to maximum take fee'
+  end
 
-  -- local requiredFields = { "Question", "Rules", "Category", "Subcategory", "Logo" }
-  -- for _, field in ipairs(requiredFields) do
-  --   if type(msg.Tags[field]) ~= "string" then
-  --     return false, field .. " is required!"
-  --   end
-  -- end
+  local requiredFields = { "Question", "Rules", "Category", "Subcategory", "Logo" }
+  for _, field in ipairs(requiredFields) do
+    if type(msg.Tags[field]) ~= "string" then
+      return false, field .. " is required!"
+    end
+  end
 
   return true
 end
