@@ -89,15 +89,16 @@ end
 --- Creates a market
 local function createMarket(outcomeSlotCount)
   local res1 = Outcome.marketFactorySpawnMarket(
-    ao.id, -- resolution agent
     Outcome.testCollateral,
+    ao.id, -- resolution agent
     ao.id, -- data index
-    "What will happen?",
     outcomeSlotCount,
+    "What will happen?",
     "Category",
     "Subcategory",
     "Logo_TxID",
     "Rules",
+    "EventId_123",
     250,
     coinBurner -- creator fee target (to use a valid Arweave address)
   )

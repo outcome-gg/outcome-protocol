@@ -204,9 +204,17 @@ WRITE METHODS
 ]]
 
 --- Create Event
+--- @param collateral string The collateral token process ID
+--- @param dataIndex string The data index process ID (where to send logs)
+--- @param outcomeSlotCount number The number of outcome slots
+--- @param question string The question to be answered
+--- @param rules string The rules of the event
+--- @param category string The category of the event
+--- @param subcategory string The subcategory of the event
+--- @param logo string The logo of the event
 --- @param msg Message The message received
 --- @return Message The create group message
-function MarketFactoryMethods:createEvent(dataIndex, collateral, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
+function MarketFactoryMethods:createEvent(collateral, dataIndex, outcomeSlotCount, question, rules, category, subcategory, logo, msg)
   -- set defaults
   category = category or ""
   subcategory = subcategory or ""
@@ -226,35 +234,35 @@ function MarketFactoryMethods:createEvent(dataIndex, collateral, question, rules
 end
 
 --- Spawn market
---- @param collateralToken string The collateral token address
---- @param resolutionAgent string The process assigned to report the market result
---- @param dataIndex string The data index address for where to log market actions
+--- @param collateralToken string The collateral token process ID
+--- @param resolutionAgent string The resolution agent process ID (assigned to report the market result)
+--- @param dataIndex string The data index process ID (where to send logs)
+--- @param outcomeSlotCount number The number of outcome slots 
 --- @param question string The question to be answered by the resolutionAgent
 --- @param rules string The rules of the market
---- @param outcomeSlotCount number The number of outcome slots which should be used for this condition
---- @param creator string The creator address
---- @param creatorFee number The creator fee
---- @param creatorFeeTarget string The creator fee target
 --- @param category string|nil The category of the market
 --- @param subcategory string|nil The subcategory of the market
 --- @param logo string|nil The logo of the market
 --- @param eventId string|nil The event ID or nil
+--- @param creator string The creator address / process ID
+--- @param creatorFee number The creator fee in basis points
+--- @param creatorFeeTarget string The creator fee target address / process ID
 --- @param msg Message The message received
 --- @return Message marketSpawnedNotice The market spawned notice
 function MarketFactoryMethods:spawnMarket(
   collateralToken,
   resolutionAgent,
   dataIndex,
+  outcomeSlotCount,
   question,
   rules,
-  outcomeSlotCount,
-  creator,
-  creatorFee,
-  creatorFeeTarget,
   category,
   subcategory,
   logo,
   eventId,
+  creator,
+  creatorFee,
+  creatorFeeTarget,
   msg
 )
   -- set defaults
@@ -328,6 +336,9 @@ function MarketFactoryMethods:spawnMarket(
   return self.spawnMarketNotice(resolutionAgent, collateralToken, dataIndex, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, eventId, msg)
 end
 
+--- Init market
+--- @param msg Message The message received
+--- @return Message The init market notice
 function MarketFactoryMethods:initMarket(msg)
   local processIds = self.marketsPendingInit
   if #processIds == 0 then
@@ -377,14 +388,23 @@ READ METHODS
 ============
 ]]
 
+--- Markets pending
+--- @param msg Message The message received
+--- @return Message The markets pending response
 function MarketFactoryMethods:marketsPending(msg)
   return msg.reply({Data = json.encode(self.marketsPendingInit)})
 end
 
+--- Markets initialized
+--- @param msg Message The message received
+--- @return Message The markets initialized response
 function MarketFactoryMethods:marketsInitialized(msg)
   return msg.reply({Data = json.encode(self.marketsInit)})
 end
 
+--- Events by creator
+--- @param msg Message The message received
+--- @return Message The events by creator response
 function MarketFactoryMethods:eventsByCreator(msg)
   local creatorMarketEvents = self.eventConfigByCreator[msg.Tags.Creator] or {}
   return msg.reply({
@@ -393,6 +413,9 @@ function MarketFactoryMethods:eventsByCreator(msg)
   })
 end
 
+--- Markets by creator
+--- @param msg Message The message received
+--- @return Message The markets by creator response
 function MarketFactoryMethods:marketsByCreator(msg)
   local creatorMarkets = self.marketsSpawnedByCreator[msg.Tags.Creator] or {}
   return msg.reply({
@@ -401,6 +424,9 @@ function MarketFactoryMethods:marketsByCreator(msg)
   })
 end
 
+--- Get process ID
+--- @param msg Message The message received
+--- @return Message The get process ID response
 function MarketFactoryMethods:getProcessId(msg)
   local originalMsgId = msg.Tags["Original-Msg-Id"]
   return msg.reply({
@@ -409,6 +435,10 @@ function MarketFactoryMethods:getProcessId(msg)
   })
 end
 
+--- Get latest process ID for creator
+--- @param creator string The creator address
+--- @param msg Message The message received
+--- @return Message The get latest process ID for creator response
 function MarketFactoryMethods:getLatestProcessIdForCreator(creator, msg)
   local creatorMarkets = self.marketsSpawnedByCreator[creator] or {}
   return msg.reply({

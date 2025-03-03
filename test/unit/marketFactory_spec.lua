@@ -145,11 +145,11 @@ describe("#marketFactory", function()
     -- should not throw an error
     assert.has_no.errors(function()
       notice = FACTORY:createEvent(
-        msgCreateMarketGroup.Tags["DataIndex"],
         msgCreateMarketGroup.Tags["Collateral"],
+        msgCreateMarketGroup.Tags["DataIndex"],
+        msgCreateMarketGroup.Tags["OutcomeSlotCount"],
         msgCreateMarketGroup.Tags["Question"],
         msgCreateMarketGroup.Tags["Rules"],
-        msgCreateMarketGroup.Tags["OutcomeSlotCount"],
         msgCreateMarketGroup.Tags["Category"],
         msgCreateMarketGroup.Tags["Subcategory"],
         msgCreateMarketGroup.Tags["Logo"],
@@ -181,16 +181,16 @@ describe("#marketFactory", function()
         msgSpawnMarket.Tags["CollateralToken"],
         msgSpawnMarket.Tags["ResolutionAgent"],
         msgSpawnMarket.Tags["DataIndex"],
+        msgSpawnMarket.Tags["OutcomeSlotCount"],
         msgSpawnMarket.Tags["Question"],
         msgSpawnMarket.Tags["Rules"],
-        msgSpawnMarket.Tags["OutcomeSlotCount"],
-        msgSpawnMarket.From,
-        msgSpawnMarket.Tags["CreatorFee"],
-        msgSpawnMarket.Tags["CreatorFeeTarget"],
         msgSpawnMarket.Tags["Category"],
         msgSpawnMarket.Tags["Subcategory"],
         msgSpawnMarket.Tags["Logo"],
         msgSpawnMarket.Tags["GroupId"],
+        msgSpawnMarket.From,
+        msgSpawnMarket.Tags["CreatorFee"],
+        msgSpawnMarket.Tags["CreatorFeeTarget"],
         msgSpawnMarket
       )
     end)
@@ -314,11 +314,11 @@ describe("#marketFactory", function()
 
   it("should get market groups by creator", function()
     FACTORY:createEvent(
-      msgCreateMarketGroup.Tags["DataIndex"],  
       msgCreateMarketGroup.Tags["Collateral"],
+      msgCreateMarketGroup.Tags["DataIndex"],
+      msgCreateMarketGroup.Tags["OutcomeSlotCount"],
       msgCreateMarketGroup.Tags["Question"],
       msgCreateMarketGroup.Tags["Rules"],
-      msgCreateMarketGroup.Tags["OutcomeSlotCount"],
       msgCreateMarketGroup.Tags["Category"],
       msgCreateMarketGroup.Tags["Subcategory"],
       msgCreateMarketGroup.Tags["Logo"],

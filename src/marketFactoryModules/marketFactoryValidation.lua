@@ -34,6 +34,9 @@ function marketFactoryValidation.validateCreateEvent(msg, approvedCollateralToke
     return false, "CollateralToken not approved!"
   end
 
+  success, err = sharedValidation.validateAddress(msg.Tags.DataIndex, "DataIndex")
+  if not success then return false, err end
+
   local requiredFields = { "Question", "Rules", "OutcomeSlotCount", "Category", "Subcategory", "Logo" }
   for _, field in ipairs(requiredFields) do
     if type(msg.Tags[field]) ~= "string" then
@@ -103,10 +106,10 @@ function marketFactoryValidation.validateMarketsByCreator(msg)
   return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
 end
 
---- Validates a marketGroupsByCreator message
+--- Validates an eventsByCreator message
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateMarketGroupsByCreator(msg)
+function marketFactoryValidation.validateEventsByCreator(msg)
   return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
 end
 

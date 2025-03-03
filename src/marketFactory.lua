@@ -101,7 +101,17 @@ WRITE HANDLERS
 ]]
 
 --- Create Event
+--- @warning This action will fail if the sender has an insufficient staked token balance.
+--- @warning This action will fail if the collateral token is not approved.
 --- @param msg Message The message to handle
+---   - msg.Tags.CollateralToken (string): The collateral token for the event.
+---   - msg.Tags.DataIndex (string): The data index for the event.
+---   - msg.Tags.OutcomeSlotCount (numeric string): The number of possible outcomes for the event.
+---   - msg.Tags.Question (string): The question to be resolved by the event.
+---   - msg.Tags.Rules (string): The rules of the event.
+---   - msg.Tags.Category (string): The category of the event.
+---   - msg.Tags.Subcategory (string): The subcategory of the event.
+---   - msg.Tags.Logo (string): The logo of the event.
 Handlers.add("Create-Event", {Action = "Create-Event"}, function(msg)
   -- Validate input
   local success, err = marketFactoryValidation.validateCreateEvent(msg, MarketFactory.approvedCollateralTokens, MarketFactory.stakedToken, MarketFactory.minStake)
@@ -115,11 +125,11 @@ Handlers.add("Create-Event", {Action = "Create-Event"}, function(msg)
   end
   -- If validation passes, create event.
   MarketFactory:createEvent(
-    msg.Tags["DataIndex"],
     msg.Tags["CollateralToken"],
+    msg.Tags["DataIndex"],
+    msg.Tags["OutcomeSlotCount"],
     msg.Tags["Question"],
     msg.Tags["Rules"],
-    msg.Tags["OutcomeSlotCount"],
     msg.Tags["Category"],
     msg.Tags["Subcategory"],
     msg.Tags["Logo"],
@@ -128,7 +138,20 @@ Handlers.add("Create-Event", {Action = "Create-Event"}, function(msg)
 end)
 
 --- Spawn market handler
+--- @warning This action will fail if the sender has an insufficient staked token balance.
+--- @warning This action will fail if the collateral token is not approved.
 --- @param msg Message The message to handle
+---   - msg.Tags.CollateralToken (string): The collateral token for the event.
+---   - msg.Tags.ResolutionAgent (string): The resolution agent for the event.
+---   - msg.Tags.DataIndex (string): The data index for the event.
+---   - msg.Tags.OutcomeSlotCount (numeric string): The number of possible outcomes for the event.
+---   - msg.Tags.CreatorFee (numberic string): The fee for the creator of the event in basis points.
+---   - msg.Tags.CreatorFeeTarget (string): The target for the creator fee.
+---   - msg.Tags.Question (string): The question to be resolved by the event.
+---   - msg.Tags.Rules (string): The rules of the event.
+---   - msg.Tags.Category (string): The category of the event.
+---   - msg.Tags.Subcategory (string): The subcategory of the event.
+---   - msg.Tags.Logo (string): The logo of the event.
 Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
   -- Validate input
   local success, err = marketFactoryValidation.validateSpawnMarket(msg, MarketFactory.approvedCollateralTokens, MarketFactory.stakedToken, MarketFactory.minStake)
@@ -145,16 +168,16 @@ Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
     msg.Tags["CollateralToken"],
     msg.Tags["ResolutionAgent"],
     msg.Tags["DataIndex"],
+    tonumber(msg.Tags["OutcomeSlotCount"]),
     msg.Tags["Question"],
     msg.Tags["Rules"],
-    tonumber(msg.Tags["OutcomeSlotCount"]),
-    msg.From,
-    tonumber(msg.Tags["CreatorFee"]),
-    msg.Tags["CreatorFeeTarget"],
     msg.Tags["Category"],
     msg.Tags["Subcategory"],
     msg.Tags["Logo"],
     msg.Tags["GroupId"],
+    msg.From,
+    tonumber(msg.Tags["CreatorFee"]),
+    msg.Tags["CreatorFeeTarget"],
     msg
   )
 end)
@@ -183,21 +206,21 @@ Handlers.add("Markets-Init", {Action = "Markets-Init"}, function(msg)
   MarketFactory:marketsInitialized(msg)
 end)
 
---- Market groups by creator handler
+--- Events by creator handler
 --- @param msg Message The message to handle
-Handlers.add("Market-Groups-By-Creator", {Action = "Market-Groups-By-Creator"}, function(msg)
+Handlers.add("Events-By-Creator", {Action = "Events-By-Creator"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateMarketsByCreator(msg)
+  local success, err = marketFactoryValidation.validateEventsByCreator(msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
-      Action = "Market-Groups-By-Creator-Error",
+      Action = "Events-By-Creator-Error",
       Error = err
     })
     return
   end
-  -- If validation passes, get market groups by creator.
-  MarketFactory:marketGroupsByCreator(msg)
+  -- If validation passes, get events by creator.
+  MarketFactory:eventsByCreator(msg)
 end)
 
 --- Markets by creator handler
@@ -218,6 +241,7 @@ Handlers.add("Markets-By-Creator", {Action = "Markets-By-Creator"}, function(msg
 end)
 
 --- Get process ID handler
+--- @notice Used to get the process ID of a spawned market by the spawn action message ID
 --- @param msg Message The message to handle
 Handlers.add("Get-Process-Id", {Action = "Get-Process-Id"}, function(msg)
   MarketFactory:getProcessId(msg)

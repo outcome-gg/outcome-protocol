@@ -851,6 +851,7 @@ function Outcome.marketSell(market, returnAmount, positionId, maxPositionTokensT
     FeeAmount = notice.Tags.FeeAmount,
     PositionId = notice.Tags.PositionId,
     PositionTokensSold = notice.Tags.PositionTokensSold,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -883,6 +884,7 @@ function Outcome.marketWithdrawFees(market)
     Action = notice.Tags.Action,
     FeeAmount = notice.Tags.FeeAmount,
     Collateral = notice.From,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -923,6 +925,7 @@ function Outcome.marketCalcBuyAmount(market, investmentAmount, positionId)
     BuyAmount = notice.Tags.BuyAmount,
     PositionId = notice.Tags.PositionId,
     InvestmentAmount = notice.Tags.InvestmentAmount,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -957,6 +960,7 @@ function Outcome.marketCalcSellAmount(market, returnAmount, positionId)
     SellAmount = response.Tags.SellAmount,
     PositionId = response.Tags.PositionId,
     ReturnAmount = response.Tags.ReturnAmount,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -980,6 +984,7 @@ function Outcome.marketCollectedFees(market)
   -- Return formatted response
   return {
     CollectedFees = response.Tags.CollectedFees,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1009,6 +1014,7 @@ function Outcome.marketFeesWithdrawable(market, account)
   return {
     FeesWithdrawable = response.Tags.FeesWithdrawable,
     Account = response.Tags.Account,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1091,6 +1097,7 @@ function Outcome.marketLpTokenBalance(market, recipient)
     Balance = response.Tags.Balance,
     Ticker = response.Tags.Ticker,
     Account = response.Tags.Account,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1114,6 +1121,7 @@ function Outcome.marketLpTokenBalances(market)
   -- Return formatted response
   return {
     Balances = json.decode(response.Data),
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1137,6 +1145,7 @@ function Outcome.marketLpTokenTotalSupply(market)
   -- Return formatted response
   return {
     TotalSupply = response.Data,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1220,6 +1229,7 @@ function Outcome.marketReportPayouts(market, payouts)
     Action = notice.Tags.Action,
     PayoutNumerators = json.decode(notice.Tags.PayoutNumerators),
     ResolutionAgent = notice.Tags.ResolutionAgent,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -1257,6 +1267,7 @@ function Outcome.marketRedeemPositions(market)
     GrossPayout = notice.Tags.GrossPayout,
     NetPayout = notice.Tags.NetPayout,
     Collateral = notice.Tags.CollateralToken,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -1397,6 +1408,7 @@ function Outcome.marketGetPayoutDenominator(market)
   -- Return formatted response
   return {
     PayoutDenominator = tonumber(response.Data),
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1431,6 +1443,7 @@ function Outcome.marketPositionBalance(market, positionId, recipient)
     Balance = response.Tags.Balance,
     PositionId = response.Tags.PositionId,
     Account = response.Tags.Account,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1459,6 +1472,7 @@ function Outcome.marketPositionBalances(market, positionId)
   return {
     Balances = json.decode(response.Data),
     PositionId = response.Tags.PositionId,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1492,6 +1506,7 @@ function Outcome.marketPositionBatchBalance(market, positionIds, recipients)
     Balances = json.decode(response.Data),
     PositionIds = json.decode(response.Tags.PositionIds),
     Accounts = json.decode(response.Tags.Accounts),
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1519,6 +1534,7 @@ function Outcome.marketPositionBatchBalances(market, positionIds)
   -- Return formatted response
   return {
     Balances = json.decode(response.Data),
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1556,6 +1572,7 @@ function Outcome.marketUpdateConfigurator(market, configurator)
   return {
     Action = notice.Tags.Action,
     Configurator = notice.Data,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -1587,6 +1604,7 @@ function Outcome.marketUpdateIncentives(market, incentives)
   return {
     Action = notice.Tags.Action,
     Incentives = notice.Data,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -1627,6 +1645,7 @@ function Outcome.marketUpdateTakeFee(market, creatorFee, protocolFee)
     CreatorFee = tonumber(notice.Tags.CreatorFee),
     ProtocolFee = tonumber(notice.Tags.ProtocolFee),
     TakeFee = tonumber(notice.Data),
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -1658,6 +1677,7 @@ function Outcome.marketUpdateProtocolFeeTarget(market, protocolFeeTarget)
   return {
     Action = notice.Tags.Action,
     ProtocolFeeTarget = notice.Data,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -1690,6 +1710,7 @@ function Outcome.marketUpdateLogo(market, logo)
   return {
     Action = notice.Tags.Action,
     Logo = notice.Data,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -1742,16 +1763,97 @@ MARKET FACTORY: WRITE
 =====================
 ]]
 
---- @class MarketFactorySpawnMarketNotice: BaseNotice
---- @field ResolutionAgent string The resolution agent process ID
+--- @class MarketFactoryCreateEventNotice: BaseNotice
 --- @field CollateralToken string The collateral token process ID
 --- @field DataIndex string The data index process ID
---- @field Question string The market question
 --- @field OutcomeSlotCount number The number of outcome slots
+--- @field Question string The market question
+--- @field Rules string The market rules
 --- @field Category string The market category
 --- @field Subcategory string The market subcategory
 --- @field Logo string The market logo URL
+
+--- Market factory create event
+--- @warning Only callable by utility token stakers with sufficient stake, or the transaction will fail
+--- @param collateralToken string The collateral token process ID
+--- @param dataIndex string The data index process ID
+--- @param outcomeSlotCount number The number of outcome slots
+--- @param question string The market question
+--- @param rules string The market rules
+--- @param category string The market category
+--- @param subcategory string The market subcategory
+--- @param logo string The market logo URL
+--- @note **Emits the following notices:**
+--- **📊 Logging & Analytics**
+--- - `Create-Event-Notice`: **marketFactory → ao.id**-- Logs the create event action
+--- @return MarketFactoryCreateEventNotice The market factory create event notice
+function Outcome.marketFactoryCreateEvent(
+  collateralToken,
+  dataIndex,
+  outcomeSlotCount,
+  question,
+  rules,
+  category,
+  subcategory,
+  logo
+)
+  -- Validate input
+  validateValidArweaveAddress(collateralToken, "collateralToken")
+  validateValidArweaveAddress(dataIndex, "dataIndex")
+  validatePositiveIntegerOrZero(tostring(outcomeSlotCount), "outcomeSlotCount")
+  assert(tonumber(outcomeSlotCount) >= 2, "`outcomeSlotCount` must be greater than or equal to 2.")
+  assert(tonumber(outcomeSlotCount) <= 256, "`outcomeSlotCount` must be less than or equal to 256.")
+  assert(question, "`question` is required.")
+  assert(type(question) == "string", "`question` must be a string.")
+  assert(rules, "`rules` is required.")
+  assert(type(rules) == "string", "`rules` must be a string.")
+  assert(category, "`category` is required.")
+  assert(type(category) == "string", "`category` must be a string.")
+  assert(subcategory, "`subcategory` is required.")
+  assert(type(subcategory) == "string", "`subcategory` must be a string.")
+  assert(logo, "`logo` is required.")
+  assert(type(logo) == "string", "`logo` must be a string.")
+  -- Send and receive response
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Create-Event",
+    CollateralToken = collateralToken,
+    DataIndex = dataIndex,
+    OutcomeSlotCount = tostring(outcomeSlotCount),
+    Question = question,
+    Rules = rules,
+    Category = category,
+    Subcategory = subcategory,
+    Logo = logo
+  }).receive()
+  -- Return formatted response
+  return {
+    Action = notice.Tags.Action,
+    CollateralToken = notice.Tags.CollateralToken,
+    DataIndex = notice.Tags.DataIndex,
+    OutcomeSlotCount = tonumber(notice.Tags.OutcomeSlotCount),
+    Question = notice.Tags.Question,
+    Category = notice.Tags.Category,
+    Subcategory = notice.Tags.Subcategory,
+    Logo = notice.Tags.Logo,
+    Rules = notice.Tags.Rules,
+    Error = notice.Tags.Error or nil,
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
+end
+
+--- @class MarketFactorySpawnMarketNotice: BaseNotice
+--- @field CollateralToken string The collateral token process ID
+--- @field ResolutionAgent string The resolution agent process ID
+--- @field DataIndex string The data index process ID
+--- @field OutcomeSlotCount number The number of outcome slots
+--- @field Question string The market question
 --- @field Rules string The market rules
+--- @field Category string The market category
+--- @field Subcategory string The market subcategory
+--- @field Logo string The market logo URL
 --- @field Creator string The creator process ID
 --- @field CreatorFee number The creator fee in basis points
 --- @field CreatorFeeTarget string The creator fee target process ID
@@ -1759,15 +1861,16 @@ MARKET FACTORY: WRITE
 
 --- Market factory spawn market
 --- @warning Only callable by utility token stakers with sufficient stake, or the transaction will fail
---- @param resolutionAgent string The resolution agent process ID
 --- @param collateralToken string The collateral token process ID
+--- @param resolutionAgent string The resolution agent process ID
 --- @param dataIndex string The data index process ID
---- @param question string The market question
 --- @param outcomeSlotCount number The number of outcome slots
+--- @param question string The market question
+--- @param rules string The market rules
 --- @param category string The market category
 --- @param subcategory string The market subcategory
 --- @param logo string The market logo URL
---- @param rules string The market rules
+--- @param eventId string|nil The event ID or `nil` if not applicable
 --- @param creatorFee number The creator fee in basis points
 --- @param creatorFeeTarget string The creator fee target process ID
 --- @note **Emits the following notices:**
@@ -1777,68 +1880,73 @@ MARKET FACTORY: WRITE
 --- - `Spawn-Market-Notice`: **marketFactory → ao.id**-- Logs the spawn market action
 --- @return MarketFactorySpawnMarketNotice The market factory spawn market notice
 function Outcome.marketFactorySpawnMarket(
-  resolutionAgent,
   collateralToken,
+  resolutionAgent,
   dataIndex,
-  question,
   outcomeSlotCount,
+  question,
+  rules,
   category,
   subcategory,
   logo,
-  rules,
+  eventId,
   creatorFee,
   creatorFeeTarget
 )
   -- Validate input
-  validateValidArweaveAddress(resolutionAgent, "resolutionAgent")
   validateValidArweaveAddress(collateralToken, "collateralToken")
+  validateValidArweaveAddress(resolutionAgent, "resolutionAgent")
   validateValidArweaveAddress(dataIndex, "dataIndex")
-  assert(question, "`question` is required.")
-  assert(type(question) == "string", "`question` must be a string.")
   validatePositiveIntegerOrZero(tostring(outcomeSlotCount), "outcomeSlotCount")
   assert(tonumber(outcomeSlotCount) >= 2, "`outcomeSlotCount` must be greater than or equal to 2.")
+  assert(tonumber(outcomeSlotCount) <= 256, "`outcomeSlotCount` must be less than or equal to 256.")
+  assert(question, "`question` is required.")
+  assert(type(question) == "string", "`question` must be a string.")
+  assert(rules, "`rules` is required.")
+  assert(type(rules) == "string", "`rules` must be a string.")
   assert(category, "`category` is required.")
   assert(type(category) == "string", "`category` must be a string.")
   assert(subcategory, "`subcategory` is required.")
   assert(type(subcategory) == "string", "`subcategory` must be a string.")
   assert(logo, "`logo` is required.")
   assert(type(logo) == "string", "`logo` must be a string.")
-  assert(rules, "`rules` is required.")
-  assert(type(rules) == "string", "`rules` must be a string.")
   validatePositiveIntegerOrZero(tostring(creatorFee), "creatorFee")
   validateValidArweaveAddress(creatorFeeTarget, "creatorFeeTarget")
   -- Send and receive response
   local notice = ao.send({
     Target = Outcome.marketFactory,
     Action = "Spawn-Market",
-    ResolutionAgent = resolutionAgent,
     CollateralToken = collateralToken,
+    ResolutionAgent = resolutionAgent,
     DataIndex = dataIndex,
-    Question = question,
     OutcomeSlotCount = tostring(outcomeSlotCount),
+    Question = question,
+    Rules = rules,
     Category = category,
     Subcategory = subcategory,
     Logo = logo,
-    Rules = rules,
+    EventId = eventId or "",
     CreatorFee = tostring(creatorFee),
     CreatorFeeTarget = creatorFeeTarget
   }).receive()
   -- Return formatted response
   return {
     Action = notice.Tags.Action,
-    ResolutionAgent = notice.Tags.ResolutionAgent,
     CollateralToken = notice.Tags.CollateralToken,
+    ResolutionAgent = notice.Tags.ResolutionAgent,
     DataIndex = notice.Tags.DataIndex,
-    Question = notice.Tags.Question,
     OutcomeSlotCount = tonumber(notice.Tags.OutcomeSlotCount),
+    Question = notice.Tags.Question,
     Category = notice.Tags.Category,
     Subcategory = notice.Tags.Subcategory,
     Logo = notice.Tags.Logo,
     Rules = notice.Tags.Rules,
+    EventId = notice.Tags.EventId,
     Creator = notice.Tags.Creator,
     CreatorFee = tonumber(notice.Tags.CreatorFee),
     CreatorFeeTarget = notice.Tags.CreatorFeeTarget,
     ["Original-Msg-Id"] = notice.Tags["Original-Msg-Id"],
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -1864,6 +1972,7 @@ function Outcome.marketFactoryInitMarket()
   return {
     Action = notice.Tags.Action,
     MarketProcessIds = json.decode(notice.Data),
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -1890,6 +1999,7 @@ function Outcome.marketFactoryMarketsPending()
   -- Return formatted response
   return {
     MarketsPending = json.decode(response.Data),
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1910,6 +2020,33 @@ function Outcome.marketFactoryMarketsInit()
   -- Return formatted response
   return {
     MarketsInit = json.decode(response.Data),
+    Error = response.Tags.Error or nil,
+    MessageId = response.Id,
+    Timestamp = response.Timestamp,
+    ["Block-Height"] = response["Block-Height"]
+  }
+end
+
+--- @class MarketFactoryEventsByCreatorResponse: BaseMessage
+--- @field EventsByCreator table<string> The event IDs created by the creator
+--- @field Creator string The creator process ID
+
+--- Market factory events by creator
+--- @param creator string The creator process ID or `nil` for the sender
+function Outcome.marketFactoryEventsByCreator(creator)
+  -- Validate input
+  validateValidArweaveAddress(creator, "creator")
+  -- Send and receive response
+  local response = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Events-By-Creator",
+    Creator = creator or ao.id
+  }).receive()
+  -- Return formatted response
+  return {
+    EventsByCreator = json.decode(response.Data),
+    Creator = response.Tags.Creator,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1935,6 +2072,7 @@ function Outcome.marketFactoryMarketsByCreator(creator)
   return {
     MarketsByCreator = json.decode(response.Data),
     Creator = response.Tags.Creator,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1961,6 +2099,7 @@ function Outcome.marketFactoryGetProcessId(originalMsgId)
   return {
     ProcessId = response.Data,
     ["Original-Msg-Id"] = response.Tags["Original-Msg-Id"],
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -1986,6 +2125,7 @@ function Outcome.marketFactoryGetLatestProcessIdForCreator(creator)
   return {
     ProcessId = response.Data,
     Creator = response.Tags.Creator,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -2021,35 +2161,67 @@ function Outcome.marketFactoryUpdateConfigurator(configurator)
   return {
     Action = notice.Tags.Action,
     Configurator = notice.Data,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
   }
 end
 
---- @class MarketFactoryUpdateIncentivesNotice: BaseNotice
---- @field Incentives string The new incentives process ID
+--- @class MarketFactoryUpdateStakedTokenNotice: BaseNotice
+--- @field StakedToken string The new staked token process ID
 
---- Market factory update incentives
+--- Market factory update staked token
 --- @warning Only callable by the market factory configurator, or the transaction will fail
---- @param incentives string The new incentives process ID
+--- @param stakedToken string The new staked token process ID
 --- @note **Emits the following notices:**
 --- **📊 Logging & Analytics**
---- - `Update-Incentives-Notice`: **marketFactory → ao.id**-- Logs the update incentives action
---- @return MarketFactoryUpdateIncentivesNotice The market factory update incentives notice
-function Outcome.marketFactoryUpdateIncentives(incentives)
+--- - `Update-Staked-Token-Notice`: **marketFactory → ao.id**-- Logs the update staked token action
+--- @return MarketFactoryUpdateStakedTokenNotice The market factory update staked token notice
+function Outcome.marketFactoryUpdateStakedToken(stakedToken)
   -- Validate input
-  validateValidArweaveAddress(incentives, "incentives")
+  validateValidArweaveAddress(stakedToken, "stakedToken")
   -- Send and receive response
   local notice = ao.send({
     Target = Outcome.marketFactory,
-    Action = "Update-Incentives",
-    Incentives = incentives
+    Action = "Update-Staked-Token",
+    StakedToken = stakedToken
   }).receive()
   -- Return formatted response
   return {
     Action = notice.Tags.Action,
-    Incentives = notice.Data,
+    StakedToken = notice.Data,
+    Error = notice.Tags.Error or nil,
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
+end
+
+--- @class MarketFactoryUpdateMinStakeNotice: BaseNotice
+--- @field MinStake number The new min stake
+
+--- Market factory update min stake
+--- @warning Only callable by the market factory configurator, or the transaction will fail
+--- @param minStake number The new min stake
+--- @note **Emits the following notices:**
+--- **📊 Logging & Analytics**
+--- - `Update-Min-Stake-Notice`: **marketFactory → ao.id**-- Logs the update min stake action
+--- @return MarketFactoryUpdateMinStakeNotice The market factory update min stake notice
+function Outcome.marketFactoryUpdateMinStake(minStake)
+  -- Validate input
+  validatePositiveIntegerOrZero(tostring(minStake), "minStake")
+  -- Send and receive response
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Update-Min-Stake",
+    MinStake = tostring(minStake)
+  }).receive()
+  -- Return formatted response
+  return {
+    Action = notice.Tags.Action,
+    MinStake = tonumber(notice.Data),
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2079,6 +2251,7 @@ function Outcome.marketFactoryUpdateLpFee(lpFee)
   return {
     Action = notice.Tags.Action,
     LpFee = tonumber(notice.Data),
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2108,6 +2281,7 @@ function Outcome.marketFactoryUpdateProtocolFee(protocolFee)
   return {
     Action = notice.Tags.Action,
     ProtocolFee = tonumber(notice.Data),
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2137,6 +2311,7 @@ function Outcome.marketFactoryUpdateProtocolFeeTarget(protocolFeeTarget)
   return {
     Action = notice.Tags.Action,
     ProtocolFeeTarget = notice.Data,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2166,6 +2341,7 @@ function Outcome.marketFactoryUpdateMaximumTakeFee(maximumTakeFee)
   return {
     Action = notice.Tags.Action,
     MaximumTakeFee = tonumber(notice.Data),
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2201,6 +2377,7 @@ function Outcome.marketFactoryApproveCollateralToken(collateral, approved)
     Action = notice.Tags.Action,
     Collateral = notice.Tags.CollateralToken,
     Approved = notice.Tags.Approved == "true",
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2317,6 +2494,7 @@ function Outcome.tokenClaim(onBehalfOf)
     Action = notice.Tags.Action,
     Quantity = notice.Tags.Quantity,
     Recipient = notice.Tags.Recipient,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2353,6 +2531,7 @@ function Outcome.tokenTransfer(quantity, recipient, target)
     Action = notice.Tags.Action,
     Quantity = notice.Tags.Quantity,
     Recipient = notice.Tags.Recipient,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2419,6 +2598,7 @@ function Outcome.tokenBurn(quantity, target)
   return {
     Action = notice.Tags.Action,
     Quantity = notice.Tags.Quantity,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2445,6 +2625,7 @@ function Outcome.tokenClaimBalance(account)
   return {
     Balance = response.Tags.Balance,
     Account = response.Tags.Account,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -2465,6 +2646,7 @@ function Outcome.tokenClaimBalances()
   -- Return formatted response
   return {
     Balances = json.decode(response.Data),
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -2493,6 +2675,7 @@ function Outcome.tokenBalance(target, account)
   return {
     Balance = response.Tags.Balance,
     Account = response.Tags.Account,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -2516,6 +2699,7 @@ function Outcome.tokenBalances(target)
   -- Return formatted response
   return {
     Balances = json.decode(response.Data),
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -2539,6 +2723,7 @@ function Outcome.tokenTotalSupply(target)
   -- Return formatted response
   return {
     TotalSupply = response.Data,
+    Error = response.Tags.Error or nil,
     MessageId = response.Id,
     Timestamp = response.Timestamp,
     ["Block-Height"] = response["Block-Height"]
@@ -2568,6 +2753,7 @@ function Outcome.tokenUpdateConfigurator(configurator)
   return {
     Action = notice.Tags.Action,
     Configurator = notice.Data,
+    Error = response.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2597,6 +2783,7 @@ function Outcome.tokenUpdateLpToHolderRatio(ratio)
   return {
     Action = notice.Tags.Action,
     Ratio = notice.Data,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2626,6 +2813,7 @@ function Outcome.tokenUpdateCollateralPrices(collateralPrices)
   return {
     Action = notice.Tags.Action,
     CollateralPrices = json.decode(notice.Data),
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2655,6 +2843,7 @@ function Outcome.tokenUpdateCollateralFactors(collateralFactors)
   return {
     Action = notice.Tags.Action,
     CollateralFactors = json.decode(notice.Data),
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
@@ -2684,6 +2873,7 @@ function Outcome.tokenUpdateCollateralDenominations(collateralDenominations)
   return {
     Action = notice.Tags.Action,
     CollateralDenominations = json.decode(notice.Data),
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
