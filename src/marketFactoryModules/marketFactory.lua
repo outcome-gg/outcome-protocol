@@ -33,6 +33,8 @@ local json = require('json')
 
 --- Create a new MarketFactory instance
 --- @param configurator string The configurator address
+--- @param stakedToken string The staked token address
+--- @param minStake string The minimum stake to spawn a market or create an event
 --- @param namePrefix string The name prefix for markets
 --- @param tickerPrefix string The ticker prefix for markets
 --- @param logo string The default logo for markets
@@ -44,6 +46,8 @@ local json = require('json')
 --- @return MarketFactory marketFactory The new MarketFactory instance
 function MarketFactory.new(
   configurator,
+  stakedToken,
+  minStake,
   namePrefix,
   tickerPrefix,
   logo,
@@ -55,6 +59,8 @@ function MarketFactory.new(
 )
   local marketFactory = {
     configurator = configurator,
+    stakedToken = stakedToken,
+    minStake = minStake,
     namePrefix = namePrefix,
     tickerPrefix = tickerPrefix,
     logo = logo,
@@ -98,6 +104,8 @@ INFO METHOD
 function MarketFactoryMethods:info(msg)
   return msg.reply({
     Configurator = self.configurator,
+    StakedToken = self.stakedToken,
+    MinStake = self.minStake,
     LpFee = tostring(self.lpFee),
     ProtocolFee = tostring(self.protocolFee),
     ProtocolFeeTarget = self.protocolFeeTarget,
@@ -422,6 +430,24 @@ CONFIGURATOR METHODS
 function MarketFactoryMethods:updateConfigurator(configurator, msg)
   self.configurator = configurator
   return self.updateConfiguratorNotice(configurator, msg)
+end
+
+--- Update stakedToken
+--- @param stakedToken string The new stakedToken
+--- @param msg Message The message received
+--- @return Message updateLpFeeNotice The update staked token notice
+function MarketFactoryMethods:updateStakedToken(stakedToken, msg)
+  self.stakedToken = stakedToken
+  return self.updateStakedTokenNotice(stakedToken, msg)
+end
+
+--- Update minStake
+--- @param minStake number The new min stake
+--- @param msg Message The message received
+--- @return Message updateLpFeeNotice The update min stake notice
+function MarketFactoryMethods:updateMinStake(minStake, msg)
+  self.minStake = minStake
+  return self.updateMinStakeNotice(minStake, msg)
 end
 
 --- Update lpFee

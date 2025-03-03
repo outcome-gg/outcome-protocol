@@ -109,6 +109,28 @@ function MarketFactoryNotices.updateConfiguratorNotice(configurator, msg)
   })
 end
 
+--- Update stakedToken notice
+--- @param stakedToken string The new staked token
+--- @param msg Message The message received
+--- @return Message updateStakedTokenNotice The update staked token notice
+function MarketFactoryNotices.updateStakedTokenNotice(stakedToken, msg)
+  return msg.reply({
+    Action = "Update-Staked-Token-Notice",
+    Data = tostring(stakedToken)
+  })
+end
+
+--- Update minStake notice
+--- @param minStake number The new min stake
+--- @param msg Message The message received
+--- @return Message updateLpFeeNotice The update min stake notice
+function MarketFactoryNotices.updateMinStakeNotice(minStake, msg)
+  return msg.reply({
+    Action = "Update-Min-Stake-Notice",
+    Data = tostring(minStake)
+  })
+end
+
 --- Update lpFee notice
 --- @param lpFee number The new lp fee
 --- @param msg Message The message received

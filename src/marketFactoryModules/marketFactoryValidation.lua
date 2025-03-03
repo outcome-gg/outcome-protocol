@@ -8,6 +8,7 @@ See factory.lua for full license details.
 local marketFactoryValidation = {}
 local sharedValidation = require('marketFactoryModules.sharedValidation')
 local sharedUtils = require('marketFactoryModules.sharedUtils')
+local bint = require('.bint')(256)
 
 --[[
 =============
@@ -19,8 +20,13 @@ WRITE METHODS
 --- @param msg Message The message received
 --- @param approvedCollateralTokens table<string, boolean> A set of approved collateral tokens
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateCreateEvent(msg, approvedCollateralTokens)
-  -- TODO @dev: check staking balance or sender == approved
+function marketFactoryValidation.validateCreateEvent(msg, approvedCollateralTokens, stakedToken, minStake)
+  local stakeBalance = ao.send({Target = stakedToken, Action = "Balance"}).receive().Data
+
+  if bint.__lt(bint(stakeBalance), bint(minStake)) then
+    return false, "Insufficient staked balance!"
+  end
+
   local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
   if not success then return false, err end
 
@@ -45,8 +51,13 @@ end
 --- @param msg Message The message received
 --- @param approvedCollateralTokens table<string, boolean> A set of approved collateral tokens
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateSpawnMarket(msg, approvedCollateralTokens)
-  -- TODO @dev: check staking balance or sender == approved
+function marketFactoryValidation.validateSpawnMarket(msg, approvedCollateralTokens, stakedToken, minStake)
+  local stakeBalance = ao.send({Target = stakedToken, Action = "Balance"}).receive().Data
+
+  if bint.__lt(bint(stakeBalance), bint(minStake)) then
+    return false, "Insufficient staked balance!"
+  end
+
   local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
   if not success then return false, err end
 

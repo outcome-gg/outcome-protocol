@@ -41,6 +41,8 @@ describe("#marketFactory", function()
     -- create a market factory object
     FACTORY = marketFactory.new(
       constants.configurator,
+      constants.stakedToken,
+      constants.minStake,
       constants.namePrefix,
       constants.tickerPrefix,
       constants.logo,
@@ -127,6 +129,8 @@ describe("#marketFactory", function()
     -- assert correct response
     assert.are.same({
       Configurator = constants.configurator,
+      StakedToken = constants.stakedToken,
+      MinStake = constants.minStake,
       LpFee = tostring(constants.lpFee),
       ProtocolFee = tostring(constants.protocolFee),
       ProtocolFeeTarget = constants.protocolFeeTarget,

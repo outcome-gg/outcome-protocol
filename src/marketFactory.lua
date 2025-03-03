@@ -34,6 +34,8 @@ end
 --- Represents the Market Factory Configuration
 --- @class MarketFactoryConfiguration
 --- @field configurator string The Configurator process ID
+--- @field stakedToken string The Staked Token process ID
+--- @field minStake string The minimum stake required to spawn a market or create an event
 --- @field namePrefix string The Market name prefix
 --- @field tickerPrefix string The Market ticker prefix
 --- @field logo string The Market default logo
@@ -48,6 +50,8 @@ end
 local function retrieveMarketFactoryConfig()
   local config = {
     configurator = Env == 'DEV' and constants.dev.configurator or constants.prod.configurator,
+    stakedToken = Env == 'DEV' and constants.dev.stakedToken or constants.prod.stakedToken,
+    minStake = constants.prod.minStake,
     namePrefix = constants.namePrefix,
     tickerPrefix = constants.tickerPrefix,
     logo = constants.logo,
@@ -65,6 +69,8 @@ if not MarketFactory or Env == 'DEV' then
   local marketFactoryConfig = retrieveMarketFactoryConfig()
   MarketFactory = marketFactory.new(
     marketFactoryConfig.configurator,
+    marketFactoryConfig.stakedToken,
+    marketFactoryConfig.minStake,
     marketFactoryConfig.namePrefix,
     marketFactoryConfig.tickerPrefix,
     marketFactoryConfig.logo,
@@ -98,7 +104,7 @@ WRITE HANDLERS
 --- @param msg Message The message to handle
 Handlers.add("Create-Event", {Action = "Create-Event"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateCreateEvent(msg, MarketFactory.approvedCollateralTokens)
+  local success, err = marketFactoryValidation.validateCreateEvent(msg, MarketFactory.approvedCollateralTokens, MarketFactory.stakedToken, MarketFactory.minStake)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -125,7 +131,7 @@ end)
 --- @param msg Message The message to handle
 Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateSpawnMarket(msg, MarketFactory.approvedCollateralTokens)
+  local success, err = marketFactoryValidation.validateSpawnMarket(msg, MarketFactory.approvedCollateralTokens, MarketFactory.stakedToken, MarketFactory.minStake)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -255,6 +261,41 @@ Handlers.add("Update-Configurator", {Action = "Update-Configurator"}, function(m
   end
   -- If validation passes, update configurator.
   MarketFactory:updateConfigurator(msg.Tags.Configurator, msg)
+end)
+
+--- Update staked token handler
+--- @param msg Message The message to handle
+Handlers.add("Update-Staked-Token", {Action = "Update-Staked-Token"}, function(msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateUpdateStakedToken(msg, MarketFactory.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Staked-Token-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update stakedToken.
+  MarketFactory:updateStakedToken(msg.Tags.StakedToken, msg)
+end)
+
+--- Update min stake
+--- @param msg Message The message to handle
+Handlers.add("Update-Min-Stake", {Action = "Update-Min-Stake"}, function(msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.validateUpdateMinStake(msg, MarketFactory.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Min-Stake-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update minStake.
+  local minStake = tonumber(msg.Tags.MinStake)
+  MarketFactory:updateMinStake(minStake, msg)
 end)
 
 --- Update LpFee handler
