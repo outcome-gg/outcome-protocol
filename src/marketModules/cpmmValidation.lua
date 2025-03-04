@@ -255,4 +255,31 @@ function cpmmValidation.updateLogo(msg, configurator)
   return true
 end
 
+--- Validates update logo
+--- @param msg Message The message to be validated
+--- @param configurator string The configurator address
+--- @return boolean, string|nil
+function cpmmValidation.updateLogos(msg, configurator)
+  if msg.From ~= configurator then
+    return false, 'Sender must be configurator!'
+  end
+
+  if not msg.Tags.Logos then
+    return false, 'Logos is required!'
+  end
+
+  local logos = json.decode(msg.Tags.Logos)
+  if type(logos) ~= 'table' then
+    return false, 'Logos must be a table!'
+  end
+
+  for _, logo in ipairs(logos) do
+    if type(logo) ~= 'string' then
+      return false, 'Logos item must be a string!'
+    end
+  end
+
+  return true
+end
+
 return cpmmValidation

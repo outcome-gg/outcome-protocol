@@ -8,7 +8,7 @@ _G.Market = { cpmm = {tokens = { positionIds = { "1", "2", "3" } } } }
 
 local name = ''
 local ticker = ''
-local logo = ''
+local logos = {}
 local balancesById = {}
 local totalSupplyById = {}
 local denomination = nil
@@ -54,7 +54,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
     -- set ticker
     ticker = ''
     -- set logo
-    logo = ''
+    logos = {'', '', ''}
     -- set balances
     balancesById = {}
     -- set totalSupply
@@ -65,7 +65,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
 		SemiFungibleTokens = semiFungibleTokens.new(
       name,
       ticker,
-      logo,
+      logos,
       balancesById,
       totalSupplyById,
       denomination
@@ -244,7 +244,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
     -- assert initial state
     assert.are.same(SemiFungibleTokens.name, name)
     assert.are.same(SemiFungibleTokens.ticker, ticker)
-    assert.are.same(SemiFungibleTokens.logo, logo)
+    assert.are.same(SemiFungibleTokens.logos, logos)
     assert.are.same(SemiFungibleTokens.balancesById, balancesById)
     assert.are.same(SemiFungibleTokens.totalSupplyById, totalSupplyById)
     assert.are.same(SemiFungibleTokens.denomination, denomination)

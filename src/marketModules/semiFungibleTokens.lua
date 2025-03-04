@@ -32,7 +32,7 @@ local bint = require('.bint')(256)
 --- @class SemiFungibleTokens
 --- @field name string The token name
 --- @field ticker string The token ticker
---- @field logo string The token logo Arweave TxID
+--- @field logos table<string> The token logos Arweave TxID for each ID
 --- @field balancesById table<string, table<string, string>> The account token balances by ID
 --- @field totalSupplyById table<string, string> The total supply of the token by ID
 --- @field denomination number The number of decimals
@@ -40,16 +40,16 @@ local bint = require('.bint')(256)
 --- Creates a new SemiFungibleTokens instance
 --- @param name string The token name
 --- @param ticker string The token ticker
---- @param logo string The token logo Arweave TxID
+--- @param logos table<string> The token logos Arweave TxID for each ID
 --- @param balancesById table<string, table<string, string>> The account token balances by ID
 --- @param totalSupplyById table<string, string> The total supply of the token by ID
 --- @param denomination number The number of decimals
 --- @return SemiFungibleTokens semiFungibleTokens The new SemiFungibleTokens instance
-function SemiFungibleTokens.new(name, ticker, logo, balancesById, totalSupplyById, denomination)
+function SemiFungibleTokens.new(name, ticker, logos, balancesById, totalSupplyById, denomination)
   local semiFungibleTokens = {
     name = name,
     ticker = ticker,
-    logo = logo,
+    logos = logos,
     balancesById = balancesById,
     totalSupplyById = totalSupplyById,
     denomination = denomination
@@ -276,7 +276,6 @@ end
 --- @return table<string, table<string, string>> The account balances for each respective ID
 function SemiFungibleTokensMethods:getBatchBalances(positionIds)
   local bals = {}
-
   for i = 1, #positionIds do
     bals[ positionIds[i] ] = {}
     if self.balancesById[ positionIds[i] ] then
@@ -285,6 +284,18 @@ function SemiFungibleTokensMethods:getBatchBalances(positionIds)
   end
   -- return balances
   return bals
+end
+
+--- Get the logo for the token with the given ID
+--- @param id string The ID of the token
+--- @return string The Arweave TxID of the logo
+function SemiFungibleTokensMethods:getLogo(id)
+  local logo = ''
+  if self.logos[tonumber(id)] then
+    logo = self.logos[tonumber(id)]
+  end
+  -- return logo
+  return logo
 end
 
 return SemiFungibleTokens

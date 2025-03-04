@@ -5,7 +5,7 @@ local json = require("json")
 
 local name = ''
 local ticker = ''
-local logo = ''
+local logos = {}
 local balancesById = {}
 local totalSupplyById = {}
 local denomination = nil
@@ -51,7 +51,7 @@ describe("#market #conditionalTokens", function()
     -- set semi-fungible variables
     name = ''
     ticker = ''
-    logo = ''
+    logos = {"logo1", "logo2", "logo3"}
     balancesById = {}
     totalSupplyById = {}
     denomination = 12
@@ -66,7 +66,7 @@ describe("#market #conditionalTokens", function()
 		ConditionalTokens = conditionalTokens.new(
       name,
       ticker,
-      logo,
+      logos,
       balancesById,
       totalSupplyById,
       denomination,
@@ -127,7 +127,7 @@ describe("#market #conditionalTokens", function()
     -- assert initial state
     assert.are.same(name, ConditionalTokens.name)
     assert.are.same(ticker, ConditionalTokens.ticker)
-    assert.are.same(logo, ConditionalTokens.logo)
+    assert.are.same(logos, ConditionalTokens.logos)
     assert.are.same(balancesById, ConditionalTokens.balancesById)
     assert.are.same(totalSupplyById, ConditionalTokens.totalSupplyById)
     assert.are.same(denomination, ConditionalTokens.denomination)

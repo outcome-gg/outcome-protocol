@@ -153,4 +153,15 @@ function CPMMNotices.updateLogoNotice(logo, msg)
   })
 end
 
+--- Sends an update logos notice
+--- @param logos table<string> The updated logos
+--- @param msg Message The message received
+--- @return Message The logo updated notice
+function CPMMNotices.updateLogosNotice(logos, msg)
+  return msg.reply({
+    Action = "Update-Logos-Notice",
+    Data = json.encode(logos)
+  })
+end
+
 return CPMMNotices

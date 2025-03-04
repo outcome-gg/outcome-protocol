@@ -13,7 +13,9 @@ local outcomeSlotCount
 local name = ""
 local ticker = ""
 local logo = ""
+local logos = {}
 local newLogo = ""
+local newLogos = {}
 local totalSupply = ""
 local denomination = 0
 local balancesById = {}
@@ -53,6 +55,7 @@ local msgUpdateIncentives = {}
 local msgUpdateTakeFee = {}
 local msgUpdateProtocolFeeTarget = {}
 local msgUpdateLogo = {}
+local msgUpdateLogos = {}
 local noticeDebit = {}
 local noticeCredit = {}
 local noticeAddFunding = {}
@@ -81,6 +84,9 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     name = "Test Market"
     ticker = "TST"
     logo = "https://test.com/logo.png"
+    logos = {"https://test.com/logo.png", "https://test.com/logo2.png"}
+    newLogo = "https://test.com/new-logo.png"
+    newLogos = {"https://test.com/new-logo.png", "https://test.com/new-logo2.png"}
     totalSupply = "0"
     denomination = 12
     lpFee = 100 -- basis points
@@ -111,6 +117,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       name,
       ticker,
       logo,
+      logos,
       lpFee,
       creatorFee,
       creatorFeeTarget,
@@ -319,6 +326,14 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       },
       reply = function(message) return message end
     }
+    -- create a message object
+    msgUpdateLogos = {
+      From = sender,
+      Tags = {
+        Logos = json.encode(newLogos)
+      },
+      reply = function(message) return message end
+    }
     -- create a notice object
     noticeDebit = {
       Action = "Debit-Notice",
@@ -349,7 +364,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     local tokens_ = tokens.new(
       name .. " Conditional Tokens",
       ticker,
-      logo,
+      logos,
       balancesById,
       totalSupplyById,
       denomination,
@@ -1341,10 +1356,25 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     )
     end)
     -- assert state
-    assert.are.equal(msgUpdateLogo.Tags.Logo, CPMM.tokens.logo)
     assert.are.equal(msgUpdateLogo.Tags.Logo, CPMM.token.logo)
     -- assert notice
     assert.are.equal("Update-Logo-Notice", notice.Action)
     assert.are.equal(msgUpdateLogo.Tags.Logo, notice.Data)
+  end)
+
+  it("should update logos" , function()
+    local notice = {}
+    -- should not throw an error
+    assert.has.no.error(function()
+      notice = CPMM:updateLogos(
+      json.decode(msgUpdateLogos.Tags.Logos),
+      msgUpdateLogos
+    )
+    end)
+    -- assert state
+    assert.are.equal(msgUpdateLogos.Tags.Logos, json.encode(CPMM.tokens.logos))
+    -- assert notice
+    assert.are.equal("Update-Logos-Notice", notice.Action)
+    assert.are.equal(msgUpdateLogos.Tags.Logos, notice.Data)
   end)
 end)

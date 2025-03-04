@@ -38,14 +38,15 @@ local conditionalTokens = require('marketModules.conditionalTokens')
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name
 --- @param ticker string The CPMM token(s) ticker
---- @param logo string The CPMM token(s) logo
+--- @param logo string The CPMM LP token logo
+--- @param logos table<string> The CPMM position tokens logos
 --- @param lpFee number The liquidity provider fee
 --- @param creatorFee number The market creator fee
 --- @param creatorFeeTarget string The market creator fee target
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
 --- @return CPMM cpmm The new CPMM instance
-function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, logo, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
+function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, logo, logos, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
   local cpmm = {
     configurator = configurator,
     poolBalances = {},
@@ -65,7 +66,7 @@ function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, n
   cpmm.tokens = conditionalTokens.new(
     name .. " Conditional Tokens",
     ticker,
-    logo,
+    logos,
     {}, -- balancesById
     {}, -- totalSupplyById
     constants.denomination,
@@ -432,8 +433,16 @@ end
 --- @return Message The update logo notice
 function CPMMMethods:updateLogo(logo, msg)
   self.token.logo = logo
-  self.tokens.logo = logo
   return self.updateLogoNotice(logo, msg)
+end
+
+--- Update logos
+--- @param logos table<string> The Arweave transaction IDs of the new logos
+--- @param msg Message The message received
+--- @return Message The update logos notice
+function CPMMMethods:updateLogos(logos, msg)
+  self.tokens.logos = logos
+  return self.updateLogosNotice(logos, msg)
 end
 
 return CPMM

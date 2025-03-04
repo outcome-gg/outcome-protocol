@@ -49,7 +49,8 @@ end
 --- @field positionIds table<string> The Position process IDs
 --- @field name string The Market name
 --- @field ticker string The Market ticker
---- @field logo string The Market logo
+--- @field logo string The Market LP token logo
+--- @field logos table<string> The Market Position tokens logos
 --- @field lpFee number The LP fee
 --- @field creatorFee number The Creator fee
 --- @field creatorFeeTarget string The Creator fee target
@@ -74,6 +75,7 @@ local function retrieveMarketConfig()
     name = ao.env.Process.Tags.Name or constants.marketConfig.name,
     ticker = ao.env.Process.Tags.Ticker or constants.marketConfig.ticker,
     logo = ao.env.Process.Tags.Logo or constants.marketConfig.logo,
+    logos = json.decode(ao.env.Process.Tags.Logos or constants.marketConfig.logos),
     lpFee = tonumber(ao.env.Process.Tags.LpFee or constants.marketConfig.lpFee),
     creatorFee = tonumber(ao.env.Process.Tags.CreatorFee or constants.marketConfig.creatorFee),
     creatorFeeTarget = ao.env.Process.Tags.CreatorFeeTarget or constants.marketConfig.creatorFeeTarget,
@@ -105,6 +107,7 @@ if not Market or Env == 'DEV' then
     marketConfig.name,
     marketConfig.ticker,
     marketConfig.logo,
+    marketConfig.logos,
     marketConfig.lpFee,
     marketConfig.creatorFee,
     marketConfig.creatorFeeTarget,
@@ -573,6 +576,29 @@ Handlers.add('Balances-All', {Action = "Balances-All"}, function(msg)
   Market:balancesAll(msg)
 end)
 
+--- Logo by ID handler
+--- @param msg Message The message received
+Handlers.add('Logo-By-Id', {Action = "Logo-By-Id"}, function(msg)
+  -- Validate input
+  local success, err = semiFungibleTokensValidation.logoById(msg, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Logo-By-Id-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, get the logo by ID.
+  Market:logoById(msg)
+end)
+
+--- Logos handler
+--- @param msg Message The message received
+Handlers.add('Logos', {Action = "Logos"}, function(msg)
+  Market:logos(msg)
+end)
+
 --[[
 ===========================
 CONFIGURATOR WRITE HANDLERS
@@ -662,6 +688,23 @@ Handlers.add('Update-Logo', {Action = "Update-Logo"}, function(msg)
   end
   -- If validation passes, update the logo.
   Market:updateLogo(msg)
+end)
+
+--- Update logos handler
+--- @param msg Message The message received
+Handlers.add('Update-Logos', {Action = "Update-Logos"}, function(msg)
+  -- Validate input
+  local success, err = cpmmValidation.updateLogos(msg, Market.cpmm.configurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Logos-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update the logos.
+  Market:updateLogos(msg)
 end)
 
 return "ok"

@@ -24,7 +24,7 @@ local ao = ao or require('.ao')
 --- @class ConditionalTokens
 --- @field name string The token name
 --- @field ticker string The token ticker
---- @field logo string The token logo Arweave TxID
+--- @field logos table<string> The token logos Arweave TxID for each ID
 --- @field balancesById table<string, table<string, string>> The account token balances by ID
 --- @field totalSupplyById table<string, string> The total supply of the token by ID
 --- @field denomination number The number of decimals
@@ -41,7 +41,7 @@ local ao = ao or require('.ao')
 --- Creates a new ConditionalTokens instance
 --- @param name string The token name
 --- @param ticker string The token ticker
---- @param logo string The token logo Arweave TxID
+--- @param logos table<string> The token logos Arweave TxID for each ID
 --- @param balancesById table<string, table<string, string>> The account token balances by ID
 --- @param totalSupplyById table<string, string> The total supply of the token by ID
 --- @param denomination number The number of decimals
@@ -56,7 +56,7 @@ local ao = ao or require('.ao')
 function ConditionalTokens.new(
   name,
   ticker,
-  logo,
+  logos,
   balancesById,
   totalSupplyById,
   denomination,
@@ -69,7 +69,7 @@ function ConditionalTokens.new(
   protocolFeeTarget
 )
   ---@class ConditionalTokens : SemiFungibleTokens
-  local conditionalTokens = SemiFungibleTokens.new(name, ticker, logo, balancesById, totalSupplyById, denomination)
+  local conditionalTokens = SemiFungibleTokens.new(name, ticker, logos, balancesById, totalSupplyById, denomination)
   conditionalTokens.resolutionAgent = resolutionAgent
   conditionalTokens.collateralToken = collateralToken
   conditionalTokens.positionIds = positionIds

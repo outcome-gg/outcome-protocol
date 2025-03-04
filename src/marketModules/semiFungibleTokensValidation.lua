@@ -141,4 +141,12 @@ function semiFungibleTokensValidation.batchBalances(msg, validPositionIds)
   return true
 end
 
+--- Validates a logoById message
+--- @param msg Message The message received
+--- @param validPositionIds table<string> The array of valid token IDs
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function semiFungibleTokensValidation.logoById(msg, validPositionIds)
+  return sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+end
+
 return semiFungibleTokensValidation

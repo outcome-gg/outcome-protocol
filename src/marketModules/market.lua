@@ -37,7 +37,8 @@ local cpmm = require('marketModules.cpmm')
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name
 --- @param ticker string The CPMM token(s) ticker
---- @param logo string The CPMM token(s) logo
+--- @param logo string The CPMM LP token logo
+--- @param logos table<string> The CPMM position tokens logos
 --- @param lpFee number The liquidity provider fee
 --- @param creatorFee number The market creator fee
 --- @param creatorFeeTarget string The market creator fee target
@@ -58,6 +59,7 @@ function Market.new(
   name,
   ticker,
   logo,
+  logos,
   lpFee,
   creatorFee,
   creatorFeeTarget,
@@ -73,6 +75,7 @@ function Market.new(
       name,
       ticker,
       logo,
+      logos,
       lpFee,
       creatorFee,
       creatorFeeTarget,
@@ -472,6 +475,27 @@ function MarketMethods:balancesAll(msg)
   return msg.reply({ Data = json.encode(self.cpmm.tokens.balancesById) })
 end
 
+--- Logo by position ID
+--- @param msg Message The message received
+--- @return Message logoById The logo for a given position ID
+function MarketMethods:logoById(msg)
+  local logo = ""
+  if self.cpmm.tokens.logos[msg.Tags.PositionId] then
+    logo = self.cpmm.tokens.logos[msg.Tags.PositionId]
+  end
+  return msg.reply({
+    PositionId = msg.Tags.PositionId,
+    Data = logo
+  })
+end
+
+--- Logos
+--- @param msg Message The message received
+--- @return Message logos The logos of the Conditional tokens
+function MarketMethods:logos(msg)
+  return msg.reply({ Data = json.encode(self.cpmm.tokens.logos) })
+end
+
 --[[
 ==========================
 CONFIGURATOR WRITE METHODS
@@ -512,6 +536,14 @@ end
 --- @return Message updateLogoNotice The update logo notice
 function MarketMethods:updateLogo(msg)
   return self.cpmm:updateLogo(msg.Tags.Logo, msg)
+end
+
+--- Update logos
+--- @param msg Message The message received
+--- @return Message updateLogosNotice The update logo notice
+function MarketMethods:updateLogos(msg)
+  local logos = json.decode(msg.Tags.Logos)
+  return self.cpmm:updateLogos(logos, msg)
 end
 
 return Market

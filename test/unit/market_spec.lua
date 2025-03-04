@@ -17,7 +17,9 @@ local subcategory = ""
 local name = ""
 local ticker = ""
 local logo = ""
+local logos = {}
 local newLogo = ""
+local newLogos = {}
 local totalSupply = ""
 local denomination = 0
 local balancesById = {}
@@ -67,6 +69,7 @@ local msgUpdateDataIndex = {}
 local msgUpdateTakeFee = {}
 local msgUpdateProtocolFeeTarget = {}
 local msgUpdateLogo = {}
+local msgUpdateLogos = {}
 local msgSplitPosition = {}
 local msgMergePositions = {}
 local msgReportPayouts = {}
@@ -108,6 +111,9 @@ describe("#market", function()
     name = "Test Market"
     ticker = "TST"
     logo = "https://test.com/logo.png"
+    logos = {"https://test.com/1.png", "https://test.com/2.png"}
+    newLogo = "https://test.com/new-logo.png"
+    newLogos = {"https://test.com/new-1.png", "https://test.com/new-2.png"}
     totalSupply = "0"
     denomination = 12
     lpFee = 100 -- basis points
@@ -149,6 +155,7 @@ describe("#market", function()
       name,
       ticker,
       logo,
+      logos,
       lpFee,
       creatorFee,
       creatorFeeTarget,
@@ -166,6 +173,7 @@ describe("#market", function()
         Name = name,
         Ticker = ticker,
         Logo = logo,
+        Logos = json.encode(logos),
         LpFee = lpFee,
         CreatorFee = creatorFee,
         CreatorFeeTarget = creatorFeeTarget,
@@ -450,6 +458,15 @@ describe("#market", function()
       reply = function(message) return message end,
       forward = function(target, message) return message end
     }
+    -- create a message object
+    msgUpdateLogos = {
+      From = configurator,
+      Tags = {
+        Logos = json.encode(newLogos)
+      },
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
+    }
     -- create a notice object
     noticeDebit = {
       Action = "Debit-Notice",
@@ -524,7 +541,7 @@ describe("#market", function()
     local tokens_ = tokens.new(
       name .. " Conditional Tokens",
       ticker,
-      logo,
+      logos,
       balancesById,
       totalSupplyById,
       denomination,
@@ -1326,10 +1343,25 @@ describe("#market", function()
       )
     end)
     -- assert state
-    assert.are.equal(msgUpdateLogo.Tags.Logo, Market.cpmm.tokens.logo)
     assert.are.equal(msgUpdateLogo.Tags.Logo, Market.cpmm.token.logo)
     -- assert notice
     assert.are.equal("Update-Logo-Notice", notice.Action)
     assert.are.equal(msgUpdateLogo.Tags.Logo, notice.Data)
+  end)
+
+  it("should update logos" , function()
+    local notice = {}
+
+    -- should not throw an error
+    assert.has.no.error(function()
+      notice = Market:updateLogos(
+        msgUpdateLogos
+      )
+    end)
+    -- assert state
+    assert.are.equal(msgUpdateLogos.Tags.Logos, json.encode(Market.cpmm.tokens.logos))
+    -- assert notice
+    assert.are.equal("Update-Logos-Notice", notice.Action)
+    assert.are.equal(msgUpdateLogos.Tags.Logos, notice.Data)
   end)
 end)
