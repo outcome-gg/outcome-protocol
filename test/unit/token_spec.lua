@@ -137,7 +137,7 @@ describe("#market #token #tokenInternal", function()
         msgMint.Tags.Recipient,
         msgMint.Tags.Quantity,
         false, -- cast
-        true, -- expectReply
+        false, -- async
         msgMint
       )
     end)
@@ -161,7 +161,7 @@ describe("#market #token #tokenInternal", function()
         msgMint.From,
         msgMint.Tags.Quantity,
         false, -- cast
-        true, -- expectReply
+        true, -- async
         msgMint
       )
     -- should not throw an error
@@ -170,7 +170,7 @@ describe("#market #token #tokenInternal", function()
         msgBurn.From,
         msgBurn.Tags.Quantity,
         false, -- cast
-        false, -- expectReply
+        true, -- async
         msgBurn
       ).receive().Data
     end)
@@ -196,7 +196,8 @@ describe("#market #token #tokenInternal", function()
     Token:mint(
       msgMint.From,
       msgMint.Tags.Quantity,
-      true, -- expectReply
+      false, -- cast
+      false, -- async
       msgMint
     )
     -- should not throw an error
@@ -206,7 +207,7 @@ describe("#market #token #tokenInternal", function()
         msgTransfer.Tags.Recipient,
         msgTransfer.Tags.Quantity,
         false, -- cast
-        true, -- expectReply
+        false, -- async
         msgTransfer
       )
     end)
@@ -228,7 +229,7 @@ describe("#market #token #tokenInternal", function()
         msgTransferError.Tags.Recipient,
         msgTransferError.Tags.Quantity,
         false, -- cast
-        true, -- expectReply
+        false, -- async
         msgTransferError
       )
     end)

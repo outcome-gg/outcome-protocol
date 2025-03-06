@@ -183,8 +183,9 @@ CPMM WRITE METHODS
 function MarketMethods:addFunding(msg)
   local distribution = msg.Tags['X-Distribution'] and json.decode(msg.Tags['X-Distribution']) or nil
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
+  local cast = msg.Tags['X-Cast'] or false
   -- Add funding to the CPMM
-  self.cpmm:addFunding(onBehalfOf, msg.Tags.Quantity, distribution, msg)
+  self.cpmm:addFunding(onBehalfOf, msg.Tags.Quantity, distribution, cast, msg)
   -- Log funding update to data index
   logFunding(self.dataIndex, msg.Tags.Sender, onBehalfOf, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
 end
@@ -195,7 +196,7 @@ end
 function MarketMethods:removeFunding(msg)
   local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
   -- Remove funding from the CPMM
-  self.cpmm:removeFunding(onBehalfOf, msg.Tags.Quantity, msg)
+  self.cpmm:removeFunding(onBehalfOf, msg.Tags.Quantity, msg.Tags.Cast, msg)
   -- Log funding update to data index
   logFunding(self.dataIndex, msg.From, onBehalfOf, 'remove', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
 end
@@ -206,8 +207,9 @@ end
 function MarketMethods:buy(msg)
   local positionTokensToBuy = self.cpmm:calcBuyAmount(msg.Tags.Quantity, msg.Tags['X-PositionId'])
   local onBehalfOf = msg.Tags['X-OnBehalfOf'] or msg.Tags.Sender
+  local cast = msg.Tags['X-Cast'] or false
   -- Buy position tokens from the CPMM
-  self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinPositionTokensToBuy']), msg)
+  self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinPositionTokensToBuy']), cast, msg)
   -- Log prediction and probability update to data index
   local price = tostring(bint.__div(bint(positionTokensToBuy), bint(msg.Tags.Quantity)))
   logPrediction(self.dataIndex, msg.Tags.Sender, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], positionTokensToBuy, price, msg)
@@ -220,7 +222,7 @@ function MarketMethods:sell(msg)
   local positionTokensToSell = self.cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
   local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
   -- Sell position tokens to the CPMM
-  self.cpmm:sell(msg.From, onBehalfOf, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.MaxPositionTokensToSell, msg)
+  self.cpmm:sell(msg.From, onBehalfOf, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.MaxPositionTokensToSell, msg.Tags.Cast, msg)
   -- Log prediction and probability update to data index
   local price = tostring(bint.__div(positionTokensToSell, bint(msg.Tags.ReturnAmount)))
   logPrediction(self.dataIndex, msg.From, onBehalfOf, "sell", self.cpmm.tokens.collateralToken, msg.Tags.ReturnAmount, msg.Tags.PositionId, positionTokensToSell, price, msg)
@@ -228,10 +230,11 @@ function MarketMethods:sell(msg)
 end
 
 --- Withdraw fees
+--- @notice Detached tag ignored as we always want to use msg.reply / forward, when responding
 --- @param msg Message The message received
 function MarketMethods:withdrawFees(msg)
   local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
-  self.cpmm:withdrawFees(msg.From, onBehalfOf, true, msg) -- expectReply
+  self.cpmm:withdrawFees(msg.From, onBehalfOf, false, msg)
 end
 
 --[[
@@ -296,9 +299,10 @@ LP TOKEN WRITE METHODS
 ]]
 
 --- Transfer
+--- @notice Detached tag ignored as we always want to use msg.reply / forward, when responding
 --- @param msg Message The message received
 function MarketMethods:transfer(msg)
-  self.cpmm:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, msg)
+  self.cpmm:transfer(msg.From, msg.Tags.Recipient, msg.Tags.Quantity, msg.Tags.Cast, false, msg)
 end
 
 --[[
@@ -353,13 +357,15 @@ CONDITIONAL TOKENS WRITE METHODS
 ]]
 
 --- Merge positions
+--- @notice Detached tag ignored as we always want to use msg.reply / forward, when responding
 --- @param msg Message The message received
 function MarketMethods:mergePositions(msg)
   local onBehalfOf = msg.Tags["OnBehalfOf"] or msg.From
-  self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, true, msg) -- is not sell, expectReply
+  self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, msg.Tags.Cast, false, msg)
 end
 
 --- Report payouts
+--- @notice Cast tag ignored as we always want to report payouts
 --- @param msg Message The message received
 function MarketMethods:reportPayouts(msg)
   local payouts = json.decode(msg.Tags.Payouts)
@@ -370,7 +376,7 @@ end
 --- @param msg Message The message received
 function MarketMethods:redeemPositions(msg)
   local onBehalfOf = msg.Tags["OnBehalfOf"] or msg.From
-  self.cpmm.tokens:redeemPositions(onBehalfOf, msg)
+  self.cpmm.tokens:redeemPositions(onBehalfOf, msg.Tags.Cast, msg)
 end
 
 --[[
@@ -400,18 +406,20 @@ SEMI-FUNGIBLE TOKENS WRITE METHODS
 ]]
 
 --- Transfer single
+--- @notice Detached tag ignored as we always want to use msg.reply / forward, when responding
 --- @param msg Message The message received
 function MarketMethods:transferSingle(msg)
-  self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.PositionId, msg.Tags.Quantity, msg.Tags.Cast, true, msg) -- expectReply
+  self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.PositionId, msg.Tags.Quantity, msg.Tags.Cast, false, msg)
 end
 
 --- Transfer batch
+--- @notice Detached tag ignored as we always want to use msg.reply / forward, when responding
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil transferBatchNotices The transfer notices, error notice or nothing
 function MarketMethods:transferBatch(msg)
   local positionIds = json.decode(msg.Tags.PositionIds)
   local quantities = json.decode(msg.Tags.Quantities)
-  return self.cpmm.tokens:transferBatch(msg.From, msg.Tags.Recipient, positionIds, quantities, msg.Tags.Cast, true, msg) -- expectReply
+  return self.cpmm.tokens:transferBatch(msg.From, msg.Tags.Recipient, positionIds, quantities, msg.Tags.Cast, false, msg)
 end
 
 --[[

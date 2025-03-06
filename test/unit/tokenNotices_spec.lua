@@ -80,7 +80,7 @@ describe("#market #token #tokenNotices", function()
     local notice = tokenNotices.mintNotice(
       msgMint.Tags.Recipient,
       msgMint.Tags.Quantity,
-      true, -- expectReply
+      false, -- async
       msgMint
     )
     assert.are.same({
@@ -94,7 +94,7 @@ describe("#market #token #tokenNotices", function()
   it("should send burnNotice", function()
     local notice = tokenNotices.burnNotice(
       msgBurn.Tags.Quantity,
-      true, -- expectReply
+      false, -- async
       msgBurn
     )
 
@@ -111,7 +111,7 @@ describe("#market #token #tokenNotices", function()
       noticeDebit,
       noticeCredit,
       recipient,
-      true, -- expectReply
+      false, -- async
       msgTransfer
     )
     assert.are.same(noticeDebit, notices[1])

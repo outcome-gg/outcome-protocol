@@ -78,10 +78,10 @@ end
 --- @param to string The address that will own the minted tokens
 --- @param quantity string The quantity of tokens to mint
 --- @param cast boolean The cast is set to true to silence the notice
---- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message|nil The mint notice if not cast
-function TokenMethods:mint(to, quantity, cast, expectReply, msg)
+function TokenMethods:mint(to, quantity, cast, detached, msg)
   assert(quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(quantity)), 'Quantity must be greater than zero!')
   -- Mint tokens
@@ -89,17 +89,17 @@ function TokenMethods:mint(to, quantity, cast, expectReply, msg)
   self.balances[to] = tostring(bint.__add(bint(self.balances[to]), bint(quantity)))
   self.totalSupply = tostring(bint.__add(bint(self.totalSupply), bint(quantity)))
   -- Send notice
-  if not cast then return self.mintNotice(to, quantity, expectReply, msg) end
+  if not cast then return self.mintNotice(to, quantity, detached, msg) end
 end
 
 --- Burn a quantity of tokens
 --- @param from string The process ID that will no longer own the burned tokens
 --- @param quantity string The quantity of tokens to burn
 --- @param cast boolean The cast is set to true to silence the notice
---- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message|nil The burn notice if not cast
-function TokenMethods:burn(from, quantity, cast, expectReply, msg)
+function TokenMethods:burn(from, quantity, cast, detached, msg)
   assert(bint.__lt(0, bint(quantity)), 'Quantity must be greater than zero!')
   assert(self.balances[from], 'Must have token balance!')
   assert(bint.__le(bint(quantity), self.balances[from]), 'Must have sufficient tokens!')
@@ -107,7 +107,7 @@ function TokenMethods:burn(from, quantity, cast, expectReply, msg)
   self.balances[from] = tostring(bint.__sub(self.balances[from], bint(quantity)))
   self.totalSupply = tostring(bint.__sub(bint(self.totalSupply), bint(quantity)))
   -- Send notice
-  if not cast then return self.burnNotice(quantity, expectReply, msg) end
+  if not cast then return self.burnNotice(quantity, detached, msg) end
 end
 
 --- Transfer a quantity of tokens
@@ -115,10 +115,10 @@ end
 --- @param recipient string The process ID that will receive the token
 --- @param quantity string The quantity of tokens to transfer
 --- @param cast boolean The cast is set to true to silence the transfer notice
---- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil The transfer notices, error notice or nothing
-function TokenMethods:transfer(from, recipient, quantity, cast, expectReply, msg)
+function TokenMethods:transfer(from, recipient, quantity, cast, detached, msg)
   if not self.balances[from] then self.balances[from] = "0" end
   if not self.balances[recipient] then self.balances[recipient] = "0" end
 
@@ -161,7 +161,7 @@ function TokenMethods:transfer(from, recipient, quantity, cast, expectReply, msg
       end
 
       -- Send Debit-Notice and Credit-Notice
-      return self.transferNotices(debitNotice, creditNotice, recipient, expectReply, msg)
+      return self.transferNotices(debitNotice, creditNotice, recipient, detached, msg)
     end
   else
     return self.transferErrorNotice(msg)

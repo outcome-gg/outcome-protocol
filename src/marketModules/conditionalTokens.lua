@@ -107,10 +107,10 @@ end
 --- @param collateralToken string The process ID of the collateral token
 --- @param quantity string The quantity of collateral to split
 --- @param cast boolean The cast is set to true to silence the notice
---- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message| nil The position split notice if not cast
-function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, cast, expectReply, msg)
+function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, cast, detached, msg)
   assert(self.payoutNumerators and #self.payoutNumerators > 0, "Condition not prepared!")
   -- Create equal split positions.
   local quantities = {}
@@ -118,9 +118,9 @@ function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity,
     table.insert(quantities, quantity)
   end
   -- Mint the stake in the split target positions.
-  self:batchMint(from, self.positionIds, quantities, false, false, msg) -- send notice, do not expect reply
+  self:batchMint(from, self.positionIds, quantities, false, true, msg) -- send notice, do not expect reply
   -- Send notice.
-  if not cast then return self.positionSplitNotice(from, collateralToken, quantity, expectReply, msg) end
+  if not cast then return self.positionSplitNotice(from, collateralToken, quantity, detached, msg) end
 end
 
 --- Merge positions
@@ -129,10 +129,10 @@ end
 --- @param quantity string The quantity of collateral to merge
 --- @param isSell boolean True if the merge is a sell, false otherwise
 --- @param cast boolean The cast is set to true to silence the notice
---- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message The positions merge notice
-function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, cast, expectReply, msg)
+function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, cast, detached, msg)
   assert(self.payoutNumerators and #self.payoutNumerators > 0, "Condition not prepared!")
   -- Create equal merge positions.
   local quantities = {}
@@ -140,7 +140,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     table.insert(quantities, quantity)
   end
   -- Burn equal quantiies from user positions.
-  self:batchBurn(from, self.positionIds, quantities, false, false, msg) -- send notice, do not expect reply
+  self:batchBurn(from, self.positionIds, quantities, false, true, msg) -- send notice, do not expect reply
   -- @dev below already handled within the sell method.
   -- sell method w/ a different quantity and recipient.
   if not isSell then
@@ -153,7 +153,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     })
   end
   -- Send notice.
-  if not cast then return self.positionsMergeNotice(self.collateralToken, quantity, onBehalfOf, expectReply, msg) end
+  if not cast then return self.positionsMergeNotice(self.collateralToken, quantity, onBehalfOf, detached, msg) end
 end
 
 --- Report payouts
@@ -200,7 +200,7 @@ function ConditionalTokensMethods:redeemPositions(onBehalfOf, cast, msg)
     if bint.__lt(0, bint(payoutStake)) then
       -- Calculate the payout and burn position.
       totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
-      self:burn(msg.From, positionId, payoutStake, false, false, msg) -- send notice, do not expect reply
+      self:burn(msg.From, positionId, payoutStake, false, true, msg) -- send notice, do not expect reply
     end
   end
   -- Return total payout minus take fee.

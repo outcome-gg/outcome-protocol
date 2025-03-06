@@ -11,10 +11,10 @@ local TokenNotices = {}
 --- Mint notice
 --- @param recipient string The address that will own the minted tokens
 --- @param quantity string The quantity of tokens to mint
---- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message The mint notice
-function TokenNotices.mintNotice(recipient, quantity, expectReply, msg)
+function TokenNotices.mintNotice(recipient, quantity, detached, msg)
   local notice = {
     Recipient = recipient,
     Quantity = tostring(quantity),
@@ -22,17 +22,17 @@ function TokenNotices.mintNotice(recipient, quantity, expectReply, msg)
     Data = Colors.gray .. "Successfully minted " .. Colors.blue .. tostring(quantity) .. Colors.reset
   }
   -- Send notice
-  if expectReply then return msg.reply(notice) end
+  if not detached then return msg.reply(notice) end
   notice.Target = msg.From
   return ao.send(notice)
 end
 
 --- Burn notice
 --- @param quantity string The quantity of tokens to burn
---- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message The burn notice
-function TokenNotices.burnNotice(quantity, expectReply, msg)
+function TokenNotices.burnNotice(quantity, detached, msg)
   local notice = {
     Target = msg.Sender and msg.Sender or msg.From,
     Quantity = tostring(quantity),
@@ -40,7 +40,7 @@ function TokenNotices.burnNotice(quantity, expectReply, msg)
     Data = Colors.gray .. "Successfully burned " .. Colors.blue .. tostring(quantity) .. Colors.reset
   }
   -- Send notice
-  if expectReply then return msg.reply(notice) end
+  if not detached then return msg.reply(notice) end
   notice.Target =  msg.Sender and msg.Sender or msg.From
   return ao.send(notice)
 end
@@ -49,11 +49,11 @@ end
 --- @param debitNotice Message The notice to send the spender
 --- @param creditNotice Message The notice to send the receiver
 --- @param recipient string The address that will receive the tokens
---- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The mesage received
 --- @return table<Message> The transfer notices
-function TokenNotices.transferNotices(debitNotice, creditNotice, recipient, expectReply, msg)
-  if expectReply then return { msg.reply(debitNotice), msg.forward(recipient, creditNotice) } end
+function TokenNotices.transferNotices(debitNotice, creditNotice, recipient, detached, msg)
+  if not detached then return { msg.reply(debitNotice), msg.forward(recipient, creditNotice) } end
   debitNotice.Target = msg.From
   creditNotice.Target = recipient
   return { ao.send(debitNotice), ao.send(creditNotice) }

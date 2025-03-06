@@ -570,6 +570,7 @@ describe("#market", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- assert state
@@ -635,6 +636,7 @@ describe("#market", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- override receive to return collateralToken balance
@@ -646,6 +648,7 @@ describe("#market", function()
     local notice = Market.cpmm:removeFunding(
       msgRemoveFunding.From,
       msgRemoveFunding.Tags.Quantity,
+      false, -- cast
       msgRemoveFunding
     )
     -- assert state
@@ -674,6 +677,7 @@ describe("#market", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- calc buy amount
@@ -694,6 +698,7 @@ describe("#market", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- calc sell amount
@@ -714,6 +719,7 @@ describe("#market", function()
      msgAddFunding.Tags.Sender,
      msgAddFunding.Tags.Quantity,
      json.decode(msgAddFunding.Tags["X-Distribution"]),
+     false, -- cast
      msgAddFunding
    )
    -- calc buy amount
@@ -730,6 +736,7 @@ describe("#market", function()
      msgBuy.Tags.InvestmentAmount,
      msgBuy.Tags.PositionId,
      msgBuy.Tags.Quantity,
+     false, -- cast
      msgBuy
      )
    end)
@@ -773,6 +780,7 @@ describe("#market", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- calc buy amount
@@ -788,6 +796,7 @@ describe("#market", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -842,6 +851,7 @@ describe("#market", function()
         msgSell.Tags.ReturnAmount,
         msgSell.Tags.PositionId,
         msgSell.Tags.MaxPositionTokensToSell,
+        false, -- cast
         msgSell
       )
     end)
@@ -886,6 +896,7 @@ describe("#market", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- buy
@@ -896,6 +907,7 @@ describe("#market", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -925,6 +937,7 @@ describe("#market", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- buy
@@ -935,6 +948,7 @@ describe("#market", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -954,6 +968,7 @@ describe("#market", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- buy
@@ -964,6 +979,7 @@ describe("#market", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -973,7 +989,13 @@ describe("#market", function()
     local withdrawnFeesNotice = {}
     -- should not throw an error
 		assert.has.no.error(function()
-      withdrawnFeesNotice = Market.cpmm:withdrawFees(sender, sender, true, msgBuy) -- expectReply
+      withdrawnFeesNotice = Market.cpmm:withdrawFees(
+        sender,
+        sender,
+        false, -- cast
+        false, -- detatched
+        msgBuy
+      ) 
     end)
     -- assert withdrawn fees
     assert.are.equal("1", feesWithdrawable)
@@ -998,7 +1020,7 @@ describe("#market", function()
         msgTransfer.Tags.Recipient,
         msgTransfer.Tags.Quantity,
         false, -- cast
-        true, -- expectReply
+        false, -- async
         msgTransfer
       )
     end)
@@ -1021,7 +1043,7 @@ describe("#market", function()
         msgTransferError.Tags.Recipient,
         msgTransferError.Tags.Quantity,
         false, -- cast
-        true, -- expectReply
+        false, -- async
         msgTransferError
       )
     end)

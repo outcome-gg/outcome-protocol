@@ -393,6 +393,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- assert state
@@ -431,6 +432,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- assert state
@@ -470,6 +472,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- assert state
@@ -544,6 +547,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- override receive to return collateralToken balance
@@ -555,6 +559,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     local notice = CPMM:removeFunding(
       msgRemoveFunding.From,
       msgRemoveFunding.Tags.Quantity,
+      false, -- cast
       msgRemoveFunding
     )
     -- assert state
@@ -577,6 +582,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- buy
@@ -587,6 +593,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -621,6 +628,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     local notice = CPMM:removeFunding(
       msgRemoveFunding.From,
       msgRemoveFunding.Tags.Quantity,
+      false, -- cast
       msgRemoveFunding
     )
     -- assert state
@@ -645,6 +653,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- calc buy amount
@@ -665,6 +674,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- calc buy amount
@@ -683,6 +693,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- calc buy amount
@@ -711,6 +722,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- calc sell amount
@@ -731,6 +743,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- calc sell amount
@@ -749,6 +762,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- calc buy amount
@@ -765,6 +779,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -803,6 +818,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- calc buy amount
@@ -831,6 +847,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- calc buy amount
@@ -846,6 +863,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -900,6 +918,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         msgSell.Tags.ReturnAmount,
         msgSell.Tags.PositionId,
         msgSell.Tags.MaxPositionTokensToSell,
+        false, -- cast
         msgSell
       )
     end)
@@ -937,6 +956,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- buy
@@ -947,6 +967,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -971,6 +992,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- buy
@@ -981,6 +1003,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -1010,6 +1033,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- buy
@@ -1020,6 +1044,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -1030,6 +1055,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgSell.Tags.PositionId,
       msgSell.Tags.Quantity,
       true,
+      false,
       {}
     )
     -- sell
@@ -1061,6 +1087,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- buy
@@ -1071,6 +1098,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -1101,6 +1129,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- buy
@@ -1111,6 +1140,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -1130,6 +1160,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- buy
@@ -1140,6 +1171,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -1149,7 +1181,13 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     local withdrawnFeesNotice = {}
     -- should not throw an error
 		assert.has.no.error(function()
-      withdrawnFeesNotice = CPMM:withdrawFees(sender, sender, true, msgBuy) -- expectReply
+      withdrawnFeesNotice = CPMM:withdrawFees(
+        sender,
+        sender,
+        false, -- cast
+        false, -- detached
+        msgBuy
+      )
     end)
     -- assert withdrawn fees
     assert.are.equal("1", feesWithdrawable)
@@ -1164,6 +1202,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgAddFunding.Tags.Sender,
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
       msgAddFunding
     )
     -- buy
@@ -1174,6 +1213,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       msgBuy.Tags.InvestmentAmount,
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
+      false, -- cast
       msgBuy
       )
     end)
@@ -1196,7 +1236,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         msgMint.Tags.Recipient,
         msgMint.Tags.Quantity,
         false, -- cast
-        true, -- expectReply
+        false, -- async
         msgMint
       )
     end)
@@ -1227,7 +1267,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         msgBurn.From,
         msgBurn.Tags.Quantity,
         false, -- cast
-        false, -- expectReply
+        true, -- async
         msgBurn
       ).receive().Data
     end)
@@ -1261,7 +1301,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         msgTransfer.Tags.Recipient,
         msgTransfer.Tags.Quantity,
         false, -- cast
-        true, -- expectReply
+        false, -- async
         msgTransfer
       )
     end)
@@ -1283,7 +1323,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         msgTransferError.Tags.Recipient,
         msgTransferError.Tags.Quantity,
         false, -- cast
-        true, -- expectReply
+        false, -- async
         msgTransferError
       )
     end)

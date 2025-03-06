@@ -27,10 +27,10 @@ end
 --- @param from string The address of the account that split the position
 --- @param collateralToken string The address of the collateral token
 --- @param quantity string The quantity
---- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message The position split notice
-function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, quantity, expectReply, msg)
+function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, quantity, detached, msg)
   local notice = {
     Action = "Split-Position-Notice",
     Process = ao.id,
@@ -46,7 +46,7 @@ function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, qua
     end
   end
   -- Send notice
-  if expectReply then return msg.reply(notice) end
+  if not detached then return msg.reply(notice) end
   notice.Target = from
   return ao.send(notice)
 end
@@ -55,17 +55,17 @@ end
 --- @param collateralToken string The address of the collateral token
 --- @param quantity string The quantity
 --- @param onBehalfOf string The address of the account to receive the collateral
---- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message The positions merge notice
-function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, onBehalfOf, expectReply, msg)
+function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, onBehalfOf, detached, msg)
   local notice = {
     Action = "Merge-Positions-Notice",
     OnBehalfOf = onBehalfOf,
     CollateralToken = collateralToken,
     Quantity = quantity
   }
-  if expectReply then return msg.reply(notice) end
+  if not detached then return msg.reply(notice) end
   notice.Target = msg.Sender and msg.Sender or msg.From
   return ao.send(notice)
 end
