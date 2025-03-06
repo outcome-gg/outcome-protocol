@@ -973,7 +973,7 @@ describe("#market", function()
     local withdrawnFeesNotice = {}
     -- should not throw an error
 		assert.has.no.error(function()
-      withdrawnFeesNotice = Market.cpmm:withdrawFees(sender, sender, msgBuy, true) -- useReply
+      withdrawnFeesNotice = Market.cpmm:withdrawFees(sender, sender, true, msgBuy) -- expectReply
     end)
     -- assert withdrawn fees
     assert.are.equal("1", feesWithdrawable)

@@ -112,10 +112,10 @@ end
 --- @param from string The process ID that will no longer own the burned tokens
 --- @param id string The ID of the tokens to burn
 --- @param quantity string The quantity of tokens to burn
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The burn notice
-function SemiFungibleTokensMethods:burn(from, id, quantity, msg, useReply)
+function SemiFungibleTokensMethods:burn(from, id, quantity, expectReply, msg)
   assert(bint.__lt(0, bint(quantity)), 'Quantity must be greater than zero!')
   assert(self.balancesById[id], 'Id must exist! ' .. id)
   assert(self.balancesById[id][from], 'Account must hold token! :: ' .. id)
@@ -124,17 +124,17 @@ function SemiFungibleTokensMethods:burn(from, id, quantity, msg, useReply)
   self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], bint(quantity)))
   self.totalSupplyById[id] = tostring(bint.__sub(self.totalSupplyById[id], bint(quantity)))
   -- send notice
-  return self.burnSingleNotice(from, id, quantity, msg, useReply)
+  return self.burnSingleNotice(from, id, quantity, expectReply, msg)
 end
 
 --- Batch burn a quantity of tokens with the given IDs
 --- @param from string The process ID that will no longer own the burned tokens
 --- @param ids table<string> The IDs of the tokens to burn
 --- @param quantities table<string> The quantities of tokens to burn
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The batch burn notice
-function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg, useReply)
+function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, expectReply, msg)
   assert(#ids == #quantities, 'Ids and quantities must have the same lengths')
   for i = 1, #ids do
     assert(bint.__lt(0, quantities[i]), 'Quantity must be greater than zero!')
@@ -150,7 +150,7 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg, useRepl
     remainingBalances[i] = self.balancesById[ ids[i] ][from]
   end
   -- send notice
-  return self.burnBatchNotice(from, ids, quantities, remainingBalances, msg, useReply)
+  return self.burnBatchNotice(from, ids, quantities, remainingBalances, expectReply, msg)
 end
 
 --- Transfer a quantity of tokens with the given ID
@@ -159,10 +159,10 @@ end
 --- @param id string The ID of the tokens to transfer
 --- @param quantity string The quantity of tokens to transfer
 --- @param cast boolean The cast is set to true to silence the transfer notice
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil The transfer notices, error notice or nothing
-function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, msg, useReply)
+function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, expectReply, msg)
   if not self.balancesById[id] then self.balancesById[id] = {} end
   if not self.balancesById[id][from] then self.balancesById[id][from] = "0" end
   if not self.balancesById[id][recipient] then self.balancesById[id][recipient] = "0" end
@@ -175,7 +175,7 @@ function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity,
 
     -- Only send the notifications if the cast tag is not set
     if not cast then
-      return self.transferSingleNotices(from, recipient, id, quantity, msg, useReply)
+      return self.transferSingleNotices(from, recipient, id, quantity, expectReply, msg)
     end
   else
     return self.transferErrorNotice(id, msg)
@@ -188,10 +188,10 @@ end
 --- @param ids table<string> The IDs of the tokens to transfer
 --- @param quantities table<string> The quantities of tokens to transfer
 --- @param cast boolean The cast is set to true to silence the transfer notice
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil The transfer notices, error notice or nothing
-function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg, useReply)
+function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, expectReply, msg)
   local ids_ = {}
   local quantities_ = {}
 
@@ -215,7 +215,7 @@ function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantitie
 
   -- Only send the notifications if the cast tag is not set
   if not cast and #ids_ > 0 then
-    return self.transferBatchNotices(from, recipient, ids_, quantities_, msg, useReply)
+    return self.transferBatchNotices(from, recipient, ids_, quantities_, expectReply, msg)
   end
 end
 

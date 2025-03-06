@@ -46,10 +46,10 @@ end
 --- @param from string The address that will burn the token
 --- @param id string The ID of the token to be burned
 --- @param quantity string The quantity of the token to be burned
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The burn notice
-function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg, useReply)
+function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, expectReply, msg)
   -- Prepare notice
   local notice = {
     Recipient = from,
@@ -66,7 +66,7 @@ function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg, use
     end
   end
   -- Send notice
-  if useReply then return msg.reply(notice) end
+  if expectReply then return msg.reply(notice) end
   notice.Target = from
   return ao.send(notice)
 end
@@ -76,10 +76,10 @@ end
 --- @param positionIds table<string> The IDs of the positions to be burned
 --- @param quantities table<string> The quantities of the tokens to be burned
 --- @param remainingBalances table<string> The remaining balances of unburned tokens
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The burn notice
-function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities, remainingBalances, msg, useReply)
+function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities, remainingBalances, expectReply, msg)
   -- Prepare notice
   local notice = {
     Recipient = from,
@@ -97,7 +97,7 @@ function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities
     end
   end
   -- Send notice
-  if useReply then return msg.reply(notice) end
+  if expectReply then return msg.reply(notice) end
   notice.Target = from
   return ao.send(notice)
 end
@@ -107,10 +107,10 @@ end
 --- @param to string The address to be credited
 --- @param id string The ID of the token to be transferred
 --- @param quantity string The quantity of the token to be transferred
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return table<Message> The debit and credit transfer notices
-function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg, useReply)
+function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, expectReply, msg)
   -- Prepare debit notice
   local debitNotice = {
     Action = 'Debit-Single-Notice',
@@ -138,7 +138,7 @@ function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity,
     end
   end
   -- Send notices
-  if useReply then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end
+  if expectReply then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end
   debitNotice.Target = from
   creditNotice.Target = to
   return { ao.send(debitNotice), ao.send(creditNotice) }
@@ -149,10 +149,10 @@ end
 --- @param to string The address to be credited
 --- @param ids table<string> The IDs of the tokens to be transferred
 --- @param quantities table<string> The quantities of the tokens to be transferred
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return table<Message> The debit and credit batch transfer notices
-function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg, useReply)
+function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, expectReply, msg)
   -- Prepare debit notice
   local debitNotice = {
     Action = 'Debit-Batch-Notice',
@@ -178,7 +178,7 @@ function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantitie
     end
   end
   -- Send notice
-  if useReply then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end
+  if expectReply then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end
   debitNotice.Target = from
   creditNotice.Target = to
   return {ao.send(debitNotice), ao.send(creditNotice)}

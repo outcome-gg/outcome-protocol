@@ -52,17 +52,17 @@ end
 --- @param collateralToken string The address of the collateral token
 --- @param quantity string The quantity
 --- @param onBehalfOf string The address of the account to receive the collateral
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The positions merge notice
-function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, onBehalfOf, msg, useReply)
+function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, onBehalfOf, expectReply, msg)
   local notice = {
     Action = "Merge-Positions-Notice",
     OnBehalfOf = onBehalfOf,
     CollateralToken = collateralToken,
     Quantity = quantity
   }
-  if useReply then return msg.reply(notice) end
+  if expectReply then return msg.reply(notice) end
   notice.Target = msg.Sender and msg.Sender or msg.From
   return ao.send(notice)
 end

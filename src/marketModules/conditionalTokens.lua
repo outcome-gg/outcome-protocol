@@ -126,10 +126,10 @@ end
 --- @param onBehalfOf string The process ID of the account that will receive the collateral
 --- @param quantity string The quantity of collateral to merge
 --- @param isSell boolean True if the merge is a sell, false otherwise
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The positions merge notice
-function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg, useReply)
+function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, expectReply, msg)
   assert(self.payoutNumerators and #self.payoutNumerators > 0, "Condition not prepared!")
   -- Create equal merge positions.
   local quantities = {}
@@ -137,7 +137,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     table.insert(quantities, quantity)
   end
   -- Burn equal quantiies from user positions.
-  self:batchBurn(from, self.positionIds, quantities, msg, false)
+  self:batchBurn(from, self.positionIds, quantities, false, msg) -- do not expect reply
   -- @dev below already handled within the sell method.
   -- sell method w/ a different quantity and recipient.
   if not isSell then
@@ -150,7 +150,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     })
   end
   -- Send notice.
-  return self.positionsMergeNotice(self.collateralToken, quantity, onBehalfOf, msg, useReply)
+  return self.positionsMergeNotice(self.collateralToken, quantity, onBehalfOf, expectReply, msg)
 end
 
 --- Report payouts
@@ -196,7 +196,7 @@ function ConditionalTokensMethods:redeemPositions(onBehalfOf, msg)
     if bint.__lt(0, bint(payoutStake)) then
       -- Calculate the payout and burn position.
       totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
-      self:burn(msg.From, positionId, payoutStake, msg, false)
+      self:burn(msg.From, positionId, payoutStake, false, msg) -- do not expect reply
     end
   end
   -- Return total payout minus take fee.

@@ -201,8 +201,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
       msgBurnSingle.From,
       msgBurnSingle.Tags.PositionId,
       msgBurnSingle.Tags.Quantity,
-      msgBurnSingle,
-      true -- useReply
+      true, -- expectReply
+      msgBurnSingle
     )
     assert.are.same({
       Recipient = msgBurnSingle.From,
@@ -220,8 +220,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
       json.decode(noticeBurnBatch.PositionIds),
       json.decode(noticeBurnBatch.Quantities),
       json.decode(noticeBurnBatch.RemainingBalances),
-      msgBurnBatch,
-      true -- useReply
+      true, -- expectReply
+      msgBurnBatch
     )
     -- assert.are.same(remainingBalances, notice.RemainingBalances)
     assert.are.same(noticeBurnBatch, notice)
@@ -233,8 +233,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
       msgTransferSingle.Tags.Recipient,
       msgTransferSingle.Tags.PositionId,
       msgTransferSingle.Tags.Quantity,
-      msgTransferSingle,
-      true -- useReply
+      true, -- expectReply
+      msgTransferSingle
     )
     assert.are.same(noticeDebitSingle, notices[1])
     assert.are.same(noticeCreditSingle, notices[2])
@@ -246,8 +246,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
       msgTransferBatch.Tags.Recipient,
       msgTransferBatch.Tags.PositionIds,
       msgTransferBatch.Tags.Quantities,
-      msgTransferBatch,
-      true -- useReply
+      true, -- expectReply
+      msgTransferBatch
     )
     assert.are.same(noticeDebitBatch, notices[1])
     assert.are.same(noticeCreditBatch, notices[2])

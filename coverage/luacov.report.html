@@ -470,10 +470,10 @@ end
 --- @param onBehalfOf string The process ID of the account that will receive the collateral
 --- @param quantity string The quantity of collateral to merge
 --- @param isSell boolean True if the merge is a sell, false otherwise
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The positions merge notice
-<span class="fc" data-hits="1">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, msg, useReply)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, expectReply, msg)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal merge positions.
 <span class="nc">  local quantities = {}</span>
@@ -481,7 +481,7 @@ end
 <span class="nc">    table.insert(quantities, quantity)</span>
   end
   -- Burn equal quantiies from user positions.
-<span class="nc">  self:batchBurn(from, self.positionIds, quantities, msg, false)</span>
+<span class="nc">  self:batchBurn(from, self.positionIds, quantities, false, msg) -- do not expect reply</span>
   -- @dev below already handled within the sell method.
   -- sell method w&#47; a different quantity and recipient.
 <span class="nc">  if not isSell then</span>
@@ -494,7 +494,7 @@ end
     })
   end
   -- Send notice.
-<span class="nc">  return self.positionsMergeNotice(self.collateralToken, quantity, onBehalfOf, msg, useReply)</span>
+<span class="nc">  return self.positionsMergeNotice(self.collateralToken, quantity, onBehalfOf, expectReply, msg)</span>
 end
 
 --- Report payouts
@@ -540,7 +540,7 @@ end
 <span class="nc">    if bint.__lt(0, bint(payoutStake)) then</span>
       -- Calculate the payout and burn position.
 <span class="nc">      totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) &#47; den)</span>
-<span class="nc">      self:burn(msg.From, positionId, payoutStake, msg, false)</span>
+<span class="nc">      self:burn(msg.From, positionId, payoutStake, false, msg) -- do not expect reply</span>
     end
   end
   -- Return total payout minus take fee.
@@ -660,17 +660,17 @@ end
 --- @param collateralToken string The address of the collateral token
 --- @param quantity string The quantity
 --- @param onBehalfOf string The address of the account to receive the collateral
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The positions merge notice
-<span class="fc" data-hits="2">function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, onBehalfOf, msg, useReply)</span>
+<span class="fc" data-hits="2">function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity, onBehalfOf, expectReply, msg)</span>
 <span class="fc" data-hits="1">  local notice = {</span>
 <span class="fc" data-hits="1">    Action = &quot;Merge-Positions-Notice&quot;,</span>
 <span class="fc" data-hits="1">    OnBehalfOf = onBehalfOf,</span>
 <span class="fc" data-hits="1">    CollateralToken = collateralToken,</span>
 <span class="fc" data-hits="1">    Quantity = quantity</span>
   }
-<span class="fc" data-hits="1">  if useReply then return msg.reply(notice) end</span>
+<span class="fc" data-hits="1">  if expectReply then return msg.reply(notice) end</span>
 <span class="nc">  notice.Target = msg.Sender and msg.Sender or msg.From</span>
 <span class="nc">  return ao.send(notice)</span>
 end
@@ -943,10 +943,10 @@ end
 --- @param from string The process ID that will no longer own the burned tokens
 --- @param id string The ID of the tokens to burn
 --- @param quantity string The quantity of tokens to burn
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The burn notice
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:burn(from, id, quantity, msg, useReply)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:burn(from, id, quantity, expectReply, msg)</span>
 <span class="nc">  assert(bint.__lt(0, bint(quantity)), &#39;Quantity must be greater than zero!&#39;)</span>
 <span class="nc">  assert(self.balancesById[id], &#39;Id must exist! &#39; .. id)</span>
 <span class="nc">  assert(self.balancesById[id][from], &#39;Account must hold token! :: &#39; .. id)</span>
@@ -955,17 +955,17 @@ end
 <span class="nc">  self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], bint(quantity)))</span>
 <span class="nc">  self.totalSupplyById[id] = tostring(bint.__sub(self.totalSupplyById[id], bint(quantity)))</span>
   -- send notice
-<span class="nc">  return self.burnSingleNotice(from, id, quantity, msg, useReply)</span>
+<span class="nc">  return self.burnSingleNotice(from, id, quantity, expectReply, msg)</span>
 end
 
 --- Batch burn a quantity of tokens with the given IDs
 --- @param from string The process ID that will no longer own the burned tokens
 --- @param ids table&lt;string&gt; The IDs of the tokens to burn
 --- @param quantities table&lt;string&gt; The quantities of tokens to burn
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The batch burn notice
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, msg, useReply)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, expectReply, msg)</span>
 <span class="nc">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
 <span class="nc">  for i = 1, #ids do</span>
 <span class="nc">    assert(bint.__lt(0, quantities[i]), &#39;Quantity must be greater than zero!&#39;)</span>
@@ -981,7 +981,7 @@ end
 <span class="nc">    remainingBalances[i] = self.balancesById[ ids[i] ][from]</span>
   end
   -- send notice
-<span class="nc">  return self.burnBatchNotice(from, ids, quantities, remainingBalances, msg, useReply)</span>
+<span class="nc">  return self.burnBatchNotice(from, ids, quantities, remainingBalances, expectReply, msg)</span>
 end
 
 --- Transfer a quantity of tokens with the given ID
@@ -990,10 +990,10 @@ end
 --- @param id string The ID of the tokens to transfer
 --- @param quantity string The quantity of tokens to transfer
 --- @param cast boolean The cast is set to true to silence the transfer notice
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return table&lt;Message&gt;|Message|nil The transfer notices, error notice or nothing
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, msg, useReply)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, expectReply, msg)</span>
 <span class="nc">  if not self.balancesById[id] then self.balancesById[id] = {} end</span>
 <span class="nc">  if not self.balancesById[id][from] then self.balancesById[id][from] = &quot;0&quot; end</span>
 <span class="nc">  if not self.balancesById[id][recipient] then self.balancesById[id][recipient] = &quot;0&quot; end</span>
@@ -1006,7 +1006,7 @@ end
 
     -- Only send the notifications if the cast tag is not set
 <span class="nc">    if not cast then</span>
-<span class="nc">      return self.transferSingleNotices(from, recipient, id, quantity, msg, useReply)</span>
+<span class="nc">      return self.transferSingleNotices(from, recipient, id, quantity, expectReply, msg)</span>
     end
   else
 <span class="nc">    return self.transferErrorNotice(id, msg)</span>
@@ -1019,10 +1019,10 @@ end
 --- @param ids table&lt;string&gt; The IDs of the tokens to transfer
 --- @param quantities table&lt;string&gt; The quantities of tokens to transfer
 --- @param cast boolean The cast is set to true to silence the transfer notice
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return table&lt;Message&gt;|Message|nil The transfer notices, error notice or nothing
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, msg, useReply)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, expectReply, msg)</span>
 <span class="nc">  local ids_ = {}</span>
 <span class="nc">  local quantities_ = {}</span>
 
@@ -1046,7 +1046,7 @@ end
 
   -- Only send the notifications if the cast tag is not set
 <span class="nc">  if not cast and #ids_ &gt; 0 then</span>
-<span class="nc">    return self.transferBatchNotices(from, recipient, ids_, quantities_, msg, useReply)</span>
+<span class="nc">    return self.transferBatchNotices(from, recipient, ids_, quantities_, expectReply, msg)</span>
   end
 end
 
@@ -1193,10 +1193,10 @@ end
 --- @param from string The address that will burn the token
 --- @param id string The ID of the token to be burned
 --- @param quantity string The quantity of the token to be burned
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The burn notice
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, msg, useReply)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, expectReply, msg)</span>
   -- Prepare notice
 <span class="nc">  local notice = {</span>
     Recipient = from,
@@ -1213,7 +1213,7 @@ end
     end
   end
   -- Send notice
-<span class="nc">  if useReply then return msg.reply(notice) end</span>
+<span class="nc">  if expectReply then return msg.reply(notice) end</span>
 <span class="nc">  notice.Target = from</span>
 <span class="nc">  return ao.send(notice)</span>
 end
@@ -1223,10 +1223,10 @@ end
 --- @param positionIds table&lt;string&gt; The IDs of the positions to be burned
 --- @param quantities table&lt;string&gt; The quantities of the tokens to be burned
 --- @param remainingBalances table&lt;string&gt; The remaining balances of unburned tokens
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The burn notice
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities, remainingBalances, msg, useReply)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities, remainingBalances, expectReply, msg)</span>
   -- Prepare notice
 <span class="nc">  local notice = {</span>
     Recipient = from,
@@ -1244,7 +1244,7 @@ end
     end
   end
   -- Send notice
-<span class="nc">  if useReply then return msg.reply(notice) end</span>
+<span class="nc">  if expectReply then return msg.reply(notice) end</span>
 <span class="nc">  notice.Target = from</span>
 <span class="nc">  return ao.send(notice)</span>
 end
@@ -1254,10 +1254,10 @@ end
 --- @param to string The address to be credited
 --- @param id string The ID of the token to be transferred
 --- @param quantity string The quantity of the token to be transferred
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return table&lt;Message&gt; The debit and credit transfer notices
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, msg, useReply)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, expectReply, msg)</span>
   -- Prepare debit notice
 <span class="nc">  local debitNotice = {</span>
     Action = &#39;Debit-Single-Notice&#39;,
@@ -1285,7 +1285,7 @@ end
     end
   end
   -- Send notices
-<span class="nc">  if useReply then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end</span>
+<span class="nc">  if expectReply then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end</span>
 <span class="nc">  debitNotice.Target = from</span>
 <span class="nc">  creditNotice.Target = to</span>
 <span class="nc">  return { ao.send(debitNotice), ao.send(creditNotice) }</span>
@@ -1296,10 +1296,10 @@ end
 --- @param to string The address to be credited
 --- @param ids table&lt;string&gt; The IDs of the tokens to be transferred
 --- @param quantities table&lt;string&gt; The quantities of the tokens to be transferred
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return table&lt;Message&gt; The debit and credit batch transfer notices
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, msg, useReply)</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, expectReply, msg)</span>
   -- Prepare debit notice
 <span class="nc">  local debitNotice = {</span>
     Action = &#39;Debit-Batch-Notice&#39;,
@@ -1325,7 +1325,7 @@ end
     end
   end
   -- Send notice
-<span class="nc">  if useReply then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end</span>
+<span class="nc">  if expectReply then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end</span>
 <span class="nc">  debitNotice.Target = from</span>
 <span class="nc">  creditNotice.Target = to</span>
 <span class="nc">  return {ao.send(debitNotice), ao.send(creditNotice)}</span>
@@ -1558,7 +1558,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-04 11:43:39
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-06 07:24:47
    </footer>
 
    <script type="text/javascript">

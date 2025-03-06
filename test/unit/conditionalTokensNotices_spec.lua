@@ -101,8 +101,8 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
       msgPositionsMerge.Tags.CollateralToken,
       msgPositionsMerge.Tags.Quantity,
       msgPositionsMerge.From,
-      msgPositionsMerge,
-      true
+      true, -- expectReply
+      msgPositionsMerge
     )
     assert.are.same({
       Action = 'Merge-Positions-Notice',

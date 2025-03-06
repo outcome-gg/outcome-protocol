@@ -182,8 +182,8 @@ describe("#market #conditionalTokens", function()
       msgMergePositions.Tags.OnBehalfOf,
       msgMergePositions.Tags.Quantity,
       true, -- isSell
-      msgMergePositions,
-      true -- useReply
+      true, -- expectReply
+      msgMergePositions
     )
     -- asert state change
     assert.are.same({
@@ -216,8 +216,8 @@ describe("#market #conditionalTokens", function()
       msgMergePositions.Tags.OnBehalfOf,
       msgMergePositions.Tags.Quantity,
       false, -- isSell
-      msgMergePositions,
-      true -- useReply
+      true, -- expectReply
+      msgMergePositions
     )
     -- asert state change
     assert.are.same({

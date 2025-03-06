@@ -87,21 +87,21 @@ function CPMMNotices.sellNotice(from, onBehalfOf, returnAmount, feeAmount, posit
 end
 
 --- Sends a withdraw fees notice
---- @notice Returns notice with `msg.reply` if `useReply` is true, otherwise uses `ao.send`
+--- @notice Returns notice with `msg.reply` if `expectReply` is true, otherwise uses `ao.send`
 --- @dev Ensures the final notice is sent to the user, preventing unintended message handling
 --- @param feeAmount number The fee amount
 --- @param onBehalfOf string The address to receive the fees
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @param useReply boolean Whether to use `msg.reply` or `ao.send`
 --- @return Message The withdraw fees notice
-function CPMMNotices.withdrawFeesNotice(feeAmount, onBehalfOf, msg, useReply)
+function CPMMNotices.withdrawFeesNotice(feeAmount, onBehalfOf, expectReply, msg)
   local notice = {
     Action = "Withdraw-Fees-Notice",
     OnBehalfOf = onBehalfOf,
     FeeAmount = tostring(feeAmount),
     Data = "Successfully withdrew fees"
   }
-  if useReply then return msg.reply(notice) end
+  if expectReply then return msg.reply(notice) end
   notice.Target = msg.Sender and msg.Sender or msg.From
   return ao.send(notice)
 end

@@ -323,8 +323,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgBurn.From,
         msgBurn.Tags.PositionId,
         msgBurn.Tags.Quantity,
-        msgBurn,
-        true -- useReply
+        true, -- expectReply
+        msgBurn
       )
     end)
     -- assert updated balance
@@ -361,8 +361,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
       msgBurnBatch.From,
       msgBurnBatch.Tags.PositionIds,
       msgBurnBatch.Tags.Quantities,
-      msgBurnBatch,
-      true -- useReply
+      true, -- expectReply
+      msgBurnBatch
     )
     end)
     -- assert updated balance
@@ -405,8 +405,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgTransfer.Tags.PositionId,
         msgTransfer.Tags.Quantity,
         false, -- cast
-        msgTransfer,
-        true -- useReply
+        true, -- expectReply
+        msgTransfer
       )
     end)
     -- assert updated balance
@@ -428,6 +428,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgTransfer.Tags.PositionId,
         msgTransfer.Tags.Quantity,
         false, -- cast
+        true, -- expectReply
         msgTransfer
       )
     end)
@@ -464,8 +465,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgTransferBatch.Tags.PositionIds,
         msgTransferBatch.Tags.Quantities,
         false, -- cast
-        msgTransfer,
-        true -- useReply
+        true, -- expectReply
+        msgTransfer     
       )
     end)
     -- assert updated balance
@@ -491,6 +492,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgTransferBatch.Tags.PositionIds,
         msgTransferBatch.Tags.Quantities,
         false, -- cast
+        true, -- expectReply
         msgTransfer
       )
     end)

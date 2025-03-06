@@ -231,7 +231,7 @@ end
 --- @param msg Message The message received
 function MarketMethods:withdrawFees(msg)
   local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
-  self.cpmm:withdrawFees(msg.From, onBehalfOf, msg, true)
+  self.cpmm:withdrawFees(msg.From, onBehalfOf, true, msg) -- expectReply
 end
 
 --[[
@@ -356,7 +356,7 @@ CONDITIONAL TOKENS WRITE METHODS
 --- @param msg Message The message received
 function MarketMethods:mergePositions(msg)
   local onBehalfOf = msg.Tags["OnBehalfOf"] or msg.From
-  self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, msg, true)
+  self.cpmm.tokens:mergePositions(msg.From, onBehalfOf, msg.Tags.Quantity, false, true, msg) -- is not sell, expectReply
 end
 
 --- Report payouts
@@ -402,7 +402,7 @@ SEMI-FUNGIBLE TOKENS WRITE METHODS
 --- Transfer single
 --- @param msg Message The message received
 function MarketMethods:transferSingle(msg)
-  self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.PositionId, msg.Tags.Quantity, msg.Tags.Cast, msg, true)
+  self.cpmm.tokens:transferSingle(msg.From, msg.Tags.Recipient, msg.Tags.PositionId, msg.Tags.Quantity, msg.Tags.Cast, true, msg) -- expectReply
 end
 
 --- Transfer batch
@@ -411,7 +411,7 @@ end
 function MarketMethods:transferBatch(msg)
   local positionIds = json.decode(msg.Tags.PositionIds)
   local quantities = json.decode(msg.Tags.Quantities)
-  return self.cpmm.tokens:transferBatch(msg.From, msg.Tags.Recipient, positionIds, quantities, msg.Tags.Cast, msg, true)
+  return self.cpmm.tokens:transferBatch(msg.From, msg.Tags.Recipient, positionIds, quantities, msg.Tags.Cast, true, msg) -- expectReply
 end
 
 --[[
