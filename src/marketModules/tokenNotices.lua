@@ -11,38 +11,52 @@ local TokenNotices = {}
 --- Mint notice
 --- @param recipient string The address that will own the minted tokens
 --- @param quantity string The quantity of tokens to mint
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return Message The mint notice
-function TokenNotices.mintNotice(recipient, quantity, msg)
-  return msg.forward(recipient, {
+function TokenNotices.mintNotice(recipient, quantity, expectReply, msg)
+  local notice = {
     Recipient = recipient,
     Quantity = tostring(quantity),
     Action = 'Mint-Notice',
     Data = Colors.gray .. "Successfully minted " .. Colors.blue .. tostring(quantity) .. Colors.reset
-  })
+  }
+  -- Send notice
+  if expectReply then return msg.reply(notice) end
+  notice.Target = msg.From
+  return ao.send(notice)
 end
 
 --- Burn notice
 --- @param quantity string The quantity of tokens to burn
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return Message The burn notice
-function TokenNotices.burnNotice(quantity, msg)
-  return ao.send({
+function TokenNotices.burnNotice(quantity, expectReply, msg)
+  local notice = {
     Target = msg.Sender and msg.Sender or msg.From,
     Quantity = tostring(quantity),
     Action = 'Burn-Notice',
     Data = Colors.gray .. "Successfully burned " .. Colors.blue .. tostring(quantity) .. Colors.reset
-  })
+  }
+  -- Send notice
+  if expectReply then return msg.reply(notice) end
+  notice.Target =  msg.Sender and msg.Sender or msg.From
+  return ao.send(notice)
 end
 
 --- Transfer notices
 --- @param debitNotice Message The notice to send the spender
 --- @param creditNotice Message The notice to send the receiver
 --- @param recipient string The address that will receive the tokens
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The mesage received
 --- @return table<Message> The transfer notices
-function TokenNotices.transferNotices(debitNotice, creditNotice, recipient, msg)
-  return { msg.reply(debitNotice), msg.forward(recipient, creditNotice) }
+function TokenNotices.transferNotices(debitNotice, creditNotice, recipient, expectReply, msg)
+  if expectReply then return { msg.reply(debitNotice), msg.forward(recipient, creditNotice) } end
+  debitNotice.Target = msg.From
+  creditNotice.Target = recipient
+  return { ao.send(debitNotice), ao.send(creditNotice) }
 end
 
 --- Transfer error notice

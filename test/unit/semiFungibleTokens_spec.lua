@@ -258,6 +258,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
       msgMint.Tags.Recipient,
       msgMint.Tags.PositionId,
       msgMint.Tags.Quantity,
+      false, -- cast
+      true, -- expectReply
       msgMint
     )
     end)
@@ -283,6 +285,8 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgMintBatch.Tags.Recipient,
         msgMintBatch.Tags.PositionIds,
         msgMintBatch.Tags.Quantities,
+        false, -- cast
+        true, -- expectReply
         msgMintBatch
       )
     end)
@@ -323,6 +327,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgBurn.From,
         msgBurn.Tags.PositionId,
         msgBurn.Tags.Quantity,
+        false, -- cast
         true, -- expectReply
         msgBurn
       )
@@ -361,6 +366,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
       msgBurnBatch.From,
       msgBurnBatch.Tags.PositionIds,
       msgBurnBatch.Tags.Quantities,
+      false, -- cast
       true, -- expectReply
       msgBurnBatch
     )

@@ -74,7 +74,9 @@ describe("#market #token #tokenInternal", function()
       From = sender,
       Tags = {
         Quantity = burnQuantity
-      }
+      },
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
     }
     -- create a message object
     msgTransfer = {
@@ -134,6 +136,8 @@ describe("#market #token #tokenInternal", function()
       notice = Token:mint(
         msgMint.Tags.Recipient,
         msgMint.Tags.Quantity,
+        false, -- cast
+        true, -- expectReply
         msgMint
       )
     end)
@@ -156,6 +160,8 @@ describe("#market #token #tokenInternal", function()
     Token:mint(
         msgMint.From,
         msgMint.Tags.Quantity,
+        false, -- cast
+        true, -- expectReply
         msgMint
       )
     -- should not throw an error
@@ -163,6 +169,8 @@ describe("#market #token #tokenInternal", function()
       notice = Token:burn(
         msgBurn.From,
         msgBurn.Tags.Quantity,
+        false, -- cast
+        false, -- expectReply
         msgBurn
       ).receive().Data
     end)
@@ -188,6 +196,7 @@ describe("#market #token #tokenInternal", function()
     Token:mint(
       msgMint.From,
       msgMint.Tags.Quantity,
+      true, -- expectReply
       msgMint
     )
     -- should not throw an error
@@ -197,6 +206,7 @@ describe("#market #token #tokenInternal", function()
         msgTransfer.Tags.Recipient,
         msgTransfer.Tags.Quantity,
         false, -- cast
+        true, -- expectReply
         msgTransfer
       )
     end)
@@ -218,6 +228,7 @@ describe("#market #token #tokenInternal", function()
         msgTransferError.Tags.Recipient,
         msgTransferError.Tags.Quantity,
         false, -- cast
+        true, -- expectReply
         msgTransferError
       )
     end)

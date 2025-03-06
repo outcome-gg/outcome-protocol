@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 33.41%"></span>
-                  <span><strong>33.41%</strong> Coverage</span>
+                  <span class="bg" style="width: 33.26%"></span>
+                  <span><strong>33.26%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>141</strong> Hits</span>
-               <span class="miss"><strong>281</strong> Missed</span>
+               <span class="hits"><strong>143</strong> Hits</span>
+               <span class="miss"><strong>287</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -450,9 +450,11 @@ end
 --- @param from string The process ID of the account that split the position
 --- @param collateralToken string The process ID of the collateral token
 --- @param quantity string The quantity of collateral to split
+--- @param cast boolean The cast is set to true to silence the notice
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @return Message The position split notice
-<span class="fc" data-hits="1">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, msg)</span>
+--- @return Message| nil The position split notice if not cast
+<span class="fc" data-hits="1">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, cast, expectReply, msg)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal split positions.
 <span class="nc">  local quantities = {}</span>
@@ -460,9 +462,9 @@ end
 <span class="nc">    table.insert(quantities, quantity)</span>
   end
   -- Mint the stake in the split target positions.
-<span class="nc">  self:batchMint(from, self.positionIds, quantities, msg)</span>
+<span class="nc">  self:batchMint(from, self.positionIds, quantities, false, false, msg) -- send notice, do not expect reply</span>
   -- Send notice.
-<span class="nc">  return self.positionSplitNotice(from, collateralToken, quantity, msg)</span>
+<span class="nc">  if not cast then return self.positionSplitNotice(from, collateralToken, quantity, expectReply, msg) end</span>
 end
 
 --- Merge positions
@@ -470,10 +472,11 @@ end
 --- @param onBehalfOf string The process ID of the account that will receive the collateral
 --- @param quantity string The quantity of collateral to merge
 --- @param isSell boolean True if the merge is a sell, false otherwise
+--- @param cast boolean The cast is set to true to silence the notice
 --- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return Message The positions merge notice
-<span class="fc" data-hits="1">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, expectReply, msg)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, cast, expectReply, msg)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal merge positions.
 <span class="nc">  local quantities = {}</span>
@@ -481,7 +484,7 @@ end
 <span class="nc">    table.insert(quantities, quantity)</span>
   end
   -- Burn equal quantiies from user positions.
-<span class="nc">  self:batchBurn(from, self.positionIds, quantities, false, msg) -- do not expect reply</span>
+<span class="nc">  self:batchBurn(from, self.positionIds, quantities, false, false, msg) -- send notice, do not expect reply</span>
   -- @dev below already handled within the sell method.
   -- sell method w&#47; a different quantity and recipient.
 <span class="nc">  if not isSell then</span>
@@ -494,7 +497,7 @@ end
     })
   end
   -- Send notice.
-<span class="nc">  return self.positionsMergeNotice(self.collateralToken, quantity, onBehalfOf, expectReply, msg)</span>
+<span class="nc">  if not cast then return self.positionsMergeNotice(self.collateralToken, quantity, onBehalfOf, expectReply, msg) end</span>
 end
 
 --- Report payouts
@@ -522,9 +525,10 @@ end
 --- Redeem positions
 --- Transfers any payout minus fees to the message sender
 --- @param onBehalfOf string The process ID of the account to receive the collateral
+--- @param cast boolean The cast is set to true to silence the notice
 --- @param msg Message The message received
---- @return Message The payout redemption notice
-<span class="fc" data-hits="1">function ConditionalTokensMethods:redeemPositions(onBehalfOf, msg)</span>
+--- @return Message|nil The payout redemption notice if not cast
+<span class="fc" data-hits="1">function ConditionalTokensMethods:redeemPositions(onBehalfOf, cast, msg)</span>
 <span class="nc">  local den = self.payoutDenominator</span>
 <span class="nc">  assert(den &gt; 0, &quot;market not resolved&quot;)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;market not initialized&quot;)</span>
@@ -540,7 +544,7 @@ end
 <span class="nc">    if bint.__lt(0, bint(payoutStake)) then</span>
       -- Calculate the payout and burn position.
 <span class="nc">      totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) &#47; den)</span>
-<span class="nc">      self:burn(msg.From, positionId, payoutStake, false, msg) -- do not expect reply</span>
+<span class="nc">      self:burn(msg.From, positionId, payoutStake, false, false, msg) -- send notice, do not expect reply</span>
     end
   end
   -- Return total payout minus take fee.
@@ -549,7 +553,7 @@ end
 <span class="nc">    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, onBehalfOf, totalPayout)</span>
   end
   -- Send notice.
-<span class="nc">  return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, onBehalfOf, msg)</span>
+<span class="nc">  if not cast then return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, onBehalfOf, msg) end</span>
 end
 
 --- Return total payout minus take fee
@@ -599,10 +603,10 @@ end
             src/marketModules/conditionalTokensNotices.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 94.44%"></span>
-                  <span><strong>94.44%</strong> Coverage</span>
+                  <span class="bg" style="width: 94.74%"></span>
+                  <span><strong>94.74%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>34</strong> Hits</span>
+               <span class="hits"><strong>36</strong> Hits</span>
                <span class="miss"><strong>2</strong> Missed</span>
             </span>
          </h2>
@@ -635,9 +639,10 @@ end
 --- @param from string The address of the account that split the position
 --- @param collateralToken string The address of the collateral token
 --- @param quantity string The quantity
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return Message The position split notice
-<span class="fc" data-hits="2">function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, quantity, msg)</span>
+<span class="fc" data-hits="2">function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, quantity, expectReply, msg)</span>
 <span class="fc" data-hits="1">  local notice = {</span>
 <span class="fc" data-hits="1">    Action = &quot;Split-Position-Notice&quot;,</span>
 <span class="fc" data-hits="1">    Process = ao.id,</span>
@@ -652,8 +657,10 @@ end
 <span class="fc" data-hits="1">      notice[tagName] = tagValue</span>
     end
   end
-  -- Send notice | @dev ao.send vs msg.reply to ensure message is sent to user (not collateralToken)
-<span class="fc" data-hits="1">  return msg.forward(from, notice)</span>
+  -- Send notice
+<span class="fc" data-hits="1">  if expectReply then return msg.reply(notice) end</span>
+<span class="fc" data-hits="1">  notice.Target = from</span>
+<span class="fc" data-hits="1">  return ao.send(notice)</span>
 end
 
 --- Positions merge notice
@@ -903,9 +910,11 @@ end
 --- @param to string The address that will own the minted tokens
 --- @param id string The ID of the tokens to mint
 --- @param quantity string The quantity of tokens to mint
+--- @param cast boolean The cast is set to true to silence the mint notice
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @return Message The mint notice
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:mint(to, id, quantity, msg)</span>
+--- @return Message|nil The mint notice if not cast
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:mint(to, id, quantity, cast, expectReply, msg)</span>
 <span class="nc">  assert(quantity, &#39;Quantity is required!&#39;)</span>
 <span class="nc">  assert(bint.__lt(0, bint(quantity)), &#39;Quantity must be greater than zero!&#39;)</span>
   -- mint tokens
@@ -915,16 +924,18 @@ end
 <span class="nc">  self.balancesById[id][to] = tostring(bint.__add(self.balancesById[id][to], bint(quantity)))</span>
 <span class="nc">  self.totalSupplyById[id] = tostring(bint.__add(self.totalSupplyById[id], bint(quantity)))</span>
   -- send notice
-<span class="nc">  return self.mintSingleNotice(to, id, quantity, msg)</span>
+<span class="nc">  if not cast then return self.mintSingleNotice(to, id, quantity, expectReply, msg) end</span>
 end
 
 --- Batch mint quantities of tokens with the given IDs
 --- @param to string The address that will own the minted tokens
 --- @param ids table&lt;string&gt; The IDs of the tokens to mint
 --- @param quantities table&lt;string&gt; The quantities of tokens to mint
+--- @param cast boolean The cast is set to true to silence the mint notice
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @return Message The batch mint notice
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchMint(to, ids, quantities, msg)</span>
+--- @return Message|nil The batch mint notice if not cast
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchMint(to, ids, quantities, cast, expectReply, msg)</span>
 <span class="nc">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
   -- mint tokens
 <span class="nc">  for i = 1, #ids do</span>
@@ -936,17 +947,18 @@ end
 <span class="nc">    self.totalSupplyById[ ids[i] ] = tostring(bint.__add(self.totalSupplyById[ ids[i] ], quantities[i]))</span>
   end
   -- send notice
-<span class="nc">  return self.mintBatchNotice(to, ids, quantities, msg)</span>
+<span class="nc">  if not cast then return self.mintBatchNotice(to, ids, quantities, expectReply, msg) end</span>
 end
 
 --- Burn a quantity of tokens with a given ID
 --- @param from string The process ID that will no longer own the burned tokens
 --- @param id string The ID of the tokens to burn
 --- @param quantity string The quantity of tokens to burn
+--- @param cast boolean The cast is set to true to silence the burn notice
 --- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @return Message The burn notice
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:burn(from, id, quantity, expectReply, msg)</span>
+--- @return Message|nil The burn notice if not cast
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:burn(from, id, quantity, cast, expectReply, msg)</span>
 <span class="nc">  assert(bint.__lt(0, bint(quantity)), &#39;Quantity must be greater than zero!&#39;)</span>
 <span class="nc">  assert(self.balancesById[id], &#39;Id must exist! &#39; .. id)</span>
 <span class="nc">  assert(self.balancesById[id][from], &#39;Account must hold token! :: &#39; .. id)</span>
@@ -955,17 +967,18 @@ end
 <span class="nc">  self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], bint(quantity)))</span>
 <span class="nc">  self.totalSupplyById[id] = tostring(bint.__sub(self.totalSupplyById[id], bint(quantity)))</span>
   -- send notice
-<span class="nc">  return self.burnSingleNotice(from, id, quantity, expectReply, msg)</span>
+<span class="nc">  if not cast then return self.burnSingleNotice(from, id, quantity, expectReply, msg) end</span>
 end
 
 --- Batch burn a quantity of tokens with the given IDs
 --- @param from string The process ID that will no longer own the burned tokens
 --- @param ids table&lt;string&gt; The IDs of the tokens to burn
 --- @param quantities table&lt;string&gt; The quantities of tokens to burn
+--- @param cast boolean The cast is set to true to silence the burn notice
 --- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @return Message The batch burn notice
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, expectReply, msg)</span>
+--- @return Message|nil The batch burn notice if not cast
+<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, cast, expectReply, msg)</span>
 <span class="nc">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
 <span class="nc">  for i = 1, #ids do</span>
 <span class="nc">    assert(bint.__lt(0, quantities[i]), &#39;Quantity must be greater than zero!&#39;)</span>
@@ -981,7 +994,7 @@ end
 <span class="nc">    remainingBalances[i] = self.balancesById[ ids[i] ][from]</span>
   end
   -- send notice
-<span class="nc">  return self.burnBatchNotice(from, ids, quantities, remainingBalances, expectReply, msg)</span>
+<span class="nc">  if not cast then return self.burnBatchNotice(from, ids, quantities, remainingBalances, expectReply, msg) end</span>
 end
 
 --- Transfer a quantity of tokens with the given ID
@@ -1138,11 +1151,11 @@ end
             src/marketModules/semiFungibleTokensNotices.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 17.24%"></span>
-                  <span><strong>17.24%</strong> Coverage</span>
+                  <span class="bg" style="width: 15.62%"></span>
+                  <span><strong>15.62%</strong> Coverage</span>
                </span>
                <span class="hits"><strong>10</strong> Hits</span>
-               <span class="miss"><strong>48</strong> Missed</span>
+               <span class="miss"><strong>54</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -1161,32 +1174,42 @@ See semiFungibleTokens.lua for full license details.
 --- @param to string The address that will own the minted token
 --- @param id string The ID of the token to be minted
 --- @param quantity string The quantity of the token to be minted
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return Message The mint notice
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, msg)</span>
-<span class="nc">  return msg.reply({</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, expectReply, msg)</span>
+<span class="nc">  local notice = {</span>
     Recipient = to,
     PositionId = tostring(id),
     Quantity = tostring(quantity),
     Action = &#39;Mint-Single-Notice&#39;,
 <span class="nc">    Data = Colors.gray .. &quot;Successfully minted &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
-  })
+  }
+  -- Send notice
+<span class="nc">  if expectReply then return msg.reply(notice) end</span>
+<span class="nc">  notice.Target = msg.From</span>
+<span class="nc">  return ao.send(notice)</span>
 end
 
 --- Mint batch notice
 --- @param to string The address that will own the minted tokens
 --- @param ids table&lt;string&gt; The IDs of the tokens to be minted
 --- @param quantities table&lt;string&gt; The quantities of the tokens to be minted
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return Message The batch mint notice
-<span class="fc" data-hits="1">function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)</span>
-<span class="nc">  return msg.forward(to, {</span>
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, expectReply, msg)</span>
+<span class="nc">  local notice = {</span>
     Recipient = to,
     PositionIds = json.encode(ids),
     Quantities = json.encode(quantities),
     Action = &#39;Mint-Batch-Notice&#39;,
 <span class="nc">    Data = &quot;Successfully minted batch&quot;</span>
-  })
+  }
+  -- Send notice
+<span class="nc">  if expectReply then return msg.reply(notice) end</span>
+<span class="nc">  notice.Target = msg.From</span>
+<span class="nc">  return ao.send(notice)</span>
 end
 
 --- Burn single notice
@@ -1558,7 +1581,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-06 07:24:47
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-06 16:12:09
    </footer>
 
    <script type="text/javascript">

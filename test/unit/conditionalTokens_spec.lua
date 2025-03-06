@@ -146,8 +146,10 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.From,
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
+      false, -- cast
+      false, -- expectReply
       msgSplitPosition
-    )
+    ).receive().Data
     -- asert state change
     assert.are.same({
       [positionIds[1]] = {
@@ -161,11 +163,18 @@ describe("#market #conditionalTokens", function()
       },
     }, ConditionalTokens.balancesById)
     -- assert notice
-    assert.are.equals("Split-Position-Notice", notice[2].Action)
-    assert.are.equals(msgSplitPosition.Tags.Quantity, notice[2].Quantity)
-    assert.are.equals(msgSplitPosition.Tags.CollateralToken, notice[2].CollateralToken)
-    assert.are.equals(msgSplitPosition.Tags.Process, notice[2].Process)
-    assert.are.equals(msgSplitPosition["X-Action"], notice[2]["X-Action"])
+    assert.are.same(
+      {
+        Action = "Split-Position-Notice",
+        CollateralToken = collateralToken,
+        Process = _G.ao.id,
+        Quantity = quantity,
+        Stakeholder = sender,
+        Target = sender,
+        ["X-Action"] = "FOO"
+      },
+      notice
+    )
 	end)
 
   it("should merge positions (isSell == true)", function()
@@ -174,6 +183,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.From,
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
+      false, -- cast
+      true, -- expectReply
       msgSplitPosition
     )
     -- merge positions
@@ -182,6 +193,7 @@ describe("#market #conditionalTokens", function()
       msgMergePositions.Tags.OnBehalfOf,
       msgMergePositions.Tags.Quantity,
       true, -- isSell
+      false, -- cast
       true, -- expectReply
       msgMergePositions
     )
@@ -208,6 +220,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.From,
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
+      false, -- cast
+      true, -- expectReply
       msgSplitPosition
     )
     -- merge positions
@@ -216,6 +230,7 @@ describe("#market #conditionalTokens", function()
       msgMergePositions.Tags.OnBehalfOf,
       msgMergePositions.Tags.Quantity,
       false, -- isSell
+      false, -- cast
       true, -- expectReply
       msgMergePositions
     )
@@ -255,6 +270,8 @@ describe("#market #conditionalTokens", function()
       recipient,
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
+      false, -- cast
+      true, -- expectReply
       msgSplitPosition
     )
     -- should throw an error
@@ -274,6 +291,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.From,
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
+      false, -- cast
+      true, -- expectReply
       msgSplitPosition
     )
     -- report payouts
@@ -296,6 +315,8 @@ describe("#market #conditionalTokens", function()
       recipient,
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
+      false, -- cast
+      true, -- expectReply
       msgSplitPosition
     )
     -- call from non-resolution agent
@@ -315,6 +336,8 @@ describe("#market #conditionalTokens", function()
       recipient,
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
+      false, -- cast
+      true, -- expectReply
       msgSplitPosition
     )
     -- wrong outcome slot count
@@ -333,6 +356,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.From,
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
+      false, -- cast
+      true, -- expectReply
       msgSplitPosition
     )
     -- report payouts
@@ -355,6 +380,8 @@ describe("#market #conditionalTokens", function()
       recipient,
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
+      false, -- cast
+      true, -- expectReply
       msgSplitPosition
     )
     -- wrong outcome slot count
@@ -374,6 +401,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.From,
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
+      false, -- cast
+      true, -- expectReply
       msgSplitPosition
     )
     -- report payouts
@@ -384,6 +413,7 @@ describe("#market #conditionalTokens", function()
     -- redeem positions
     local notice = ConditionalTokens:redeemPositions(
       msgRedeemPositions.From,
+      false, -- cast
       msgRedeemPositions
     )
     -- asert state change
@@ -410,6 +440,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.From,
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
+      false, -- cast
+      true, -- expectReply
       msgSplitPosition
     )
     -- redeem positions

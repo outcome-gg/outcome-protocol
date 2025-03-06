@@ -149,9 +149,9 @@ function CPMMMethods:addFunding(onBehalfOf, addedFunds, distributionHint, msg)
     mintAmount = tostring(math.floor(tostring(bint.__div(bint.__mul(addedFunds, poolShareSupply), poolWeight))))
   end
   -- Mint Conditional Positions
-  self.tokens:splitPosition(ao.id, self.tokens.collateralToken, addedFunds, msg)
+  self.tokens:splitPosition(ao.id, self.tokens.collateralToken, addedFunds, false, false, msg) -- send notice, do not expect reply
   -- Mint LP Tokens
-  self:mint(onBehalfOf, mintAmount, msg)
+  self:mint(onBehalfOf, mintAmount, false, false, msg) -- send notice, don't expect reply
   -- Remove non-zero items before transfer-batch
   local nonZeroAmounts = {}
   local nonZeroPositionIds = {}
@@ -163,7 +163,7 @@ function CPMMMethods:addFunding(onBehalfOf, addedFunds, distributionHint, msg)
   end
   -- Send back conditional tokens should there be an uneven distribution
   if #nonZeroAmounts ~= 0 then
-    self.tokens:transferBatch(ao.id, onBehalfOf, nonZeroPositionIds, nonZeroAmounts, true, false, msg) -- cast, do not expect reply
+    self.tokens:transferBatch(ao.id, onBehalfOf, nonZeroPositionIds, nonZeroAmounts, false, false, msg) -- send notice, do not expect reply
   end
   -- Transform sendBackAmounts to array of amounts added
   for i = 1, #sendBackAmounts do
@@ -189,11 +189,11 @@ function CPMMMethods:removeFunding(onBehalfOf, sharesToBurn, msg)
   end
   -- Calculate collateralRemovedFromFeePool
   local collateralRemovedFromFeePool = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
-  self:burn(msg.From, sharesToBurn, msg)
+  self:burn(msg.From, sharesToBurn, false, false, msg) -- send notice, don't expect reply
   local poolFeeBalance = ao.send({Target = self.tokens.collateralToken, Action = 'Balance'}).receive().Data
   collateralRemovedFromFeePool = tostring(math.floor(poolFeeBalance - collateralRemovedFromFeePool))
   -- Send conditionalTokens amounts
-  self.tokens:transferBatch(ao.id, onBehalfOf, self.tokens.positionIds, sendAmounts, false, false, msg) -- do not cast, do not expect reply
+  self.tokens:transferBatch(ao.id, onBehalfOf, self.tokens.positionIds, sendAmounts, false, false, msg) -- send notice, do not expect reply
   -- Send notice
   return self.removeFundingNotice(sendAmounts, collateralRemovedFromFeePool, sharesToBurn, onBehalfOf, msg)
 end
@@ -284,9 +284,9 @@ function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minPosi
   self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
   local investmentAmountMinusFees = tostring(bint.__sub(investmentAmount, bint(feeAmount)))
   -- Split position through all conditions
-  self.tokens:splitPosition(ao.id, self.tokens.collateralToken, investmentAmountMinusFees, msg)
+  self.tokens:splitPosition(ao.id, self.tokens.collateralToken, investmentAmountMinusFees, false, false, msg) -- send notice, do not expect reply
   -- Transfer buy position to onBehalfOf
-  self.tokens:transferSingle(ao.id, onBehalfOf, positionId, positionTokensToBuy, true, false, msg) -- cast, do not expectReply
+  self.tokens:transferSingle(ao.id, onBehalfOf, positionId, positionTokensToBuy, false, false, msg) -- send notice, do not expectReply
   -- Send notice.
   return self.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, positionId, positionTokensToBuy, msg)
 end
@@ -312,9 +312,9 @@ function CPMMMethods:sell(from, onBehalfOf, returnAmount, positionId, maxPositio
   -- Check user balance and transfer positionTokensToSell to process before merge.
   local balance = self.tokens:getBalance(from, nil, positionId)
   assert(bint.__le(bint(positionTokensToSell), bint(balance)), 'Insufficient balance!')
-  self.tokens:transferSingle(from, ao.id, positionId, positionTokensToSell, true, false, msg) -- cast, do not expectReply
+  self.tokens:transferSingle(from, ao.id, positionId, positionTokensToSell, false, false, msg) -- send notice, do not expectReply
   -- Merge positions through all conditions (burns returnAmountPlusFees).
-  self.tokens:mergePositions(ao.id, '', positionTokensToSell, true, false, msg) -- cast, do not expectReply
+  self.tokens:mergePositions(ao.id, '', positionTokensToSell, true, false, false, msg) -- isSell, send notice, do not expectReply
   -- Returns collateral to the user / onBehalfOf address
   msg.forward(self.tokens.collateralToken,{
     Action = "Transfer",
@@ -379,23 +379,23 @@ function CPMMMethods:_beforeTokenTransfer(from, to, amount, msg)
 end
 
 --- @dev See `Mint` in modules.token
-function CPMMMethods:mint(to, quantity, msg)
+function CPMMMethods:mint(to, quantity, cast, expectReply, msg)
   self:_beforeTokenTransfer(nil, to, quantity, msg)
-  return self.token:mint(to, quantity, msg)
+  return self.token:mint(to, quantity, cast, expectReply, msg)
 end
 
 --- @dev See `Burn` in modules.token
 -- @dev See tokenMethods:burn & _beforeTokenTransfer
-function CPMMMethods:burn(from, quantity, msg)
+function CPMMMethods:burn(from, quantity, cast, expectReply, msg)
   self:_beforeTokenTransfer(from, nil, quantity, msg)
-  return self.token:burn(from, quantity, msg)
+  return self.token:burn(from, quantity, cast, expectReply, msg)
 end
 
 --- @dev See `Transfer` in modules.token
 -- @dev See tokenMethods:transfer & _beforeTokenTransfer
-function CPMMMethods:transfer(from, recipient, quantity, cast, msg)
+function CPMMMethods:transfer(from, recipient, quantity, cast, expectReply, msg)
   self:_beforeTokenTransfer(from, recipient, quantity, msg)
-  return self.token:transfer(from, recipient, quantity, cast, msg)
+  return self.token:transfer(from, recipient, quantity, cast, expectReply, msg)
 end
 
 --- Update configurator

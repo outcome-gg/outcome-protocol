@@ -27,9 +27,10 @@ end
 --- @param from string The address of the account that split the position
 --- @param collateralToken string The address of the collateral token
 --- @param quantity string The quantity
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return Message The position split notice
-function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, quantity, msg)
+function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, quantity, expectReply, msg)
   local notice = {
     Action = "Split-Position-Notice",
     Process = ao.id,
@@ -44,8 +45,10 @@ function ConditionalTokensNotices.positionSplitNotice(from, collateralToken, qua
       notice[tagName] = tagValue
     end
   end
-  -- Send notice | @dev ao.send vs msg.reply to ensure message is sent to user (not collateralToken)
-  return msg.forward(from, notice)
+  -- Send notice
+  if expectReply then return msg.reply(notice) end
+  notice.Target = from
+  return ao.send(notice)
 end
 
 --- Positions merge notice

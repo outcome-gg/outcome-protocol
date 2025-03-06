@@ -169,6 +169,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
       msgMintSingle.Tags.Recipient,
       msgMintSingle.Tags.PositionId,
       msgMintSingle.Tags.Quantity,
+      true, -- expectReply
       msgMintSingle
     )
     assert.are.same({
@@ -185,6 +186,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
       msgMintBatch.Tags.Recipient,
       msgMintBatch.Tags.PositionIds,
       msgMintBatch.Tags.Quantities,
+      true, -- expectReply
       msgMintBatch
     )
     assert.are.same({

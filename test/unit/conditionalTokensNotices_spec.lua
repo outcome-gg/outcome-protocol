@@ -13,6 +13,16 @@ local msgPositionSplit = {}
 local msgPositionsMerge = {}
 local msgPayoutRedemption = {}
 
+
+local function getTagValue(tags, targetName)
+  for _, tag in ipairs(tags) do
+    if tag.name == targetName then
+      return tag.value
+    end
+  end
+  return nil -- Return nil if the name is not found
+end
+
 describe("#market #conditionalTokens #conditionalTokensNotices", function()
   before_each(function()
     -- set variables
@@ -41,7 +51,7 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
         Quantity = quantity,
       },
       ["X-Action"] = "FOO",
-      forward = function(to, message) return {to, message} end
+      reply = function(to, message) return {to, message} end
     }
     -- create a message object
     msgPositionsMerge = {
@@ -81,19 +91,19 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
       msgPositionSplit.Tags.Stakeholder,
       msgPositionSplit.Tags.CollateralToken,
       msgPositionSplit.Tags.Quantity,
+      false, -- expectReply
       msgPositionSplit
-    )
-    local to = result[1]
-    local notice = result[2]
-    assert.are.same(msgPositionSplit.Tags.Stakeholder, to)
+    ).receive().Data
+
     assert.are.same({
+      Target = msgPositionSplit.Tags.Stakeholder,
       Action = 'Split-Position-Notice',
       Process = _G.ao.id,
       Stakeholder = msgPositionSplit.Tags.Stakeholder,
       CollateralToken = msgPositionSplit.Tags.CollateralToken,
       Quantity = msgPositionSplit.Tags.Quantity,
       ["X-Action"] = "FOO"
-    }, notice)
+    }, result)
   end)
 
   it("should send positions merge notice", function()

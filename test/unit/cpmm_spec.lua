@@ -1195,6 +1195,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       notice = CPMM:mint(
         msgMint.Tags.Recipient,
         msgMint.Tags.Quantity,
+        false, -- cast
+        true, -- expectReply
         msgMint
       )
     end)
@@ -1224,6 +1226,8 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       notice = CPMM.token:burn(
         msgBurn.From,
         msgBurn.Tags.Quantity,
+        false, -- cast
+        false, -- expectReply
         msgBurn
       ).receive().Data
     end)
@@ -1257,6 +1261,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         msgTransfer.Tags.Recipient,
         msgTransfer.Tags.Quantity,
         false, -- cast
+        true, -- expectReply
         msgTransfer
       )
     end)
@@ -1278,6 +1283,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
         msgTransferError.Tags.Recipient,
         msgTransferError.Tags.Quantity,
         false, -- cast
+        true, -- expectReply
         msgTransferError
       )
     end)

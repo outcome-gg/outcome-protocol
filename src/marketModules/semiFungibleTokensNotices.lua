@@ -14,32 +14,42 @@ local SemiFungibleTokensNotices = {}
 --- @param to string The address that will own the minted token
 --- @param id string The ID of the token to be minted
 --- @param quantity string The quantity of the token to be minted
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return Message The mint notice
-function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, msg)
-  return msg.reply({
+function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, expectReply, msg)
+  local notice = {
     Recipient = to,
     PositionId = tostring(id),
     Quantity = tostring(quantity),
     Action = 'Mint-Single-Notice',
     Data = Colors.gray .. "Successfully minted " .. Colors.blue .. tostring(quantity) .. Colors.gray .. " of id " .. Colors.blue .. tostring(id) .. Colors.reset
-  })
+  }
+  -- Send notice
+  if expectReply then return msg.reply(notice) end
+  notice.Target = msg.From
+  return ao.send(notice)
 end
 
 --- Mint batch notice
 --- @param to string The address that will own the minted tokens
 --- @param ids table<string> The IDs of the tokens to be minted
 --- @param quantities table<string> The quantities of the tokens to be minted
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
 --- @return Message The batch mint notice
-function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, msg)
-  return msg.forward(to, {
+function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, expectReply, msg)
+  local notice = {
     Recipient = to,
     PositionIds = json.encode(ids),
     Quantities = json.encode(quantities),
     Action = 'Mint-Batch-Notice',
     Data = "Successfully minted batch"
-  })
+  }
+  -- Send notice
+  if expectReply then return msg.reply(notice) end
+  notice.Target = msg.From
+  return ao.send(notice)
 end
 
 --- Burn single notice

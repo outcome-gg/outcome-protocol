@@ -72,9 +72,11 @@ end
 --- @param to string The address that will own the minted tokens
 --- @param id string The ID of the tokens to mint
 --- @param quantity string The quantity of tokens to mint
+--- @param cast boolean The cast is set to true to silence the mint notice
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @return Message The mint notice
-function SemiFungibleTokensMethods:mint(to, id, quantity, msg)
+--- @return Message|nil The mint notice if not cast
+function SemiFungibleTokensMethods:mint(to, id, quantity, cast, expectReply, msg)
   assert(quantity, 'Quantity is required!')
   assert(bint.__lt(0, bint(quantity)), 'Quantity must be greater than zero!')
   -- mint tokens
@@ -84,16 +86,18 @@ function SemiFungibleTokensMethods:mint(to, id, quantity, msg)
   self.balancesById[id][to] = tostring(bint.__add(self.balancesById[id][to], bint(quantity)))
   self.totalSupplyById[id] = tostring(bint.__add(self.totalSupplyById[id], bint(quantity)))
   -- send notice
-  return self.mintSingleNotice(to, id, quantity, msg)
+  if not cast then return self.mintSingleNotice(to, id, quantity, expectReply, msg) end
 end
 
 --- Batch mint quantities of tokens with the given IDs
 --- @param to string The address that will own the minted tokens
 --- @param ids table<string> The IDs of the tokens to mint
 --- @param quantities table<string> The quantities of tokens to mint
+--- @param cast boolean The cast is set to true to silence the mint notice
+--- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @return Message The batch mint notice
-function SemiFungibleTokensMethods:batchMint(to, ids, quantities, msg)
+--- @return Message|nil The batch mint notice if not cast
+function SemiFungibleTokensMethods:batchMint(to, ids, quantities, cast, expectReply, msg)
   assert(#ids == #quantities, 'Ids and quantities must have the same lengths')
   -- mint tokens
   for i = 1, #ids do
@@ -105,17 +109,18 @@ function SemiFungibleTokensMethods:batchMint(to, ids, quantities, msg)
     self.totalSupplyById[ ids[i] ] = tostring(bint.__add(self.totalSupplyById[ ids[i] ], quantities[i]))
   end
   -- send notice
-  return self.mintBatchNotice(to, ids, quantities, msg)
+  if not cast then return self.mintBatchNotice(to, ids, quantities, expectReply, msg) end
 end
 
 --- Burn a quantity of tokens with a given ID
 --- @param from string The process ID that will no longer own the burned tokens
 --- @param id string The ID of the tokens to burn
 --- @param quantity string The quantity of tokens to burn
+--- @param cast boolean The cast is set to true to silence the burn notice
 --- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @return Message The burn notice
-function SemiFungibleTokensMethods:burn(from, id, quantity, expectReply, msg)
+--- @return Message|nil The burn notice if not cast
+function SemiFungibleTokensMethods:burn(from, id, quantity, cast, expectReply, msg)
   assert(bint.__lt(0, bint(quantity)), 'Quantity must be greater than zero!')
   assert(self.balancesById[id], 'Id must exist! ' .. id)
   assert(self.balancesById[id][from], 'Account must hold token! :: ' .. id)
@@ -124,17 +129,18 @@ function SemiFungibleTokensMethods:burn(from, id, quantity, expectReply, msg)
   self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], bint(quantity)))
   self.totalSupplyById[id] = tostring(bint.__sub(self.totalSupplyById[id], bint(quantity)))
   -- send notice
-  return self.burnSingleNotice(from, id, quantity, expectReply, msg)
+  if not cast then return self.burnSingleNotice(from, id, quantity, expectReply, msg) end
 end
 
 --- Batch burn a quantity of tokens with the given IDs
 --- @param from string The process ID that will no longer own the burned tokens
 --- @param ids table<string> The IDs of the tokens to burn
 --- @param quantities table<string> The quantities of tokens to burn
+--- @param cast boolean The cast is set to true to silence the burn notice
 --- @param expectReply boolean Whether to use `msg.reply` or `ao.send`
 --- @param msg Message The message received
---- @return Message The batch burn notice
-function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, expectReply, msg)
+--- @return Message|nil The batch burn notice if not cast
+function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, cast, expectReply, msg)
   assert(#ids == #quantities, 'Ids and quantities must have the same lengths')
   for i = 1, #ids do
     assert(bint.__lt(0, quantities[i]), 'Quantity must be greater than zero!')
@@ -150,7 +156,7 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, expectReply,
     remainingBalances[i] = self.balancesById[ ids[i] ][from]
   end
   -- send notice
-  return self.burnBatchNotice(from, ids, quantities, remainingBalances, expectReply, msg)
+  if not cast then return self.burnBatchNotice(from, ids, quantities, remainingBalances, expectReply, msg) end
 end
 
 --- Transfer a quantity of tokens with the given ID

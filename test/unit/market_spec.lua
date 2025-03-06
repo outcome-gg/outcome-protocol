@@ -998,6 +998,7 @@ describe("#market", function()
         msgTransfer.Tags.Recipient,
         msgTransfer.Tags.Quantity,
         false, -- cast
+        true, -- expectReply
         msgTransfer
       )
     end)
@@ -1020,6 +1021,7 @@ describe("#market", function()
         msgTransferError.Tags.Recipient,
         msgTransferError.Tags.Quantity,
         false, -- cast
+        true, -- expectReply
         msgTransferError
       )
     end)
