@@ -2753,7 +2753,7 @@ function Outcome.tokenUpdateConfigurator(configurator)
   return {
     Action = notice.Tags.Action,
     Configurator = notice.Data,
-    Error = response.Tags.Error or nil,
+    Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
     ["Block-Height"] = notice["Block-Height"]
