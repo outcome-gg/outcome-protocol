@@ -571,6 +571,7 @@ describe("#market", function()
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       false, -- cast
+      false, -- castInterim
       msgAddFunding
     )
     -- assert state
@@ -637,6 +638,7 @@ describe("#market", function()
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       false, -- cast
+      false, -- castInterim
       msgAddFunding
     )
     -- override receive to return collateralToken balance
@@ -649,6 +651,7 @@ describe("#market", function()
       msgRemoveFunding.From,
       msgRemoveFunding.Tags.Quantity,
       false, -- cast
+      false, -- castInterim
       msgRemoveFunding
     )
     -- assert state
@@ -678,6 +681,7 @@ describe("#market", function()
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       false, -- cast
+      false, -- castInterim
       msgAddFunding
     )
     -- calc buy amount
@@ -699,6 +703,7 @@ describe("#market", function()
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       false, -- cast
+      false, -- castInterim
       msgAddFunding
     )
     -- calc sell amount
@@ -720,6 +725,7 @@ describe("#market", function()
      msgAddFunding.Tags.Quantity,
      json.decode(msgAddFunding.Tags["X-Distribution"]),
      false, -- cast
+     false, -- castInterim
      msgAddFunding
    )
    -- calc buy amount
@@ -737,6 +743,7 @@ describe("#market", function()
      msgBuy.Tags.PositionId,
      msgBuy.Tags.Quantity,
      false, -- cast
+     false, -- castInterim
      msgBuy
      )
    end)
@@ -781,6 +788,7 @@ describe("#market", function()
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       false, -- cast
+      false, -- castInterim
       msgAddFunding
     )
     -- calc buy amount
@@ -797,6 +805,7 @@ describe("#market", function()
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
       false, -- cast
+      false, -- castInterim
       msgBuy
       )
     end)
@@ -852,6 +861,7 @@ describe("#market", function()
         msgSell.Tags.PositionId,
         msgSell.Tags.MaxPositionTokensToSell,
         false, -- cast
+        false, -- castInterim
         msgSell
       )
     end)
@@ -897,6 +907,7 @@ describe("#market", function()
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       false, -- cast
+      false, -- castInterim
       msgAddFunding
     )
     -- buy
@@ -908,6 +919,7 @@ describe("#market", function()
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
       false, -- cast
+      false, -- castInterim
       msgBuy
       )
     end)
@@ -938,6 +950,7 @@ describe("#market", function()
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       false, -- cast
+      false, -- castInterim
       msgAddFunding
     )
     -- buy
@@ -949,6 +962,7 @@ describe("#market", function()
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
       false, -- cast
+      false, -- castInterim
       msgBuy
       )
     end)
@@ -969,6 +983,7 @@ describe("#market", function()
       msgAddFunding.Tags.Quantity,
       json.decode(msgAddFunding.Tags["X-Distribution"]),
       false, -- cast
+      false, -- castInterim
       msgAddFunding
     )
     -- buy
@@ -980,6 +995,7 @@ describe("#market", function()
       msgBuy.Tags.PositionId,
       msgBuy.Tags.Quantity,
       false, -- cast
+      false, -- castInterim
       msgBuy
       )
     end)
@@ -993,6 +1009,7 @@ describe("#market", function()
         sender,
         sender,
         false, -- cast
+        false, -- sendInterim
         false, -- detatched
         msgBuy
       ) 
@@ -1020,7 +1037,7 @@ describe("#market", function()
         msgTransfer.Tags.Recipient,
         msgTransfer.Tags.Quantity,
         false, -- cast
-        false, -- async
+        false, -- detached
         msgTransfer
       )
     end)
@@ -1043,7 +1060,7 @@ describe("#market", function()
         msgTransferError.Tags.Recipient,
         msgTransferError.Tags.Quantity,
         false, -- cast
-        false, -- async
+        false, -- detached
         msgTransferError
       )
     end)

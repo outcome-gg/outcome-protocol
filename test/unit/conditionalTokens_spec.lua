@@ -147,7 +147,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
       false, -- cast
-      true, -- async
+      false, -- sendInterim
+      true, -- detached
       msgSplitPosition
     ).receive().Data
     -- asert state change
@@ -184,7 +185,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
       false, -- cast
-      false, -- async
+      false, -- sendInterim
+      false, -- detached
       msgSplitPosition
     )
     -- merge positions
@@ -194,7 +196,8 @@ describe("#market #conditionalTokens", function()
       msgMergePositions.Tags.Quantity,
       true, -- isSell
       false, -- cast
-      false, -- async
+      false, -- sendInterim
+      false, -- detached
       msgMergePositions
     )
     -- asert state change
@@ -221,7 +224,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
       false, -- cast
-      false, -- async
+      false, -- sendInterim
+      false, -- detached
       msgSplitPosition
     )
     -- merge positions
@@ -231,7 +235,8 @@ describe("#market #conditionalTokens", function()
       msgMergePositions.Tags.Quantity,
       false, -- isSell
       false, -- cast
-      false, -- async
+      false, -- sendInterim
+      false, -- detached
       msgMergePositions
     )
     -- asert state change
@@ -271,7 +276,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
       false, -- cast
-      false, -- async
+      false, -- sendInterim
+      false, -- detached
       msgSplitPosition
     )
     -- should throw an error
@@ -292,7 +298,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
       false, -- cast
-      false, -- async
+      false, -- sendInterim
+      false, -- detached
       msgSplitPosition
     )
     -- report payouts
@@ -316,7 +323,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
       false, -- cast
-      false, -- async
+      false, -- sendInterim
+      false, -- detached
       msgSplitPosition
     )
     -- call from non-resolution agent
@@ -337,7 +345,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
       false, -- cast
-      false, -- async
+      false, -- sendInterim
+      false, -- detached
       msgSplitPosition
     )
     -- wrong outcome slot count
@@ -357,7 +366,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
       false, -- cast
-      false, -- async
+      false, -- sendInterim
+      false, -- detached
       msgSplitPosition
     )
     -- report payouts
@@ -381,7 +391,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
       false, -- cast
-      false, -- async
+      false, -- sendInterim
+      false, -- detached
       msgSplitPosition
     )
     -- wrong outcome slot count
@@ -402,7 +413,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
       false, -- cast
-      false, -- async
+      false, -- sendInterim
+      false, -- detached
       msgSplitPosition
     )
     -- report payouts
@@ -414,6 +426,7 @@ describe("#market #conditionalTokens", function()
     local notice = ConditionalTokens:redeemPositions(
       msgRedeemPositions.From,
       false, -- cast
+      false, -- sendInterim
       msgRedeemPositions
     )
     -- asert state change
@@ -441,7 +454,8 @@ describe("#market #conditionalTokens", function()
       msgSplitPosition.Tags.CollateralToken,
       msgSplitPosition.Tags.Quantity,
       false, -- cast
-      false, -- async
+      false, -- sendInterim
+      false, -- detached
       msgSplitPosition
     )
     -- redeem positions

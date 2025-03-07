@@ -169,7 +169,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
       msgMintSingle.Tags.Recipient,
       msgMintSingle.Tags.PositionId,
       msgMintSingle.Tags.Quantity,
-      false, -- async
+      false, -- detached
       msgMintSingle
     )
     assert.are.same({
@@ -186,7 +186,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
       msgMintBatch.Tags.Recipient,
       msgMintBatch.Tags.PositionIds,
       msgMintBatch.Tags.Quantities,
-      false, -- async
+      false, -- detached
       msgMintBatch
     )
     assert.are.same({
@@ -203,7 +203,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
       msgBurnSingle.From,
       msgBurnSingle.Tags.PositionId,
       msgBurnSingle.Tags.Quantity,
-      false, -- async
+      false, -- detached
       msgBurnSingle
     )
     assert.are.same({
@@ -222,7 +222,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
       json.decode(noticeBurnBatch.PositionIds),
       json.decode(noticeBurnBatch.Quantities),
       json.decode(noticeBurnBatch.RemainingBalances),
-      false, -- async
+      false, -- detached
       msgBurnBatch
     )
     -- assert.are.same(remainingBalances, notice.RemainingBalances)
@@ -235,7 +235,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
       msgTransferSingle.Tags.Recipient,
       msgTransferSingle.Tags.PositionId,
       msgTransferSingle.Tags.Quantity,
-      false, -- async
+      false, -- detached
       msgTransferSingle
     )
     assert.are.same(noticeDebitSingle, notices[1])
@@ -248,7 +248,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensNotices", function()
       msgTransferBatch.Tags.Recipient,
       msgTransferBatch.Tags.PositionIds,
       msgTransferBatch.Tags.Quantities,
-      false, -- async
+      false, -- detached
       msgTransferBatch
     )
     assert.are.same(noticeDebitBatch, notices[1])

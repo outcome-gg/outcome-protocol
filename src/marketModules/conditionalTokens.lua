@@ -107,10 +107,11 @@ end
 --- @param collateralToken string The process ID of the collateral token
 --- @param quantity string The quantity of collateral to split
 --- @param cast boolean The cast is set to true to silence the notice
+--- @param sendInterim boolean If true, sends intermediate notices 
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message| nil The position split notice if not cast
-function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, cast, detached, msg)
+function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, cast, sendInterim, detached, msg)
   assert(self.payoutNumerators and #self.payoutNumerators > 0, "Condition not prepared!")
   -- Create equal split positions.
   local quantities = {}
@@ -118,7 +119,7 @@ function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity,
     table.insert(quantities, quantity)
   end
   -- Mint the stake in the split target positions.
-  self:batchMint(from, self.positionIds, quantities, false, true, msg) -- send notice, do not expect reply
+  self:batchMint(from, self.positionIds, quantities, not sendInterim, true, msg) -- @dev `true`: sends detatched message
   -- Send notice.
   if not cast then return self.positionSplitNotice(from, collateralToken, quantity, detached, msg) end
 end
@@ -129,10 +130,11 @@ end
 --- @param quantity string The quantity of collateral to merge
 --- @param isSell boolean True if the merge is a sell, false otherwise
 --- @param cast boolean The cast is set to true to silence the notice
+--- @param sendInterim boolean If true, sends intermediate notices 
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
---- @return Message The positions merge notice
-function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, cast, detached, msg)
+--- @return Message|nil The positions merge notice if not cast
+function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, cast, sendInterim, detached, msg)
   assert(self.payoutNumerators and #self.payoutNumerators > 0, "Condition not prepared!")
   -- Create equal merge positions.
   local quantities = {}
@@ -140,7 +142,7 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
     table.insert(quantities, quantity)
   end
   -- Burn equal quantiies from user positions.
-  self:batchBurn(from, self.positionIds, quantities, false, true, msg) -- send notice, do not expect reply
+  self:batchBurn(from, self.positionIds, quantities, not sendInterim, true, msg) -- @dev `true`: sends detatched message
   -- @dev below already handled within the sell method.
   -- sell method w/ a different quantity and recipient.
   if not isSell then
@@ -149,7 +151,9 @@ function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isS
       Target = self.collateralToken,
       Action = "Transfer",
       Quantity = quantity,
-      Recipient = onBehalfOf
+      Recipient = onBehalfOf,
+    ---@diagnostic disable-next-line: assign-type-mismatch
+      Cast = not sendInterim and "true" or nil
     })
   end
   -- Send notice.
@@ -182,9 +186,10 @@ end
 --- Transfers any payout minus fees to the message sender
 --- @param onBehalfOf string The process ID of the account to receive the collateral
 --- @param cast boolean The cast is set to true to silence the notice
+--- @param sendInterim boolean If true, sends intermediate notices 
 --- @param msg Message The message received
 --- @return Message|nil The payout redemption notice if not cast
-function ConditionalTokensMethods:redeemPositions(onBehalfOf, cast, msg)
+function ConditionalTokensMethods:redeemPositions(onBehalfOf, cast, sendInterim, msg)
   local den = self.payoutDenominator
   assert(den > 0, "market not resolved")
   assert(self.payoutNumerators and #self.payoutNumerators > 0, "market not initialized")
@@ -200,13 +205,13 @@ function ConditionalTokensMethods:redeemPositions(onBehalfOf, cast, msg)
     if bint.__lt(0, bint(payoutStake)) then
       -- Calculate the payout and burn position.
       totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
-      self:burn(msg.From, positionId, payoutStake, false, true, msg) -- send notice, do not expect reply
+      self:burn(msg.From, positionId, payoutStake, not sendInterim, true, msg) -- @dev `true`: sends detatched message
     end
   end
   -- Return total payout minus take fee.
   if totalPayout > 0 then
     totalPayout = math.floor(totalPayout)
-    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, onBehalfOf, totalPayout)
+    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, onBehalfOf, totalPayout, not sendInterim)
   end
   -- Send notice.
   if not cast then return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, onBehalfOf, msg) end
@@ -217,8 +222,9 @@ end
 --- @param collateralToken string The collateral token
 --- @param from string The account to receive the payout minus fees
 --- @param totalPayout number The total payout assciated with the acount stake
+--- @param cast boolean The cast is set to true to silence the notice
 --- @return string The total payout minus fee amount
-function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)
+function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, cast)
   local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))
   local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))
   local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))
@@ -229,18 +235,21 @@ function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken,
     Action = "Transfer",
     Recipient = self.protocolFeeTarget,
     Quantity = protocolFee,
+    Cast = cast and "true" or nil
   }
   local creatorFeeTxn = {
     Target = collateralToken,
     Action = "Transfer",
     Recipient = self.creatorFeeTarget,
     Quantity = creatorFee,
+    Cast = cast and "true" or nil
   }
   local totalPayoutMinutTakeFeeTxn = {
     Target = collateralToken,
     Action = "Transfer",
     Recipient = from,
-    Quantity = totalPayoutMinusFee
+    Quantity = totalPayoutMinusFee,
+    Cast = cast and "true" or nil
   }
   -- send txns
   ao.send(protocolFeeTxn)

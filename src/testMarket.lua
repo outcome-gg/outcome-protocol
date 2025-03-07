@@ -162,7 +162,7 @@ local function runTests()
     res and res.MessageId or "Unknown"
   )
   binaryMarket = res and res.ProcessId or nil
-  -- binaryMarket = "JMSVJzJGQeIQxys5qDXQUIoqQtZpj1U4UwzyW9jqdyk"
+  -- binaryMarket = "qr5PScIzm5deZ0RWyVO1lSO5SdNIodbDlTPSR7xJgqw"
   print("binaryMarket: " .. tostring(binaryMarket))
 
   -- testName = "Create Categorical Market"
@@ -209,6 +209,8 @@ local function runTests()
     res ~= nil and res.Error==nil and res.Balance==positionBalance,
     res and res.MessageId or "Unknown"
   )
+  -- @dev This is to exit early if the position balance is not zero
+  assert(res and res.Balance==positionBalance, "Position balance is not zero")
 
   testName = "Add Initial Funding to Binary Market"
   print("➤ " .. testName)

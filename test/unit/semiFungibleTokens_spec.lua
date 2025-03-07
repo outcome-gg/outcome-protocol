@@ -259,7 +259,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
       msgMint.Tags.PositionId,
       msgMint.Tags.Quantity,
       false, -- cast
-      false, -- async
+      false, -- detached
       msgMint
     )
     end)
@@ -286,7 +286,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgMintBatch.Tags.PositionIds,
         msgMintBatch.Tags.Quantities,
         false, -- cast
-        false, -- async
+        false, -- detached
         msgMintBatch
       )
     end)
@@ -328,7 +328,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgBurn.Tags.PositionId,
         msgBurn.Tags.Quantity,
         false, -- cast
-        false, -- async
+        false, -- detached
         msgBurn
       )
     end)
@@ -367,7 +367,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
       msgBurnBatch.Tags.PositionIds,
       msgBurnBatch.Tags.Quantities,
       false, -- cast
-      false, -- async
+      false, -- detached
       msgBurnBatch
     )
     end)
@@ -411,7 +411,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgTransfer.Tags.PositionId,
         msgTransfer.Tags.Quantity,
         false, -- cast
-        false, -- async
+        false, -- detached
         msgTransfer
       )
     end)
@@ -434,7 +434,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgTransfer.Tags.PositionId,
         msgTransfer.Tags.Quantity,
         false, -- cast
-        false, -- async
+        false, -- detached
         msgTransfer
       )
     end)
@@ -471,7 +471,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgTransferBatch.Tags.PositionIds,
         msgTransferBatch.Tags.Quantities,
         false, -- cast
-        false, -- async
+        false, -- detached
         msgTransfer
       )
     end)
@@ -498,7 +498,7 @@ describe("#market #semiFungibleTokens #semiFungibleTokensInternal", function()
         msgTransferBatch.Tags.PositionIds,
         msgTransferBatch.Tags.Quantities,
         false, -- cast
-        false, -- async
+        false, -- detached
         msgTransfer
       )
     end)

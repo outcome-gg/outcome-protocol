@@ -91,7 +91,7 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
       msgPositionSplit.Tags.Stakeholder,
       msgPositionSplit.Tags.CollateralToken,
       msgPositionSplit.Tags.Quantity,
-      true, -- async
+      true, -- detached
       msgPositionSplit
     ).receive().Data
 
@@ -111,7 +111,7 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
       msgPositionsMerge.Tags.CollateralToken,
       msgPositionsMerge.Tags.Quantity,
       msgPositionsMerge.From,
-      false, -- async
+      false, -- detached
       msgPositionsMerge
     )
     assert.are.same({
