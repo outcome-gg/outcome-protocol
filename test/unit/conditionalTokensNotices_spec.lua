@@ -82,7 +82,8 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
     assert.are.same({
       Action = 'Report-Payouts-Notice',
       ResolutionAgent = msgConditionResolution.Tags.ResolutionAgent,
-      PayoutNumerators = json.encode(msgConditionResolution.Tags.PayoutNumerators)
+      PayoutNumerators = json.encode(msgConditionResolution.Tags.PayoutNumerators),
+      Data = "Successfully reported payouts"
     }, notice)
   end)
 
@@ -118,7 +119,8 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
       Action = 'Merge-Positions-Notice',
       CollateralToken = msgPositionsMerge.Tags.CollateralToken,
       Quantity = msgPositionsMerge.Tags.Quantity,
-      OnBehalfOf = msgPositionsMerge.From
+      OnBehalfOf = msgPositionsMerge.From,
+      Data = "Successfully merged positions"
     }, notice)
   end)
 
@@ -135,7 +137,8 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
       CollateralToken = msgPayoutRedemption.Tags.CollateralToken,
       GrossPayout = tostring(msgPayoutRedemption.Tags.Payout),
       NetPayout = tostring(msgPayoutRedemption.Tags.Payout),
-      OnBehalfOf = msgPayoutRedemption.From
+      OnBehalfOf = msgPayoutRedemption.From,
+      Data = "Successfully redeemed positions"
     }, notice)
   end)
 end)

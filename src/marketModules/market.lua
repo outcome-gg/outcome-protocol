@@ -111,6 +111,7 @@ function MarketMethods:info(msg)
     Name = self.cpmm.token.name,
     Ticker = self.cpmm.token.ticker,
     Logo = self.cpmm.token.logo,
+    Logos = json.encode(self.cpmm.tokens.logos),
     Denomination = tostring(self.cpmm.token.denomination),
     PositionIds = json.encode(self.cpmm.tokens.positionIds),
     CollateralToken = self.cpmm.tokens.collateralToken,
@@ -122,13 +123,13 @@ function MarketMethods:info(msg)
     Category = self.category,
     Subcategory = self.subcategory,
     Creator = self.creator,
-    LpFee = tostring(self.cpmm.lpFee),
-    LpFeePoolWeight = self.cpmm.feePoolWeight,
-    LpFeeTotalWithdrawn = self.cpmm.totalWithdrawnFees,
     CreatorFee = tostring(self.cpmm.tokens.creatorFee),
     CreatorFeeTarget = self.cpmm.tokens.creatorFeeTarget,
     ProtocolFee = tostring(self.cpmm.tokens.protocolFee),
     ProtocolFeeTarget = self.cpmm.tokens.protocolFeeTarget,
+    LpFee = tostring(self.cpmm.lpFee),
+    LpFeePoolWeight = self.cpmm.feePoolWeight,
+    LpFeeTotalWithdrawn = self.cpmm.totalWithdrawnFees,
     Owner = Owner
   })
 end
@@ -459,7 +460,7 @@ end
 
 --- Batch balance
 --- @param msg Message The message received
---- @return Message batchBalance The balance accounts filtered by IDs
+--- @return Message batchBalance The balance accounts filtered by recipients and IDs
 function MarketMethods:batchBalance(msg)
   local recipients = json.decode(msg.Tags.Recipients)
   local positionIds = json.decode(msg.Tags.PositionIds)

@@ -90,6 +90,21 @@ function ConditionalTokensValidation.mergePositions(msg, cpmm)
   return true
 end
 
+--- Validates the redeemPositions message.
+--- @param msg Message The message to be validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function ConditionalTokensValidation.redeemPositions(msg)
+  local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
+  local success, err
+
+  if not onBehalfOf then
+    success, err = sharedValidation.validateAddress(onBehalfOf, 'onBehalfOf')
+    if not success then return false, err end
+  end
+
+  return true
+end
+
 
 --- Validates the reportPayouts message
 --- @param msg Message The message to be validated

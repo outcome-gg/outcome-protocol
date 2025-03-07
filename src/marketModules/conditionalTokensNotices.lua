@@ -19,7 +19,8 @@ function ConditionalTokensNotices.reportPayoutsNotice(resolutionAgent, payoutNum
   return msg.reply({
     Action = "Report-Payouts-Notice",
     ResolutionAgent = resolutionAgent,
-    PayoutNumerators = json.encode(payoutNumerators)
+    PayoutNumerators = json.encode(payoutNumerators),
+    Data = "Successfully reported payouts"
   })
 end
 
@@ -63,7 +64,8 @@ function ConditionalTokensNotices.positionsMergeNotice(collateralToken, quantity
     Action = "Merge-Positions-Notice",
     OnBehalfOf = onBehalfOf,
     CollateralToken = collateralToken,
-    Quantity = quantity
+    Quantity = quantity,
+    Data = "Successfully merged positions"
   }
   if not detached then return msg.reply(notice) end
   notice.Target = msg.Sender and msg.Sender or msg.From
@@ -83,7 +85,8 @@ function ConditionalTokensNotices.redeemPositionsNotice(collateralToken, payout,
     CollateralToken = collateralToken,
     GrossPayout = tostring(payout),
     NetPayout = netPayout,
-    OnBehalfOf = onBehalfOf
+    OnBehalfOf = onBehalfOf,
+    Data = "Successfully redeemed positions"
   })
 end
 

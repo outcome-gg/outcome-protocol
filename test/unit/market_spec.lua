@@ -230,7 +230,7 @@ describe("#market", function()
       InvestmentAmount = investmentAmount,
       PositionId = "1",
       PositionTokensBought = quantity,
-      Data = "Successful buy order",
+      Data = "Successfully bought",
     }
     -- create a message object
     msgSell = {
@@ -249,7 +249,7 @@ describe("#market", function()
       ReturnAmount = returnAmount,
       PositionId = "1",
       PositionTokensSold = quantity,
-      Data = "Successful sell order"
+      Data = "Successfully sold"
     }
     -- create a message object
     msgCalcBuyAmount = {

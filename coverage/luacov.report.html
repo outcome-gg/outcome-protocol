@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 33.26%"></span>
-                  <span><strong>33.26%</strong> Coverage</span>
+                  <span class="bg" style="width: 33.33%"></span>
+                  <span><strong>33.33%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>143</strong> Hits</span>
-               <span class="miss"><strong>287</strong> Missed</span>
+               <span class="hits"><strong>147</strong> Hits</span>
+               <span class="miss"><strong>294</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -335,11 +335,11 @@
             src/marketModules/conditionalTokens.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 14.29%"></span>
-                  <span><strong>14.29%</strong> Coverage</span>
+                  <span class="bg" style="width: 13.98%"></span>
+                  <span><strong>13.98%</strong> Coverage</span>
                </span>
                <span class="hits"><strong>13</strong> Hits</span>
-               <span class="miss"><strong>78</strong> Missed</span>
+               <span class="miss"><strong>80</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -495,7 +495,9 @@ end
       Target = self.collateralToken,
       Action = &quot;Transfer&quot;,
       Quantity = quantity,
-<span class="nc">      Recipient = onBehalfOf</span>
+      Recipient = onBehalfOf,
+    ---@diagnostic disable-next-line: assign-type-mismatch
+<span class="nc">      Cast = not sendInterim and &quot;true&quot; or nil</span>
     })
   end
   -- Send notice.
@@ -553,7 +555,7 @@ end
   -- Return total payout minus take fee.
 <span class="nc">  if totalPayout &gt; 0 then</span>
 <span class="nc">    totalPayout = math.floor(totalPayout)</span>
-<span class="nc">    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, onBehalfOf, totalPayout)</span>
+<span class="nc">    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, onBehalfOf, totalPayout, not sendInterim)</span>
   end
   -- Send notice.
 <span class="nc">  if not cast then return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, onBehalfOf, msg) end</span>
@@ -564,8 +566,9 @@ end
 --- @param collateralToken string The collateral token
 --- @param from string The account to receive the payout minus fees
 --- @param totalPayout number The total payout assciated with the acount stake
+--- @param cast boolean The cast is set to true to silence the notice
 --- @return string The total payout minus fee amount
-<span class="fc" data-hits="1">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout)</span>
+<span class="fc" data-hits="1">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, cast)</span>
 <span class="nc">  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))</span>
 <span class="nc">  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))</span>
 <span class="nc">  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))</span>
@@ -576,18 +579,21 @@ end
     Action = &quot;Transfer&quot;,
     Recipient = self.protocolFeeTarget,
     Quantity = protocolFee,
+<span class="nc">    Cast = cast and &quot;true&quot; or nil</span>
   }
 <span class="nc">  local creatorFeeTxn = {</span>
     Target = collateralToken,
     Action = &quot;Transfer&quot;,
     Recipient = self.creatorFeeTarget,
     Quantity = creatorFee,
+<span class="nc">    Cast = cast and &quot;true&quot; or nil</span>
   }
 <span class="nc">  local totalPayoutMinutTakeFeeTxn = {</span>
     Target = collateralToken,
     Action = &quot;Transfer&quot;,
     Recipient = from,
-<span class="nc">    Quantity = totalPayoutMinusFee</span>
+    Quantity = totalPayoutMinusFee,
+<span class="nc">    Cast = cast and &quot;true&quot; or nil</span>
   }
   -- send txns
 <span class="nc">  ao.send(protocolFeeTxn)</span>
@@ -606,10 +612,10 @@ end
             src/marketModules/conditionalTokensNotices.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 94.74%"></span>
-                  <span><strong>94.74%</strong> Coverage</span>
+                  <span class="bg" style="width: 95.12%"></span>
+                  <span><strong>95.12%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>36</strong> Hits</span>
+               <span class="hits"><strong>39</strong> Hits</span>
                <span class="miss"><strong>2</strong> Missed</span>
             </span>
          </h2>
@@ -634,7 +640,8 @@ See conditionalTokens.lua for full license details.
 <span class="fc" data-hits="2">  return msg.reply({</span>
 <span class="fc" data-hits="1">    Action = &quot;Report-Payouts-Notice&quot;,</span>
 <span class="fc" data-hits="1">    ResolutionAgent = resolutionAgent,</span>
-<span class="fc" data-hits="1">    PayoutNumerators = json.encode(payoutNumerators)</span>
+<span class="fc" data-hits="1">    PayoutNumerators = json.encode(payoutNumerators),</span>
+<span class="fc" data-hits="1">    Data = &quot;Successfully reported payouts&quot;</span>
   })
 end
 
@@ -678,7 +685,8 @@ end
 <span class="fc" data-hits="1">    Action = &quot;Merge-Positions-Notice&quot;,</span>
 <span class="fc" data-hits="1">    OnBehalfOf = onBehalfOf,</span>
 <span class="fc" data-hits="1">    CollateralToken = collateralToken,</span>
-<span class="fc" data-hits="1">    Quantity = quantity</span>
+<span class="fc" data-hits="1">    Quantity = quantity,</span>
+<span class="fc" data-hits="1">    Data = &quot;Successfully merged positions&quot;</span>
   }
 <span class="fc" data-hits="1">  if not detached then return msg.reply(notice) end</span>
 <span class="nc">  notice.Target = msg.Sender and msg.Sender or msg.From</span>
@@ -698,7 +706,8 @@ end
 <span class="fc" data-hits="1">    CollateralToken = collateralToken,</span>
 <span class="fc" data-hits="1">    GrossPayout = tostring(payout),</span>
 <span class="fc" data-hits="1">    NetPayout = netPayout,</span>
-<span class="fc" data-hits="1">    OnBehalfOf = onBehalfOf</span>
+<span class="fc" data-hits="1">    OnBehalfOf = onBehalfOf,</span>
+<span class="fc" data-hits="1">    Data = &quot;Successfully redeemed positions&quot;</span>
   })
 end
 
@@ -711,11 +720,11 @@ end
             src/marketModules/conditionalTokensValidation.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 88.89%"></span>
-                  <span><strong>88.89%</strong> Coverage</span>
+                  <span class="bg" style="width: 80.39%"></span>
+                  <span><strong>80.39%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>40</strong> Hits</span>
-               <span class="miss"><strong>5</strong> Missed</span>
+               <span class="hits"><strong>41</strong> Hits</span>
+               <span class="miss"><strong>10</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -808,6 +817,21 @@ end
   end
 
 <span class="fc" data-hits="1">  return true</span>
+end
+
+--- Validates the redeemPositions message.
+--- @param msg Message The message to be validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+<span class="fc" data-hits="1">function ConditionalTokensValidation.redeemPositions(msg)</span>
+<span class="nc">  local onBehalfOf = msg.Tags[&#39;OnBehalfOf&#39;] or msg.From</span>
+  local success, err
+
+<span class="nc">  if not onBehalfOf then</span>
+<span class="nc">    success, err = sharedValidation.validateAddress(onBehalfOf, &#39;onBehalfOf&#39;)</span>
+<span class="nc">    if not success then return false, err end</span>
+  end
+
+<span class="nc">  return true</span>
 end
 
 
@@ -1584,7 +1608,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-07 11:24:25
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-07 23:06:47
    </footer>
 
    <script type="text/javascript">

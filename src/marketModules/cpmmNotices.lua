@@ -61,7 +61,7 @@ function CPMMNotices.buyNotice(from, onBehalfOf, investmentAmount, feeAmount, po
     FeeAmount = tostring(feeAmount),
     PositionId = positionId,
     PositionTokensBought = tostring(positionTokensBought),
-    Data = "Successful buy order"
+    Data = "Successfully bought"
   })
 end
 
@@ -82,7 +82,7 @@ function CPMMNotices.sellNotice(from, onBehalfOf, returnAmount, feeAmount, posit
     FeeAmount = tostring(feeAmount),
     PositionId = positionId,
     PositionTokensSold = tostring(positionTokensSold),
-    Data = "Successful sell order"
+    Data = "Successfully sold"
   })
 end
 

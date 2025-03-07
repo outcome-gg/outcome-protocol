@@ -247,8 +247,8 @@ CONFIGURATOR: WRITE
 --- @param updateTags table|nil The update message tags or `nil`
 --- @param updateData table|nil The update message data or `nil`
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Stage-Update-Notice`: **configurator → ao.id**-- Logs the stage update action
+--- **✅ Success Notice**
+--- - `Stage-Update-Notice`: **configurator → ao.id** -- Logs the stage update action
 --- @return ConfiguratorStageUpdateNotice The configurator stage update notice
 function Outcome.configuratorStageUpdate(updateProcess, updateAction, updateTags, updateData)
   -- Validate input
@@ -294,8 +294,8 @@ end
 --- @param updateTags table|nil The update message tags or `nil`
 --- @param updateData table|nil The update message data or `nil`
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Unstage-Update-Notice`: **configurator → ao.id**-- Logs the unstage update action
+--- **✅ Success Notice**
+--- - `Unstage-Update-Notice`: **configurator → ao.id** -- Logs the unstage update action
 --- @return ConfiguratorUnstageUpdateNotice The configurator unstage update notice
 function Outcome.configuratorUnstageUpdate(updateProcess, updateAction, updateTags, updateData)
   -- Validate input
@@ -337,7 +337,7 @@ end
 --- @param updateTags table|nil The update message tags or `nil`
 --- @param updateData table|nil The update message data or `nil`
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
+--- **✅ Success Notice**
 --- - `Action-Update-Notice`: **configurator → ao.id** -- Logs the action update action
 --- @return ConfiguratorActionUpdateNotice The configurator action update notice
 function Outcome.configuratorActionUpdate(updateProcess, updateAction, updateTags, updateData)
@@ -377,8 +377,8 @@ end
 --- @warning Only callable by the configurator admin
 --- @param updateAdmin string The admin to update
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Stage-Update-Admin-Notice`: **configurator → ao.id**-- Logs the stage update admin action
+--- **✅ Success Notice**
+--- - `Stage-Update-Admin-Notice`: **configurator → ao.id** -- Logs the stage update admin action
 --- @return ConfiguratorStageUpdateAdminNotice The configurator stage update admin notice
 function Outcome.configuratorStageUpdateAdmin(updateAdmin)
   -- Validate input
@@ -407,8 +407,8 @@ end
 --- @warning Only callable by the configurator admin
 --- @param updateAdmin string The admin to update
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Unstage-Update-Admin-Notice`: **configurator → ao.id**-- Logs the unstage update admin action
+--- **✅ Success Notice**
+--- - `Unstage-Update-Admin-Notice`: **configurator → ao.id** -- Logs the unstage update admin action
 --- @return ConfiguratorUnstageUpdateAdminNotice The configurator unstage update admin notice
 function Outcome.configuratorUnstageUpdateAdmin(updateAdmin)
   -- Validate input
@@ -436,7 +436,7 @@ end
 --- @warning Only callable by the configurator admin
 --- @param updateAdmin string The admin to update
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
+--- **✅ Success Notice**
 --- - `Action-Update-Admin-Notice`: **configurator → ao.id** -- Logs the action update admin action
 --- @return ConfiguratorActionUpdateAdminNotice The configurator action update admin notice
 function Outcome.configuratorActionUpdateAdmin(updateAdmin)
@@ -466,8 +466,8 @@ end
 --- @warning Only callable by the configurator admin
 --- @param updateDelay number The delay to update (in days)
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Stage-Update-Delay-Notice`: **configurator → ao.id**-- Logs the stage update delay action
+--- **✅ Success Notice**
+--- - `Stage-Update-Delay-Notice`: **configurator → ao.id** -- Logs the stage update delay action
 --- @return ConfiguratorStageUpdateDelayNotice The configurator stage update delay notice
 function Outcome.configuratorStageUpdateDelay(updateDelay)
   -- Validate input
@@ -496,8 +496,8 @@ end
 --- @warning Only callable by the configurator admin
 --- @param updateDelay number The delay to update (in days)
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Unstage-Update-Delay-Notice`: **configurator → ao.id**-- Logs the unstage update delay action
+--- **✅ Success Notice**
+--- - `Unstage-Update-Delay-Notice`: **configurator → ao.id** -- Logs the unstage update delay action
 --- @return ConfiguratorUnstageUpdateDelayNotice The configurator unstage update delay notice
 function Outcome.configuratorUnstageUpdateDelay(updateDelay)
   -- Validate input
@@ -525,7 +525,7 @@ end
 --- @warning Only callable by the configurator admin
 --- @param updateDelay number The delay to update (in days)
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
+--- **✅ Success Notice**
 --- - `Action-Update-Delay-Notice`: **configurator → ao.id** -- Logs the action update delay action
 --- @return ConfiguratorActionUpdateDelayNotice The configurator action update delay notice
 function Outcome.configuratorActionUpdateDelay(updateDelay)
@@ -556,7 +556,8 @@ MARKET: INFO
 ---@class MarketInfo: BaseMessage
 ---@field Name string The market name
 ---@field Ticker string The market ticker
----@field Logo string The market logo
+---@field Logo string The market LP token logo
+---@field Logos table<string> The market position token logos
 ---@field Denomination number The market denomination
 ---@field CollateralToken string The market collateral token
 ---@field Configurator string The market configurator
@@ -592,6 +593,7 @@ function Outcome.marketInfo(market)
     Name = info.Tags.Name,
     Ticker = info.Tags.Ticker,
     Logo = info.Tags.Logo,
+    Logos = json.decode(info.Tags.Logos),
     Denomination = tonumber(info.Tags.Denomination),
     CollateralToken = info.Tags.CollateralToken,
     Configurator = info.Tags.Configurator,
@@ -639,20 +641,22 @@ MARKET: CPMM WRITE
 --- @param collateral string The collateral token process ID
 --- @param quantity string The quantity of collateral tokens to transfer, a.k.a. the funding amount
 --- @param distribution table<number>|nil The initial probability distribution. **Pass `nil` for subsequent funding**
+--- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
 --- @param onBehalfOf string? The recipient of the outcome position tokens. **Defaults to the sender if omitted.**
 --- @note **Emits the following notices:**
 --- **🔄 Execution Transfers**
 --- - `Debit-Notice`: **collateral → ao.id**     -- Transfers collateral tokens from the provider
 --- - `Credit-Notice`: **collateral → market**   -- Transfers collateral tokens to the market
---- **✨ Minting & Splitting Position**
---- - `Mint-Batch-Notice`: **market → market**   -- Mints position tokens to the market
---- - `Split-Position-Notice`: **market → market**-- Splits collateral into position tokens
---- - `Mint-Notice`: **market → ao.id**          -- Mints LP tokens to the provider
+--- **✨ Interim Notices (Default silenced)**
+--- - `Mint-Batch-Notice`: **market → market**      -- Mints position tokens to the market
+--- - `Split-Position-Notice`: **market → market**  -- Splits collateral into position tokens
+--- - `Mint-Notice`: **market → ao.id**             -- Mints LP tokens to the provider
 --- **📊 Logging & Analytics**
---- - `Add-Funding-Notice`: **market → ao.id**                                           -- Logs the add funding action
---- - `Log-Funding-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex**-- Logs the funding
+--- - `Log-Funding-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the funding
+--- **✅ Success Notice**
+--- - `Add-Funding-Notice`: **market → ao.id**  -- Logs the add funding action
 --- @return MarketAddFundingDebitNotice The market add funding debit notice
-function Outcome.marketAddFunding(market, collateral, quantity, distribution, onBehalfOf)
+function Outcome.marketAddFunding(market, collateral, quantity, distribution, sendInterim, onBehalfOf)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   validateValidArweaveAddress(collateral, "collateral")
@@ -666,9 +670,11 @@ function Outcome.marketAddFunding(market, collateral, quantity, distribution, on
     Quantity = quantity,
     Recipient = market,
     ["X-Action"] = "Add-Funding",
+    ["X-OnBehalfOf"] = onBehalfOf or ao.id,
     ---@diagnostic disable-next-line: assign-type-mismatch
     ["X-Distribution"] = distribution and json.encode(distribution) or nil,
-    ["X-OnBehalfOf"] = onBehalfOf or ao.id
+     ---@diagnostic disable-next-line: assign-type-mismatch
+    ["X-SendInterim"] = sendInterim and "true" or nil,
   }).receive()
   -- Return formatted response
   return {
@@ -677,8 +683,9 @@ function Outcome.marketAddFunding(market, collateral, quantity, distribution, on
     Quantity = notice.Tags.Quantity,
     Recipient = notice.Tags.Recipient,
     ["X-Action"] = notice.Tags["X-Action"],
-    ["X-Distribution"] = notice.Tags["X-Distribution"] or nil,
     ["X-OnBehalfOf"] = notice.Tags["X-OnBehalfOf"],
+    ["X-Distribution"] = notice.Tags["X-Distribution"] or nil,
+    ["X-SendInterim"] = notice.Tags["X-SendInterim"] or nil,
     Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
@@ -695,19 +702,19 @@ end
 --- @notice Calling `marketRemoveFunding` will simultaneously return the liquidity provider's share of accrued fees
 --- @param market string The market process ID
 --- @param quantity string The quantity of LP tokens to transfer, i.e. the amount of shares to burn
+--- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
 --- @note **Emits the following notices:**
---- **🔄 Execution Transfers**
---- - `Withdraw-Fees-Notice`: **market → ao.id**-- Distributes accrued LP fees to the provider
---- **🔥 Burning LP Shares**
---- - `Burn-Notice`: **market → market**       -- Burns the returned LP tokens
---- **🔄 Settlement Transfers**
---- - `Debit-Batch-Notice`: **market → market**-- Transfers position tokens from the market
---- - `Credit-Batch-Notice`: **market → ao.id**-- Transfers position tokens to the provider
+--- **✨ Interim Notices (Default silenced)**
+--- - `Withdraw-Fees-Notice`: **market → ao.id**  -- Distributes accrued LP fees to the provider
+--- - `Burn-Notice`: **market → market**  -- Burns the returned LP tokens
+--- - `Debit-Batch-Notice`: **market → market** -- Transfers position tokens from the market
+--- - `Credit-Batch-Notice`: **market → ao.id** -- Transfers position tokens to the provider
 --- **📊 Logging & Analytics**
---- - `Remove-Funding-Notice`: **market → ao.id**                                        -- Logs the remove funding action
---- - `Log-Funding-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex**-- Logs the funding
+--- - `Log-Funding-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the funding
+--- **✅ Success Notice**
+--- - `Remove-Funding-Notice`: **market → ao.id** -- Logs the remove funding action
 --- @return MarketRemoveFundingtNotice The market remove funding notice
-function Outcome.marketRemoveFunding(market, quantity)
+function Outcome.marketRemoveFunding(market, quantity, sendInterim)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   validatePositiveIntegerGreaterThanZero(quantity, "quantity")
@@ -715,7 +722,9 @@ function Outcome.marketRemoveFunding(market, quantity)
   local notice = ao.send({
     Target = market,
     Action = "Remove-Funding",
-    Quantity = quantity
+    Quantity = quantity,
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    SendInterim = sendInterim and "true" or nil
   }).receive()
   -- Return formatted response
   return {
@@ -747,23 +756,24 @@ end
 --- @param quantity string The quantity of collateral tokens to transfer, a.k.a. the investment amount
 --- @param positionId string The outcome position token position ID
 --- @param minPositionTokensToBuy string The minimum outcome position tokens to buy
+--- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
 --- @param onBehalfOf string? The recipient of the outcome position tokens (optional)
 --- @note **Emits the following notices:**
 --- **🔄 Execution Transfers**
 --- - `Debit-Notice`: **collateral → ao.id**     -- Transfers collateral from the buyer
 --- - `Credit-Notice`: **collateral → market**   -- Transfers collateral to the market
---- **✨ Minting & Spliting Position**
---- - `Mint-Batch-Notice`: **market → market**   -- Mints new position tokens
---- - `Split-Position-Notice`: **market → market**-- Splits collateral into position tokens
---- **🔄 Settlement Transfers**
---- - `Debit-Single-Notice`: **market → market** -- Transfers position tokens from the market
---- - `Credit-Single-Notice`: **market → ao.id** -- Transfers position tokens to the buyer
+--- **✨ Interim Notices (Default silenced)**
+--- - `Mint-Batch-Notice`: **market → market**      -- Mints new position tokens
+--- - `Split-Position-Notice`: **market → market**  -- Splits collateral into position tokens
+--- - `Debit-Single-Notice`: **market → market**    -- Transfers position tokens from the market
+--- - `Credit-Single-Notice`: **market → ao.id**    -- Transfers position tokens to the buyer
 --- **📊 Logging & Analytics**
---- - `Buy-Notice`: **market → ao.id**                                                       -- Logs the buy action
 --- - `Log-Prediction-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the prediction
---- - `Log-Probabilities-Notice`: **market → Outcome.dataIndex**                             -- Logs the updated probabilities
+--- - `Log-Probabilities-Notice`: **market → Outcome.dataIndex**                            -- Logs the updated probabilities
+--- **✅ Success Notice**
+--- - `Buy-Notice`: **market → ao.id**  -- Logs the buy action
 --- @return MarketBuyCollateralDebitNotice The market buy collateral debit notice
-function Outcome.marketBuy(market, collateral, quantity, positionId, minPositionTokensToBuy, onBehalfOf)
+function Outcome.marketBuy(market, collateral, quantity, positionId, minPositionTokensToBuy, sendInterim, onBehalfOf)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   validateValidArweaveAddress(collateral, "collateral")
@@ -781,7 +791,9 @@ function Outcome.marketBuy(market, collateral, quantity, positionId, minPosition
     ["X-Action"] = "Buy",
     ["X-OnBehalfOf"] = onBehalfOf,
     ["X-PositionId"] = positionId,
-    ["X-MinPositionTokensToBuy"] = minPositionTokensToBuy
+    ["X-MinPositionTokensToBuy"] = minPositionTokensToBuy,
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    ["X-SendInterim"] = sendInterim and "true" or nil,
   }).receive()
   -- Return formatted response
   return {
@@ -793,6 +805,7 @@ function Outcome.marketBuy(market, collateral, quantity, positionId, minPosition
     ["X-OnBehalfOf"] = notice.Tags["X-OnBehalfOf"],
     ["X-PositionId"] = notice.Tags["X-PositionId"],
     ["X-MinPositionTokensToBuy"] = notice.Tags["X-MinPositionTokensToBuy"],
+    ["X-SendInterim"] = notice.Tags["X-SendInterim"] or nil,
     Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
@@ -813,24 +826,24 @@ end
 --- @param returnAmount string The quantity of collateral tokens to receive
 --- @param positionId string The outcome position token position ID
 --- @param maxPositionTokensToSell string The max outcome position tokens to sell
+--- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
 --- @note **Emits the following notices:**
---- **🔄 Execution Transfers**
---- - `Debit-Single-Notice`: **market → ao.id**    -- Transfers sold position tokens from the seller
---- - `Credit-Single-Notice`: **market → market**  -- Transfers sold position tokens to the market
---- **🔥 Burning & Merging Positions**
---- - `Batch-Burn-Notice`: **market → market**     -- Burns sold position tokens
---- - `Merge-Positions-Notice`: **market → market**-- Merges sold position tokens back to collateral
---- **🔄 Settlement Transfers**
---- - `Debit-Notice`: **collateral → market**      -- Transfers collateral from the seller
---- - `Credit-Notice`: **collateral → ao.id**      -- Transfers collateral to the buyer
---- - `Debit-Single-Notice`: **market → ao.id**    -- Returns unburned position tokens from the market
---- - `Credit-Single-Notice`: **market → market**  -- Returns unburned position tokens to the seller
+--- **✨ Interim Notices (Default silenced)**
+--- - `Debit-Single-Notice`: **market → ao.id**     -- Transfers sold position tokens from the seller
+--- - `Credit-Single-Notice`: **market → market**   -- Transfers sold position tokens to the market
+--- - `Batch-Burn-Notice`: **market → market**      -- Burns sold position tokens
+--- - `Merge-Positions-Notice`: **market → market** -- Merges sold position tokens back to collateral
+--- - `Debit-Notice`: **collateral → market**       -- Transfers collateral from the seller
+--- - `Credit-Notice`: **collateral → ao.id**       -- Transfers collateral to the buyer
+--- - `Debit-Single-Notice`: **market → ao.id**     -- Returns unburned position tokens from the market
+--- - `Credit-Single-Notice`: **market → market**   -- Returns unburned position tokens to the seller
 --- **📊 Logging & Analytics**
---- - `Sell-Notice`: **market → ao.id**                                                      -- Logs the sell action
 --- - `Log-Prediction-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the prediction
---- - `Log-Probabilities-Notice`: **market → Outcome.dataIndex**                             -- Logs the updated probabilities
+--- - `Log-Probabilities-Notice`: **market → Outcome.dataIndex**                            -- Logs the updated probabilities
+--- **✅ Success Notice**
+--- - `Sell-Notice`: **market → ao.id** -- Logs the sell action
 --- @return MarketSellNotice The market sell notice
-function Outcome.marketSell(market, returnAmount, positionId, maxPositionTokensToSell)
+function Outcome.marketSell(market, returnAmount, positionId, maxPositionTokensToSell, sendInterim)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   validatePositiveIntegerGreaterThanZero(returnAmount, "returnAmount")
@@ -842,7 +855,9 @@ function Outcome.marketSell(market, returnAmount, positionId, maxPositionTokensT
     Action = "Sell",
     ReturnAmount = returnAmount,
     PositionId = positionId,
-    MaxPositionTokensToSell = maxPositionTokensToSell
+    MaxPositionTokensToSell = maxPositionTokensToSell,
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    SendInterim = sendInterim and "true" or nil,
   }).receive()
   -- Return formatted response
   return {
@@ -864,20 +879,23 @@ end
 
 --- Market withdraw fees
 --- @param market string The market process ID
+--- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
 --- @note **Emits the following notices:**
---- **🔄 Settlement Transfers**
+--- **✨ Interim Notices (Default silenced)**
 --- - `Debit-Notice`: **collateral → market**  -- Transfers LP fees from the market
 --- - `Credit-Notice`: **collateral → ao.id**  -- Transfers LP fees to the provider
---- **📊 Logging & Analytics**
---- - `Withdraw-Fees-Notice`: **market → ao.id**-- Logs the withdraw fees action
+--- **✅ Success Notice**
+--- - `Withdraw-Fees-Notice`: **market → ao.id** -- Logs the withdraw fees action
 --- @return MarketWithdrawFeesNotice The market withdraw fees notice
-function Outcome.marketWithdrawFees(market)
+function Outcome.marketWithdrawFees(market, sendInterim)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   -- Send and receive response
   local notice = ao.send({
     Target = market,
-    Action = "Withdraw-Fees"
+    Action = "Withdraw-Fees",
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    SendInterim = sendInterim and "true" or nil,
   }).receive()
   -- Return formatted response
   return {
@@ -1036,12 +1054,17 @@ MARKET: LP TOKEN WRITE
 --- @param market string The market process ID
 --- @param recipient string The recipient process ID
 --- @param quantity string The quantity of LP tokens to transfer
+--- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
 --- @note **Emits the following notices:**
---- **🔄 Execution Transfers**
---- - `Debit-Notice`: **market → ao.id**     -- Transfers LP tokens from the sender
---- - `Credit-Notice`: **market → recipient**-- Transfers LP tokens to the recipient
+--- **✨ Interim Notices (Default silenced)**
+--- - `Debit-Notice`: **collateral → market**  -- Transfers LP fees from the market
+--- - `Credit-Notice`: **collateral → ao.id**  -- Transfers LP fees to the provider
+--- - `Withdraw-Fees-Notice`: **market → ao.id** -- Logs the withdraw fees action
+--- **✅ Success Notice**
+--- - `Debit-Notice`: **market → ao.id**      -- Transfers LP tokens from the sender
+--- - `Credit-Notice`: **market → recipient** -- Transfers LP tokens to the recipient
 --- @return MarketLpTokenDebitNotice The market LP token debit notice
-function Outcome.marketLpTokenTransfer(market, recipient, quantity)
+function Outcome.marketLpTokenTransfer(market, recipient, quantity, sendInterim)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   validateValidArweaveAddress(recipient, "recipient")
@@ -1051,7 +1074,9 @@ function Outcome.marketLpTokenTransfer(market, recipient, quantity)
     Target = market,
     Action = "Transfer",
     Quantity = quantity,
-    Recipient = recipient
+    Recipient = recipient,
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    SendInterim = sendInterim and "true" or nil,
   }).receive()
   -- Return formatted response
   return {
@@ -1167,17 +1192,17 @@ MARKET: POSITIONS WRITE
 --- and their must be sufficient liquidity to merge for collateral, or the transaction will fail
 --- @param market string The market process ID
 --- @param quantity string The quantity of outcome position tokens from each position ID to merge for collataral
+--- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
 --- @param onBehalfOf string? The recipient of the collateral tokens, or `nil` for the sender
 --- @note **Emits the following notices:**
---- **🔥 Burning Position Tokens**
---- - `Burn-Batch-Notice`: **market → ao.id**    -- Burns the position tokens
---- **🔄 Settlement Transfers**
---- - `Debit-Notice`: **collateral → market**    -- Transfers collateral from the market
---- - `Credit-Notice`: **collateral → ao.id**    -- Transfers collateral to the recipient
---- **📊 Logging & Analytics**
---- - `Merge-Positions-Notice`: **market → ao.id**-- Logs the merge positions action
+--- **✨ Interim Notices (Default silenced)**
+--- - `Burn-Batch-Notice`: **market → ao.id** -- Burns the position tokens
+--- - `Debit-Notice`: **collateral → market** -- Transfers collateral from the market
+--- - `Credit-Notice`: **collateral → ao.id** -- Transfers collateral to the recipient
+--- **✅ Success Notice**
+--- - `Merge-Positions-Notice`: **market → ao.id**  -- Logs the merge positions action
 --- @return MarketMergePositionsNotice The market merge positions notice
-function Outcome.marketMergePositions(market, quantity, onBehalfOf)
+function Outcome.marketMergePositions(market, quantity, sendInterim, onBehalfOf)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   validatePositiveIntegerGreaterThanZero(quantity, "quantity")
@@ -1187,6 +1212,8 @@ function Outcome.marketMergePositions(market, quantity, onBehalfOf)
     Target = market,
     Action = "Merge-Positions",
     Quantity = quantity,
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    SendInterim = sendInterim and "true" or nil,
     ---@diagnostic disable-next-line: assign-type-mismatch
     OnBehalfOf = onBehalfOf or nil
   }).receive()
@@ -1211,7 +1238,7 @@ end
 --- @param market string The market process ID
 --- @param payouts table<number> The payout numerators
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
+--- **✅ Success Notice**
 ---  - `Report-Payouts-Notice`: **market → ao.id** -- Logs the report payouts action
 --- @return MarketReportPayoutsNotice The market report payouts notice
 function Outcome.marketReportPayouts(market, payouts)
@@ -1244,22 +1271,24 @@ end
 --- Market redeem positions
 --- @warning Market must be resolve or the transaction will fail
 --- @param market string The market process ID
+--- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
 --- @note **Emits the following notices:**
---- **🔥 Burning Position Tokens**
+--- **✨ Interim Notices (Default silenced)**
 --- - `Burn-Single-Notice`: **market → ao.id**    -- Burns redeemed position tokens (for each position ID held by the sender)
---- **🔄 Settlement Transfers**
 --- - `Debit-Notice`: **collateral → market**     -- Transfers collateral from the market
 --- - `Credit-Notice`: **collateral → ao.id**     -- Transfers collateral to the sender
---- **📊 Logging & Analytics**
---- - `Redeem-Positions-Notice`: **market → ao.id**-- Logs the redeem positions action
+--- **✅ Success Notice**
+--- - `Redeem-Positions-Notice`: **market → ao.id** -- Logs the redeem positions action
 --- @return MarketRedeemPositionsNotice The market redeem positions notice
-function Outcome.marketRedeemPositions(market)
+function Outcome.marketRedeemPositions(market, sendInterim)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   -- Send and receive response
   local notice = ao.send({
     Target = market,
-    Action = "Redeem-Positions"
+    Action = "Redeem-Positions",
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    SendInterim = sendInterim and "true" or nil
   }).receive()
   -- Return formatted response
   return {
@@ -1288,7 +1317,7 @@ end
 --- @note **Emits the following notices:**
 --- **🔄 Execution Transfers**
 ---  - `Debit-Single-Notice`: **market → ao.id**     -- Transfers position tokens from the sender
----  - `Credit-Single-Notice`: **market → recipient**-- Transfers position tokens to the recipient
+---  - `Credit-Single-Notice`: **market → recipient** -- Transfers position tokens to the recipient
 --- @return MarketPositionDebitSingleNotice The market outcome position token debit single notice
 function Outcome.marketPositionTransfer(market, quantity, positionId, recipient)
   -- Validate input
@@ -1332,7 +1361,7 @@ end
 --- @note **Emits the following notices:**
 --- **🔄 Execution Transfers**
 --- - `Debit-Batch-Notice`: **market → ao.id**     -- Transfers position tokens from the sender
---- - `Credit-Batch-Notice`: **market → recipient**-- Transfers position tokens to the recipient
+--- - `Credit-Batch-Notice`: **market → recipient** -- Transfers position tokens to the recipient
 --- @return MarketPositionDebitBatchNotice The market outcome position token debit batch notice
 function Outcome.marketPositionTransferBatch(market, quantities, positionIds, recipient)
   -- Validate input
@@ -1555,7 +1584,7 @@ MARKET: CONFIGURATOR
 --- @param market string The market process ID
 --- @param configurator string The new configurator process ID
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
+--- **✅ Success Notice**
 --- - `Update-Configurator-Notice`: **market → ao.id** -- Logs the update configurator action
 --- @return MarketUpdateConfiguratorNotice The market update configurator notice
 function Outcome.marketUpdateConfigurator(market, configurator)
@@ -1587,7 +1616,7 @@ end
 --- @param market string The market process ID
 --- @param incentives string The new incentives process ID
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
+--- **✅ Success Notice**
 --- - `Update-Incentives-Notice`: **market → ao.id** -- Logs the update incentives action
 --- @return MarketUpdateIncentivesNotice The market update incentives notice
 function Outcome.marketUpdateIncentives(market, incentives)
@@ -1623,7 +1652,7 @@ end
 --- @param creatorFee number The new creator fee, in basis points
 --- @param protocolFee number The new protocol fee, in basis points
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
+--- **✅ Success Notice**
 --- - `Update-Take-Fee-Notice`: **market → ao.id** -- Logs the update take fee action
 --- @return MarketUpdateTakeFeeNotice The market update take fee notice
 function Outcome.marketUpdateTakeFee(market, creatorFee, protocolFee)
@@ -1660,8 +1689,8 @@ end
 --- @param market string The market process ID
 --- @param protocolFeeTarget string The new protocol fee target
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Update-Take-Fee-Target-Notice`: **market → ao.id**-- Logs the update protocol fee target action
+--- **✅ Success Notice**
+--- - `Update-Take-Fee-Target-Notice`: **market → ao.id** -- Logs the update protocol fee target action
 --- @return MarketUpdateProtocolFeeTargetNotice The market update protocol fee target notice
 function Outcome.marketUpdateProtocolFeeTarget(market, protocolFeeTarget)
   -- Validate input
@@ -1692,7 +1721,7 @@ end
 --- @param market string The market process ID
 --- @param logo string The new logo Arweave TxID
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
+--- **✅ Success Notice**
 --- - `Update-Logo-Notice`: **market → ao.id** -- Logs the update logo action
 --- @return MarketUpdateLogoNotice The market update logo notice
 function Outcome.marketUpdateLogo(market, logo)
@@ -1784,8 +1813,8 @@ MARKET FACTORY: WRITE
 --- @param subcategory string The market subcategory
 --- @param logo string The market logo URL
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Create-Event-Notice`: **marketFactory → ao.id**-- Logs the create event action
+--- **✅ Success Notice**
+--- - `Create-Event-Notice`: **marketFactory → ao.id** -- Logs the create event action
 --- @return MarketFactoryCreateEventNotice The market factory create event notice
 function Outcome.marketFactoryCreateEvent(
   collateralToken,
@@ -1876,8 +1905,8 @@ end
 --- @note **Emits the following notices:**
 --- **✨ Market Creation**
 --- - `Spawned`: **marketFactory → marketFactory**   -- Spawns a new market process
---- **📊 Logging & Analytics**
---- - `Spawn-Market-Notice`: **marketFactory → ao.id**-- Logs the spawn market action
+--- **✅ Success Notice**
+--- - `Spawn-Market-Notice`: **marketFactory → ao.id** -- Logs the spawn market action
 --- @return MarketFactorySpawnMarketNotice The market factory spawn market notice
 function Outcome.marketFactorySpawnMarket(
   collateralToken,
@@ -1959,8 +1988,9 @@ end
 --- Market factory init market
 --- @note **Emits the following notices:**
 --- **📊 Logging & Analytics**
---- - `Log-Market-Notice`: **marketFactory → dataIndex**and **marketFactory → ao.id**-- Logs the market
---- - `Init-Market-Notice`: **marketFactory → ao.id**                                -- Logs the init market action
+--- - `Log-Market-Notice`: **marketFactory → dataIndex**and **marketFactory → ao.id** -- Logs the market
+--- **✅ Success Notice**
+--- - `Init-Market-Notice`: **marketFactory → ao.id** -- Logs the init market action
 --- @return MarketFactoryInitMarketNotice The market factory init market notice
 function Outcome.marketFactoryInitMarket()
   -- Send and receive response
@@ -2145,8 +2175,8 @@ MARKET FACTORY: CONFIGURATOR
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param configurator string The new configurator process ID
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Update-Configurator-Notice`: **marketFactory → ao.id**-- Logs the update configurator action
+--- **✅ Success Notice**
+--- - `Update-Configurator-Notice`: **marketFactory → ao.id** -- Logs the update configurator action
 --- @return MarketFactoryUpdateConfiguratorNotice The market factory update configurator notice
 function Outcome.marketFactoryUpdateConfigurator(configurator)
   -- Validate input
@@ -2175,8 +2205,8 @@ end
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param stakedToken string The new staked token process ID
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Update-Staked-Token-Notice`: **marketFactory → ao.id**-- Logs the update staked token action
+--- **✅ Success Notice**
+--- - `Update-Staked-Token-Notice`: **marketFactory → ao.id** -- Logs the update staked token action
 --- @return MarketFactoryUpdateStakedTokenNotice The market factory update staked token notice
 function Outcome.marketFactoryUpdateStakedToken(stakedToken)
   -- Validate input
@@ -2205,8 +2235,8 @@ end
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param minStake number The new min stake
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Update-Min-Stake-Notice`: **marketFactory → ao.id**-- Logs the update min stake action
+--- **✅ Success Notice**
+--- - `Update-Min-Stake-Notice`: **marketFactory → ao.id** -- Logs the update min stake action
 --- @return MarketFactoryUpdateMinStakeNotice The market factory update min stake notice
 function Outcome.marketFactoryUpdateMinStake(minStake)
   -- Validate input
@@ -2235,8 +2265,8 @@ end
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param lpFee number The new LP fee, in basis points
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Update-Lp-Fee-Notice`: **marketFactory → ao.id**-- Logs the update LP fee action
+--- **✅ Success Notice**
+--- - `Update-Lp-Fee-Notice`: **marketFactory → ao.id** -- Logs the update LP fee action
 --- @return MarketFactoryUpdateLpFeeNotice The market factory update LP fee notice
 function Outcome.marketFactoryUpdateLpFee(lpFee)
   -- Validate input
@@ -2265,8 +2295,8 @@ end
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param protocolFee number The new protocol fee, in basis points
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Update-Protocol-Fee-Notice`: **marketFactory → ao.id**-- Logs the update protocol fee action
+--- **✅ Success Notice**
+--- - `Update-Protocol-Fee-Notice`: **marketFactory → ao.id** -- Logs the update protocol fee action
 --- @return MarketFactoryUpdateProtocolFeeNotice The market factory update protocol fee notice
 function Outcome.marketFactoryUpdateProtocolFee(protocolFee)
   -- Validate input
@@ -2295,7 +2325,7 @@ end
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param protocolFeeTarget string The new protocol fee target
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
+--- **✅ Success Notice**
 --- - `Update-Protocol-Fee-Target-Notice`: **marketFactory → ao.id** -- Logs the update protocol fee target action
 --- @return MarketFactoryUpdateProtocolFeeTargetNotice The market factory update protocol fee target notice
 function Outcome.marketFactoryUpdateProtocolFeeTarget(protocolFeeTarget)
@@ -2325,8 +2355,8 @@ end
 --- @warning Only callable by the market factory configurator, or the transaction will fail
 --- @param maximumTakeFee number The new maximum take fee, in basis points
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
---- - `Update-Maximum-Take-Fee-Notice`: **marketFactory → ao.id**-- Logs the update maximum take fee action
+--- **✅ Success Notice**
+--- - `Update-Maximum-Take-Fee-Notice`: **marketFactory → ao.id** -- Logs the update maximum take fee action
 --- @return MarketFactoryUpdateMaximumTakeFeeNotice The market factory update maximum take fee notice
 function Outcome.marketFactoryUpdateMaximumTakeFee(maximumTakeFee)
   -- Validate input
@@ -2357,7 +2387,7 @@ end
 --- @param collateral string The collateral token process ID
 --- @param approved boolean The approval status
 --- @note **Emits the following notices:**
---- **📊 Logging & Analytics**
+--- **✅ Success Notice**
 --- - `Approve-Collateral-Token-Notice`: **marketFactory → ao.id** -- Logs the approve collateral token action
 --- @return MarketFactoryApproveCollateralTokenNotice The market factory approve collateral token notice
 function Outcome.marketFactoryApproveCollateralToken(collateral, approved)
@@ -2399,7 +2429,7 @@ end
 --- **🔄 Administrative Transfers**
 --- - `Debit-Notice`: **token → marketFactory**            -- Transfers token quantity from the market factory
 --- - `Credit-Notice`: **token → recipient**               -- Transfers token quantity to the recipient
---- **📊 Logging & Analytics**
+--- **✅ Final Notices (Always sent)**
 --- - `Transfer-Notice`: **marketFactory → ao.id**         -- Logs the transfer action
 --- - `Transfer-Success-Notice`: **marketFactory → ao.id** -- Logs on transfer success
 --- @return MarketFactoryTransferNotice The market factory transfer notice
@@ -2477,7 +2507,7 @@ end
 --- - `Debit-Notice`: **token → token**      -- Transfers token claim from the token
 --- - `Credit-Notice`: **token → recipient** -- Transfers token claim to the recipient
 --- **📊 Logging & Analytics**
---- - `Token-Claim-Notice`: **token → ao.id**-- Logs the token claim action
+--- - `Token-Claim-Notice`: **token → ao.id** -- Logs the token claim action
 --- @return TokenClaimNotice The token claim notice
 function Outcome.tokenClaim(onBehalfOf)
   -- Validate input
@@ -2512,7 +2542,7 @@ end
 --- @note **Emits the following notices:**
 --- **🔄 Execution Transfers**
 --- - `Debit-Notice`: **token → ao.id**    -- Transfers token quantity from the sender
---- - `Credit-Notice`: **token → recipient**-- Transfers token quantity to the recipient
+--- - `Credit-Notice`: **token → recipient** -- Transfers token quantity to the recipient
 --- @return TokenTransferDebitNotice The token transfer debit notice
 function Outcome.tokenTransfer(quantity, recipient, target)
   -- Validate input
@@ -2738,7 +2768,7 @@ end
 --- @param configurator string The new configurator process ID
 --- @note **Emits the following notices:**
 --- **📊 Logging & Analytics**
---- - `Update-Configurator-Notice`: **token → ao.id**-- Logs the token update configurator action
+--- - `Update-Configurator-Notice`: **token → ao.id** -- Logs the token update configurator action
 --- @return TokenUpdateConfiguratorNotice The token update configurator notice
 function Outcome.tokenUpdateConfigurator(configurator)
   -- Validate input
@@ -2768,7 +2798,7 @@ end
 --- @param ratio string The new LP to Holder ratio
 --- @note **Emits the following notices:**
 --- **📊 Logging & Analytics**
---- - `Update-Lp-To-Holder-Ratio-Notice`: **token → ao.id**-- Logs the token update LP to holder ratio action
+--- - `Update-Lp-To-Holder-Ratio-Notice`: **token → ao.id** -- Logs the token update LP to holder ratio action
 --- @return TokenUpdateLpToHolderRatioNotice The token update LP to Holder ratio notice
 function Outcome.tokenUpdateLpToHolderRatio(ratio)
   -- Validate input
@@ -2858,7 +2888,7 @@ end
 --- @param collateralDenominations table<string, string> The new mapping of collateral denominations
 --- @note **Emits the following notices:**
 --- **📊 Logging & Analytics**
---- - `Update-Collateral-Denominations-Notice`: **token → ao.id**-- Logs the token update collateral denominations action
+--- - `Update-Collateral-Denominations-Notice`: **token → ao.id** -- Logs the token update collateral denominations action
 --- @return TokenUpdateCollateralDenominationsNotice The token update collateral denominations notice
 function Outcome.tokenUpdateCollateralDenominations(collateralDenominations)
   -- Validate input
