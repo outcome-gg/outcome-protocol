@@ -399,7 +399,7 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 | Action                | Required Role                    | Required Tags                          | Optional Tags                   | Result                 | 
 | --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 
 | `Info`      || | | `Info-Response` |
-| `Spawn-Market`        || `CollateralToken`: Valid Arweave address<br>`ResolutionAgent`: Valid Arweave address<br>`DataIndex`: Valid Arweave address<br>`OutcomeSlotCount`: Integer greater or equal to 2<br>`Question`: String<br>`Rules`: String<br>`Category`: String<br>`Subcategory`: String<br>`Logo`: String<br>`Logos`: Valid JSON Array of strings<br>`CreatorFee`: Integer greater than or equal to 0<br>`CreatorFeeTarget`: Valid Arweave address<br> | | `Spawned`<br>`Spawn-Market-Notice` |
+| `Spawn-Market`        || `CollateralToken`: Valid Arweave address<br>`ResolutionAgent`: Valid Arweave address<br>`DataIndex`: Valid Arweave address<br>`OutcomeSlotCount`: Integer greater or equal to 2<br>`Question`: String<br>`Rules`: String<br>`Category`: String<br>`Subcategory`: String<br>`Logo`: String<br>`Logos`: Valid JSON Array of strings<br>`CreatorFee`: Integer greater than or equal to 0<br>`CreatorFeeTarget`: Valid Arweave address<br> | | `Spawn-Market-Notice` |
 | `Init-Market`      || | | `Init-Market-Notice` |
 | `Markets-Pending`       || | | `Markets-Pending-Response` |
 | `Markets-Init`  || | | `Markets-Init-Response` |
