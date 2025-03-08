@@ -8,46 +8,45 @@ description: |
 ---
 
 graph TD
-  %% Configurator 
+  %% 🔧 Configurator (System Updates)
   Configurator[Configurator] --> |Update| Market
-  Configurator[Configurator] --> |Update| MarketFactory
+  Configurator --> |Update| MarketFactory[Market Factory Process]
 
-  %% Market Creator -> Market Factory -> Market
-  MarketCreator((Market Creator)) -->|Spawn/Init| MarketFactory[Market Factory Process]
-  MarketFactory -->|Creates| Market@{ shape: procs, label: "Market Process"}
+  %% 🏗 Market Creation Flow
+  MarketCreator((Market Creator)) -->|Spawn/Init| MarketFactory
+  MarketFactory -->|Creates| Market[Market Process]
 
-  %% Market Creator -> Resolution Agent Factory -> Resolution Agent
+  %% 🔍 Resolution Agent Flow
   MarketCreator -->|Spawn/Init| ResolutionAgentFactory
-  ResolutionAgentFactory -->|Creates| ResolutionAgent@{ shape: procs, label: "Market Process"}
+  ResolutionAgentFactory -->|Creates| ResolutionAgent[Resolution Agent Process]
 
-  %% Liqudity Provider -> Market
-  LiquidityProvider((Liquidity Provider)) -->|Remove Funding| Market
-  LiquidityProvider((Liquidity Provider)) -->|X-Action: Add-Funding| CollateralTokens[(Collateral Tokens)]
-  CollateralTokens -->|Add Funding| Market
+  %% 💰 Liquidity Provider -> Market
+  LiquidityProvider((Liquidity Provider)) -->|RemoveFunding| Market
+  LiquidityProvider -->|X-Action: AddFunding| CollateralTokens[(Collateral Tokens)]
+  CollateralTokens -->|AddFunding| Market
 
-  %% Trader-> Market
-  Trader((Trader))  -->|X-Action: Buy| CollateralTokens
+  %% 📈 Trader -> Market
+  Trader((Trader)) -->|X-Action: Buy| CollateralTokens
   CollateralTokens -->|Buy| Market
-  Trader((Trader))  -->|Sell/Redeem| Market
+  Trader -->|Sell/Redeem| Market
 
-
-  %% Define Market Process Modules
-  subgraph MarketSubgraph[Market Process Modules]
+  %% 🟣 Market Process Modules
+  subgraph MarketModules[Market Process Modules]
     Market --> |Mints/Burns/Transfers| PositionTokens[(Position Tokens)]
     Market -->|Mints/Burns/Transfers| LpTokens[(LP Tokens)]
     Market -->|Adds/Removes Liquidity| CPMM[CPMM]
   end
 
-  %% Resolution
-  ResolutionAgent@{ shape: procs, label: "Resolution Agent Process"} -->|Report Payout| Market
+  %% 🟢 Resolution Agent Process
+  ResolutionAgent -->|Report Payout| Market
   Cron[Cron Process] --> |Poll| ResolutionAgent
 
-  %% Data Indexing
-  Client[User Interface] -->|Queries| DataIndex
-  Market -->|Log Notices| DataIndex[(Data Index)]
+  %% 🔵 Data Indexing & UI
+  Client[User Interface] -->|Queries| DataIndex[Data Index]
+  Market -->|Log Notices| DataIndex
 
-  %% Styling
-  style MarketSubgraph fill:#800080,stroke:#800080,stroke-width:2px %% Purple
+  %% 🖌 Styling for Readability
+  style MarketModules fill:#800080,stroke:#800080,stroke-width:2px  %% Purple
   style ResolutionAgentFactory fill:#008000,stroke:#005000,stroke-width:2px  %% Green
   style ResolutionAgent fill:#008000,stroke:#005000,stroke-width:2px  %% Green
   style Cron fill:#008000,stroke:#005000,stroke-width:2px  %% Green

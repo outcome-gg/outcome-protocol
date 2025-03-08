@@ -308,6 +308,8 @@ Market resolution is autonomous via `resolutionAgent.lua`, with optional support
 
 Core processes are **ownerless**, with `configurator.lua` managing time-gated updates through token governance.
 
+![Outcome v2 Architecture](docs/architecture.png)
+
 ## Contracts
 
 | Contract                | Purpose                                                                                         |
@@ -317,7 +319,7 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 | market.lua              | Handles all prediction market functionality in a single process. |
 | marketFactory.lua       | Spawns prediction markets permissionlessly, gated by utility token staking. |
 | ocmToken.lua            | Rewards activity, gates market creation, and governs protocol updates. |
-| platformData.lua        | Stores protocol logs and enables complex frontend queries. |
+| dataIndex.lua           | Stores protocol logs and enables complex queries. |
 | resolutionAgent.lua     | Autonomously resolves markets, supporting single-signer and zero-resolution (perpetual) markets. |
 
 ## Roles
@@ -434,9 +436,9 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 | `Update-Collateral-Factors` | `C` | `UpdateDelay`: Integer greater than 0 | | `Update-Collateral-Factors-Notice` |
 | `Update-Collateral-Denominations` | `C` | `UpdateDelay`: Integer greater than 0 | | `Update-Collateral-Denominations-Notice` |
 
-### Platform Data
+### Data Index
 
-> Actions in `platformData.lua` are restricted and require proper permissions to execute.
+> Actions in `dataIndex.lua` are restricted and require proper permissions to execute.
 
 | Action                | Required Role                    | Required Tags                          | Optional Tags                   | Result                | 
 | --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 
@@ -482,21 +484,21 @@ src
   └─ ...
 └─ cronRunnerModules
   └─ ... 
+└─ dataIndexModules
+  └─ ... 
 └─ marketFactoryModules
   └─ ...
 └─ marketModules
   └─ ... 
 └─ ocmTokenModules 
   └─ ...
-└─ platformData
-  └─ ... 
 └─ configurator.lua
 └─ cronRunner.lua
+└─ dataIndex.lua
 └─ market.lua
 └─ marketFactory.lua
 └─ ocmToken.lua
 └─ outcome.lua
-└─ platformData.lua
 └─ resolutionAgent.lua
 └─ ...
 test  
