@@ -102,6 +102,7 @@ describe("#marketFactory", function()
         ["Category"] = "test category",
         ["Subcategory"] = "test subcategory",
         ["Logo"] = "test logo",
+        ["Logos"] = {"test logo1", "test logo2"},
         ["GroupId"] = ""
       },
       Id =  "test-this-is-valid-arweave-wallet-address-3",
@@ -189,6 +190,7 @@ describe("#marketFactory", function()
         msgSpawnMarket.Tags["Category"],
         msgSpawnMarket.Tags["Subcategory"],
         msgSpawnMarket.Tags["Logo"],
+        msgSpawnMarket.Tags["Logos"],
         msgSpawnMarket.Tags["GroupId"],
         msgSpawnMarket.From,
         msgSpawnMarket.Tags["CreatorFee"],
@@ -211,6 +213,7 @@ describe("#marketFactory", function()
       Category = msgSpawnMarket.Tags["Category"],
       Subcategory = msgSpawnMarket.Tags["Subcategory"],
       Logo = msgSpawnMarket.Tags["Logo"],
+      Logos = json.encode(msgSpawnMarket.Tags["Logos"]),
       GroupId = msgSpawnMarket.Tags["GroupId"],
       ["Original-Msg-Id"] = msgSpawnMarket.Id
     }, notice)

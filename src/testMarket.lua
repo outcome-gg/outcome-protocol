@@ -88,18 +88,25 @@ end
 
 --- Creates a market
 local function createMarket(outcomeSlotCount)
+  -- Create position token logos
+  local logos = {}
+  for i = 1, outcomeSlotCount do
+    table.insert(logos, "Logo_TxID" .. tostring(i))
+  end
+  -- Spawn market
   local res1 = Outcome.marketFactorySpawnMarket(
     Outcome.testCollateral,
     ao.id, -- resolution agent
     ao.id, -- data index
     outcomeSlotCount,
-    "What will happen?",
+    "What will happen?", -- question
+    "How we will know", -- rules
     "Category",
     "Subcategory",
-    "Logo_TxID",
-    "Rules",
+    "Logo_TxID", -- LP token logo
+    logos, -- position token logos
     "", -- eventId (empty string to signify stand-alone market)
-    250,
+    250, -- creator fee (in basis points)
     coinBurner -- creator fee target (to use a valid Arweave address)
   )
   assertNotNil(res1["Original-Msg-Id"], "Market spawn failed: Original-Msg-Id is nil")

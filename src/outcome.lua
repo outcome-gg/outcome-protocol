@@ -641,8 +641,8 @@ MARKET: CPMM WRITE
 --- @param collateral string The collateral token process ID
 --- @param quantity string The quantity of collateral tokens to transfer, a.k.a. the funding amount
 --- @param distribution table<number>|nil The initial probability distribution. **Pass `nil` for subsequent funding**
---- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
 --- @param onBehalfOf string? The recipient of the outcome position tokens. **Defaults to the sender if omitted.**
+--- @param sendInterim string? The sendInterim is set to send interim notices. **Defaults to silenced if omitted.**
 --- @note **Emits the following notices:**
 --- **🔄 Execution Transfers**
 --- - `Debit-Notice`: **collateral → ao.id**     -- Transfers collateral tokens from the provider
@@ -656,7 +656,7 @@ MARKET: CPMM WRITE
 --- **✅ Success Notice**
 --- - `Add-Funding-Notice`: **market → ao.id**  -- Logs the add funding action
 --- @return MarketAddFundingDebitNotice The market add funding debit notice
-function Outcome.marketAddFunding(market, collateral, quantity, distribution, sendInterim, onBehalfOf)
+function Outcome.marketAddFunding(market, collateral, quantity, distribution, onBehalfOf, sendInterim)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   validateValidArweaveAddress(collateral, "collateral")
@@ -670,9 +670,9 @@ function Outcome.marketAddFunding(market, collateral, quantity, distribution, se
     Quantity = quantity,
     Recipient = market,
     ["X-Action"] = "Add-Funding",
-    ["X-OnBehalfOf"] = onBehalfOf or ao.id,
     ---@diagnostic disable-next-line: assign-type-mismatch
     ["X-Distribution"] = distribution and json.encode(distribution) or nil,
+    ["X-OnBehalfOf"] = onBehalfOf or ao.id,
      ---@diagnostic disable-next-line: assign-type-mismatch
     ["X-SendInterim"] = sendInterim and "true" or nil,
   }).receive()
@@ -702,7 +702,7 @@ end
 --- @notice Calling `marketRemoveFunding` will simultaneously return the liquidity provider's share of accrued fees
 --- @param market string The market process ID
 --- @param quantity string The quantity of LP tokens to transfer, i.e. the amount of shares to burn
---- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
+--- @param sendInterim string? The sendInterim is set to send interim notices. **Defaults to silenced if omitted.**
 --- @note **Emits the following notices:**
 --- **✨ Interim Notices (Default silenced)**
 --- - `Withdraw-Fees-Notice`: **market → ao.id**  -- Distributes accrued LP fees to the provider
@@ -756,8 +756,8 @@ end
 --- @param quantity string The quantity of collateral tokens to transfer, a.k.a. the investment amount
 --- @param positionId string The outcome position token position ID
 --- @param minPositionTokensToBuy string The minimum outcome position tokens to buy
---- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
---- @param onBehalfOf string? The recipient of the outcome position tokens (optional)
+--- @param onBehalfOf string? The recipient of the outcome position tokens. **Defaults to the sender if omitted.**
+--- @param sendInterim string? The sendInterim is set to send interim notices. **Defaults to silenced if omitted.**
 --- @note **Emits the following notices:**
 --- **🔄 Execution Transfers**
 --- - `Debit-Notice`: **collateral → ao.id**     -- Transfers collateral from the buyer
@@ -773,7 +773,7 @@ end
 --- **✅ Success Notice**
 --- - `Buy-Notice`: **market → ao.id**  -- Logs the buy action
 --- @return MarketBuyCollateralDebitNotice The market buy collateral debit notice
-function Outcome.marketBuy(market, collateral, quantity, positionId, minPositionTokensToBuy, sendInterim, onBehalfOf)
+function Outcome.marketBuy(market, collateral, quantity, positionId, minPositionTokensToBuy, onBehalfOf, sendInterim)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   validateValidArweaveAddress(collateral, "collateral")
@@ -826,7 +826,7 @@ end
 --- @param returnAmount string The quantity of collateral tokens to receive
 --- @param positionId string The outcome position token position ID
 --- @param maxPositionTokensToSell string The max outcome position tokens to sell
---- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
+--- @param sendInterim string? The sendInterim is set to send interim notices. **Defaults to silenced if omitted.**
 --- @note **Emits the following notices:**
 --- **✨ Interim Notices (Default silenced)**
 --- - `Debit-Single-Notice`: **market → ao.id**     -- Transfers sold position tokens from the seller
@@ -879,7 +879,7 @@ end
 
 --- Market withdraw fees
 --- @param market string The market process ID
---- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
+--- @param sendInterim string? The sendInterim is set to send interim notices. **Defaults to silenced if omitted.**
 --- @note **Emits the following notices:**
 --- **✨ Interim Notices (Default silenced)**
 --- - `Debit-Notice`: **collateral → market**  -- Transfers LP fees from the market
@@ -1054,7 +1054,7 @@ MARKET: LP TOKEN WRITE
 --- @param market string The market process ID
 --- @param recipient string The recipient process ID
 --- @param quantity string The quantity of LP tokens to transfer
---- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
+--- @param sendInterim string? The sendInterim is set to send interim notices. **Defaults to silenced if omitted.**
 --- @note **Emits the following notices:**
 --- **✨ Interim Notices (Default silenced)**
 --- - `Debit-Notice`: **collateral → market**  -- Transfers LP fees from the market
@@ -1192,7 +1192,7 @@ MARKET: POSITIONS WRITE
 --- and their must be sufficient liquidity to merge for collateral, or the transaction will fail
 --- @param market string The market process ID
 --- @param quantity string The quantity of outcome position tokens from each position ID to merge for collataral
---- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
+--- @param sendInterim string? The sendInterim is set to send interim notices. **Defaults to silenced if omitted.**
 --- @param onBehalfOf string? The recipient of the collateral tokens, or `nil` for the sender
 --- @note **Emits the following notices:**
 --- **✨ Interim Notices (Default silenced)**
@@ -1202,7 +1202,7 @@ MARKET: POSITIONS WRITE
 --- **✅ Success Notice**
 --- - `Merge-Positions-Notice`: **market → ao.id**  -- Logs the merge positions action
 --- @return MarketMergePositionsNotice The market merge positions notice
-function Outcome.marketMergePositions(market, quantity, sendInterim, onBehalfOf)
+function Outcome.marketMergePositions(market, quantity, onBehalfOf, sendInterim)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   validatePositiveIntegerGreaterThanZero(quantity, "quantity")
@@ -1213,9 +1213,9 @@ function Outcome.marketMergePositions(market, quantity, sendInterim, onBehalfOf)
     Action = "Merge-Positions",
     Quantity = quantity,
     ---@diagnostic disable-next-line: assign-type-mismatch
-    SendInterim = sendInterim and "true" or nil,
+    OnBehalfOf = onBehalfOf or nil,
     ---@diagnostic disable-next-line: assign-type-mismatch
-    OnBehalfOf = onBehalfOf or nil
+    SendInterim = sendInterim and "true" or nil
   }).receive()
   -- Return formatted response
   return {
@@ -1271,7 +1271,7 @@ end
 --- Market redeem positions
 --- @warning Market must be resolve or the transaction will fail
 --- @param market string The market process ID
---- @param sendInterim nil|string  The sendInterim is set to send interim notices (default `nil`to silience)
+--- @param sendInterim string? The sendInterim is set to send interim notices. **Defaults to silenced if omitted.**
 --- @note **Emits the following notices:**
 --- **✨ Interim Notices (Default silenced)**
 --- - `Burn-Single-Notice`: **market → ao.id**    -- Burns redeemed position tokens (for each position ID held by the sender)
@@ -1882,7 +1882,8 @@ end
 --- @field Rules string The market rules
 --- @field Category string The market category
 --- @field Subcategory string The market subcategory
---- @field Logo string The market logo URL
+--- @field Logo string The market LP token logo Arweave TxID
+--- @field Logos table<string> The market position tokens logo Arweave TxIDs
 --- @field Creator string The creator process ID
 --- @field CreatorFee number The creator fee in basis points
 --- @field CreatorFeeTarget string The creator fee target process ID
@@ -1898,7 +1899,8 @@ end
 --- @param rules string The market rules
 --- @param category string The market category
 --- @param subcategory string The market subcategory
---- @param logo string The market logo URL
+--- @param logo string The market LP token logo Arweave TxID
+--- @param logos table<string> The market position tokens logo Arweave TxIDs
 --- @param eventId string|nil The event ID or `nil` if not applicable
 --- @param creatorFee number The creator fee in basis points
 --- @param creatorFeeTarget string The creator fee target process ID
@@ -1918,6 +1920,7 @@ function Outcome.marketFactorySpawnMarket(
   category,
   subcategory,
   logo,
+  logos,
   eventId,
   creatorFee,
   creatorFeeTarget
@@ -1939,6 +1942,12 @@ function Outcome.marketFactorySpawnMarket(
   assert(type(subcategory) == "string", "`subcategory` must be a string.")
   assert(logo, "`logo` is required.")
   assert(type(logo) == "string", "`logo` must be a string.")
+  assert(logos, "`logos` is required.")
+  assert(type(logos) == "table", "`logos` must be a table.")
+  assert(#logos == tonumber(outcomeSlotCount), "`logos` must have the same length as `outcomeSlotCount`.")
+  for _, l in ipairs(logos) do
+    assert(type(l) == "string", "`logos` must be a table of strings.")
+  end
   validatePositiveIntegerOrZero(tostring(creatorFee), "creatorFee")
   validateValidArweaveAddress(creatorFeeTarget, "creatorFeeTarget")
   -- Send and receive response
@@ -1954,6 +1963,7 @@ function Outcome.marketFactorySpawnMarket(
     Category = category,
     Subcategory = subcategory,
     Logo = logo,
+    Logos = json.encode(logos),
     EventId = eventId or "",
     CreatorFee = tostring(creatorFee),
     CreatorFeeTarget = creatorFeeTarget
@@ -1969,6 +1979,7 @@ function Outcome.marketFactorySpawnMarket(
     Category = notice.Tags.Category,
     Subcategory = notice.Tags.Subcategory,
     Logo = notice.Tags.Logo,
+    Logos = json.decode(notice.Tags.Logos),
     Rules = notice.Tags.Rules,
     EventId = notice.Tags.EventId,
     Creator = notice.Tags.Creator,

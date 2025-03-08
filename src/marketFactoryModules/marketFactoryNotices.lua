@@ -48,7 +48,8 @@ end
 --- @param outcomeSlotCount number The number of outcome slots
 --- @param category string The market category
 --- @param subcategory string The market subcategory
---- @param logo string The market logo
+--- @param logo string The LP token logo
+--- @param logos table<string> The position token logos
 --- @param groupId string The group ID
 --- @param msg Message The message received
 --- @return Message spawnMarketNotice The spawn market notice
@@ -65,6 +66,7 @@ function MarketFactoryNotices.spawnMarketNotice(
   category,
   subcategory,
   logo,
+  logos,
   groupId,
   msg
 )
@@ -82,6 +84,7 @@ function MarketFactoryNotices.spawnMarketNotice(
     Category = category,
     Subcategory = subcategory,
     Logo = logo,
+    Logos = json.encode(logos),
     GroupId = groupId,
     ["Original-Msg-Id"] = msg.Id
   })

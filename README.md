@@ -31,12 +31,12 @@ Outcome.tokenMint(Outcome.testCollateral, "1000000000000000")
 #### Expected Result
 ```lua
 {
-   Quantity = "1000000000000000",
-   Block-Height = 1612508,
-   Action = "Mint-Notice",
-   MessageId = "kuLUM8a06p4MBnUgpuXGQBU-14I-fOD3Ai91CboLThM",
-   Timestamp = 1739887893528,
-   Recipient = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8"
+  Quantity = "1000000000000000",
+  Block-Height = 1612508,
+  Action = "Mint-Notice",
+  MessageId = "kuLUM8a06p4MBnUgpuXGQBU-14I-fOD3Ai91CboLThM",
+  Timestamp = 1739887893528,
+  Recipient = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8"
 }
 ```
 
@@ -44,52 +44,60 @@ Outcome.tokenMint(Outcome.testCollateral, "1000000000000000")
 Once tokens are staked, spawn a new prediction market.
 
 #### Parameters
-- `resolutionAgent`: Address of the resolution agent (set to `ao.id` for Quickstart).
 - `collateralToken`: Token used for collateral (set to `Outcome.testCollateral` for Quickstart).
-- `question`: Market question (e.g., `"$A0 surpasses $AR market cap by the end of 2025"`).
+- `resolutionAgent`: Address of the resolution agent (set to `ao.id` for Quickstart).
+- `dataIndex`: Address for where to send prediction market logs (set to `ao.id` for Quickstart).
 - `outcomeSlotCount`: Number of possible outcomes (must be `2` for outcome.gg visibility).
+- `question`: Market question (e.g., `"$A0 surpasses $AR market cap by the end of 2025"`).
+- `rules`: Market rules.
 - `category`: Market category (e.g., `"Crypto"`).
 - `subcategory`: Market subcategory (e.g., `"Prices"`).
-- `logo`: Arweave transaction ID of the logo image.
-- `rules`: Market rules.
+- `logo`: Arweave transaction ID of the LP token logo image.
+- `logos`: Aweave transaction IDs of the position token logo images.
+- `eventId`: The event ID for market groups, set to `nil` if not applicable.
 - `creatorFeeBps`: Creator fee in basis points (e.g., `250` for a `2.5%` fee).
 - `creatorFeeTarget`: Address receiving the creator fee (set to `ao.id` for Quickstart).
 
 #### Run
 ```lua
 res = Outcome.marketFactorySpawnMarket(
-    ao.id,
-    Outcome.testCollateral,
-    "$A0 surpasses $AR market cap by the end of 2025",
-    2,
-    "Crypto",
-    "Prices",
-    "Logo_TxID",
-    "Rules of the market",
-    250,
-    ao.id
+  Outcome.testCollateral,
+  ao.id,
+  ao.id,
+  2,
+  "$A0 surpasses $AR market cap by the end of 2025",
+  "Market resolved via https://www.coingecko.com using AO Core's native HTTP integration",
+  "Crypto",
+  "Prices",
+  "UkS-mdoiG8hcAClhKK8ch4ZhEzla0mCPDOix9hpdSFE",
+  {"UkS-mdoiG8hcAClhKK8ch4ZhEzla0mCPDOix9hpdSFE", "UkS-mdoiG8hcAClhKK8ch4ZhEzla0mCPDOix9hpdSFE"},
+  nil,
+  250,
+  ao.id
 )
 ```
 
 #### Expected Result
 ```lua
 {
-   Block-Height = 1612507,
-   Rules = "Rules of the market",
-   Timestamp = 1739887594422,
-   MessageId = "NYb6kEiXFWdd6SIItCbh6ovKN-fU137AG_IPvYgzIEY",
-   Creator = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
-   ResolutionAgent = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
-   Logo = "Logo_TxID",
-   Category = "Crypto",
-   CreatorFeeTarget = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
-   CollateralToken = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
-   CreatorFee = 250,
-   Subcategory = "Prices",
-   Action = "Spawn-Market-Notice",
-   Original-Msg-Id = "ykZi8Sh-IJoyvP7XrZ2ayXsA4STEiDy5mOoLCCiBibU",
-   OutcomeSlotCount = 2,
-   Question = "$A0 surpasses $AR market cap by the end of 2025"
+  Rules = "Market resolved via https://www.coingecko.com using AO Core's native HTTP integration",
+  ResolutionAgent = "nWx096_XneRb6TlvIadeeLQ_RF2LPxogQyl_2tNR-P4",
+  Logo = "UkS-mdoiG8hcAClhKK8ch4ZhEzla0mCPDOix9hpdSFE",
+  CollateralToken = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
+  DataIndex = "nWx096_XneRb6TlvIadeeLQ_RF2LPxogQyl_2tNR-P4",
+  Action = "Spawn-Market-Notice",
+  Original-Msg-Id = "0-cRVofFMjOGyzqfc2t0HwtexkBekLe3d0bOjg0jLbc",
+  Creator = "nWx096_XneRb6TlvIadeeLQ_RF2LPxogQyl_2tNR-P4",
+  Question = "$A0 surpasses $AR market cap by the end of 2025",
+  Subcategory = "Prices",
+  Timestamp = 1741428466002,
+  MessageId = "iTnyZt9SiBerbrCCvXWHm2amkwf7JC8aNaW_EsGHkPc",
+  CreatorFeeTarget = "nWx096_XneRb6TlvIadeeLQ_RF2LPxogQyl_2tNR-P4",
+  Logos = '["UkS-mdoiG8hcAClhKK8ch4ZhEzla0mCPDOix9hpdSFE","UkS-mdoiG8hcAClhKK8ch4ZhEzla0mCPDOix9hpdSFE"]',
+  CreatorFee = 250,
+  Block-Height = 1624539,
+  OutcomeSlotCount = 2,
+  Category = "Crypto"
 }
 ```
 
@@ -108,11 +116,11 @@ market = res.ProcessId
 #### Expected Result
 ```lua
 {
-   ProcessId = "MFUPbtanZgdXMQrmeXMnN7qnsN5s2vZAcAp3FuDEaIc",
-   Block-Height = 1612507,
-   Original-Msg-Id = "ykZi8Sh-IJoyvP7XrZ2ayXsA4STEiDy5mOoLCCiBibU",
-   Timestamp = 1739887616685,
-   MessageId = "hrIWFO5xTV98W-ScUAaYJ80BLE4VvUwnaGkdtFKBA2M"
+  ProcessId = "MFUPbtanZgdXMQrmeXMnN7qnsN5s2vZAcAp3FuDEaIc",
+  Block-Height = 1612507,
+  Original-Msg-Id = "ykZi8Sh-IJoyvP7XrZ2ayXsA4STEiDy5mOoLCCiBibU",
+  Timestamp = 1739887616685,
+  MessageId = "hrIWFO5xTV98W-ScUAaYJ80BLE4VvUwnaGkdtFKBA2M"
 }
 ```
 
@@ -127,11 +135,11 @@ Outcome.marketFactoryInitMarket()
 #### Expected Result
 ```lua
 {
-   MarketProcessIds = { "MFUPbtanZgdXMQrmeXMnN7qnsN5s2vZAcAp3FuDEaIc" },
-   Action = "Init-Market-Notice",
-   MessageId = "tbESFtEP3Lrr6fBmGMOqklIdMcex3BFqUFkJCRp3Iz0",
-   Timestamp = 1739887635868,
-   Block-Height = 1612507
+  MarketProcessIds = { "MFUPbtanZgdXMQrmeXMnN7qnsN5s2vZAcAp3FuDEaIc" },
+  Action = "Init-Market-Notice",
+  MessageId = "tbESFtEP3Lrr6fBmGMOqklIdMcex3BFqUFkJCRp3Iz0",
+  Timestamp = 1739887635868,
+  Block-Height = 1612507
 }
 ```
 
@@ -157,16 +165,16 @@ Outcome.marketAddFunding(
 #### Expected Result
 ```lua
 {
-   X-OnBehalfOf = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
-   MessageId = "PyMclTSI_s3N8QKv9eKrXRhy9Z1yCYAR8tAtlajel2s",
-   Recipient = "MFUPbtanZgdXMQrmeXMnN7qnsN5s2vZAcAp3FuDEaIc",
-   Quantity = "100000000000000",
-   X-Distribution = "[60,40]",
-   Timestamp = 1739887656056,
-   Action = "Debit-Notice",
-   Block-Height = 1612507,
-   X-Action = "Add-Funding",
-   Collateral = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU"
+  X-OnBehalfOf = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
+  MessageId = "PyMclTSI_s3N8QKv9eKrXRhy9Z1yCYAR8tAtlajel2s",
+  Recipient = "MFUPbtanZgdXMQrmeXMnN7qnsN5s2vZAcAp3FuDEaIc",
+  Quantity = "100000000000000",
+  X-Distribution = "[60,40]",
+  Timestamp = 1739887656056,
+  Action = "Debit-Notice",
+  Block-Height = 1612507,
+  X-Action = "Add-Funding",
+  Collateral = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU"
 }
 ```
 
@@ -185,18 +193,18 @@ res = Outcome.marketCalcBuyAmount(
   market,
   "1000000000000",
   "1"
-) 
+)
 ```
 
 #### Expected Result
 ```lua
 {
-   PositionId = "1",
-   BuyAmount = "2453270434054",
-   InvestmentAmount = "1000000000000",
-   MessageId = "SFeWEN7nFq0JKX_pQS5LIqhTUF30sWQItGeMVCqAFeE",
-   Timestamp = 1739887683076,
-   Block-Height = 1612508
+  PositionId = "1",
+  BuyAmount = "2453270434054",
+  InvestmentAmount = "1000000000000",
+  MessageId = "SFeWEN7nFq0JKX_pQS5LIqhTUF30sWQItGeMVCqAFeE",
+  Timestamp = 1739887683076,
+  Block-Height = 1612508
 }
 ```
 
@@ -252,20 +260,20 @@ Finalize the market outcome by reporting the payout distribution.
 #### Run
 ```lua
 Outcome.marketReportPayouts(
-    market,
-    {1, 0}
+  market,
+  {1, 0}
 )
 ```
 
 #### Expected Result
 ```lua
 {
-   Block-Height = 1612508,
-   Timestamp = 1739887760967,
-   Action = "Report-Payouts-Notice",
-   ResolutionAgent = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
-   PayoutNumerators = { 1, 0 },
-   MessageId = "2a9DuV5YIdvg4ncAZkW-zUds5vxFBeGt6BQLZ7hMyTQ"
+  Block-Height = 1612508,
+  Timestamp = 1739887760967,
+  Action = "Report-Payouts-Notice",
+  ResolutionAgent = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
+  PayoutNumerators = { 1, 0 },
+  MessageId = "2a9DuV5YIdvg4ncAZkW-zUds5vxFBeGt6BQLZ7hMyTQ"
 }
 ```
 
@@ -280,13 +288,13 @@ Outcome.marketRedeemPositions(market)
 #### Expected Result
 ```lua
 {
-   GrossPayout = "2453270434054",
-   Block-Height = 1612508,
-   Collateral = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
-   Action = "Redeem-Positions-Notice",
-   MessageId = "ojiLvEhKooljDfFdGrYbj5kQFa77Izcv9gt-WgAAC8g",
-   Timestamp = 1739887786254,
-   NetPayout = "2330606912350"
+  GrossPayout = "2453270434054",
+  Block-Height = 1612508,
+  Collateral = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
+  Action = "Redeem-Positions-Notice",
+  MessageId = "ojiLvEhKooljDfFdGrYbj5kQFa77Izcv9gt-WgAAC8g",
+  Timestamp = 1739887786254,
+  NetPayout = "2330606912350"
 }
 ```
 

@@ -159,7 +159,9 @@ end)
 ---   - msg.Tags.Rules (string): The rules of the event.
 ---   - msg.Tags.Category (string): The category of the event.
 ---   - msg.Tags.Subcategory (string): The subcategory of the event.
----   - msg.Tags.Logo (string): The logo of the event.
+---   - msg.Tags.Logo (string): The logo of the LP token.
+---   - msg.Tags.Logos (string): The logos of the position tokens (stringified table).
+---   - msg.Tags.EventId (string): The event ID.
 Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
   -- Validate input
   local success, err = marketFactoryValidation.validateSpawnMarket(
@@ -189,6 +191,7 @@ Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
     msg.Tags["Category"],
     msg.Tags["Subcategory"],
     msg.Tags["Logo"],
+    msg.Tags["Logos"],
     msg.Tags["EventId"],
     msg.From,
     tonumber(msg.Tags["CreatorFee"]),

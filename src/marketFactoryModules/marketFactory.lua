@@ -257,7 +257,8 @@ end
 --- @param rules string The rules of the market
 --- @param category string|nil The category of the market
 --- @param subcategory string|nil The subcategory of the market
---- @param logo string|nil The logo of the market
+--- @param logo string|nil The logo of the LP token
+--- @param logos table<string>|nil The logos of the position tokens
 --- @param eventId string|nil The event ID or nil
 --- @param creator string The creator address / process ID
 --- @param creatorFee number The creator fee in basis points
@@ -274,6 +275,7 @@ function MarketFactoryMethods:spawnMarket(
   category,
   subcategory,
   logo,
+  logos,
   eventId,
   creator,
   creatorFee,
@@ -285,6 +287,12 @@ function MarketFactoryMethods:spawnMarket(
   category = category or ""
   subcategory = subcategory or ""
   logo = logo or self.marketLogo
+  logos = logos or {}
+  if #logos == 0 then
+    for _ = 1, outcomeSlotCount do
+      table.insert(logos, logo)
+    end
+  end
   eventId = eventId or ""
   -- check if event exists, creator is the owner, and collateral and outcome slot count matches event
   if eventId ~= "" then
@@ -310,6 +318,7 @@ function MarketFactoryMethods:spawnMarket(
     ["Name"] = self.namePrefix,
     ["Ticker"] = self.tickerPrefix,
     ["Logo"] = logo,
+    ["Logos"] = json.encode(logos),
     ["LpFee"] = tostring(self.lpFee),
     ["Configurator"] = self.configurator,
     ["DataIndex"] = dataIndex,
@@ -344,11 +353,12 @@ function MarketFactoryMethods:spawnMarket(
     category = category,
     subcategory = subcategory,
     logo = logo,
+    logos = logos,
     eventId = eventId
   }
   self.messageToMarketConfigMapping[msg.Id] = marketConfig
   -- send notice
-  return self.spawnMarketNotice(resolutionAgent, collateralToken, dataIndex, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, eventId, msg)
+  return self.spawnMarketNotice(resolutionAgent, collateralToken, dataIndex, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, logos, eventId, msg)
 end
 
 --- Init market
