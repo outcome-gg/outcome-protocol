@@ -684,8 +684,8 @@ end)
 
 --- Redeem positions handler
 --- @param msg Message The message received, expected to contain:
---- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
 --- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the collateral tokens.
+--- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
 --- @note **Emits the following notices:**
 --- **⚠️ Error Handling (Sent on failed input validation)**
 --- - `Redeem-Positions-Error`: **market → sender** -- Returns an error message
