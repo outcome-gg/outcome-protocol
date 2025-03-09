@@ -5,13 +5,13 @@ Outcome © 2025. All Rights Reserved.
 This code is proprietary and exclusively controlled by Outcome.
 
 You are permitted to build applications, integrations, and extensions that interact
-with the Outcome Protocol, provided such usage adheres to the official Outcome 
+with the Outcome Protocol, provided such usage adheres to the official Outcome
 terms of service and does not result in unauthorized forks or clones of this codebase.
 
-Redistribution, reproduction, modification, or distribution of this code is strictly 
+Redistribution, reproduction, modification, or distribution of this code is strictly
 prohibited without explicit written permission from Outcome.
 
-By using this software, you agree to the Outcome Terms of Service:  
+By using this software, you agree to the Outcome Terms of Service:
 https://outcome.gg/tos
 ======================================================================================
 ]]
@@ -74,7 +74,7 @@ function ActivityMethods:logMarketGroup(groupId, collateral, creator, question, 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
     ]], false, groupId, collateral, creator, question, rules, category, subcategory, logo, timestamp
   )
-  -- Send notice if cast is true
+  -- Send noticeif cast is true
   if cast then
     return self.logMarketGroupNotice(msg.From, groupId, collateral, creator, question, rules, category, subcategory, logo, msg)
   end
@@ -139,7 +139,7 @@ function ActivityMethods:logMarket(
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, groupId, timestamp
   )
-  -- Send notice if cast is true
+  -- Send noticeif cast is true
   if cast then
     return self.logMarketNotice(
       msg.From,
@@ -183,7 +183,7 @@ function ActivityMethods:logFunding(user, operation, collateral, amount, timesta
       VALUES (?, ?, ?, ?, ?, ?, ?);
     ]], false, msg.Id, msg.From, user, operation, collateral, amount, timestamp
   )
-  -- Send notice if cast is true
+  -- Send noticeif cast is true
   if cast then
     return self.logFundingNotice(msg.From, user, operation, collateral, amount, msg)
   end
@@ -214,7 +214,7 @@ function ActivityMethods:logPrediction(user, operation, collateral, amount, outc
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     ]], true, msg.Id, msg.From, user, operation, collateral, amount, outcome, shares, price, timestamp
   )
-  -- Send notice if cast is true
+  -- Send noticeif cast is true
   if cast then
     return self.logPredictionNotice(msg.From, user, operation, collateral, amount, outcome, shares, price, msg)
   end
@@ -246,7 +246,7 @@ function ActivityMethods:logProbabilities(probabilities, timestamp, cast, msg)
       probability
     )
   end
-  -- Send notice if cast is true
+  -- Send noticeif cast is true
   if cast then
     return self.logProbabilitiesNotice(msg.From, probabilities, msg)
   end

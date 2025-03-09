@@ -1155,7 +1155,7 @@ local function batchShareRedeem(msg)
       }
       redemptions[shareOwner] = redemptionData
 
-      -- Send notice to shareOwner
+      -- Send noticeto shareOwner
       ao.send({
         Target = shareOwner,
         Action = 'Redeem-Notice',

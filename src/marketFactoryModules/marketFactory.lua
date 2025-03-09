@@ -5,13 +5,13 @@ Outcome © 2025. All Rights Reserved.
 This code is proprietary and exclusively controlled by Outcome.
 
 You are permitted to build applications, integrations, and extensions that interact
-with the Outcome Protocol, provided such usage adheres to the official Outcome 
+with the Outcome Protocol, provided such usage adheres to the official Outcome
 terms of service and does not result in unauthorized forks or clones of this codebase.
 
-Redistribution, reproduction, modification, or distribution of this code is strictly 
+Redistribution, reproduction, modification, or distribution of this code is strictly
 prohibited without explicit written permission from Outcome.
 
-By using this software, you agree to the Outcome Terms of Service:  
+By using this software, you agree to the Outcome Terms of Service:
 https://outcome.gg/tos
 ======================================================================================
 ]]
@@ -239,7 +239,7 @@ function MarketFactoryMethods:createEvent(collateral, dataIndex, outcomeSlotCoun
   category = category or ""
   subcategory = subcategory or ""
   logo = logo or self.marketLogo
-  -- set config 
+  -- set config
   local config = {
     collateral = collateral,
     outcomeSlotCount = outcomeSlotCount,
@@ -257,7 +257,7 @@ end
 --- @param collateralToken string The collateral token process ID
 --- @param resolutionAgent string The resolution agent process ID (assigned to report the market result)
 --- @param dataIndex string The data index process ID (where to send logs)
---- @param outcomeSlotCount number The number of outcome slots 
+--- @param outcomeSlotCount number The number of outcome slots
 --- @param question string The question to be answered by the resolutionAgent
 --- @param rules string The rules of the market
 --- @param category string|nil The category of the market
@@ -363,7 +363,23 @@ function MarketFactoryMethods:spawnMarket(
   }
   self.messageToMarketConfigMapping[msg.Id] = marketConfig
   -- send notice
-  return self.spawnMarketNotice(resolutionAgent, collateralToken, dataIndex, creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, category, subcategory, logo, logos, eventId, msg)
+  return self.spawnMarketNotice(
+    resolutionAgent,
+    collateralToken,
+    dataIndex,
+    creator,
+    creatorFee,
+    creatorFeeTarget,
+    question,
+    rules,
+    outcomeSlotCount,
+    category,
+    subcategory,
+    logo,
+    logos,
+    eventId,
+    msg
+  )
 end
 
 --- Init market

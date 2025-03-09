@@ -5,13 +5,13 @@ Outcome © 2025. All Rights Reserved.
 This code is proprietary and exclusively controlled by Outcome.
 
 You are permitted to build applications, integrations, and extensions that interact
-with the Outcome Protocol, provided such usage adheres to the official Outcome 
+with the Outcome Protocol, provided such usage adheres to the official Outcome
 terms of service and does not result in unauthorized forks or clones of this codebase.
 
-Redistribution, reproduction, modification, or distribution of this code is strictly 
+Redistribution, reproduction, modification, or distribution of this code is strictly
 prohibited without explicit written permission from Outcome.
 
-By using this software, you agree to the Outcome Terms of Service:  
+By using this software, you agree to the Outcome Terms of Service:
 https://outcome.gg/tos
 ======================================================================================
 ]]
@@ -38,6 +38,20 @@ USERS = [[
   );
 ]]
 
+EVENTS = [[
+  CREATE TABLE IF NOT EXISTS Markets (
+    id TEXT PRIMARY KEY,
+    collateral TEXT NOT NULL,
+    creator TEXT NOT NULL,
+    question TEXT NOT NULL,
+    rules TEXT NOT NULL,
+    category TEXT NOT NULL,
+    subcategory TEXT NOT NULL,
+    logo TEXT NOT NULL,
+    timestamp NUMBER NOT NULL
+  );
+]]
+
 MARKETS = [[
   CREATE TABLE IF NOT EXISTS Markets (
     id TEXT PRIMARY KEY,
@@ -53,21 +67,8 @@ MARKETS = [[
     category TEXT NOT NULL,
     subcategory TEXT NOT NULL,
     logo TEXT NOT NULL,
-    group_id TEXT NOT NULL,
-    timestamp NUMBER NOT NULL
-  );
-]]
-
-MARKET_GROUPS = [[
-  CREATE TABLE IF NOT EXISTS Markets (
-    id TEXT PRIMARY KEY,
-    collateral TEXT NOT NULL,
-    creator TEXT NOT NULL,
-    question TEXT NOT NULL,
-    rules TEXT NOT NULL,
-    category TEXT NOT NULL,
-    subcategory TEXT NOT NULL,
-    logo TEXT NOT NULL,
+    logos TEXT NOT NULL,
+    event_id TEXT NOT NULL,
     timestamp NUMBER NOT NULL
   );
 ]]
@@ -76,6 +77,7 @@ MARKET_GROUPS = [[
 --   CREATE TABLE IF NOT EXISTS ResolutionAgents (
 --     id TEXT PRIMARY KEY,
 --     market TEXT NOT NULL,
+--     market_start_timestamp NUMBER NOT NULL,
 --     market_end_timestamp NUMBER NOT NULL,
 --     timestamp NUMBER NOT NULL
 --   );
@@ -159,7 +161,7 @@ DbAdmin = require('dataIndexModules.dbAdmin').new(Db)
 local function initDb()
   Db:exec(USERS)
   Db:exec(MARKETS)
-  Db:exec(MARKET_GROUPS)
+  Db:exec(EVENTS)
   Db:exec(MESSAGES)
   Db:exec(FUNDINGS)
   Db:exec(PREDICTIONS)

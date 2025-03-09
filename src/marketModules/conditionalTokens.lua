@@ -5,13 +5,13 @@ Outcome © 2025. All Rights Reserved.
 This code is proprietary and exclusively controlled by Outcome.
 
 You are permitted to build applications, integrations, and extensions that interact
-with the Outcome Protocol, provided such usage adheres to the official Outcome 
+with the Outcome Protocol, provided such usage adheres to the official Outcome
 terms of service and does not result in unauthorized forks or clones of this codebase.
 
-Redistribution, reproduction, modification, or distribution of this code is strictly 
+Redistribution, reproduction, modification, or distribution of this code is strictly
 prohibited without explicit written permission from Outcome.
 
-By using this software, you agree to the Outcome Terms of Service:  
+By using this software, you agree to the Outcome Terms of Service:
 https://outcome.gg/tos
 ======================================================================================
 ]]
@@ -110,7 +110,7 @@ end
 --- @param collateralToken string The process ID of the collateral token
 --- @param quantity string The quantity of collateral to split
 --- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices 
+--- @param sendInterim boolean If true, sends intermediate notices
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message| nil The position split notice if not cast
@@ -133,7 +133,7 @@ end
 --- @param quantity string The quantity of collateral to merge
 --- @param isSell boolean True if the merge is a sell, false otherwise
 --- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices 
+--- @param sendInterim boolean If true, sends intermediate notices
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message|nil The positions merge notice if not cast
@@ -189,7 +189,7 @@ end
 --- Transfers any payout minus fees to the message sender
 --- @param onBehalfOf string The process ID of the account to receive the collateral
 --- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices 
+--- @param sendInterim boolean If true, sends intermediate notices
 --- @param msg Message The message received
 --- @return Message|nil The payout redemption notice if not cast
 function ConditionalTokensMethods:redeemPositions(onBehalfOf, cast, sendInterim, msg)

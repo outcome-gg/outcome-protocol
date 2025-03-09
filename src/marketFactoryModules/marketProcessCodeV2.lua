@@ -2415,13 +2415,13 @@ Outcome © 2025. All Rights Reserved.
 This code is proprietary and exclusively controlled by Outcome.
 
 You are permitted to build applications, integrations, and extensions that interact
-with the Outcome Protocol, provided such usage adheres to the official Outcome 
+with the Outcome Protocol, provided such usage adheres to the official Outcome
 terms of service and does not result in unauthorized forks or clones of this codebase.
 
-Redistribution, reproduction, modification, or distribution of this code is strictly 
+Redistribution, reproduction, modification, or distribution of this code is strictly
 prohibited without explicit written permission from Outcome.
 
-By using this software, you agree to the Outcome Terms of Service:  
+By using this software, you agree to the Outcome Terms of Service:
 https://outcome.gg/tos
 ======================================================================================
 ]]
@@ -2520,7 +2520,7 @@ end
 --- @param collateralToken string The process ID of the collateral token
 --- @param quantity string The quantity of collateral to split
 --- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices 
+--- @param sendInterim boolean If true, sends intermediate notices
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message| nil The position split notice if not cast
@@ -2543,7 +2543,7 @@ end
 --- @param quantity string The quantity of collateral to merge
 --- @param isSell boolean True if the merge is a sell, false otherwise
 --- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices 
+--- @param sendInterim boolean If true, sends intermediate notices
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message|nil The positions merge notice if not cast
@@ -2599,7 +2599,7 @@ end
 --- Transfers any payout minus fees to the message sender
 --- @param onBehalfOf string The process ID of the account to receive the collateral
 --- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices 
+--- @param sendInterim boolean If true, sends intermediate notices
 --- @param msg Message The message received
 --- @return Message|nil The payout redemption notice if not cast
 function ConditionalTokensMethods:redeemPositions(onBehalfOf, cast, sendInterim, msg)
@@ -2687,13 +2687,13 @@ Outcome © 2025. All Rights Reserved.
 This code is proprietary and exclusively controlled by Outcome.
 
 You are permitted to build applications, integrations, and extensions that interact
-with the Outcome Protocol, provided such usage adheres to the official Outcome 
+with the Outcome Protocol, provided such usage adheres to the official Outcome
 terms of service and does not result in unauthorized forks or clones of this codebase.
 
-Redistribution, reproduction, modification, or distribution of this code is strictly 
+Redistribution, reproduction, modification, or distribution of this code is strictly
 prohibited without explicit written permission from Outcome.
 
-By using this software, you agree to the Outcome Terms of Service:  
+By using this software, you agree to the Outcome Terms of Service:
 https://outcome.gg/tos
 ======================================================================================
 ]]
@@ -2784,7 +2784,7 @@ end
 --- @param addedFunds string The amount of funds to add
 --- @param distributionHint table<number> The initial probability distribution
 --- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices 
+--- @param sendInterim boolean If true, sends intermediate notices
 --- @param msg Message The message received
 --- @return Message|nil The funding added notice if not cast
 function CPMMMethods:addFunding(onBehalfOf, addedFunds, distributionHint, cast, sendInterim, msg)
@@ -2856,7 +2856,7 @@ function CPMMMethods:addFunding(onBehalfOf, addedFunds, distributionHint, cast, 
   for i = 1, #sendBackAmounts do
     sendBackAmounts[i] = addedFunds - sendBackAmounts[i]
   end
-  -- Send notice with amounts added
+  -- Send noticewith amounts added
   if not cast then return self.addFundingNotice(sendBackAmounts, mintAmount, onBehalfOf, msg) end
 end
 
@@ -2864,7 +2864,7 @@ end
 --- @param onBehalfOf string The process ID of the account to receive the position tokens
 --- @param sharesToBurn string The amount of shares to burn
 --- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices 
+--- @param sendInterim boolean If true, sends intermediate notices
 --- @param msg Message The message received
 --- @return Message|nil The funding removed notice if not cast
 function CPMMMethods:removeFunding(onBehalfOf, sharesToBurn, cast, sendInterim, msg)
@@ -2964,7 +2964,7 @@ end
 --- @param positionId string The position ID of the outcome
 --- @param minPositionTokensToBuy number The minimum number of outcome tokens to buy
 --- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices 
+--- @param sendInterim boolean If true, sends intermediate notices
 --- @param msg Message The message received
 --- @return Message|nil The buy notice if not cast
 function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minPositionTokensToBuy, cast, sendInterim, msg)
@@ -2988,8 +2988,8 @@ end
 --- @param returnAmount number The amount to unstake from an outcome
 --- @param positionId string The position ID of the outcome
 --- @param maxPositionTokensToSell number The max outcome tokens to sell
---- @param cast boolean The cast is set to true to silence the notice 
---- @param sendInterim boolean If true, sends intermediate notices 
+--- @param cast boolean The cast is set to true to silence the notice
+--- @param sendInterim boolean If true, sends intermediate notices
 --- @return Message|nil The sell notice if not cast
 function CPMMMethods:sell(from, onBehalfOf, returnAmount, positionId, maxPositionTokensToSell, cast, sendInterim, msg)
   -- Calculate outcome tokens to sell.
@@ -3017,7 +3017,7 @@ function CPMMMethods:sell(from, onBehalfOf, returnAmount, positionId, maxPositio
     ---@diagnostic disable-next-line: assign-type-mismatch
     Cast = not sendInterim and "true" or nil
   })
-  -- Send notice 
+  -- Send notice
   if not cast then return self.sellNotice(from, onBehalfOf, returnAmount, feeAmount, positionId, positionTokensToSell, msg) end
 end
 
@@ -3043,7 +3043,7 @@ end
 --- @param sender string The process ID of the sender
 --- @param onBehalfOf string The process ID of the account to receive the fees
 --- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices 
+--- @param sendInterim boolean If true, sends intermediate notices
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message|nil The withdraw fees message if not cast
@@ -3070,7 +3070,7 @@ end
 --- @param to string|nil The process ID of the account receiving the transaction
 --- @param amount string The amount transferred
 --- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices 
+--- @param sendInterim boolean If true, sends intermediate notices
 --- @param msg Message The message received
 function CPMMMethods:_beforeTokenTransfer(from, to, amount, cast, sendInterim, msg)
   if from ~= nil and from ~= ao.id then
@@ -3166,13 +3166,13 @@ Outcome © 2025. All Rights Reserved.
 This code is proprietary and exclusively controlled by Outcome.
 
 You are permitted to build applications, integrations, and extensions that interact
-with the Outcome Protocol, provided such usage adheres to the official Outcome 
+with the Outcome Protocol, provided such usage adheres to the official Outcome
 terms of service and does not result in unauthorized forks or clones of this codebase.
 
-Redistribution, reproduction, modification, or distribution of this code is strictly 
+Redistribution, reproduction, modification, or distribution of this code is strictly
 prohibited without explicit written permission from Outcome.
 
-By using this software, you agree to the Outcome Terms of Service:  
+By using this software, you agree to the Outcome Terms of Service:
 https://outcome.gg/tos
 ======================================================================================
 ]]
@@ -4572,13 +4572,13 @@ Outcome © 2025. All Rights Reserved.
 This code is proprietary and exclusively controlled by Outcome.
 
 You are permitted to build applications, integrations, and extensions that interact
-with the Outcome Protocol, provided such usage adheres to the official Outcome 
+with the Outcome Protocol, provided such usage adheres to the official Outcome
 terms of service and does not result in unauthorized forks or clones of this codebase.
 
-Redistribution, reproduction, modification, or distribution of this code is strictly 
+Redistribution, reproduction, modification, or distribution of this code is strictly
 prohibited without explicit written permission from Outcome.
 
-By using this software, you agree to the Outcome Terms of Service:  
+By using this software, you agree to the Outcome Terms of Service:
 https://outcome.gg/tos
 ======================================================================================
 ]]

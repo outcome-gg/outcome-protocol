@@ -9,7 +9,6 @@ local marketFactoryValidation = {}
 local sharedValidation = require('marketFactoryModules.sharedValidation')
 local sharedUtils = require('marketFactoryModules.sharedUtils')
 local bint = require('.bint')(256)
-local json = require("json")
 
 --[[
 =============
