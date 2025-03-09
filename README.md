@@ -5,7 +5,18 @@ Outcome v2 is a new decentralized automated market maker and prediction market p
 ## Table of Contents
 
 - [Quickstart](#quickstart)
+  - [Install AOS](#1-install-aos)
+  - [Load Outcome](#2-load-outcome)
+  - [Mint Test Collateral](#3-mint-test-collateral)
+  - [Create a Market](#4-create-a-market)
+  - [Get Market Process ID](#5-get-market-process-id)
+  - [Initialize the Market](#6-initialize-the-market)
+  - [Fund the Market](#7-fund-the-market)
+  - [Buy Positions](#8-buy-positions)
+  - [Resolve Market](#9-resolve-market)
+  - [Redeem Positions](#10-redeem-positions)
 - [Architecture](#architecture)
+  - [Sequence Diagrams](#sequence-diagrams)
 - [Contracts](#contracts)
   - [Roles](#roles)
   - [Configurator](#configurator)
@@ -17,8 +28,8 @@ Outcome v2 is a new decentralized automated market maker and prediction market p
   - [Resolution Agent](#resolution-agent)
 - [Repository Structure](#repository-structure)
 - [Outcome Package](#outcome-package)
-  - [Installation](#installation)
-  - [Loading Outcome](#loading-the-outcome-package)
+  - [Install AOS](#install-aos)
+  - [Load Outcome](#load-outcome)
   - [Usage](#usage)
   - [Methods](#methods)
 - [Testing](#testing)
@@ -231,7 +242,7 @@ res = Outcome.marketCalcBuyAmount(
 }
 ```
 
-### 8. Buy Outcome Positions
+### 8. Buy Positions
 Trade outcome positions.
 
 > We use `res.BuyAmount` from the previous step for `minPositionTokensToBuy`. In a live trading environment, you may want to set this slightly lower to prevent failed transactions if the price moves against you.
@@ -321,6 +332,8 @@ Outcome.marketRedeemPositions(market)
 }
 ```
 
+> **Want to go further?**  
+> Explore the full set of available methods in the [Methods](#methods) section.
 
 [🔝 Back to Top](#table-of-contents)
 
@@ -571,14 +584,14 @@ The [`outcome.lua`](src/outcome.lua) package offers a streamlined interface for 
 
 Developers can load or require the package to execute actions efficiently across protocol processes.
 
-### Installation
+### Install AOS
 
 To install AOS, run:
 ```bash
 yarn global add https://get_ao.g8way.io
 ```
 
-### Loading Outcome
+### Load Outcome
 
 To load the Outcome package into AOS, run:
 ```bash
