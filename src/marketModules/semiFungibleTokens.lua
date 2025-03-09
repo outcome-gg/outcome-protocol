@@ -181,7 +181,7 @@ function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity,
 
     -- Only send the notifications if the cast tag is not set
     if not cast then
-      return self.transferSingleNotices(from, recipient, id, quantity, async, msg)
+      return self.transferSingleNotices(from, recipient, id, quantity, detached, msg)
     end
   else
     return self.transferErrorNotice(id, msg)
