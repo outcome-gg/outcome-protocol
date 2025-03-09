@@ -336,8 +336,29 @@ Core processes are **ownerless**, with [`configurator.lua`](src/configurator.lua
 
 ![Outcome v2 Architecture](docs/architecture.png)
 
+### Sequence Diagrams
+
+For a deeper look at system interactions, we've provided detailed sequence diagrams in the [`docs/`](docs/) directory. These include **interim notifications**, which are silenced by default but can be enabled for debugging to see step-by-step execution.
+
+- **Market Creation**
+  - **[Create Market](docs/01-market-creation/createMarket.png)**
+- **Market Liquidity**
+  - [Add Funding](docs/02-market-liquidity/addFunding.png)
+  - [Remove Funding](docs/02-market-liquidity/removeFunding.png)
+- **Market Trading**
+  - [Buy Position](docs/03-market-trading/buyPosition.png)
+  - [Sell Position](docs/03-market-trading/sellPosition.png)
+- **LP Tokens**
+  - [Transfer](docs/04-lp-tokens/transfer.png)
+  - [Withdraw Fees](docs/04-lp-tokens/withdrawFees.png)
+- **Position Tokens**
+  - [Merge Positions](docs/05-position-tokens/mergePositions.png)
+- **Market Resolution**
+  - [Report Payouts](docs/06-market-resolution/reportPayouts.png)
+  - [Redeem Positions](docs/06-market-resolution/redeemPositions.png)
 
 [🔝 Back to Top](#table-of-contents)
+
 
 ## Contracts
 
