@@ -40,34 +40,34 @@ end
 --- @param resolutionAgent string The resolution agent address
 --- @param collateralToken string The collateral token address
 --- @param dataIndex string The data index address
---- @param creator string The creator address
---- @param creatorFee number The creator fee
---- @param creatorFeeTarget string The creator fee target
+--- @param outcomeSlotCount number The number of outcome slots
 --- @param question string The market question
 --- @param rules string The market rules
---- @param outcomeSlotCount number The number of outcome slots
 --- @param category string The market category
 --- @param subcategory string The market subcategory
 --- @param logo string The LP token logo
 --- @param logos table<string> The position token logos
 --- @param groupId string The group ID
+--- @param creator string The creator address
+--- @param creatorFee number The creator fee
+--- @param creatorFeeTarget string The creator fee target
 --- @param msg Message The message received
 --- @return Message spawnMarketNotice The spawn market notice
 function MarketFactoryNotices.spawnMarketNotice(
   resolutionAgent,
   collateralToken,
   dataIndex,
-  creator,
-  creatorFee,
-  creatorFeeTarget,
+  outcomeSlotCount,
   question,
   rules,
-  outcomeSlotCount,
   category,
   subcategory,
   logo,
   logos,
   groupId,
+  creator,
+  creatorFee,
+  creatorFeeTarget,
   msg
 )
   return msg.reply({
@@ -75,17 +75,17 @@ function MarketFactoryNotices.spawnMarketNotice(
     ResolutionAgent = resolutionAgent,
     CollateralToken = collateralToken,
     DataIndex = dataIndex,
-    Creator = creator,
-    CreatorFee = tostring(creatorFee),
-    CreatorFeeTarget = creatorFeeTarget,
+    OutcomeSlotCount = tostring(outcomeSlotCount),
     Question = question,
     Rules = rules,
-    OutcomeSlotCount = tostring(outcomeSlotCount),
     Category = category,
     Subcategory = subcategory,
     Logo = logo,
     Logos = json.encode(logos),
     GroupId = groupId,
+    Creator = creator,
+    CreatorFee = tostring(creatorFee),
+    CreatorFeeTarget = creatorFeeTarget,
     ["Original-Msg-Id"] = msg.Id
   })
 end

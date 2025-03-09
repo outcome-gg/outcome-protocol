@@ -320,46 +320,46 @@ function MarketFactoryMethods:spawnMarket(
     ["Original-Msg-Id"] = msg.Id,
     -- Configurator-controlled parameters
     ["Authority"] = ao.authorities[1],
+    ["Configurator"] = self.configurator,
+    ["DataIndex"] = dataIndex,
     ["Name"] = self.namePrefix,
     ["Ticker"] = self.tickerPrefix,
     ["Logo"] = logo,
     ["Logos"] = json.encode(logos),
     ["LpFee"] = tostring(self.lpFee),
-    ["Configurator"] = self.configurator,
-    ["DataIndex"] = dataIndex,
     ["ProtocolFee"] = tostring(self.protocolFee),
     ["ProtocolFeeTarget"] = self.protocolFeeTarget,
     -- Creator-controlled parameters
-    ["ResolutionAgent"] = resolutionAgent,
     ["CollateralToken"] = collateralToken,
-    ["Creator"] = creator,
-    ["CreatorFee"] = tostring(creatorFee),
-    ["CreatorFeeTarget"] = creatorFeeTarget,
+    ["ResolutionAgent"] = resolutionAgent,
+    ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount)),
     ["Question"] = question,
     ["Rules"] = rules,
     ["Category"] = category,
     ["Subcategory"] = subcategory,
-    ["PositionIds"] = json.encode(getPositionIds(outcomeSlotCount)),
     ["EventId"] = eventId,
+    ["Creator"] = creator,
+    ["CreatorFee"] = tostring(creatorFee),
+    ["CreatorFeeTarget"] = creatorFeeTarget,
     -- Environment set to PROD to renounce process owner on eval
     ["Env"] = "PROD"
   })
   -- add mapping
   local marketConfig = {
-    creator = creator,
-    creatorFee = creatorFee,
-    creatorFeeTarget = creatorFeeTarget,
-    question = question,
-    rules = rules,
-    outcomeSlotCount = outcomeSlotCount,
     collateralToken = collateralToken,
     resolutionAgent = resolutionAgent,
     dataIndex = dataIndex,
+    outcomeSlotCount = outcomeSlotCount,
+    question = question,
+    rules = rules,
     category = category,
     subcategory = subcategory,
     logo = logo,
     logos = logos,
-    eventId = eventId
+    eventId = eventId,
+    creator = creator,
+    creatorFee = creatorFee,
+    creatorFeeTarget = creatorFeeTarget
   }
   self.messageToMarketConfigMapping[msg.Id] = marketConfig
   -- send notice
@@ -367,17 +367,17 @@ function MarketFactoryMethods:spawnMarket(
     resolutionAgent,
     collateralToken,
     dataIndex,
-    creator,
-    creatorFee,
-    creatorFeeTarget,
+    outcomeSlotCount,
     question,
     rules,
-    outcomeSlotCount,
     category,
     subcategory,
     logo,
     logos,
     eventId,
+    creator,
+    creatorFee,
+    creatorFeeTarget,
     msg
   )
 end

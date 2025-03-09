@@ -553,7 +553,6 @@ function CPMMNotices.sellNotice(from, onBehalfOf, returnAmount, feeAmount, posit
 end
 
 --- Sends a withdraw fees notice
---- @notice Returns notice with `msg.reply` if `async` is true, otherwise uses `ao.send`
 --- @dev Ensures the final notice is sent to the user, preventing unintended message handling
 --- @param feeAmount number The fee amount
 --- @param onBehalfOf string The address to receive the fees
@@ -1276,63 +1275,7 @@ See market.lua for full license details.
 
 local constants = {}
 local json = require('json')
--- DB
-constants.db = {
-  intervals = {
-    ["1h"] = "1 minute",
-    ["6h"] = "1 minute",
-    ["1d"] = "5 minutes",
-    ["1w"] = "3 hours",
-    ["1M"] = "12 hours",
-    ["max"] = "1 day"
-  },
-  rangeDurations = {
-    ["1h"] = "1 hour",
-    ["6h"] = "6 hours",
-    ["1d"] = "1 day",
-    ["1w"] = "7 days",
-    ["1M"] = "1 month"
-  },
-  maxInterval = "1 day",
-  maxRangeDuration = "100 years",
-  defaultLimit = 50,
-  defaultOffset = 0,
-  defaultActivityWindow = 24,
-  moderators = {},
-}
--- Market Factory
-constants.marketFactory = {
-  configurator = "test-this-is-valid-arweave-wallet-address-1",
-  namePrefix = "Outcome Market",
-  tickerPrefix = "OUTCOME",
-  logo = "https://test.com/logo.png",
-  lpFee = "100",
-  protocolFee = "250",
-  protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-3",
-  maximumTakeFee = "500",
-  utilityToken = "test-this-is-valid-arweave-wallet-address-4",
-  minimumPayment = "1000",
-  collateralTokens = {"test-this-is-valid-arweave-wallet-address-5"}
-}
--- Market
-constants.testMarketConfig = {
-  configurator = "test-this-is-valid-arweave-wallet-address-6",
-  collateralToken = "test-this-is-valid-arweave-wallet-address-2",
-  conditionId = "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
-  positionIds = json.encode({"1", "2"}),
-  name = "Test Market",
-  ticker = "TST",
-  logo = "https://test.com/logo.png",
-  lpFee = "100",
-  creatorFee = "100",
-  creatorFeeTarget = "test-this-is-valid-arweave-wallet-address-3",
-  protocolFee = "100",
-  protocolFeeTarget = "test-this-is-valid-arweave-wallet-address-4"
-}
--- Activity
-constants.activity = {
-  configurator = "test-this-is-valid-arweave-wallet-address-1",
-}
+
 -- CPMM
 constants.denomination = 12
 -- Market Config
@@ -2277,7 +2220,7 @@ function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity,
 
     -- Only send the notifications if the cast tag is not set
     if not cast then
-      return self.transferSingleNotices(from, recipient, id, quantity, async, msg)
+      return self.transferSingleNotices(from, recipient, id, quantity, detached, msg)
     end
   else
     return self.transferErrorNotice(id, msg)
@@ -5224,7 +5167,7 @@ Handlers.add("Merge-Positions", {Action = "Merge-Positions"}, function(msg)
 end)
 
 --- Report payouts handler
---- @warning Only callable by the resolution agent, and once, or the transaction will fail
+--- @notice Only callable by the resolution agent
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Payouts (stringified table): The payouts to report
 --- @note **Emits the following notices:**
@@ -5254,8 +5197,8 @@ end)
 
 --- Redeem positions handler
 --- @param msg Message The message received, expected to contain:
---- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
 --- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the collateral tokens.
+--- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
 --- @note **Emits the following notices:**
 --- **⚠️ Error Handling (Sent on failed input validation)**
 --- - `Redeem-Positions-Error`: **market → sender** -- Returns an error message
@@ -5536,6 +5479,7 @@ CONFIGURATOR WRITE HANDLERS
 ]]
 
 --- Update configurator handler
+--- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Configurator (string): The new configurator.
 --- @note **Emits the following notices:**
@@ -5560,6 +5504,7 @@ Handlers.add('Update-Configurator', {Action = "Update-Configurator"}, function(m
 end)
 
 --- Update data index handler
+--- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.DataIndex (string): The new data index.
 --- @note **Emits the following notices:**
@@ -5584,6 +5529,7 @@ Handlers.add("Update-Data-Index", {Action = "Update-Data-Index"}, function(msg)
 end)
 
 --- Update take fee handler
+--- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.TakeFee (string): The new take fee.
 --- @note **Emits the following notices:**
@@ -5607,6 +5553,7 @@ Handlers.add('Update-Take-Fee', {Action = "Update-Take-Fee"}, function(msg)
 end)
 
 --- Update protocol fee target handler
+--- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.ProtocolFeeTarget (string): The new protocol fee target.
 --- @note **Emits the following notices:**
@@ -5630,6 +5577,7 @@ Handlers.add('Update-Protocol-Fee-Target', {Action = "Update-Protocol-Fee-Target
 end)
 
 --- Update logo handler
+--- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Logo (string): The new logo.
 --- @note **Emits the following notices:**
@@ -5653,6 +5601,7 @@ Handlers.add('Update-Logo', {Action = "Update-Logo"}, function(msg)
 end)
 
 --- Update logos handler
+--- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Logos (stringified table): The new logos.
 --- @note **Emits the following notices:**
