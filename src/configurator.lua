@@ -55,10 +55,10 @@ UPDATE WRITE HANDLERS
 ]]
 --- Stage update handler
 --- @param msg Message The message received, expected to contain:
----  - msg.Tags.UpdateProcess string The update process
----  - msg.Tags.UpdateAction string The update action
----  - msg.Tags.UpdateTags? string|nil The update tags or `nil`
----  - msg.Tags.UpdateData? string|nil The update data or `nil`
+--- - msg.Tags.UpdateProcess string The update process
+--- - msg.Tags.UpdateAction string The update action
+--- - msg.Tags.UpdateTags? string|nil The update tags or `nil`
+--- - msg.Tags.UpdateData? string|nil The update data or `nil`
 --- @return Message The reply message
 Handlers.add("Stage-Update", {Action = "Stage-Update"}, function(msg)
   -- Validate input
@@ -78,10 +78,10 @@ end)
 
 --- Unstage update handler
 --- @param msg Message The message received, expected to contain:
----  - msg.Tags.UpdateProcess string The update process
----  - msg.Tags.UpdateAction string The update action
----  - msg.Tags.UpdateTags? string|nil The update tags or `nil`
----  - msg.Tags.UpdateData? string|nil The update data or `nil`
+--- - msg.Tags.UpdateProcess string The update process
+--- - msg.Tags.UpdateAction string The update action
+--- - msg.Tags.UpdateTags? string|nil The update tags or `nil`
+--- - msg.Tags.UpdateData? string|nil The update data or `nil`
 --- @return Message The reply message
 Handlers.add("Unstage-Update", {Action = "Unstage-Update"}, function(msg)
   -- Validate input
@@ -101,10 +101,10 @@ end)
 
 --- Action update handler
 --- @param msg Message The message received, expected to contain:
----  - msg.Tags.UpdateProcess string The update process
----  - msg.Tags.UpdateAction string The update action
----  - msg.Tags.UpdateTags? string|nil The update tags or `nil`
----  - msg.Tags.UpdateData? string|nil The update data or `nil`
+--- - msg.Tags.UpdateProcess string The update process
+--- - msg.Tags.UpdateAction string The update action
+--- - msg.Tags.UpdateTags? string|nil The update tags or `nil`
+--- - msg.Tags.UpdateData? string|nil The update data or `nil`
 --- @return Message The reply message
 Handlers.add("Action-Update", {Action = "Action-Update"}, function(msg)
   -- Validate input
@@ -130,7 +130,7 @@ UPDATE ADMIN WRITE HANDLERS
 
 --- Stage update admin handler
 --- @param msg Message The message received, expected to contain:
----  - msg.Tags.UpdateAdmin string The new admin address
+--- - msg.Tags.UpdateAdmin string The new admin address
 --- @return Message The reply message
 Handlers.add("Stage-Update-Admin", {Action = "Stage-Update-Admin"}, function(msg)
   -- Validate input
@@ -148,7 +148,7 @@ end)
 
 --- Unstage update admin handler
 --- @param msg Message The message received, expected to contain:
----  - msg.Tags.UpdateAdmin string The new admin address
+--- - msg.Tags.UpdateAdmin string The new admin address
 --- @return Message The reply message
 Handlers.add("Unstage-Update-Admin", {Action = "Unstage-Update-Admin"}, function(msg)
   -- Validate input
@@ -166,7 +166,7 @@ end)
 
 --- Action update admin handler
 --- @param msg Message The message received, expected to contain:
----  - msg.Tags.UpdateAdmin string The new admin address
+--- - msg.Tags.UpdateAdmin string The new admin address
 --- @return Message The reply message
 Handlers.add("Action-Update-Admin", {Action = "Action-Update-Admin"}, function(msg)
   -- Validate input
@@ -190,7 +190,7 @@ UPDATE DELAY WRITE HANDLERS
 
 --- Stage update delay handler
 --- @param msg Message The message received, expected to contain:
----  - msg.Tags.UpdateDelay string The updated delay time in seconds
+--- - msg.Tags.UpdateDelay string The updated delay time in seconds
 --- @return Message The reply message
 Handlers.add("Stage-Update-Delay", {Action = "Stage-Update-Delay"}, function(msg)
   -- Validate input
@@ -208,7 +208,7 @@ end)
 
 --- Unstage update delay handler
 --- @param msg Message The message received, expected to contain:
----  - msg.Tags.UpdateDelay string The updated delay time in seconds
+--- - msg.Tags.UpdateDelay string The updated delay time in seconds
 --- @return Message The reply message
 Handlers.add("Unstage-Update-Delay", {Action = "Unstage-Update-Delay"}, function(msg)
   -- Validate input
@@ -226,7 +226,7 @@ end)
 
 --- Action update delay handler
 --- @param msg Message The message received, expected to contain:
----  - msg.Tags.UpdateDelay string The updated delay time in seconds
+--- - msg.Tags.UpdateDelay string The updated delay time in seconds
 --- @return Message The reply message
 Handlers.add("Action-Update-Delay", {Action = "Action-Update-Delay"}, function(msg)
   -- Validate input
