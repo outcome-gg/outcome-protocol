@@ -1276,8 +1276,6 @@ See market.lua for full license details.
 local constants = {}
 local json = require('json')
 
--- CPMM
-constants.denomination = 12
 -- Market Config
 constants.marketConfig = {
   configurator = "b9hj1yVw3eWGIggQgJxRDj1t8SZFCezctYD-7U5nYFk",
@@ -1292,6 +1290,7 @@ constants.marketConfig = {
   positionIds = json.encode({"1","2"}),
   name = "Mock Spawn Market",
   ticker = 'MSM',
+  denomination = 12,
   logo = "https://test.com/logo.png",
   logos = json.encode({"https://test.com/logo.png", "https://test.com/logo.png"}),
   lpFee = "100",
@@ -2666,6 +2665,7 @@ local conditionalTokens = require('marketModules.conditionalTokens')
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name
 --- @param ticker string The CPMM token(s) ticker
+--- @param denomination number The CPMM token(s) denomination
 --- @param logo string The CPMM LP token logo
 --- @param logos table<string> The CPMM position tokens logos
 --- @param lpFee number The liquidity provider fee
@@ -2674,7 +2674,7 @@ local conditionalTokens = require('marketModules.conditionalTokens')
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
 --- @return CPMM cpmm The new CPMM instance
-function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, logo, logos, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
+function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, denomination, logo, logos, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
   local cpmm = {
     configurator = configurator,
     poolBalances = {},
@@ -2689,7 +2689,7 @@ function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, n
     logo,
     {}, -- balances
     "0", -- totalSupply
-    constants.denomination
+    denomination
   )
   cpmm.tokens = conditionalTokens.new(
     name .. " Conditional Tokens",
@@ -2697,7 +2697,7 @@ function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, n
     logos,
     {}, -- balancesById
     {}, -- totalSupplyById
-    constants.denomination,
+    denomination,
     resolutionAgent,
     collateralToken,
     positionIds,
@@ -3144,6 +3144,7 @@ local cpmm = require('marketModules.cpmm')
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name
 --- @param ticker string The CPMM token(s) ticker
+--- @param denomination number The CPMM token(s) denomination
 --- @param logo string The CPMM LP token logo
 --- @param logos table<string> The CPMM position tokens logos
 --- @param lpFee number The liquidity provider fee
@@ -3165,6 +3166,7 @@ function Market.new(
   positionIds,
   name,
   ticker,
+  denomination,
   logo,
   logos,
   lpFee,
@@ -3181,6 +3183,7 @@ function Market.new(
       positionIds,
       name,
       ticker,
+      denomination,
       logo,
       logos,
       lpFee,
@@ -4587,6 +4590,7 @@ local function retrieveMarketConfig()
     positionIds = json.decode(ao.env.Process.Tags.PositionIds or constants.marketConfig.positionIds),
     name = ao.env.Process.Tags.Name or constants.marketConfig.name,
     ticker = ao.env.Process.Tags.Ticker or constants.marketConfig.ticker,
+    denomination = tonumber(ao.env.Process.Tags.Denomination or constants.marketConfig.denomination),
     logo = ao.env.Process.Tags.Logo or constants.marketConfig.logo,
     logos = json.decode(ao.env.Process.Tags.Logos or constants.marketConfig.logos),
     lpFee = tonumber(ao.env.Process.Tags.LpFee or constants.marketConfig.lpFee),
@@ -4619,6 +4623,7 @@ if not Market or Env == 'DEV' then
     marketConfig.positionIds,
     marketConfig.name,
     marketConfig.ticker,
+    marketConfig.denomination,
     marketConfig.logo,
     marketConfig.logos,
     marketConfig.lpFee,
@@ -4627,10 +4632,9 @@ if not Market or Env == 'DEV' then
     marketConfig.protocolFee,
     marketConfig.protocolFeeTarget
   )
+  -- Set LP Token namespace variable
+  Denomination = marketConfig.denomination
 end
-
--- Set LP Token namespace variables
-Denomination = constants.denomination
 
 --[[
 ========

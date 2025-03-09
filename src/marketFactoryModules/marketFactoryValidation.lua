@@ -52,18 +52,22 @@ function marketFactoryValidation.createEvent(approvedCollateralTokens, approvedC
 end
 
 --- Validates a spawnMarket message
---- @param approvedCollateralTokens table<string, boolean> A set of approved collateral tokens
+--- @param registeredCollateralTokens table<string, table> The registered collateral tokens
 --- @param approvedCreators table<string, boolean> A set of approved creators
 --- @param testCollateral string The test collateral token
 --- @param protocolFee number The protocol fee
 --- @param maximumTakeFee number The maximum take fee
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.spawnMarket(approvedCollateralTokens, approvedCreators, testCollateral, protocolFee, maximumTakeFee, msg)
+function marketFactoryValidation.spawnMarket(registeredCollateralTokens, approvedCreators, testCollateral, protocolFee, maximumTakeFee, msg)
   local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
   if not success then return false, err end
 
-  if not approvedCollateralTokens[msg.Tags.CollateralToken] then
+  if not registeredCollateralTokens[msg.Tags.CollateralToken] then
+    return false, "CollateralToken not registered!"
+  end
+
+  if not registeredCollateralTokens[msg.Tags.CollateralToken].approved then
     return false, "CollateralToken not approved!"
   end
 
@@ -240,16 +244,52 @@ function marketFactoryValidation.updateMaximumTakeFee(configurator, msg)
   return sharedValidation.validatePositiveIntegerOrZero(msg.Tags.MaximumTakeFee, "MaximumTakeFee")
 end
 
---- Validates an approveCollateralToken message
+--- Validates an registerCollateralToken message
 --- @param configurator string The current configurator
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.approveCollateralToken(configurator, msg)
+function marketFactoryValidation.registerCollateralToken(configurator, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
+
   local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
   if not success then return false, err end
+
+  if type(msg.Tags.Name) ~= 'string' then
+    return false, 'Name is required!'
+  end
+
+  if type(msg.Tags.Ticker) ~= 'string' then
+    return false, 'Ticker is required!'
+  end
+
+  success, err = sharedValidation.validatePositiveInteger(msg.Tags.Denomination, "Denomination")
+  if not success then return false, err end
+
+  if not sharedUtils.isValidBooleanString(msg.Tags.Approved) then
+    return false, "Approved must be a boolean string!"
+  end
+
+  return true
+end
+
+--- Validates an approveCollateralToken message
+--- @param configurator string The current configurator
+--- @param registeredCollateralTokens table<string, table> The registered collateral tokens
+--- @param msg Message The message received
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
+function marketFactoryValidation.approveCollateralToken(configurator, registeredCollateralTokens, msg)
+  if msg.From ~= configurator then
+    return false, "Sender must be configurator!"
+  end
+
+  local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
+  if not success then return false, err end
+
+  if not registeredCollateralTokens[msg.Tags.CollateralToken] then
+    return false, "CollateralToken not registered!"
+  end
 
   if not sharedUtils.isValidBooleanString(msg.Tags.Approved) then
     return false, "Approved must be a boolean string!"

@@ -41,6 +41,7 @@ local conditionalTokens = require('marketModules.conditionalTokens')
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name
 --- @param ticker string The CPMM token(s) ticker
+--- @param denomination number The CPMM token(s) denomination
 --- @param logo string The CPMM LP token logo
 --- @param logos table<string> The CPMM position tokens logos
 --- @param lpFee number The liquidity provider fee
@@ -49,7 +50,7 @@ local conditionalTokens = require('marketModules.conditionalTokens')
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
 --- @return CPMM cpmm The new CPMM instance
-function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, logo, logos, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
+function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, denomination, logo, logos, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
   local cpmm = {
     configurator = configurator,
     poolBalances = {},
@@ -64,7 +65,7 @@ function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, n
     logo,
     {}, -- balances
     "0", -- totalSupply
-    constants.denomination
+    denomination
   )
   cpmm.tokens = conditionalTokens.new(
     name .. " Conditional Tokens",
@@ -72,7 +73,7 @@ function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, n
     logos,
     {}, -- balancesById
     {}, -- totalSupplyById
-    constants.denomination,
+    denomination,
     resolutionAgent,
     collateralToken,
     positionIds,

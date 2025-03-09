@@ -50,7 +50,7 @@ describe("#marketFactory", function()
       constants.dev.protocolFeeTarget,
       constants.maximumTakeFee,
       constants.dev.approvedCreators,
-      constants.dev.approvedCollateralTokens,
+      constants.dev.registeredCollateralTokens,
       constants.testCollateral
     )
     -- create a message object
@@ -103,7 +103,7 @@ describe("#marketFactory", function()
         ["Subcategory"] = "test subcategory",
         ["Logo"] = "test logo",
         ["Logos"] = {"test logo1", "test logo2"},
-        ["GroupId"] = ""
+        ["EventId"] = ""
       },
       Id =  "test-this-is-valid-arweave-wallet-address-3",
       reply = function(message) return message end,
@@ -118,6 +118,13 @@ describe("#marketFactory", function()
       Id =  "test-this-is-valid-arweave-wallet-address-4",
       reply = function(message) return message end,
       forward = function(target, message) return message end
+    }
+    -- add collateral to registered collateral tokens
+    FACTORY.registeredCollateralTokens[collateralToken] = {
+      name = "test",
+      ticker = "TEST",
+      denomination = 9,
+      approved = true
     }
 	end)
 
@@ -137,7 +144,7 @@ describe("#marketFactory", function()
       ProtocolFeeTarget = constants.dev.protocolFeeTarget,
       MaximumTakeFee = tostring(constants.maximumTakeFee),
       ApprovedCreators = json.encode(constants.dev.approvedCreators),
-      ApprovedCollateralTokens = json.encode(constants.dev.approvedCollateralTokens),
+      RegisteredCollateralTokens = json.encode(constants.dev.registeredCollateralTokens),
       TestCollateral = constants.testCollateral,
     }, info)
   end)
@@ -161,12 +168,13 @@ describe("#marketFactory", function()
     end)
     -- assert notice
     assert.are.same({
-      Action = "Create-Market-Group-Notice",
-      GroupId = msgCreateMarketGroup.Id,
+      Action = "Create-Event-Notice",
+      EventId = msgCreateMarketGroup.Id,
       Collateral = msgCreateMarketGroup.Tags["Collateral"],
       DataIndex = msgCreateMarketGroup.Tags["DataIndex"],
       Creator = msgCreateMarketGroup.From,
       Question = msgCreateMarketGroup.Tags["Question"],
+      Denomination = "9",
       OutcomeSlotCount = msgCreateMarketGroup.Tags["OutcomeSlotCount"],
       Rules = msgCreateMarketGroup.Tags["Rules"],
       Category = msgCreateMarketGroup.Tags["Category"],
@@ -204,17 +212,18 @@ describe("#marketFactory", function()
       ResolutionAgent = msgSpawnMarket.Tags["ResolutionAgent"],
       CollateralToken = msgSpawnMarket.Tags["CollateralToken"],
       DataIndex = msgSpawnMarket.Tags["DataIndex"],
-      Creator = msgSpawnMarket.From,
-      CreatorFee = msgSpawnMarket.Tags["CreatorFee"],
-      CreatorFeeTarget = msgSpawnMarket.Tags["CreatorFeeTarget"],
+      Denomination = "9",
+      OutcomeSlotCount = msgSpawnMarket.Tags["OutcomeSlotCount"],
       Question = msgSpawnMarket.Tags["Question"],
       Rules = msgSpawnMarket.Tags["Rules"],
-      OutcomeSlotCount = msgSpawnMarket.Tags["OutcomeSlotCount"],
       Category = msgSpawnMarket.Tags["Category"],
       Subcategory = msgSpawnMarket.Tags["Subcategory"],
       Logo = msgSpawnMarket.Tags["Logo"],
       Logos = json.encode(msgSpawnMarket.Tags["Logos"]),
-      GroupId = msgSpawnMarket.Tags["GroupId"],
+      EventId = msgSpawnMarket.Tags["EventId"],
+      Creator = msgSpawnMarket.From,
+      CreatorFee = msgSpawnMarket.Tags["CreatorFee"],
+      CreatorFeeTarget = msgSpawnMarket.Tags["CreatorFeeTarget"],
       ["Original-Msg-Id"] = msgSpawnMarket.Id
     }, notice)
   end)
@@ -564,8 +573,40 @@ describe("#marketFactory", function()
     }, notice)
   end)
 
+  it("should register collateral token", function()
+    -- reset collateralToken registerd state to nil
+    FACTORY.registeredCollateralTokens[collateralToken] = nil
+    local notice = {}
+    -- should not throw an error
+    assert.has_no.errors(function()
+      notice = FACTORY:registerCollateralToken(
+        collateralToken,
+        "Test",
+        "TEST",
+        12,
+        true, -- approve
+        msg
+      )
+    end)
+    -- assert state change
+    assert.are.same(true, FACTORY.registeredCollateralTokens[collateralToken].approved)
+    assert.are.same("Test", FACTORY.registeredCollateralTokens[collateralToken].name)
+    assert.are.same("TEST", FACTORY.registeredCollateralTokens[collateralToken].ticker)
+    assert.are.same(12, FACTORY.registeredCollateralTokens[collateralToken].denomination)
+    -- assert notice
+    assert.are.same({
+      Action = "Register-Collateral-Token-Notice",
+      Name = "Test",
+      Ticker = "TEST",
+      Denomination = "12",
+      Approved = "true",
+      CollateralToken = collateralToken
+    }, notice)
+  end)
+
   it("should approve collateral token", function()
-    FACTORY.approvedCollateralTokens = {}
+    -- set approved to false
+    FACTORY.registeredCollateralTokens[collateralToken].approved = false
     local notice = {}
     -- should not throw an error
     assert.has_no.errors(function()
@@ -576,10 +617,7 @@ describe("#marketFactory", function()
       )
     end)
     -- assert state change
-    local updatedCollateralTokens = {}
-    updatedCollateralTokens[collateralToken] = true
-
-    assert.are.same(updatedCollateralTokens, FACTORY.approvedCollateralTokens)
+    assert.are.same(true, FACTORY.registeredCollateralTokens[collateralToken].approved)
     -- assert notice
     assert.are.same({
       Action = "Approve-Collateral-Token-Notice",
@@ -589,14 +627,9 @@ describe("#marketFactory", function()
   end)
 
   it("should unapprove collateral token", function()
-    FACTORY.approvedCollateralTokens = {}
+    -- set approved to true
+    FACTORY.registeredCollateralTokens[collateralToken].approved = true
     local notice = {}
-    -- should not throw an error
-    FACTORY:approveCollateralToken(
-      collateralToken,
-      true, -- approve
-      msg
-    )
     assert.has_no.errors(function()
       notice = FACTORY:approveCollateralToken(
         collateralToken,

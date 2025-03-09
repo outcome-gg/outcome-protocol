@@ -40,6 +40,7 @@ local cpmm = require('marketModules.cpmm')
 --- @param positionIds table<string, ...> The position IDs
 --- @param name string The CPMM token(s) name
 --- @param ticker string The CPMM token(s) ticker
+--- @param denomination number The CPMM token(s) denomination
 --- @param logo string The CPMM LP token logo
 --- @param logos table<string> The CPMM position tokens logos
 --- @param lpFee number The liquidity provider fee
@@ -61,6 +62,7 @@ function Market.new(
   positionIds,
   name,
   ticker,
+  denomination,
   logo,
   logos,
   lpFee,
@@ -77,6 +79,7 @@ function Market.new(
       positionIds,
       name,
       ticker,
+      denomination,
       logo,
       logos,
       lpFee,

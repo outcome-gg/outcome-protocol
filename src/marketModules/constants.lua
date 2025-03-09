@@ -8,8 +8,6 @@ See market.lua for full license details.
 local constants = {}
 local json = require('json')
 
--- CPMM
-constants.denomination = 12
 -- Market Config
 constants.marketConfig = {
   configurator = "b9hj1yVw3eWGIggQgJxRDj1t8SZFCezctYD-7U5nYFk",
@@ -24,6 +22,7 @@ constants.marketConfig = {
   positionIds = json.encode({"1","2"}),
   name = "Mock Spawn Market",
   ticker = 'MSM',
+  denomination = 12,
   logo = "https://test.com/logo.png",
   logos = json.encode({"https://test.com/logo.png", "https://test.com/logo.png"}),
   lpFee = "100",

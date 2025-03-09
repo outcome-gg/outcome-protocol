@@ -77,6 +77,7 @@ local function retrieveMarketConfig()
     positionIds = json.decode(ao.env.Process.Tags.PositionIds or constants.marketConfig.positionIds),
     name = ao.env.Process.Tags.Name or constants.marketConfig.name,
     ticker = ao.env.Process.Tags.Ticker or constants.marketConfig.ticker,
+    denomination = tonumber(ao.env.Process.Tags.Denomination or constants.marketConfig.denomination),
     logo = ao.env.Process.Tags.Logo or constants.marketConfig.logo,
     logos = json.decode(ao.env.Process.Tags.Logos or constants.marketConfig.logos),
     lpFee = tonumber(ao.env.Process.Tags.LpFee or constants.marketConfig.lpFee),
@@ -109,6 +110,7 @@ if not Market or Env == 'DEV' then
     marketConfig.positionIds,
     marketConfig.name,
     marketConfig.ticker,
+    marketConfig.denomination,
     marketConfig.logo,
     marketConfig.logos,
     marketConfig.lpFee,
@@ -117,10 +119,9 @@ if not Market or Env == 'DEV' then
     marketConfig.protocolFee,
     marketConfig.protocolFeeTarget
   )
+  -- Set LP Token namespace variable
+  Denomination = marketConfig.denomination
 end
-
--- Set LP Token namespace variables
-Denomination = constants.denomination
 
 --[[
 ========

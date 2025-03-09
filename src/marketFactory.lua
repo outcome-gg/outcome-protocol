@@ -63,7 +63,7 @@ local function retrieveMarketFactoryConfig()
     protocolFeeTarget = Env == 'DEV' and constants.dev.protocolFeeTarget or constants.prod.protocolFeeTarget,
     maximumTakeFee = constants.maximumTakeFee,
     approvedCreators = Env == 'DEV' and constants.dev.approvedCreators or constants.prod.approvedCreators,
-    approvedCollateralTokens = Env == 'DEV' and constants.dev.approvedCollateralTokens or constants.prod.approvedCollateralTokens,
+    registeredCollateralTokens = Env == 'DEV' and constants.dev.registeredCollateralTokens or constants.prod.registeredCollateralTokens,
     testCollateral = constants.testCollateral
   }
   return config
@@ -83,7 +83,7 @@ if not MarketFactory or Env == 'DEV' then
     marketFactoryConfig.protocolFeeTarget,
     marketFactoryConfig.maximumTakeFee,
     marketFactoryConfig.approvedCreators,
-    marketFactoryConfig.approvedCollateralTokens,
+    marketFactoryConfig.registeredCollateralTokens,
     marketFactoryConfig.testCollateral
   )
 end
@@ -150,7 +150,7 @@ end)
 
 --- Spawn market handler
 --- @warning This action will fail if the sender is not an approved creator.
---- @warning This action will fail if the collateral token is not approved.
+--- @warning This action will fail if the collateral token is not registered or approved.
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.CollateralToken (string): The collateral token for the event.
 --- - msg.Tags.ResolutionAgent (string): The resolution agent for the event.
@@ -168,7 +168,7 @@ end)
 Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
   -- Validate input
   local success, err = marketFactoryValidation.spawnMarket(
-    MarketFactory.approvedCollateralTokens,
+    MarketFactory.registeredCollateralTokens,
     MarketFactory.approvedCreators,
     MarketFactory.testCollateral,
     MarketFactory.protocolFee,
@@ -462,14 +462,43 @@ Handlers.add("Update-Maximum-Take-Fee", {Action = "Update-Maximum-Take-Fee"}, fu
   MarketFactory:updateMaximumTakeFee(maximumTakeFee, msg)
 end)
 
---- Approve collateralToken handler
+--- Register collateral token handler
+--- @notice Only callable by the configurator
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.CollateralToken (string): The address of the collateral token.
+--- - msg.Tags.Name (string): The name of the collateral token.
+--- - msg.Tags.Ticker (string): The ticker of the collateral token.
+--- - msg.Tags.Denomination (numeric string): The decimals of the collateral token.
+--- - msg.Tags.Approved (string): Whether the collateral token is approved, "true" or "false".
+Handlers.add("Register-Collateral-Token", {Action = "Register-Collateral-Token"}, function(msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.registerCollateralToken(MarketFactory.configurator, msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Register-Collateral-Token-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, register collateralToken.
+  local denomination = tonumber(msg.Tags.Denomination)
+  local approved = string.lower(msg.Tags.Approved) == "true"
+  MarketFactory:registerCollateralToken(msg.Tags.CollateralToken, msg.Tags.Name, msg.Tags.Ticker, denomination, approved, msg)
+end)
+
+--- Approve collateral token handler
 --- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.CollateralToken (string): The address of the collateral token.
 --- - msg.Tags.Approved (string): Whether the collateral token is approved, "true" or "false".
 Handlers.add("Approve-Collateral-Token", {Action = "Approve-Collateral-Token"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.approveCollateralToken(MarketFactory.configurator, msg)
+  local success, err = marketFactoryValidation.approveCollateralToken(
+    MarketFactory.configurator,
+    MarketFactory.registeredCollateralTokens,
+    msg
+  )
   -- If validation fails, provide error response.
   if not success then
     msg.reply({

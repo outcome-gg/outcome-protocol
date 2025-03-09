@@ -116,6 +116,7 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       positionIds,
       name,
       ticker,
+      denomination,
       logo,
       logos,
       lpFee,

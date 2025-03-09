@@ -154,6 +154,7 @@ describe("#market", function()
       positionIds,
       name,
       ticker,
+      denomination,
       logo,
       logos,
       lpFee,

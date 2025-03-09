@@ -20,13 +20,18 @@ constants.dev = {
   veToken = "Y3f5v1RLf5espiLS5EMHC1XMqSEONKW83wdTgHaMv7g",
   protocolFeeTarget = "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0",
   approvedCreators = {["XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I"] = true},
-  approvedCollateralTokens = {["jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU"] = true},
+  registeredCollateralTokens = {["jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU"] = {
+    name = "Mock DAI",
+    ticker = "mDAI",
+    denomination = 6,
+    approved = true
+  }},
 }
 constants.prod = {
   configurator = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
   veToken = "Y3f5v1RLf5espiLS5EMHC1XMqSEONKW83wdTgHaMv7g",
   protocolFeeTarget = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
   approvedCreators = {["XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I"] = true},
-  approvedCollateralTokens = {},
+  registeredCollateralTokens = {},
 }
 return constants

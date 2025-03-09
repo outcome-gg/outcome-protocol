@@ -8,31 +8,33 @@ See factory.lua for full license details.
 local MarketFactoryNotices = {}
 local json = require('json')
 
---- Create market group notice
---- @param dataIndex string The data index address
+--- Create event notice
 --- @param collateral string The collateral token address
---- @param creator string The creator address
---- @param question string The group title
---- @param rules string The group rules
+--- @param dataIndex string The data index address
+--- @param denomination number The denomination
 --- @param outcomeSlotCount string The number of outcome slots
---- @param category string The group category
---- @param subcategory string The group subcategory
---- @param logo string The group logo
+--- @param question string The event title
+--- @param rules string The event rules
+--- @param category string The event category
+--- @param subcategory string The event subcategory
+--- @param logo string The event logo
+--- @param creator string The creator address
 --- @param msg Message The message received
---- @return Message createGroupNotice The create group notice
-function MarketFactoryNotices.createEventNotice(dataIndex, collateral, creator, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
+--- @return Message createEventNotice The create event notice
+function MarketFactoryNotices.createEventNotice(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, creator, msg)
   return msg.reply({
-    Action = "Create-Market-Group-Notice",
-    GroupId = msg.Id,
-    DataIndex = dataIndex,
+    Action = "Create-Event-Notice",
+    EventId = msg.Id,
     Collateral = collateral,
-    Creator = creator,
+    DataIndex = dataIndex,
+    Denomination = tostring(denomination),
+    OutcomeSlotCount = outcomeSlotCount,
     Question = question,
     Rules = rules,
-    OutcomeSlotCount = outcomeSlotCount,
     Category = category,
     Subcategory = subcategory,
-    Logo = logo
+    Logo = logo,
+    Creator = creator
   })
 end
 
@@ -40,6 +42,7 @@ end
 --- @param resolutionAgent string The resolution agent address
 --- @param collateralToken string The collateral token address
 --- @param dataIndex string The data index address
+--- @param denomination number The denomination
 --- @param outcomeSlotCount number The number of outcome slots
 --- @param question string The market question
 --- @param rules string The market rules
@@ -47,7 +50,7 @@ end
 --- @param subcategory string The market subcategory
 --- @param logo string The LP token logo
 --- @param logos table<string> The position token logos
---- @param groupId string The group ID
+--- @param eventId string The event ID
 --- @param creator string The creator address
 --- @param creatorFee number The creator fee
 --- @param creatorFeeTarget string The creator fee target
@@ -57,6 +60,7 @@ function MarketFactoryNotices.spawnMarketNotice(
   resolutionAgent,
   collateralToken,
   dataIndex,
+  denomination,
   outcomeSlotCount,
   question,
   rules,
@@ -64,7 +68,7 @@ function MarketFactoryNotices.spawnMarketNotice(
   subcategory,
   logo,
   logos,
-  groupId,
+  eventId,
   creator,
   creatorFee,
   creatorFeeTarget,
@@ -75,6 +79,7 @@ function MarketFactoryNotices.spawnMarketNotice(
     ResolutionAgent = resolutionAgent,
     CollateralToken = collateralToken,
     DataIndex = dataIndex,
+    Denomination = tostring(denomination),
     OutcomeSlotCount = tostring(outcomeSlotCount),
     Question = question,
     Rules = rules,
@@ -82,7 +87,7 @@ function MarketFactoryNotices.spawnMarketNotice(
     Subcategory = subcategory,
     Logo = logo,
     Logos = json.encode(logos),
-    GroupId = groupId,
+    EventId = eventId,
     Creator = creator,
     CreatorFee = tostring(creatorFee),
     CreatorFeeTarget = creatorFeeTarget,
@@ -186,6 +191,25 @@ function MarketFactoryNotices.updateMaximumTakeFeeNotice(maximumTakeFee, msg)
   return msg.reply({
     Action = "Update-Maximum-Take-Fee-Notice",
     Data = tostring(maximumTakeFee)
+  })
+end
+
+--- Register collateral token notice
+--- @param collateralToken string The collateral token address
+--- @param name string The collateral token name
+--- @param ticker string The collateral token ticker
+--- @param denomination number The denomination; the number of decimal places
+--- @param approved boolean The approval status, true if approved, false otherwise
+--- @param msg Message The message received
+--- @return Message registerCollateralTokenNotice The approve collateral token notice
+function MarketFactoryNotices.registerCollateralTokenNotice(collateralToken, name, ticker, denomination, approved, msg)
+  return msg.reply({
+    Action = "Register-Collateral-Token-Notice",
+    CollateralToken = collateralToken,
+    Name = name,
+    Ticker = ticker,
+    Denomination = tostring(denomination),
+    Approved = tostring(approved),
   })
 end
 

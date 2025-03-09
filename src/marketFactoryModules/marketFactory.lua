@@ -22,6 +22,13 @@ local MarketFactoryNotices = require('marketFactoryModules.marketFactoryNotices'
 local marketProcessCode = require('marketFactoryModules.marketProcessCodeV2')
 local json = require('json')
 
+--- Represents CollateralTokenDetail
+--- @class CollateralTokenDetail
+--- @field name string The name of the collateral token
+--- @field ticker string The ticker of the collateral token
+--- @field denomination number The number of decimals of the collateral token
+--- @field approved boolean Whether the collateral token is approved 
+
 --- Represents a MarketFactory
 --- @class MarketFactory
 --- @field configurator string The configurator process ID
@@ -34,7 +41,7 @@ local json = require('json')
 --- @field protocolFeeTarget string The default protocol fee target
 --- @field maximumTakeFee number The default maximum take fee in basis points
 --- @field approvedCreators table<string, boolean> Approved creators
---- @field approvedCollateralTokens table<string, boolean> Approved collateral tokens
+--- @field registeredCollateralTokens table<string, table> Registered collateral tokens
 --- @field testCollateral string The test collateral token process ID
 --- @field payoutNumerators table<string, table<number>> Payout Numerators for each outcomeSlot
 --- @field payoutDenominator table<string, number> Payout Denominator
@@ -56,7 +63,7 @@ local json = require('json')
 --- @param protocolFeeTarget string The default protocol fee target
 --- @param maximumTakeFee number The default maximum take fee
 --- @param approvedCreators table<string, boolean> The approved creators
---- @param approvedCollateralTokens table<string, boolean> The approved collateral tokens
+--- @param registeredCollateralTokens table<string, table> The registered collateral tokens
 --- @param testCollateral string The test collateral token process ID
 --- @return MarketFactory marketFactory The new MarketFactory instance
 function MarketFactory.new(
@@ -70,7 +77,7 @@ function MarketFactory.new(
   protocolFeeTarget,
   maximumTakeFee,
   approvedCreators,
-  approvedCollateralTokens,
+  registeredCollateralTokens,
   testCollateral
 )
   local marketFactory = {
@@ -84,7 +91,7 @@ function MarketFactory.new(
     protocolFeeTarget = protocolFeeTarget,
     maximumTakeFee = maximumTakeFee,
     approvedCreators = approvedCreators,
-    approvedCollateralTokens = approvedCollateralTokens,
+    registeredCollateralTokens = registeredCollateralTokens,
     testCollateral = testCollateral,
     messageToProcessMapping = {},
     processToMessageMapping = {},
@@ -127,7 +134,7 @@ function MarketFactoryMethods:info(msg)
     ProtocolFeeTarget = self.protocolFeeTarget,
     MaximumTakeFee = tostring(self.maximumTakeFee),
     ApprovedCreators = json.encode(self.approvedCreators),
-    ApprovedCollateralTokens = json.encode(self.approvedCollateralTokens),
+    RegisteredCollateralTokens = json.encode(self.registeredCollateralTokens),
     TestCollateral = self.testCollateral
   })
 end
@@ -160,6 +167,7 @@ local function logMarket(
   market,
   collateralToken,
   resolutionAgent,
+  denomination,
   outcomeSlotCount,
   question,
   rules,
@@ -179,6 +187,7 @@ local function logMarket(
     Market = market,
     Collateral = collateralToken,
     ResolutionAgent = resolutionAgent,
+    Denomination = tostring(denomination),
     OutcomeSlotCount = tostring(outcomeSlotCount),
     Question = question,
     Rules = rules,
@@ -197,12 +206,13 @@ local function logMarket(
   msg.forward(creator, notice)
 end
 
-local function logGroup(dataIndex, group, collateral, outcomeSlotCount, question, rules, category, subcategory, logo, creator, msg)
+local function logEvent(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, creator, msg)
   -- create notice
   local notice = {
-    Action = "Log-Group-Notice",
-    Group = group,
+    Action = "Log-Event-Notice",
+    EventId = msg.Id,
     Collateral = collateral,
+    Denomination = tostring(denomination),
     OutcomeSlotCount = outcomeSlotCount,
     Question = question,
     Rules = rules,
@@ -233,7 +243,7 @@ WRITE METHODS
 --- @param subcategory string The subcategory of the event
 --- @param logo string The logo of the event
 --- @param msg Message The message received
---- @return Message The create group message
+--- @return Message The create event message
 function MarketFactoryMethods:createEvent(collateral, dataIndex, outcomeSlotCount, question, rules, category, subcategory, logo, msg)
   -- set defaults
   category = category or ""
@@ -247,10 +257,12 @@ function MarketFactoryMethods:createEvent(collateral, dataIndex, outcomeSlotCoun
   -- create event
   if not self.eventConfigByCreator[msg.From] then self.eventConfigByCreator[msg.From] = {} end
   self.eventConfigByCreator[msg.From][msg.Id] = config
-  -- log group
-  logGroup(dataIndex, msg.Id, collateral, outcomeSlotCount, question, rules, category, subcategory, logo, msg.From, msg)
+  -- retrieve denomination
+  local denomination = self.registeredCollateralTokens[collateral].denomination
+  -- log event
+  logEvent(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, msg.From, msg)
   -- send notice
-  return self.createEventNotice(dataIndex, collateral, msg.From, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
+  return self.createEventNotice(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, msg.From, msg)
 end
 
 --- Spawn market
@@ -287,17 +299,6 @@ function MarketFactoryMethods:spawnMarket(
   creatorFeeTarget,
   msg
 )
-  -- set defaults
-  rules = rules or ""
-  category = category or ""
-  subcategory = subcategory or ""
-  logo = logo or self.marketLogo
-  logos = logos or {}
-  if #logos == 0 then
-    for _ = 1, outcomeSlotCount do
-      table.insert(logos, logo)
-    end
-  end
   eventId = eventId or ""
   -- check if event exists, creator is the owner, and collateral and outcome slot count matches event
   if eventId ~= "" then
@@ -314,6 +315,19 @@ function MarketFactoryMethods:spawnMarket(
       return msg.reply({Error = "Outcome slot count does not match event"})
     end
   end
+  -- set defaults
+  rules = rules or ""
+  category = category or ""
+  subcategory = subcategory or ""
+  logo = logo or self.marketLogo
+  logos = logos or {}
+  if #logos == 0 then
+    for _ = 1, outcomeSlotCount do
+      table.insert(logos, logo)
+    end
+  end
+  -- retrieve denomination
+  local denomination = self.registeredCollateralTokens[collateralToken].denomination
   -- spawn market
   ao.spawn(ao.env.Module.Id, {
     -- Factory parameters
@@ -324,6 +338,7 @@ function MarketFactoryMethods:spawnMarket(
     ["DataIndex"] = dataIndex,
     ["Name"] = self.namePrefix,
     ["Ticker"] = self.tickerPrefix,
+    ["Denomination"] = tostring(denomination),
     ["Logo"] = logo,
     ["Logos"] = json.encode(logos),
     ["LpFee"] = tostring(self.lpFee),
@@ -349,6 +364,7 @@ function MarketFactoryMethods:spawnMarket(
     collateralToken = collateralToken,
     resolutionAgent = resolutionAgent,
     dataIndex = dataIndex,
+    denomination = denomination,
     outcomeSlotCount = outcomeSlotCount,
     question = question,
     rules = rules,
@@ -367,6 +383,7 @@ function MarketFactoryMethods:spawnMarket(
     resolutionAgent,
     collateralToken,
     dataIndex,
+    denomination,
     outcomeSlotCount,
     question,
     rules,
@@ -409,6 +426,7 @@ function MarketFactoryMethods:initMarket(msg)
       processId,
       marketConfig.collateralToken,
       marketConfig.resolutionAgent,
+      marketConfig.denomination,
       marketConfig.outcomeSlotCount,
       marketConfig.question,
       marketConfig.rules,
@@ -581,13 +599,33 @@ function MarketFactoryMethods:updateMaximumTakeFee(maximumTakeFee, msg)
   return self.updateMaximumTakeFeeNotice(maximumTakeFee, msg)
 end
 
---- Approve collateralToken
+--- Register collateral token
+--- @param collateralToken string The collateral token address
+--- @param name string The name of the collateral token
+--- @param ticker string The ticker of the collateral token
+--- @param denomination number The number of decimals
+--- @param approved boolean Whether the collateral token is approved
+--- @param msg Message The message received
+--- @return Message registerCollateralTokenNotice The registerCollateralToken notice
+function MarketFactoryMethods:registerCollateralToken(collateralToken, name, ticker, denomination, approved, msg)
+  --- @type CollateralTokenDetail
+  local tokenDetail = {
+    name = name,
+    ticker = ticker,
+    denomination = denomination,
+    approved = approved
+  }
+  self.registeredCollateralTokens[collateralToken] = tokenDetail
+  return self.registerCollateralTokenNotice(collateralToken, name, ticker, denomination, approved, msg)
+end
+
+--- Approve collateral token
 --- @param collateralToken string The approved collateral token address
 --- @param approved boolean True to approve, false to disapprove
 --- @param msg Message The message received
 --- @return Message approveCollateralTokenNotice The approveCollateralToken notice
 function MarketFactoryMethods:approveCollateralToken(collateralToken, approved, msg)
-  self.approvedCollateralTokens[collateralToken] = approved
+  self.registeredCollateralTokens[collateralToken].approved = approved
   return self.approveCollateralTokenNotice(collateralToken, approved, msg)
 end
 
