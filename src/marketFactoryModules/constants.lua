@@ -23,7 +23,7 @@ constants.dev = {
   registeredCollateralTokens = {["jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU"] = {
     name = "Mock DAI",
     ticker = "mDAI",
-    denomination = 6,
+    denomination = 12,
     approved = true
   }},
 }
