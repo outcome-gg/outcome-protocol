@@ -18,7 +18,7 @@ https://outcome.gg/tos
 
 local Chatroom = {}
 local ChatroomMethods = {}
-local ChatroomNotices = require('platformDataModules.chatroomNotices')
+local ChatroomNotices = require('dataIndexModules.chatroomNotices')
 local json = require('json')
 
 --- Creates a new Chatroom instance

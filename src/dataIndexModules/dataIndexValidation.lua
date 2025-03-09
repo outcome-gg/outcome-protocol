@@ -8,7 +8,7 @@ See dataIndex.lua for full license details.
 
 local DataIndexValidation = {}
 local sharedValidation = require('dataIndexModules.sharedValidation')
-local utils = require('platformDataModules.utils')
+local utils = require('dataIndexModules.utils')
 local json = require('json')
 
 

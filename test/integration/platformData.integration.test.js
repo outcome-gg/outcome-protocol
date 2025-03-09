@@ -11,8 +11,8 @@ import exp from "constants";
 
 dotenv.config();
 
-const platformData = process.env.TEST_PLATFORM_DATA3;
-console.log("TEST_PLATFORM_DATA: ", platformData)
+const dataIndex = process.env.TEST_DATA_INDEX5;
+console.log("TEST_DATA_INDEX: ", dataIndex)
 // Get the current file path
 const __filename = fileURLToPath(import.meta.url);
 // Get the directory name of the current module
@@ -31,7 +31,7 @@ let walletAddress2
 /* 
 * Tests
 */
-describe("platformData.integration.test", function () {
+describe("dataIndex.integration.test", function () {
   before(async () => ( 
     wallet = JSON.parse(
       readFileSync(path.join(__dirname, '../../wallet.json')).toString(),
@@ -49,7 +49,7 @@ describe("platformData.integration.test", function () {
   describe("INFO HANDLER", function () {
     it("+ve should get info", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Info" }
         ],
@@ -63,7 +63,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -88,7 +88,7 @@ describe("platformData.integration.test", function () {
   describe("ACTIVITY WRITE HANDLERS", function () {
     it("+ve should log market", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Log-Market" },
           { name: "Market", value: walletAddress },
@@ -115,7 +115,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -154,7 +154,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should log market w/o cast", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Log-Market" },
           { name: "Market", value: "test-this-is-valid-arweave-wallet-address-1" },
@@ -180,7 +180,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -193,7 +193,7 @@ describe("platformData.integration.test", function () {
 
     it("-ve should fail log market validation", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Log-Market" },
           { name: "Market", value: "test-this-is-valid-arweave-wallet-address-1" },
@@ -219,7 +219,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       expect(Error).to.contain("CreatorFeeTarget must be a valid Arweave address!")
@@ -227,7 +227,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should log funding", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Log-Funding" },
           { name: "User", value: "test-this-is-valid-arweave-wallet-address-1" },
@@ -246,7 +246,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -271,7 +271,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should log funding w/o cast", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Log-Funding" },
           { name: "User", value: walletAddress },
@@ -289,7 +289,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -302,7 +302,7 @@ describe("platformData.integration.test", function () {
 
     it("-ve should fail log funding validation", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Log-Funding" },
           { name: "User", value: "test-this-is-valid-arweave-wallet-address-1" },
@@ -320,7 +320,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       expect(Error).to.contain("Quantity is required!")
@@ -328,7 +328,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should log prediction", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Log-Prediction" },
           { name: "User", value: "test-this-is-valid-arweave-wallet-address-1" },
@@ -350,7 +350,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -381,7 +381,7 @@ describe("platformData.integration.test", function () {
 
     it("-ve should log prediction w/o cast", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Log-Prediction" },
           { name: "User", value: walletAddress2 },
@@ -402,7 +402,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -415,7 +415,7 @@ describe("platformData.integration.test", function () {
 
     it("-ve should fail log prediction validation", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Log-Prediction" },
           { name: "User", value: "test-this-is-valid-arweave-wallet-address-1" },
@@ -437,7 +437,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       expect(Error).to.contain("Quantity is required!")
@@ -446,7 +446,7 @@ describe("platformData.integration.test", function () {
     it("+ve should log probabilities", async () => {
       const probabilities_ = {"1": 0.2, "2": 0.8}
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Log-Probabilities" },
           { name: "Probabilities", value: JSON.stringify(probabilities_) },
@@ -462,7 +462,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -481,7 +481,7 @@ describe("platformData.integration.test", function () {
     it("+ve should log probabilities w/o cast", async () => {
       const probabilities_ = {"1": 0.2, "2": 0.8}
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Log-Probabilities" },
           { name: "Probabilities", value: JSON.stringify(probabilities_) }
@@ -496,7 +496,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -510,7 +510,7 @@ describe("platformData.integration.test", function () {
 
     it("-ve should fail log probabilities validation", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Log-Probabilities" },
         ],
@@ -524,7 +524,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       expect(Error).to.contain("Probabilities is required!")
@@ -537,7 +537,7 @@ describe("platformData.integration.test", function () {
   describe("CHATROOM WRITE HANDLERS", function () {
     it("+ve should broadcast", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Broadcast" },
           { name: "Market", value: walletAddress },
@@ -553,7 +553,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -572,7 +572,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should broadcast w/o cast", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Broadcast" },
           { name: "Market", value: walletAddress }
@@ -587,7 +587,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -600,7 +600,7 @@ describe("platformData.integration.test", function () {
 
     it("-ve should fail broadcast message validation", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Broadcast" }
         ],
@@ -614,7 +614,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       expect(Error).to.contain("Market is required!")
@@ -627,7 +627,7 @@ describe("platformData.integration.test", function () {
   describe("READ HANDLERS", function () {
     it("+ve should query", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Query" },
         ],
@@ -641,7 +641,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -659,7 +659,7 @@ describe("platformData.integration.test", function () {
 
     it("-ve should fail query validation", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Query" },
         ],
@@ -673,7 +673,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       expect(Error).to.contain("Forbidden keyword found in query!")
@@ -681,7 +681,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get market", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Market" },
           { name: "Market", value: walletAddress },
@@ -696,7 +696,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -725,7 +725,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get no market w/ non-existant-market", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Market" },
           { name: "Market", value: "test-this-is-valid-arweave-wallet-address-0" },
@@ -740,7 +740,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -755,7 +755,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get markets", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
         ],
@@ -769,7 +769,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -799,7 +799,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get markets w/ status==closed", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Status", value: "closed" },
@@ -814,7 +814,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -829,7 +829,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get markets w/ status==resolved", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Status", value: "resolved" },
@@ -844,7 +844,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -859,7 +859,7 @@ describe("platformData.integration.test", function () {
 
     it("-ve should fail to get markets w/ status==foo", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Status", value: "foo" },
@@ -874,7 +874,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
       
       expect(Error).to.contain("Status must be 'open', 'closed', or 'resolved'!")
@@ -882,7 +882,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get markets w/ minFunding==300*10**12", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "MinFunding", value: parseAmount(300, 12) },
@@ -897,7 +897,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -912,7 +912,7 @@ describe("platformData.integration.test", function () {
 
     it("-ve should fail get markets w/ minFunding==foo", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "MinFunding", value: "foo" },
@@ -927,7 +927,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       expect(Error).to.contain("MinFunding must be a number!")
@@ -935,7 +935,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get markets w/ creator==walletAddress2", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Creator", value: walletAddress2 },
@@ -950,7 +950,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -965,7 +965,7 @@ describe("platformData.integration.test", function () {
 
     it("-ve should fail to get markets w/ creator==foo", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Creator", value: "foo" },
@@ -980,7 +980,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       expect(Error).to.contain("Creator must be a valid Arweave address!")
@@ -988,7 +988,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get markets w/ category==politics", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Category", value: "politics" },
@@ -1003,7 +1003,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -1018,7 +1018,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should no get markets w/ category==foo", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Category", value: "foo" },
@@ -1033,7 +1033,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -1048,7 +1048,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get markets w/ subcategory==US election", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Subcategory", value: "US election" },
@@ -1063,7 +1063,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -1078,7 +1078,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get no markets w/ subcategory==foo", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Subcategory", value: "foo" },
@@ -1093,7 +1093,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -1108,7 +1108,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get markets w/ keyword==election", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Keyword", value: "election" },
@@ -1123,7 +1123,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -1138,7 +1138,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get no markets w/ keyword==foo", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Keyword", value: "foo" },
@@ -1153,7 +1153,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -1168,7 +1168,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get markets w/ orderBy==bet_volume", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "OrderBy", value: "bet_volume" },
@@ -1183,7 +1183,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -1199,7 +1199,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get markets w/ orderBy==bet_volume orderDirection=ASC", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "OrderBy", value: "bet_volume" },
@@ -1215,7 +1215,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -1231,7 +1231,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get markets w/ limit and offset", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Limit", value: "1" },
@@ -1247,7 +1247,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -1275,7 +1275,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get no markets w/ limit and offset > num of results", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Markets" },
           { name: "Limit", value: "1" },
@@ -1291,7 +1291,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -1306,7 +1306,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get broadcasts", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Broadcasts" },
           { name: "Market", value: walletAddress },
@@ -1321,7 +1321,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {
@@ -1345,7 +1345,7 @@ describe("platformData.integration.test", function () {
 
     it("+ve should get broadcasts w/ offset", async () => {
       await message({
-        process: platformData,
+        process: dataIndex,
         tags: [
           { name: "Action", value: "Get-Broadcasts" },
           { name: "Market", value: walletAddress },
@@ -1362,7 +1362,7 @@ describe("platformData.integration.test", function () {
 
       let { Messages, Error } = await result({
         message: messageId,
-        process: platformData,
+        process: dataIndex,
       });
 
       if (Error) {

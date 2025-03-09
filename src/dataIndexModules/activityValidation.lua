@@ -6,8 +6,8 @@ See activity.lua for full license details.
 ]]
 
 local ActivityValidation = {}
-local sharedValidation = require('platformDataModules.sharedValidation')
-local sharedUtils = require('platformDataModules.sharedUtils')
+local sharedValidation = require('dataIndexModules.sharedValidation')
+local sharedUtils = require('dataIndexModules.sharedUtils')
 
 --- Validate log market
 --- @param msg Message The message received

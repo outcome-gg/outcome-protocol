@@ -158,36 +158,38 @@ ACTIVITY LOGS
 local function logMarket(
   dataIndex,
   market,
-  creator,
-  creatorFee,
-  creatorFeeTarget,
-  question,
-  rules,
-  outcomeSlotCount,
   collateralToken,
   resolutionAgent,
+  outcomeSlotCount,
+  question,
+  rules,
   category,
   subcategory,
   logo,
+  logos,
   eventId,
+  creator,
+  creatorFee,
+  creatorFeeTarget,
   msg
 )
   -- create notice
   local notice = {
     Action = "Log-Market-Notice",
     Market = market,
-    Creator = creator,
-    CreatorFee = tostring(creatorFee),
-    CreatorFeeTarget = creatorFeeTarget,
-    Question = question,
-    Rules = rules,
-    OutcomeSlotCount = tostring(outcomeSlotCount),
     Collateral = collateralToken,
     ResolutionAgent = resolutionAgent,
+    OutcomeSlotCount = tostring(outcomeSlotCount),
+    Question = question,
+    Rules = rules,
     Category = category,
     Subcategory = subcategory,
     Logo = logo,
-    EventId = eventId
+    Logos = json.encode(logos),
+    EventId = eventId,
+    Creator = creator,
+    CreatorFee = tostring(creatorFee),
+    CreatorFeeTarget = creatorFeeTarget
   }
   -- log to data index
   msg.forward(dataIndex, notice)
@@ -195,15 +197,15 @@ local function logMarket(
   msg.forward(creator, notice)
 end
 
-local function logGroup(dataIndex, group, creator, collateral, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
+local function logGroup(dataIndex, group, collateral, outcomeSlotCount, question, rules, category, subcategory, logo, creator, msg)
   -- create notice
   local notice = {
     Action = "Log-Group-Notice",
     Group = group,
     Collateral = collateral,
+    OutcomeSlotCount = outcomeSlotCount,
     Question = question,
     Rules = rules,
-    OutcomeSlotCount = outcomeSlotCount,
     Category = category,
     Subcategory = subcategory,
     Logo = logo,
@@ -246,7 +248,7 @@ function MarketFactoryMethods:createEvent(collateral, dataIndex, outcomeSlotCoun
   if not self.eventConfigByCreator[msg.From] then self.eventConfigByCreator[msg.From] = {} end
   self.eventConfigByCreator[msg.From][msg.Id] = config
   -- log group
-  logGroup(dataIndex, msg.Id, msg.From, collateral, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
+  logGroup(dataIndex, msg.Id, collateral, outcomeSlotCount, question, rules, category, subcategory, logo, msg.From, msg)
   -- send notice
   return self.createEventNotice(dataIndex, collateral, msg.From, question, rules, outcomeSlotCount, category, subcategory, logo, msg)
 end
@@ -389,18 +391,19 @@ function MarketFactoryMethods:initMarket(msg)
     logMarket(
       marketConfig.dataIndex,
       processId,
-      marketConfig.creator,
-      marketConfig.creatorFee,
-      marketConfig.creatorFeeTarget,
-      marketConfig.question,
-      marketConfig.rules,
-      marketConfig.outcomeSlotCount,
       marketConfig.collateralToken,
       marketConfig.resolutionAgent,
+      marketConfig.outcomeSlotCount,
+      marketConfig.question,
+      marketConfig.rules,
       marketConfig.category,
       marketConfig.subcategory,
       marketConfig.logo,
+      marketConfig.logos,
       marketConfig.eventId,
+      marketConfig.creator,
+      marketConfig.creatorFee,
+      marketConfig.creatorFeeTarget,
       msg
     )
   end

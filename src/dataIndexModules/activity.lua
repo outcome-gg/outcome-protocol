@@ -18,8 +18,8 @@ https://outcome.gg/tos
 
 local Activity = {}
 local ActivityMethods = {}
-local ActivityNotices = require('platformDataModules.activityNotices')
-local constants = require('platformDataModules.constants')
+local ActivityNotices = require('dataIndexModules.activityNotices')
+local constants = require('dataIndexModules.constants')
 local json = require('json')
 
 function Activity.new(dbAdmin)

@@ -87,7 +87,6 @@ function CPMMNotices.sellNotice(from, onBehalfOf, returnAmount, feeAmount, posit
 end
 
 --- Sends a withdraw fees notice
---- @notice Returns notice with `msg.reply` if `async` is true, otherwise uses `ao.send`
 --- @dev Ensures the final notice is sent to the user, preventing unintended message handling
 --- @param feeAmount number The fee amount
 --- @param onBehalfOf string The address to receive the fees

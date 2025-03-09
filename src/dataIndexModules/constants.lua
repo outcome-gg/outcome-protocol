@@ -1,7 +1,7 @@
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
-See platformData.lua for full license details.
+See dataIndex.lua for full license details.
 =========================================================
 ]]
 

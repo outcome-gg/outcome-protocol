@@ -55,7 +55,7 @@ if [ "$1" == "test" ]; then
     # Deploy configurator
     create_or_update_process TEST_CONFIGURATOR src/configurator.lua
     # Deploy platform data contract
-    create_or_update_process TEST_PLATFORM_DATA2 src/platformData.lua --sqlite
+    create_or_update_process TEST_PLATFORM_DATA2 src/dataIndex.lua --sqlite
     # Deploy mock collateral contract
     create_or_update_process DEV_MOCK_DAI src/mock/token.lua
     
