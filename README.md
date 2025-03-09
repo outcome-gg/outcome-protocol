@@ -456,7 +456,7 @@ For a deeper look at system interactions, we've provided detailed sequence diagr
 | `Remove-Funding`      || `Quantity`: Integer greater than 0 | `OnBehalfOf`: Valid Arweave address<br>`SendInterim`: String | `Remove-Funding-Notice`<br>`Log-Funding-Notice`  |
 | `Buy(*)`       || `Quantity`: Integer greater than 0s<br>`X-PositionId`: Integer greater than 0<br>`X-MinPositionTokensToBuy`: Integer greater than 0 |  `X-OnBehalfOf`: Valid Arweave address<br>`X-SendInterim`: String | `Debit-Notice`<br>`Credit-Notice`<br>`Buy-Notice`<br>`Log-Prediction-Notice`<br>`Log-Probabilities-Notice` |
 | `Sell`  || `Quantity`: Integer greater than 0s<br>`PositionId`: Integer greater than 0<br>`ReturnAmount`: Integer greater than 0  | `OnBehalfOf`: Valid Arweave address<br>`SendInterim`: String | `Sell-Notice`<br>`Log-Prediction-Notice`<br>`Log-Probabilities-Notice` |
-| `Withdraw-Fees`|| | `SendInterim`: String| `Withdraw-Fees-Notice` |
+| `Withdraw-Fees`|| | `SendInterim`: String| `OnBehalfOf`: Valid Arweave address<br>`Withdraw-Fees-Notice` |
 | `Calc-Buy-Amount` || `InvestmentAmount`: Integer greater than 0s<br>`PositionId`: Integer greater than 0 | | `Calc-Buy-Amount-Response` |
 | `Calc-Sell-Amount` || `ReturnAmount`: Integer greater than 0s<br>`PositionId`: Integer greater than 0 | | `Calc-Sell-Amount-Response` |
 | `Collected-Fees`|| | | `Collected-Fees-Response` |
