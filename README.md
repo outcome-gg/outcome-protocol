@@ -7,11 +7,11 @@ Outcome v2 is a new decentralized automated market maker and prediction market p
 - [Quickstart](#quickstart)
   - [Install AOS](#1-install-aos)
   - [Load Outcome](#2-load-outcome)
-  - [Mint Test Collateral](#3-mint-test-collateral)
-  - [Create a Market](#4-create-a-market)
-  - [Get Market Process ID](#5-get-market-process-id)
-  - [Initialize the Market](#6-initialize-the-market)
-  - [Fund the Market](#7-fund-the-market)
+  - [Create a Market](#3-create-a-market)
+  - [Get Market Process ID](#4-get-market-process-id)
+  - [Initialize the Market](#5-initialize-the-market)
+  - [Mint Test Collateral](#6-mint-test-collateral)
+  - [Fund the Market](#7-fund-the-market-and-set-initial-probabilities)
   - [Buy Positions](#8-buy-positions)
   - [Resolve Market](#9-resolve-market)
   - [Redeem Positions](#10-redeem-positions)
@@ -371,7 +371,6 @@ For a deeper look at system interactions, we've provided detailed sequence diagr
   - [Redeem Positions](docs/06-market-resolution/redeemPositions.png)
 
 [🔝 Back to Top](#table-of-contents)
-
 
 ## Contracts
 
