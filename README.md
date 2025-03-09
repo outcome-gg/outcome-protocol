@@ -381,7 +381,7 @@ For a deeper look at system interactions, we've provided detailed sequence diagr
 | [`dataIndex.lua`](src/dataIndex.lua)          | Stores protocol logs and enables complex queries. |
 | [`market.lua`](src/market.lua)              | Handles all prediction market functionality in a single process. |
 | [`marketFactory.lua`](src/marketFactory.lua)       | Spawns prediction markets permissionlessly, gated by utility token staking. |
-| [`ocmToken.lua`](src/ocmToken.lua)            | Rewards activity, gates market creation, and governs protocol updates. |
+| [`ocmToken.lua`](src/ocmToken.lua)            | Rewards stakeholders, gates market creation, and governs protocol updates. |
 | [`resolutionAgent.lua`](src/resolutionAgent.lua)     | Autonomously resolves markets, supporting single-signer and zero-resolution (perpetual) markets. |
 
 ### Roles
@@ -392,6 +392,7 @@ For a deeper look at system interactions, we've provided detailed sequence diagr
 | **`C`** | **Configurator**          | Manages and enforces protocol-level updates. |
 | **`M`** | **Moderator**             | Moderates non-critical content. |
 | **`R`** | **Resolution Agent**      | Unique to each market, responsible for finalising payouts. |
+| **`S`** | **Staking Authority**     | Manages staking-based permissions and governance. |
 | **`V`** | **Viewer**                | Executes complex SQL queries. |
 
 ### Configurator
@@ -487,20 +488,23 @@ For a deeper look at system interactions, we've provided detailed sequence diagr
 | Action                | Required Role                    | Required Tags                          | Optional Tags                   | Result                 | 
 | --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 
 | `Info`      || | | `Info-Response` |
-| `Spawn-Market`        || `CollateralToken`: Valid Arweave address<br>`ResolutionAgent`: Valid Arweave address<br>`DataIndex`: Valid Arweave address<br>`OutcomeSlotCount`: Integer greater or equal to 2<br>`Question`: String<br>`Rules`: String<br>`Category`: String<br>`Subcategory`: String<br>`Logo`: String<br>`Logos`: Valid JSON Array of strings<br>`CreatorFee`: Integer greater than or equal to 0<br>`CreatorFeeTarget`: Valid Arweave address<br> | | `Spawn-Market-Notice` |
+| `Create-Event`        || `CollateralToken`: Valid Arweave address<br>`DataIndex`: Valid Arweave address<br>`OutcomeSlotCount`: Integer greater or equal to 2<br>`Question`: String | `Rules`: String<br>`Category`: String<br>`Subcategory`: String<br>`Logo`: String<br>`StartTime`: Integer greater than 0<br>`EndTime`: Integer greater than 0 | `Create-Event-Notice` |
+| `Spawn-Market`        || `CollateralToken`: Valid Arweave address<br>`DataIndex`: Valid Arweave address<br>`ResolutionAgent`: Valid Arweave address<br>`DataIndex`: Valid Arweave address<br>`OutcomeSlotCount`: Integer greater or equal to 2<br>`Question`: String<br>`CreatorFee`: Integer greater than or equal to 0<br>`CreatorFeeTarget`: Valid Arweave address<br> | `Rules`: String<br>`Category`: String<br>`Subcategory`: String<br>`Logo`: String<br>`Logos`: Valid JSON Array of strings<br>`EventId`: String<br>`StartTime`: Integer greater than 0<br>`EndTime`: Integer greater than 0 | `Spawn-Market-Notice` |
 | `Init-Market`      || | | `Init-Market-Notice` |
 | `Markets-Pending`       || | | `Markets-Pending-Response` |
 | `Markets-Init`  || | | `Markets-Init-Response` |
-| `Markets-By-Creator`|| `Creator`: Valid Arweave address | | `Markets-By-Creator-Response` |
+| `Events-By-Creator`|| | `Creator`: Valid Arweave address | `Events-By-Creator-Response` |
+| `Markets-By-Creator`|| | `Creator`: Valid Arweave address | `Markets-By-Creator-Response` |
 | `Get-Process-Id` || `Original-Msg-Id`: Valid Arweave address | | `Get-Process-Id-Response` |
-| `Get-Latest-Process-Id-For-Creator`  || `Creator`:  Valid Arweave address | | `Get-Latest-Process-Id-For-Creator-Response` |
-| `Update-Configurator`| `C` | `Configurator`:  Valid Arweave address | | `Update-Configurator-Notice` |
-| `Update-Incentives` | `C` | `Incentives`:  Valid Arweave address | | `Update-Incentives-Notice` |
+| `Get-Latest-Process-Id-For-Creator`  || | `Creator`: Valid Arweave address | `Get-Latest-Process-Id-For-Creator-Response` |
+| `Approve-Creator` | `S` | `Creator`: Valid Arweave address<br>`Approved`: Boolean (true or false) | | `Approve-Creator-Notice` |
+| `Update-Configurator`| `C` | `Configurator`: Valid Arweave address | | `Update-Configurator-Notice` |
+| `Update-Incentives` | `C` | `Incentives`: Valid Arweave address | | `Update-Incentives-Notice` |
 | `Update-Lp-Fee` | `C` | `LpFee`: Integer greater than or equal to 0 | | `Update-Lp-Fee-Notice` |
 | `Update-Protocol-Fee` | `C` | `ProtocolFee`: Integer greater than or equal to 0 | | `Update-Protocol-Fee-Notice` |
-| `Update-Protocol-Fee-Target` | `C` | `ProtocolFeeTarget`:  Valid Arweave address | | `Update-Protocol-Fee-Target-Notice` |
+| `Update-Protocol-Fee-Target` | `C` | `ProtocolFeeTarget`: Valid Arweave address | | `Update-Protocol-Fee-Target-Notice` |
 | `Update-Maximum-Take-Fee` | `C` | `MaximumTakeFee`: Integer greater than or equal to 0 | | `Update-Maximum-Take-Fee-Notice` |
-| `Approve-Collateral-Token` | `C` | `CollateralToken`:  Valid Arweave address<br>`Approved`: Boolean (true or false) | | `Approve-Collateral-Token-Notice` |
+| `Register-Collateral-Token` | `C` | `CollateralToken`: Valid Arweave address<br>`Name`: String<br>`Ticker`: String<br>`Denomination`: Integer greater than zero<br>`Approved`: Boolean (true or false) | | `Register-Collateral-Token-Notice` |
 | `Transfer` | `C` |`Token`:  Valid Arweave address<br>`Quantity`: Integer greater than 0<br>`Recipient`: Valid Arweave address | `X-*`: Tags beginning with "X-" | `Transfer-Notice`<br>`Transfer-Success-Notice` |
 
 ### OCM Token

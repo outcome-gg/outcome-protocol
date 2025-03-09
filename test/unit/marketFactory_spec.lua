@@ -163,6 +163,8 @@ describe("#marketFactory", function()
         msgCreateMarketGroup.Tags["Category"],
         msgCreateMarketGroup.Tags["Subcategory"],
         msgCreateMarketGroup.Tags["Logo"],
+        "1741542323381", -- startTime
+        "1741552323381", -- endTime
         msgCreateMarketGroup
       )
     end)
@@ -179,7 +181,9 @@ describe("#marketFactory", function()
       Rules = msgCreateMarketGroup.Tags["Rules"],
       Category = msgCreateMarketGroup.Tags["Category"],
       Subcategory = msgCreateMarketGroup.Tags["Subcategory"],
-      Logo = msgCreateMarketGroup.Tags["Logo"]
+      Logo = msgCreateMarketGroup.Tags["Logo"],
+      StartTime = "1741542323381",
+      EndTime = "1741552323381"
     }, notice)
   end)
 
@@ -199,7 +203,9 @@ describe("#marketFactory", function()
         msgSpawnMarket.Tags["Subcategory"],
         msgSpawnMarket.Tags["Logo"],
         msgSpawnMarket.Tags["Logos"],
-        msgSpawnMarket.Tags["GroupId"],
+        msgSpawnMarket.Tags["EventId"],
+        "1741542323381", -- startTime
+        "1741552323381", -- endTime
         msgSpawnMarket.From,
         msgSpawnMarket.Tags["CreatorFee"],
         msgSpawnMarket.Tags["CreatorFeeTarget"],
@@ -221,6 +227,8 @@ describe("#marketFactory", function()
       Logo = msgSpawnMarket.Tags["Logo"],
       Logos = json.encode(msgSpawnMarket.Tags["Logos"]),
       EventId = msgSpawnMarket.Tags["EventId"],
+      StartTime = "1741542323381",
+      EndTime = "1741552323381",
       Creator = msgSpawnMarket.From,
       CreatorFee = msgSpawnMarket.Tags["CreatorFee"],
       CreatorFeeTarget = msgSpawnMarket.Tags["CreatorFeeTarget"],
@@ -250,7 +258,7 @@ describe("#marketFactory", function()
       category = "",
       subcategory = "",
       logo = "",
-      groupId = ""
+      eventId = ""
     }
     FACTORY.messageToMarketConfigMapping[msgSpawnMarket.Id] = marketConfig
     -- should not throw an error
@@ -311,7 +319,7 @@ describe("#marketFactory", function()
       category = "",
       subcategory = "",
       logo = "",
-      groupId = ""
+      eventId = ""
     }
     FACTORY.messageToMarketConfigMapping[msgSpawnMarket.Id] = marketConfig
     -- init market
@@ -336,6 +344,8 @@ describe("#marketFactory", function()
       msgCreateMarketGroup.Tags["Category"],
       msgCreateMarketGroup.Tags["Subcategory"],
       msgCreateMarketGroup.Tags["Logo"],
+      "1741542323381", -- startTime
+      "1741552323381", -- endTime
       msgCreateMarketGroup
     )
     local msgReply = {}

@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 30.24%"></span>
-                  <span><strong>30.24%</strong> Coverage</span>
+                  <span class="bg" style="width: 28.34%"></span>
+                  <span><strong>28.34%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>114</strong> Hits</span>
-               <span class="miss"><strong>263</strong> Missed</span>
+               <span class="hits"><strong>125</strong> Hits</span>
+               <span class="miss"><strong>316</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -859,11 +859,11 @@ end
             src/marketModules/semiFungibleTokens.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 2.56%"></span>
-                  <span><strong>2.56%</strong> Coverage</span>
+                  <span class="bg" style="width: 3.42%"></span>
+                  <span><strong>3.42%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>3</strong> Hits</span>
-               <span class="miss"><strong>114</strong> Missed</span>
+               <span class="hits"><strong>4</strong> Hits</span>
+               <span class="miss"><strong>113</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -894,7 +894,7 @@ THE SOFTWARE.
 <span class="fc" data-hits="1">local SemiFungibleTokens = {}</span>
 <span class="fc" data-hits="1">local SemiFungibleTokensMethods = {}</span>
 <span class="fc" data-hits="1">local SemiFungibleTokensNotices = require(&#39;marketModules.semiFungibleTokensNotices&#39;)</span>
-<span class="nc">local bint = require(&#39;.bint&#39;)(256)</span>
+<span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
 
 -- Represents SemiFungibleTokens
 --- @class SemiFungibleTokens
@@ -1176,6 +1176,231 @@ end
 </pre>
       </div>
 
+      <div class="hidden file danger" id="src-marketmodules-semifungibletokensnotices">
+         <h2 class="title">
+            src/marketModules/semiFungibleTokensNotices.lua
+            <span class="stats">
+               <span class="cov">
+                  <span class="bg" style="width: 15.62%"></span>
+                  <span><strong>15.62%</strong> Coverage</span>
+               </span>
+               <span class="hits"><strong>10</strong> Hits</span>
+               <span class="miss"><strong>54</strong> Missed</span>
+            </span>
+         </h2>
+         <pre class="prettyprint lang-lua linenums">--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See semiFungibleTokens.lua for full license details.
+=========================================================
+]]
+
+-- local ao = require(&#39;.ao&#39;)
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
+
+<span class="fc" data-hits="1">local SemiFungibleTokensNotices = {}</span>
+
+--- Mint single notice
+--- @param to string The address that will own the minted token
+--- @param id string The ID of the token to be minted
+--- @param quantity string The quantity of the token to be minted
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
+--- @param msg Message The message received
+--- @return Message The mint notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.mintSingleNotice(to, id, quantity, detached, msg)</span>
+<span class="nc">  local notice = {</span>
+    Recipient = to,
+    PositionId = tostring(id),
+    Quantity = tostring(quantity),
+    Action = &#39;Mint-Single-Notice&#39;,
+<span class="nc">    Data = Colors.gray .. &quot;Successfully minted &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
+  }
+  -- Send notice
+<span class="nc">  if not detached then return msg.reply(notice) end</span>
+<span class="nc">  notice.Target = msg.From</span>
+<span class="nc">  return ao.send(notice)</span>
+end
+
+--- Mint batch notice
+--- @param to string The address that will own the minted tokens
+--- @param ids table&lt;string&gt; The IDs of the tokens to be minted
+--- @param quantities table&lt;string&gt; The quantities of the tokens to be minted
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
+--- @param msg Message The message received
+--- @return Message The batch mint notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.mintBatchNotice(to, ids, quantities, detached, msg)</span>
+<span class="nc">  local notice = {</span>
+    Recipient = to,
+    PositionIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+    Action = &#39;Mint-Batch-Notice&#39;,
+<span class="nc">    Data = &quot;Successfully minted batch&quot;</span>
+  }
+  -- Send notice
+<span class="nc">  if not detached then return msg.reply(notice) end</span>
+<span class="nc">  notice.Target = msg.From</span>
+<span class="nc">  return ao.send(notice)</span>
+end
+
+--- Burn single notice
+--- @param from string The address that will burn the token
+--- @param id string The ID of the token to be burned
+--- @param quantity string The quantity of the token to be burned
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
+--- @param msg Message The message received
+--- @return Message The burn notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnSingleNotice(from, id, quantity, detached, msg)</span>
+  -- Prepare notice
+<span class="nc">  local notice = {</span>
+    Recipient = from,
+    PositionId = tostring(id),
+    Quantity = tostring(quantity),
+    Action = &#39;Burn-Single-Notice&#39;,
+<span class="nc">    Data = Colors.gray .. &quot;Successfully burned &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot; .. Colors.blue .. tostring(id) .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      notice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  if not detached then return msg.reply(notice) end</span>
+<span class="nc">  notice.Target = from</span>
+<span class="nc">  return ao.send(notice)</span>
+end
+
+--- Burn batch notice
+--- @param from string The address that will burn the tokens
+--- @param positionIds table&lt;string&gt; The IDs of the positions to be burned
+--- @param quantities table&lt;string&gt; The quantities of the tokens to be burned
+--- @param remainingBalances table&lt;string&gt; The remaining balances of unburned tokens
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
+--- @param msg Message The message received
+--- @return Message The burn notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.burnBatchNotice(from, positionIds, quantities, remainingBalances, detached, msg)</span>
+  -- Prepare notice
+<span class="nc">  local notice = {</span>
+    Recipient = from,
+    PositionIds = json.encode(positionIds),
+    Quantities = json.encode(quantities),
+    RemainingBalances = json.encode(remainingBalances),
+    Action = &#39;Burn-Batch-Notice&#39;,
+<span class="nc">    Data = &quot;Successfully burned batch&quot;</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      notice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  if not detached then return msg.reply(notice) end</span>
+<span class="nc">  notice.Target = from</span>
+<span class="nc">  return ao.send(notice)</span>
+end
+
+--- Transfer single token notices
+--- @param from string The address to be debited
+--- @param to string The address to be credited
+--- @param id string The ID of the token to be transferred
+--- @param quantity string The quantity of the token to be transferred
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
+--- @param msg Message The message received
+--- @return table&lt;Message&gt; The debit and credit transfer notices
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferSingleNotices(from, to, id, quantity, detached, msg)</span>
+  -- Prepare debit notice
+<span class="nc">  local debitNotice = {</span>
+    Action = &#39;Debit-Single-Notice&#39;,
+    Recipient = to,
+    PositionId = tostring(id),
+    Quantity = tostring(quantity),
+<span class="nc">    Data = Colors.gray .. &quot;You transferred &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot;</span>
+<span class="nc">      .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; to &quot; .. Colors.green .. to .. Colors.reset</span>
+  }
+  -- Prepare credit notice
+<span class="nc">  local creditNotice = {</span>
+    Action = &#39;Credit-Single-Notice&#39;,
+    Sender = from,
+    PositionId = tostring(id),
+    Quantity = tostring(quantity),
+<span class="nc">    Data = Colors.gray .. &quot;You received &quot; .. Colors.blue .. tostring(quantity) .. Colors.gray .. &quot; of id &quot;</span>
+<span class="nc">      .. Colors.blue .. tostring(id) .. Colors.gray .. &quot; from &quot; .. Colors.green .. from .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      debitNotice[tagName] = tagValue</span>
+<span class="nc">      creditNotice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notices
+<span class="nc">  if not detached then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end</span>
+<span class="nc">  debitNotice.Target = from</span>
+<span class="nc">  creditNotice.Target = to</span>
+<span class="nc">  return { ao.send(debitNotice), ao.send(creditNotice) }</span>
+end
+
+--- Transfer batch tokens notices
+--- @param from string The address to be debited
+--- @param to string The address to be credited
+--- @param ids table&lt;string&gt; The IDs of the tokens to be transferred
+--- @param quantities table&lt;string&gt; The quantities of the tokens to be transferred
+--- @param detached boolean Whether to use `ao.send` or `msg.reply`
+--- @param msg Message The message received
+--- @return table&lt;Message&gt; The debit and credit batch transfer notices
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferBatchNotices(from, to, ids, quantities, detached, msg)</span>
+  -- Prepare debit notice
+<span class="nc">  local debitNotice = {</span>
+    Action = &#39;Debit-Batch-Notice&#39;,
+    Recipient = to,
+    PositionIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+<span class="nc">    Data = Colors.gray .. &quot;You transferred batch to &quot; .. Colors.green .. to .. Colors.reset</span>
+  }
+  -- Prepare credit notice
+<span class="nc">  local creditNotice = {</span>
+    Action = &#39;Credit-Batch-Notice&#39;,
+    Sender = from,
+    PositionIds = json.encode(ids),
+    Quantities = json.encode(quantities),
+<span class="nc">    Data = Colors.gray .. &quot;You received batch from &quot; .. Colors.green .. from .. Colors.reset</span>
+  }
+  -- Forward X-Tags
+<span class="nc">  for tagName, tagValue in pairs(msg) do</span>
+    -- Tags beginning with &quot;X-&quot; are forwarded
+<span class="nc">    if string.sub(tagName, 1, 2) == &quot;X-&quot; then</span>
+<span class="nc">      debitNotice[tagName] = tagValue</span>
+<span class="nc">      creditNotice[tagName] = tagValue</span>
+    end
+  end
+  -- Send notice
+<span class="nc">  if not detached then return { msg.reply(debitNotice), msg.forward(to, creditNotice) } end</span>
+<span class="nc">  debitNotice.Target = from</span>
+<span class="nc">  creditNotice.Target = to</span>
+<span class="nc">  return {ao.send(debitNotice), ao.send(creditNotice)}</span>
+end
+
+--- Transfer error notice
+--- @param id string The ID of the token to be transferred
+--- @param msg Message The message received
+--- @return Message The transfer error notice
+<span class="fc" data-hits="1">function SemiFungibleTokensNotices.transferErrorNotice(id, msg)</span>
+<span class="nc">  return msg.reply({</span>
+    Action = &#39;Transfer-Error&#39;,
+    [&#39;Message-Id&#39;] = msg.Id,
+    [&#39;PositionId&#39;] = id,
+<span class="nc">    Error = &#39;Insufficient Balance!&#39;</span>
+  })
+end
+
+<span class="fc" data-hits="1">return SemiFungibleTokensNotices</span>
+</pre>
+      </div>
+
       <div class="hidden file warning" id="src-marketmodules-sharedutils">
          <h2 class="title">
             src/marketModules/sharedUtils.lua
@@ -1386,7 +1611,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-09 18:11:04
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-09 19:24:05
    </footer>
 
    <script type="text/javascript">

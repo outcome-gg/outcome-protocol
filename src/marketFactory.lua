@@ -164,6 +164,8 @@ end)
 --- - msg.Tags.Subcategory (string): The subcategory of the event.
 --- - msg.Tags.Logo (string): The logo of the LP token.
 --- - msg.Tags.Logos (string): The logos of the position tokens (stringified table).
+--- - msg.Tags.StartTime (string): The market start time.
+--- - msg.Tags.EndTime (string): The market end time.
 --- - msg.Tags.EventId (string): The event ID.
 Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
   -- Validate input
@@ -196,6 +198,8 @@ Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
     msg.Tags["Logo"],
     msg.Tags["Logos"],
     msg.Tags["EventId"],
+    msg.Tags["StartTime"],
+    msg.Tags["EndTime"],
     msg.From,
     tonumber(msg.Tags["CreatorFee"]),
     msg.Tags["CreatorFeeTarget"],

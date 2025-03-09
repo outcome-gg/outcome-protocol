@@ -18,10 +18,12 @@ local json = require('json')
 --- @param category string The event category
 --- @param subcategory string The event subcategory
 --- @param logo string The event logo
+--- @param startTime string The event start time
+--- @param endTime string The event end time
 --- @param creator string The creator address
 --- @param msg Message The message received
 --- @return Message createEventNotice The create event notice
-function MarketFactoryNotices.createEventNotice(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, creator, msg)
+function MarketFactoryNotices.createEventNotice(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, creator, msg)
   return msg.reply({
     Action = "Create-Event-Notice",
     EventId = msg.Id,
@@ -34,6 +36,8 @@ function MarketFactoryNotices.createEventNotice(collateral, dataIndex, denominat
     Category = category,
     Subcategory = subcategory,
     Logo = logo,
+    StartTime = startTime,
+    EndTime = endTime,
     Creator = creator
   })
 end
@@ -51,6 +55,8 @@ end
 --- @param logo string The LP token logo
 --- @param logos table<string> The position token logos
 --- @param eventId string The event ID
+--- @param startTime string The market start time
+--- @param endTime string The market end time
 --- @param creator string The creator address
 --- @param creatorFee number The creator fee
 --- @param creatorFeeTarget string The creator fee target
@@ -69,6 +75,8 @@ function MarketFactoryNotices.spawnMarketNotice(
   logo,
   logos,
   eventId,
+  startTime,
+  endTime,
   creator,
   creatorFee,
   creatorFeeTarget,
@@ -88,6 +96,8 @@ function MarketFactoryNotices.spawnMarketNotice(
     Logo = logo,
     Logos = json.encode(logos),
     EventId = eventId,
+    StartTime = startTime,
+    EndTime = endTime,
     Creator = creator,
     CreatorFee = tostring(creatorFee),
     CreatorFeeTarget = creatorFeeTarget,

@@ -27,7 +27,7 @@ local json = require('json')
 --- @field name string The name of the collateral token
 --- @field ticker string The ticker of the collateral token
 --- @field denomination number The number of decimals of the collateral token
---- @field approved boolean Whether the collateral token is approved 
+--- @field approved boolean Whether the collateral token is approved
 
 --- Represents a MarketFactory
 --- @class MarketFactory
@@ -176,6 +176,8 @@ local function logMarket(
   logo,
   logos,
   eventId,
+  startTime,
+  endTime,
   creator,
   creatorFee,
   creatorFeeTarget,
@@ -196,6 +198,8 @@ local function logMarket(
     Logo = logo,
     Logos = json.encode(logos),
     EventId = eventId,
+    StartTime = startTime,
+    EndTime = endTime,
     Creator = creator,
     CreatorFee = tostring(creatorFee),
     CreatorFeeTarget = creatorFeeTarget
@@ -206,7 +210,7 @@ local function logMarket(
   msg.forward(creator, notice)
 end
 
-local function logEvent(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, creator, msg)
+local function logEvent(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, creator, msg)
   -- create notice
   local notice = {
     Action = "Log-Event-Notice",
@@ -219,6 +223,8 @@ local function logEvent(collateral, dataIndex, denomination, outcomeSlotCount, q
     Category = category,
     Subcategory = subcategory,
     Logo = logo,
+    StartTime = startTime,
+    EndTime = endTime,
     Creator = creator
   }
   -- log to data index
@@ -238,17 +244,22 @@ WRITE METHODS
 --- @param dataIndex string The data index process ID (where to send logs)
 --- @param outcomeSlotCount number The number of outcome slots
 --- @param question string The question to be answered
---- @param rules string The rules of the event
---- @param category string The category of the event
---- @param subcategory string The subcategory of the event
---- @param logo string The logo of the event
+--- @param rules string|nil The rules of the event
+--- @param category string|nil The category of the event
+--- @param subcategory string|nil The subcategory of the event
+--- @param logo string|nil The logo of the event
+--- @param startTime string|nil The start time of the event
+--- @param endTime string|nil The end time of the event
 --- @param msg Message The message received
 --- @return Message The create event message
-function MarketFactoryMethods:createEvent(collateral, dataIndex, outcomeSlotCount, question, rules, category, subcategory, logo, msg)
+function MarketFactoryMethods:createEvent(collateral, dataIndex, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, msg)
   -- set defaults
+  rules = rules or ""
   category = category or ""
   subcategory = subcategory or ""
   logo = logo or self.marketLogo
+  startTime = startTime or ""
+  endTime = endTime or ""
   -- set config
   local config = {
     collateral = collateral,
@@ -260,9 +271,9 @@ function MarketFactoryMethods:createEvent(collateral, dataIndex, outcomeSlotCoun
   -- retrieve denomination
   local denomination = self.registeredCollateralTokens[collateral].denomination
   -- log event
-  logEvent(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, msg.From, msg)
+  logEvent(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, msg.From, msg)
   -- send notice
-  return self.createEventNotice(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, msg.From, msg)
+  return self.createEventNotice(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, msg.From, msg)
 end
 
 --- Spawn market
@@ -277,6 +288,8 @@ end
 --- @param logo string|nil The logo of the LP token
 --- @param logos table<string>|nil The logos of the position tokens
 --- @param eventId string|nil The event ID or nil
+--- @param startTime string|nil The start time or nil
+--- @param endTime string|nil The end time or nil
 --- @param creator string The creator address / process ID
 --- @param creatorFee number The creator fee in basis points
 --- @param creatorFeeTarget string The creator fee target address / process ID
@@ -294,11 +307,26 @@ function MarketFactoryMethods:spawnMarket(
   logo,
   logos,
   eventId,
+  startTime,
+  endTime,
   creator,
   creatorFee,
   creatorFeeTarget,
   msg
 )
+  -- set defaults
+  rules = rules or ""
+  category = category or ""
+  subcategory = subcategory or ""
+  logo = logo or self.marketLogo
+  logos = logos or {}
+  if #logos == 0 then
+    for _ = 1, outcomeSlotCount do
+      table.insert(logos, logo)
+    end
+  end
+  startTime = startTime or ""
+  endTime = endTime or ""
   eventId = eventId or ""
   -- check if event exists, creator is the owner, and collateral and outcome slot count matches event
   if eventId ~= "" then
@@ -313,17 +341,6 @@ function MarketFactoryMethods:spawnMarket(
     end
     if self.eventConfigByCreator[msg.From][msg.Id].outcomeSlotCount ~= outcomeSlotCount then
       return msg.reply({Error = "Outcome slot count does not match event"})
-    end
-  end
-  -- set defaults
-  rules = rules or ""
-  category = category or ""
-  subcategory = subcategory or ""
-  logo = logo or self.marketLogo
-  logos = logos or {}
-  if #logos == 0 then
-    for _ = 1, outcomeSlotCount do
-      table.insert(logos, logo)
     end
   end
   -- retrieve denomination
@@ -373,6 +390,8 @@ function MarketFactoryMethods:spawnMarket(
     logo = logo,
     logos = logos,
     eventId = eventId,
+    startTime = startTime,
+    endTime = endTime,
     creator = creator,
     creatorFee = creatorFee,
     creatorFeeTarget = creatorFeeTarget
@@ -392,6 +411,8 @@ function MarketFactoryMethods:spawnMarket(
     logo,
     logos,
     eventId,
+    startTime,
+    endTime,
     creator,
     creatorFee,
     creatorFeeTarget,
@@ -435,6 +456,8 @@ function MarketFactoryMethods:initMarket(msg)
       marketConfig.logo,
       marketConfig.logos,
       marketConfig.eventId,
+      marketConfig.startTime,
+      marketConfig.endTime,
       marketConfig.creator,
       marketConfig.creatorFee,
       marketConfig.creatorFeeTarget,

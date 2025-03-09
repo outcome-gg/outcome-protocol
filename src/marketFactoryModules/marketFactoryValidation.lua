@@ -48,6 +48,16 @@ function marketFactoryValidation.createEvent(approvedCollateralTokens, approvedC
   success, err = sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")
   if not success then return false, err end
 
+  if msg.Tags.StartTime then
+    success, err = sharedValidation.validatePositiveInteger(msg.Tags.StartTime, "StartTime")
+    if not success then return false, err end
+  end
+
+  if msg.Tags.EndTime then
+    success, err = sharedValidation.validatePositiveInteger(msg.Tags.EndTime, "EndTime")
+    if not success then return false, err end
+  end
+
   return true
 end
 
@@ -94,6 +104,16 @@ function marketFactoryValidation.spawnMarket(registeredCollateralTokens, approve
   local totalFee = bint.__add(bint(msg.Tags.CreatorFee), bint(protocolFee))
   if not bint.__le(totalFee, bint(maximumTakeFee)) then
     return false, 'Total fee must be less than or equal to maximum take fee'
+  end
+
+  if msg.Tags.StartTime then
+    success, err = sharedValidation.validatePositiveInteger(msg.Tags.StartTime, "StartTime")
+    if not success then return false, err end
+  end
+
+  if msg.Tags.EndTime then
+    success, err = sharedValidation.validatePositiveInteger(msg.Tags.EndTime, "EndTime")
+    if not success then return false, err end
   end
 
   local requiredFields = { "Question", "Rules", "Category", "Subcategory", "Logo" }

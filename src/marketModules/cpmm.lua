@@ -23,7 +23,6 @@ local CPMMNotices = require('marketModules.cpmmNotices')
 local bint = require('.bint')(256)
 local utils = require(".utils")
 local token = require('marketModules.token')
-local constants = require("marketModules.constants")
 local conditionalTokens = require('marketModules.conditionalTokens')
 
 --- Represents a CPMM (Constant Product Market Maker)
@@ -50,7 +49,22 @@ local conditionalTokens = require('marketModules.conditionalTokens')
 --- @param protocolFee number The protocol fee
 --- @param protocolFeeTarget string The protocol fee target
 --- @return CPMM cpmm The new CPMM instance
-function CPMM.new(configurator, collateralToken, resolutionAgent, positionIds, name, ticker, denomination, logo, logos, lpFee, creatorFee, creatorFeeTarget, protocolFee, protocolFeeTarget)
+function CPMM.new(
+  configurator,
+  collateralToken,
+  resolutionAgent,
+  positionIds,
+  name,
+  ticker,
+  denomination,
+  logo,
+  logos,
+  lpFee,
+  creatorFee,
+  creatorFeeTarget,
+  protocolFee,
+  protocolFeeTarget
+)
   local cpmm = {
     configurator = configurator,
     poolBalances = {},
