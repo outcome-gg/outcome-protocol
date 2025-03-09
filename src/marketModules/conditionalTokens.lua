@@ -2,14 +2,17 @@
 ======================================================================================
 Outcome © 2025. All Rights Reserved.
 ======================================================================================
-This code is proprietary and owned by Outcome.
+This code is proprietary and exclusively controlled by Outcome.
 
 You are permitted to build applications, integrations, and extensions that interact
-with the Outcome Protocol, provided such usage adheres to the official Outcome
+with the Outcome Protocol, provided such usage adheres to the official Outcome 
 terms of service and does not result in unauthorized forks or clones of this codebase.
 
-Redistribution, modification, or unauthorized use of this code is strictly prohibited
-without explicit written permission from Outcome.
+Redistribution, reproduction, modification, or distribution of this code is strictly 
+prohibited without explicit written permission from Outcome.
+
+By using this software, you agree to the Outcome Terms of Service:  
+https://outcome.gg/tos
 ======================================================================================
 ]]
 

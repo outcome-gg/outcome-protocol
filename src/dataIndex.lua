@@ -2,22 +2,25 @@
 ======================================================================================
 Outcome © 2025. All Rights Reserved.
 ======================================================================================
-This code is proprietary and owned by Outcome.
+This code is proprietary and exclusively controlled by Outcome.
 
 You are permitted to build applications, integrations, and extensions that interact
-with the Outcome Protocol, provided such usage adheres to the official Outcome
+with the Outcome Protocol, provided such usage adheres to the official Outcome 
 terms of service and does not result in unauthorized forks or clones of this codebase.
 
-Redistribution, modification, or unauthorized use of this code is strictly prohibited
-without explicit written permission from Outcome.
+Redistribution, reproduction, modification, or distribution of this code is strictly 
+prohibited without explicit written permission from Outcome.
+
+By using this software, you agree to the Outcome Terms of Service:  
+https://outcome.gg/tos
 ======================================================================================
 ]]
 
-local platformData = require("platformDataModules.platformData")
-local platformDataValidation = require("platformDataModules.platformDataValidation")
-local activityValidation = require("platformDataModules.activityValidation")
-local chatroomValidation = require("platformDataModules.chatroomValidation")
-local constants = require("platformDataModules.constants")
+local dataIndex = require("dataIndexModules.dataIndex")
+local dataIndexValidation = require("dataIndexModules.dataIndexValidation")
+local activityValidation = require("dataIndexModules.activityValidation")
+local chatroomValidation = require("dataIndexModules.chatroomValidation")
+local constants = require("dataIndexModules.constants")
 local sqlite3 = require('lsqlite3')
 local json = require("json")
 
@@ -143,15 +146,15 @@ PROBABILITIES = [[
 ]]
 
 --[[
-=============
-PLATFORM DATA
-=============
+==========
+DATA INDEX
+==========
 ]]
 
 Env = "DEV"
 
 if not Db or Env == "DEV" then Db = sqlite3.open_memory() end
-DbAdmin = require('platformDataModules.dbAdmin').new(Db)
+DbAdmin = require('dataIndexModules.dbAdmin').new(Db)
 
 local function initDb()
   Db:exec(USERS)
@@ -168,16 +171,16 @@ end
 local tables = initDb()
 print("tables: " .. json.encode(tables))
 
---- Represents the PlatformData Configuration
---- @class PlatformDataConfiguration
+--- Represents the DataIndex Configuration
+--- @class DataIndexConfiguration
 --- @field configurator string The configurator
 --- @field moderators table<string> The moderators
 --- @field viewers table<string> The viwers
 
---- Retrieve PlatformData Configuration
+--- Retrieve DataIndex Configuration
 --- Fetches configuration parameters from constants
---- @return PlatformDataConfiguration platformDataConfiguration The PlatformData Configuration
-local function retrievePlatformDataConfig()
+--- @return DataIndexConfiguration dataIndexConfiguration The DataIndex Configuration
+local function retrieveDataIndexConfig()
   local config = {
     configurator = constants.configurator,
     moderators = constants.moderators,
@@ -186,14 +189,14 @@ local function retrievePlatformDataConfig()
   return config
 end
 
---- @dev Reset PlatformData state during development mode or if uninitialized
-if not PlatformData or Env == 'DEV' then
-  local platformDataConfig = retrievePlatformDataConfig()
-  PlatformData = platformData.new(
+--- @dev Reset DataIndex state during development mode or if uninitialized
+if not DataIndex or Env == 'DEV' then
+  local dataIndexConfig = retrieveDataIndexConfig()
+  DataIndex = dataIndex.new(
     DbAdmin,
-    platformDataConfig.configurator,
-    platformDataConfig.moderators,
-    platformDataConfig.viewers
+    dataIndexConfig.configurator,
+    dataIndexConfig.moderators,
+    dataIndexConfig.viewers
   )
 end
 
@@ -207,7 +210,7 @@ INFO HANDLER
 --- @param msg Message The message received
 --- @return Message info The info
 Handlers.add("Info", {Action = "Info"}, function(msg)
-  return PlatformData:info(msg)
+  return DataIndex:info(msg)
 end)
 
 --[[
@@ -224,7 +227,7 @@ Handlers.add("Log-Market", {Action = "Log-Market-Notice"}, function(msg)
   local cast = msg.Tags.Cast == "true"
   local creatorFee = tonumber(msg.Tags.CreatorFee)
   local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
-  return PlatformData.activity:logMarket(
+  return DataIndex.activity:logMarket(
     msg.Tags.Market,
     msg.Tags.Creator,
     creatorFee,
@@ -250,7 +253,7 @@ end)
 Handlers.add("Log-Market-Group", {Action = "Log-Market-Group-Notice"}, function(msg)
   activityValidation.validateLogMarket(msg)
   local cast = msg.Tags.Cast == "true"
-  return PlatformData.activity:logMarketGroup(
+  return DataIndex.activity:logMarketGroup(
     msg.Tags.GroupId,
     msg.Tags.Collateral,
     msg.Tags.Creator,
@@ -272,7 +275,7 @@ end)
 Handlers.add("Log-Funding", {Action = "Log-Funding-Notice"}, function(msg)
   activityValidation.validateLogFunding(msg)
   local cast = msg.Tags.Cast == "true"
-  return PlatformData.activity:logFunding(msg.Tags.User, msg.Tags.Operation, msg.Tags.Collateral, msg.Tags.Quantity, os.time(), cast, msg)
+  return DataIndex.activity:logFunding(msg.Tags.User, msg.Tags.Operation, msg.Tags.Collateral, msg.Tags.Quantity, os.time(), cast, msg)
 end)
 
 --- Log prediction handler
@@ -281,7 +284,7 @@ end)
 Handlers.add("Log-Prediction", {Action = "Log-Prediction-Notice"}, function(msg)
   activityValidation.validateLogPrediction(msg)
   local cast = msg.Tags.Cast == "true"
-  return PlatformData.activity:logPrediction(
+  return DataIndex.activity:logPrediction(
     msg.Tags.User,
     msg.Tags.Operation,
     msg.Tags.Collateral,
@@ -302,7 +305,7 @@ Handlers.add("Log-Probabilities", {Action = "Log-Probabilities-Notice"}, functio
   activityValidation.validateLogProbabilities(msg)
   local cast = msg.Tags.Cast == "true"
   local probabilities = json.decode(msg.Tags.Probabilities)
-  return PlatformData.activity:logProbabilities(probabilities, os.time(), cast, msg)
+  return DataIndex.activity:logProbabilities(probabilities, os.time(), cast, msg)
 end)
 
 
@@ -319,7 +322,7 @@ Handlers.add("Broadcast", {Action = "Broadcast"}, function(msg)
   chatroomValidation.validateBroadcast(msg)
   local cast = msg.Tags.Cast == "true"
   local body = tostring(msg.Data)
-  return PlatformData.chatroom:broadcast(msg.Tags.Market, msg.From, body, os.time(), cast, msg)
+  return DataIndex.chatroom:broadcast(msg.Tags.Market, msg.From, body, os.time(), cast, msg)
 end)
 
 --[[
@@ -332,16 +335,16 @@ READ HANDLERS
 --- @param msg Message The message received
 --- @return Message queryResults The query results
 Handlers.add("Query", {Action = "Query"}, function(msg)
-  local normalizedSql = platformDataValidation.validateQuery(PlatformData.viewers, msg)
-  return PlatformData:query(normalizedSql, msg)
+  local normalizedSql = dataIndexValidation.validateQuery(DataIndex.viewers, msg)
+  return DataIndex:query(normalizedSql, msg)
 end)
 
 --- Get market handler
 --- @param msg Message The message received
 --- @return Message market The market
 Handlers.add("Get-Market", {Action = "Get-Market"}, function(msg)
-  platformDataValidation.validateGetMarket(msg)
-  return PlatformData:getMarket(msg.Tags.Market, msg)
+  dataIndexValidation.validateGetMarket(msg)
+  return DataIndex:getMarket(msg.Tags.Market, msg)
 end)
 
 
@@ -349,7 +352,7 @@ end)
 --- @param msg Message The message received
 --- @return Message markets The markets
 Handlers.add("Get-Markets", {Action = "Get-Markets"}, function(msg)
-  platformDataValidation.validateGetMarkets(msg)
+  dataIndexValidation.validateGetMarkets(msg)
   local params = {
     status = msg.Tags.Status,
     collateral = msg.Tags.Collateral,
@@ -363,7 +366,7 @@ Handlers.add("Get-Markets", {Action = "Get-Markets"}, function(msg)
     limit = msg.Tags.Limit or "12",
     offset = msg.Tags.Offset,
   }
-  return PlatformData:getMarkets(params, msg)
+  return DataIndex:getMarkets(params, msg)
 end)
 
 --- Get broadcasts handler
@@ -377,7 +380,7 @@ Handlers.add("Get-Broadcasts", {Action = "Get-Broadcasts"}, function(msg)
     limit = msg.Tags.Limit or "50",
     offset = msg.Tags.Offset,
   }
-  return PlatformData.chatroom:getBroadcasts(params, msg)
+  return DataIndex.chatroom:getBroadcasts(params, msg)
 end)
 
 --[[
@@ -390,32 +393,32 @@ MODERATOR HANDLERS
 --- @param msg Message The message received
 --- @return Message setUserSilenceNotice The set user silence notice
 Handlers.add("Set-User-Silence", {Action = "Set-User-Silence"}, function(msg)
-  chatroomValidation.validateSetUserSilence(PlatformData.chatroom.moderators, msg)
-  return PlatformData.chatroom:setUserSilence(msg.Tags.User, msg.Tags.Silenced == "true", msg)
+  chatroomValidation.validateSetUserSilence(DataIndex.chatroom.moderators, msg)
+  return DataIndex.chatroom:setUserSilence(msg.Tags.User, msg.Tags.Silenced == "true", msg)
 end)
 
 --- Set message visibility
 --- @param msg Message The message received
 --- @return Message setMessageVisibilityNotice The set message visibility notice
 Handlers.add("Set-Message-Visibility", {Action = "Set-Message-Visibility"}, function(msg)
-  chatroomValidation.validateSetMessageVisibility(PlatformData.chatroom.moderators, msg)
-  return PlatformData.chatroom:setMessageVisibility(msg.Tags.Entity, msg.Tags.EntityId, msg.Tags.Visible == "true", msg)
+  chatroomValidation.validateSetMessageVisibility(DataIndex.chatroom.moderators, msg)
+  return DataIndex.chatroom:setMessageVisibility(msg.Tags.Entity, msg.Tags.EntityId, msg.Tags.Visible == "true", msg)
 end)
 
 --- Delete messages handler
 --- @param msg Message The message received
 --- @return Message deleteMessagesNotice The delete messages notice
 Handlers.add("Delete-Messages", {Action = "Delete-Messages"}, function(msg)
-  chatroomValidation.validateDeleteMessages(PlatformData.chatroom.moderators, msg)
-  return PlatformData.chatroom:deleteMessages(msg.Tags.Entity, msg.Tags.EntityId, msg)
+  chatroomValidation.validateDeleteMessages(DataIndex.chatroom.moderators, msg)
+  return DataIndex.chatroom:deleteMessages(msg.Tags.Entity, msg.Tags.EntityId, msg)
 end)
 
 --- Delete old messages handler
 --- @param msg Message The message received
 --- @return Message deleteOldMessagesNotice The delete old messages notice
 Handlers.add("Delete-Old-Messages", {Action = "Delete-Old-Messages"}, function(msg)
-  chatroomValidation.validateDeleteOldMessages(PlatformData.chatroom.moderators, msg)
-  return PlatformData.chatroom:deleteOldMessages(msg.Tags.Days, msg)
+  chatroomValidation.validateDeleteOldMessages(DataIndex.chatroom.moderators, msg)
+  return DataIndex.chatroom:deleteOldMessages(msg.Tags.Days, msg)
 end)
 
 --[[
@@ -428,24 +431,24 @@ CONFIGURATOR HANDLERS
 --- @param msg Message The message received
 --- @return Message updateConfiguratorNotice The update configurator notice
 Handlers.add("Update-Configurator", {Action = "Update-Configurator"}, function(msg)
-  chatroomValidation.validateUpdateConfigurator(PlatformData.chatroom.configurator, msg)
-  return PlatformData.chatroom:updateConfigurator(msg.Tags.Configurator, msg)
+  chatroomValidation.validateUpdateConfigurator(DataIndex.chatroom.configurator, msg)
+  return DataIndex.chatroom:updateConfigurator(msg.Tags.Configurator, msg)
 end)
 
 --- Update moderators handler
 --- @param msg Message The message received
 --- @return Message updateModeratorsNotice The update moderators notice
 Handlers.add("Update-Moderators", {Action = "Update-Moderators"}, function(msg)
-  chatroomValidation.validateUpdateModerators(PlatformData.chatroom.configurator, msg)
+  chatroomValidation.validateUpdateModerators(DataIndex.chatroom.configurator, msg)
   local moderators = json.decode(msg.Tags.Moderators)
-  return PlatformData.chatroom:updateModerators(moderators, msg)
+  return DataIndex.chatroom:updateModerators(moderators, msg)
 end)
 
 --- Update viewers handler
 --- @param msg Message The message received
 --- @return Message updateViewersNotice The update viewers notice
 Handlers.add("Update-Viewers", {Action = "Update-Viewers"}, function(msg)
-  chatroomValidation.validateUpdateViewers(PlatformData.chatroom.configurator, msg)
+  chatroomValidation.validateUpdateViewers(DataIndex.chatroom.configurator, msg)
   local viewers = json.decode(msg.Tags.Viewers)
-  return PlatformData.chatroom:updateViewers(viewers, msg)
+  return DataIndex.chatroom:updateViewers(viewers, msg)
 end)

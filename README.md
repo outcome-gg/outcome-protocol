@@ -2,6 +2,29 @@
 
 Outcome v2 is a new decentralized automated market maker and prediction market protocol enabling permissionless market creation and autonomous, oracle-free resolution. All markets and their outcomes are permanently stored on Arweave and AO.
 
+## Table of Contents
+
+- [Quickstart](#quickstart)
+- [Architecture](#architecture)
+- [Contracts](#contracts)
+  - [Roles](#roles)
+  - [Configurator](#configurator)
+  - [Cron Runner](#cron-runner)
+  - [Data Index](#data-index)
+  - [Market](#market)
+  - [Market Factory](#market-factory)
+  - [OCM Token](#ocm-token)
+  - [Resolution Agent](#resolution-agent)
+- [Repository Structure](#repository-structure)
+- [Outcome Package](#outcome-package)
+  - [Installation](#installation)
+  - [Loading Outcome](#loading-the-outcome-package)
+  - [Usage](#usage)
+  - [Methods](#methods)
+- [Testing](#testing)
+  - [Unit Tests](#unit-tests)
+  - [Integration Tests](#integration-tests)
+
 ## Quickstart
 
 Get started with Outcome v2 by installing AOS, loading the package, and interacting with markets.
@@ -19,29 +42,8 @@ Load the Outcome package into AOS:
 aos --load src/outcome.lua
 ```
 
-### 3. Mint Test Collateral
-
-Mint **Test Collateral tokens** to create markets on testnet.
-
-#### Run
-```lua
-Outcome.tokenMint(Outcome.testCollateral, "1000000000000000") 
-```
-
-#### Expected Result
-```lua
-{
-  Quantity = "1000000000000000",
-  Block-Height = 1612508,
-  Action = "Mint-Notice",
-  MessageId = "kuLUM8a06p4MBnUgpuXGQBU-14I-fOD3Ai91CboLThM",
-  Timestamp = 1739887893528,
-  Recipient = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8"
-}
-```
-
-### 4. Create a Market
-Once tokens are staked, spawn a new prediction market.
+### 3. Create a Market
+Spawn a new prediction market.
 
 #### Parameters
 - `collateralToken`: Token used for collateral (set to `Outcome.testCollateral` for Quickstart).
@@ -77,7 +79,7 @@ res = Outcome.marketFactorySpawnMarket(
 )
 ```
 
-#### Expected Result
+#### Example Response
 ```lua
 {
   Rules = "Market resolved via https://www.coingecko.com using AO Core's native HTTP integration",
@@ -101,7 +103,7 @@ res = Outcome.marketFactorySpawnMarket(
 }
 ```
 
-### 5. Get Market Process ID
+### 4. Get Market Process ID
 Retrieve the market process ID using the original message ID.
 
 > Wait 1-2 seconds for the process to spawn before retrieving the ID.
@@ -113,7 +115,7 @@ res = Outcome.marketFactoryGetProcessId(originalMsgId)
 market = res.ProcessId
 ```
 
-#### Expected Result
+#### Example Response
 ```lua
 {
   ProcessId = "MFUPbtanZgdXMQrmeXMnN7qnsN5s2vZAcAp3FuDEaIc",
@@ -124,7 +126,7 @@ market = res.ProcessId
 }
 ```
 
-### 6. Initialize the Market
+### 5. Initialize the Market
 Once a market has been spawned, it must be initialized.
 
 #### Run
@@ -132,7 +134,7 @@ Once a market has been spawned, it must be initialized.
 Outcome.marketFactoryInitMarket()
 ```
 
-#### Expected Result
+#### Example Response
 ```lua
 {
   MarketProcessIds = { "MFUPbtanZgdXMQrmeXMnN7qnsN5s2vZAcAp3FuDEaIc" },
@@ -140,6 +142,27 @@ Outcome.marketFactoryInitMarket()
   MessageId = "tbESFtEP3Lrr6fBmGMOqklIdMcex3BFqUFkJCRp3Iz0",
   Timestamp = 1739887635868,
   Block-Height = 1612507
+}
+```
+
+### 6. Mint Test Collateral
+
+Mint **Test Collateral tokens** to add funding and buy positions. 
+
+#### Run
+```lua
+Outcome.tokenMint(Outcome.testCollateral, "1000000000000000") 
+```
+
+#### Example Response
+```lua
+{
+  Quantity = "1000000000000000",
+  Block-Height = 1612508,
+  Action = "Mint-Notice",
+  MessageId = "kuLUM8a06p4MBnUgpuXGQBU-14I-fOD3Ai91CboLThM",
+  Timestamp = 1739887893528,
+  Recipient = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8"
 }
 ```
 
@@ -162,7 +185,7 @@ Outcome.marketAddFunding(
 )
 ```
 
-#### Expected Result
+#### Example Response
 ```lua
 {
   X-OnBehalfOf = "Hyfdqip2vz03K5-3zfB-ybrQCMBT-EQSFpEIvC_6by8",
@@ -196,7 +219,7 @@ res = Outcome.marketCalcBuyAmount(
 )
 ```
 
-#### Expected Result
+#### Example Response
 ```lua
 {
   PositionId = "1",
@@ -231,7 +254,7 @@ Outcome.marketBuy(
 ) 
 ```
 
-#### Expected Result
+#### Example Response
 ```lua
 {
    X-MinPositionTokensToBuy = "2453270434054",
@@ -265,7 +288,7 @@ Outcome.marketReportPayouts(
 )
 ```
 
-#### Expected Result
+#### Example Response
 ```lua
 {
   Block-Height = 1612508,
@@ -285,7 +308,7 @@ Claim winnings in collateral by redeeming outcome positions.
 Outcome.marketRedeemPositions(market)
 ```
 
-#### Expected Result
+#### Example Response
 ```lua
 {
   GrossPayout = "2453270434054",
@@ -300,13 +323,13 @@ Outcome.marketRedeemPositions(market)
 
 ## Architecture
 
-Outcome v2 follows a transient-style architecture, where each market operates as an independent process, executed with `market.lua` and initialized with market-specific parameters.
+Outcome v2 follows a transient-style architecture, where each market operates as an independent process, executed with [`market.lua`](src/market.lua) and initialized with market-specific parameters.
 
-Markets are created permissionlessly via `marketFactory.lua`, gated by `ocmToken.lua` staking.
+Markets are created permissionlessly via [`marketFactory.lua`](src/marketFactory.lua), gated by [`ocmToken.lua`](src/ocmToken.lua) staking.
 
-Market resolution is autonomous via `resolutionAgent.lua`, with optional support for single-signer and perpetual (zero-resolution) markets.
+Market resolution is autonomous via [`resolutionAgent.lua`](src/resolutionAgent.lua), with optional support for single-signer and perpetual (zero-resolution) markets.
 
-Core processes are **ownerless**, with `configurator.lua` managing time-gated updates through token governance.
+Core processes are **ownerless**, with [`configurator.lua`](src/configurator.lua) managing time-gated updates through token governance.
 
 ![Outcome v2 Architecture](docs/architecture.png)
 
@@ -314,15 +337,15 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 
 | Contract                | Purpose                                                                                         |
 | ----------------------- | ----------------------------------------------------------------------------------------------- |
-| configurator.lua        | Stages time-delayed protocol updates. |
-| cronRunner.lua          | Manages cron jobs: adding, removing and executing scheduled tasks. |
-| market.lua              | Handles all prediction market functionality in a single process. |
-| marketFactory.lua       | Spawns prediction markets permissionlessly, gated by utility token staking. |
-| ocmToken.lua            | Rewards activity, gates market creation, and governs protocol updates. |
-| dataIndex.lua           | Stores protocol logs and enables complex queries. |
-| resolutionAgent.lua     | Autonomously resolves markets, supporting single-signer and zero-resolution (perpetual) markets. |
+| [`configurator.lua`](src/configurator.lua)        | Stages time-delayed protocol updates. |
+| [`cronRunner.lua`](src/cronRunner.lua)           | Manages cron jobs: adding, removing and executing scheduled tasks. |
+| [`dataIndex.lua`](src/dataIndex.lua)          | Stores protocol logs and enables complex queries. |
+| [`market.lua`](src/market.lua)              | Handles all prediction market functionality in a single process. |
+| [`marketFactory.lua`](src/marketFactory.lua)       | Spawns prediction markets permissionlessly, gated by utility token staking. |
+| [`ocmToken.lua`](src/ocmToken.lua)            | Rewards activity, gates market creation, and governs protocol updates. |
+| [`resolutionAgent.lua`](src/resolutionAgent.lua)     | Autonomously resolves markets, supporting single-signer and zero-resolution (perpetual) markets. |
 
-## Roles
+### Roles
 
 | Role    | Name                      | Purpose                                 |
 | --------| ------------------------- | --------------------------------------- |
@@ -357,6 +380,30 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 | `Remove-Job`   | `A` | `ProcessId`: Valid Arweave address | | `Remove-Job-Notice` |
 | `Remove-Jobs`   | `A` | `ProcessId`:  Valid JSON Array of Arweave addresses | | `Remove-Jobs-Notice` |
 | `Run-Jobs`   | `A` | | | `Run-Jobs-Notice` |
+
+### Data Index
+
+> Actions in `dataIndex.lua` are restricted and require proper permissions to execute.
+
+| Action                | Required Role                    | Required Tags                          | Optional Tags                   | Result                | 
+| --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 
+| `Info`      || | | `Info-Response` |
+| `Log-Market` || `Market`: Valid Arweave address<br>`Collateral`: Valid Arweave address<br>`ResolutionAgent`: Valid Arweave address<br>`DataIndex`: Valid Arweave address<br>`OutcomeSlotCount`: Integer greater than or equal to 2<br>`Question`: String<br>`Rules`: String<br>`Category`: String<br>`Subcategory`: String<br>`Logo`: String<br>`Logos`: JSON Array of valid strings<br>`Creator`: Valid Arweave address<br>`CreatorFee`: Integer greater than or equal to 0<br>`CreatorFeeTarget`: Valid Arweave address | | `Log-Market-Notice` |
+| `Log-Funding` || `User`: Valid Arweave address<br>`Operation`: String ("add" or "remove")<br>`Collateral`: Valid Arweave address<br>`Quantity`: Integer greater than 0 | | `Log-Funding-Notice` |
+| `Log-Prediction`|| `User`: Valid Arweave address<br>`Operation`: String ("buy" or "sell")<br>`Collateral`: Valid Arweave address<br>`Quantity`: Integer greater than 0<br>`Outcome`: Integer greater than 0<br>`Shares`: Integer greater than 0<br>`Price`: Decimal greater than 0 | | `Log-Prediction-Notice` |
+| `Log-Probabilities` || `Probabilities`: Valid JSON Array of decimals greater than or equal to 0 | | `Log-Probabilities-Notice` |
+| `Broadcast`|| `Market`: Valid Arweave address<br>`Data`: String | | `Broadcast-Notice` |
+| `Query` | `V` | `Data`: Valid SQL Query | | `Query-Response` |
+| `Get-Market` || `Market`: Valid Arweave address | | `Get-Market-Response` |
+| `Get-Markets`|| | `Status`: String ("open", "resolved" or "closed")<br>`Collateral`: Valid Arweave address<br>`MinFunding`: Integer greater than or equal to 0<br>`Creator`: Valid Arweave address<br>`Category`: String<br>`Subcategory`: String<br>`Keyword`: String<br>`OrderBy`: String ("timestamp" or "question", default: "timestamp")<br>`OrderDirections`: Valid Arweave address ("ASC" or "DESC")<br>`Limit`: Integer greater than 0 (default: 12)<br>`Offset`: Integer greater than or equal to 0 (default: 0) | `Get-Markets-Response` |
+| `Get-Broadcasts` || `Market`: Valid Arweave address | `OrderDirections`: Valid Arweave address ("ASC" or "DESC")<br>`Limit`: Integer greater than 0 (default: 50)<br>`Offset`: Integer greater than or equal to 0 (default: 0) | `Get-Broadcasts-Response` |
+| `Set-User-Silence` | `M` | `User`: Valid Arweave address<br>`Silenced`: Boolean ("true" or "false") | | `Set-User-Silence-Notice` |
+| `Set-Message-Visibility` | `M` | `Entity`: String ("message" or "user")<br>`EntityId`: Valid Arweave address<br>`Visible`: Boolean ("true" or "false") | | `Set-Message-Visibility-Notice` |
+| `Delete-Messages` | `M` | `Entity`: String ("message" or "user")<br>`EntityId`: Valid Arweave address | | `Delete-Messages-Notice` |
+| `Delete-Old-Messages` | `M` | `Days`: Integer greater than 0 | | `Delete-Old-Messages-Notice` |
+| `Update-Configurator` | `C` | `Configurator`: Valid Arweave address | | `Update-Configurator-Notice` |
+| `Update-Moderators` | `C` | `Moderators`: Valid JSON Array of Arweave addresses | | `Update-Moderators-Notice` |
+| `Update-Viewers` | `C` | `Viewers`: Valid JSON Array of Arweave addresses | | `Update-Viewers-Notice` |
 
 ### Market
 
@@ -436,30 +483,6 @@ Core processes are **ownerless**, with `configurator.lua` managing time-gated up
 | `Update-Collateral-Factors` | `C` | `UpdateDelay`: Integer greater than 0 | | `Update-Collateral-Factors-Notice` |
 | `Update-Collateral-Denominations` | `C` | `UpdateDelay`: Integer greater than 0 | | `Update-Collateral-Denominations-Notice` |
 
-### Data Index
-
-> Actions in `dataIndex.lua` are restricted and require proper permissions to execute.
-
-| Action                | Required Role                    | Required Tags                          | Optional Tags                   | Result                | 
-| --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 
-| `Info`      || | | `Info-Response` |
-| `Log-Market` || `Market`: Valid Arweave address<br>`Collateral`: Valid Arweave address<br>`ResolutionAgent`: Valid Arweave address<br>`DataIndex`: Valid Arweave address<br>`OutcomeSlotCount`: Integer greater than or equal to 2<br>`Question`: String<br>`Rules`: String<br>`Category`: String<br>`Subcategory`: String<br>`Logo`: String<br>`Logos`: JSON Array of valid strings<br>`Creator`: Valid Arweave address<br>`CreatorFee`: Integer greater than or equal to 0<br>`CreatorFeeTarget`: Valid Arweave address | | `Log-Market-Notice` |
-| `Log-Funding` || `User`: Valid Arweave address<br>`Operation`: String ("add" or "remove")<br>`Collateral`: Valid Arweave address<br>`Quantity`: Integer greater than 0 | | `Log-Funding-Notice` |
-| `Log-Prediction`|| `User`: Valid Arweave address<br>`Operation`: String ("buy" or "sell")<br>`Collateral`: Valid Arweave address<br>`Quantity`: Integer greater than 0<br>`Outcome`: Integer greater than 0<br>`Shares`: Integer greater than 0<br>`Price`: Decimal greater than 0 | | `Log-Prediction-Notice` |
-| `Log-Probabilities` || `Probabilities`: Valid JSON Array of decimals greater than or equal to 0 | | `Log-Probabilities-Notice` |
-| `Broadcast`|| `Market`: Valid Arweave address<br>`Data`: String | | `Broadcast-Notice` |
-| `Query` | `V` | `Data`: Valid SQL Query | | `Query-Response` |
-| `Get-Market` || `Market`: Valid Arweave address | | `Get-Market-Response` |
-| `Get-Markets`|| | `Status`: String ("open", "resolved" or "closed")<br>`Collateral`: Valid Arweave address<br>`MinFunding`: Integer greater than or equal to 0<br>`Creator`: Valid Arweave address<br>`Category`: String<br>`Subcategory`: String<br>`Keyword`: String<br>`OrderBy`: String ("timestamp" or "question", default: "timestamp")<br>`OrderDirections`: Valid Arweave address ("ASC" or "DESC")<br>`Limit`: Integer greater than 0 (default: 12)<br>`Offset`: Integer greater than or equal to 0 (default: 0) | `Get-Markets-Response` |
-| `Get-Broadcasts` || `Market`: Valid Arweave address | `OrderDirections`: Valid Arweave address ("ASC" or "DESC")<br>`Limit`: Integer greater than 0 (default: 50)<br>`Offset`: Integer greater than or equal to 0 (default: 0) | `Get-Broadcasts-Response` |
-| `Set-User-Silence` | `M` | `User`: Valid Arweave address<br>`Silenced`: Boolean ("true" or "false") | | `Set-User-Silence-Notice` |
-| `Set-Message-Visibility` | `M` | `Entity`: String ("message" or "user")<br>`EntityId`: Valid Arweave address<br>`Visible`: Boolean ("true" or "false") | | `Set-Message-Visibility-Notice` |
-| `Delete-Messages` | `M` | `Entity`: String ("message" or "user")<br>`EntityId`: Valid Arweave address | | `Delete-Messages-Notice` |
-| `Delete-Old-Messages` | `M` | `Days`: Integer greater than 0 | | `Delete-Old-Messages-Notice` |
-| `Update-Configurator` | `C` | `Configurator`: Valid Arweave address | | `Update-Configurator-Notice` |
-| `Update-Moderators` | `C` | `Moderators`: Valid JSON Array of Arweave addresses | | `Update-Moderators-Notice` |
-| `Update-Viewers` | `C` | `Viewers`: Valid JSON Array of Arweave addresses | | `Update-Viewers-Notice` |
-
 ### Resolution Agent
 
 TODO
@@ -471,7 +494,7 @@ All contracts reside in `/src`. Each contract consists of:
 2. A corresponding **module subfolder** (e.g., `/configuratorModules/`), which contains:
    - **Core Logic** – Defines contract behavior and execution.
    - **Output Notices** – Handles emitted events and responses.
-   - **Input Validation** – Ensures valid data and transaction integrity.
+   - **Input Validation** - Ensures valid data and transaction integrity.
 
 Unit and integration tests are located in the `/test` folder.
 
@@ -512,7 +535,7 @@ test
 
 ## Outcome Package
 
-The `outcome.lua` package offers a streamlined interface for interacting with Outcome v2, an automated market maker and prediction market protocol built on AO.
+The [`outcome.lua`](src/outcome.lua) package offers a streamlined interface for interacting with Outcome v2, an automated market maker and prediction market protocol built on AO.
 
 Developers can load or require the package to execute actions efficiently across protocol processes.
 
@@ -523,21 +546,21 @@ To install AOS, run:
 yarn global add https://get_ao.g8way.io
 ```
 
-### Loading the Outcome Package
+### Loading Outcome
 
 To load the Outcome package into AOS, run:
 ```bash
 aos --load src/outcome.lua
 ```
 
-### Usage example
+### Usage
 
 Run an action, such as retrieving **configurator information**:
 ```lua
 Outcome.configuratorInfo()
 ```
 
-### Available Methods
+### Methods
 
 > **All methods below are accessed via the `Outcome` package.**
 

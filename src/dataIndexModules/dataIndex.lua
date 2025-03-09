@@ -2,26 +2,29 @@
 ======================================================================================
 Outcome © 2025. All Rights Reserved.
 ======================================================================================
-This code is proprietary and owned by Outcome.
+This code is proprietary and exclusively controlled by Outcome.
 
 You are permitted to build applications, integrations, and extensions that interact
-with the Outcome Protocol, provided such usage adheres to the official Outcome
+with the Outcome Protocol, provided such usage adheres to the official Outcome 
 terms of service and does not result in unauthorized forks or clones of this codebase.
 
-Redistribution, modification, or unauthorized use of this code is strictly prohibited
-without explicit written permission from Outcome.
+Redistribution, reproduction, modification, or distribution of this code is strictly 
+prohibited without explicit written permission from Outcome.
+
+By using this software, you agree to the Outcome Terms of Service:  
+https://outcome.gg/tos
 ======================================================================================
 ]]
 
-local PlatformData = {}
-local PlatformDataMethods = {}
-local PlatformDataNotices = require('platformDataModules.platformDataNotices')
-local activity = require('platformDataModules.activity')
-local chatroom = require('platformDataModules.chatroom')
+local DataIndex = {}
+local DataIndexMethods = {}
+local DataIndexNotices = require('DataIndexModules.dataIndexNotices')
+local activity = require('dataIndexModules.activity')
+local chatroom = require('dataIndexModules.chatroom')
 local json = require('json')
 
---- Represents PlatformData
---- @class PlatformData
+--- Represents DataIndex
+--- @class DataIndex
 --- @field db table The database
 --- @field dbAdmin table The database admin
 --- @field activity table The activity helpers
@@ -29,9 +32,9 @@ local json = require('json')
 --- @field configurator string The configurator
 --- @field moderators table<string> The moderators
 
---- Creates a new PlatformData instance
-function PlatformData.new(dbAdmin, configurator, moderators, viewers)
-  local platformData = {
+--- Creates a new DataIndex instance
+function DataIndex.new(dbAdmin, configurator, moderators, viewers)
+  local dataIndex = {
     dbAdmin = dbAdmin,
     activity = activity.new(dbAdmin),
     chatroom = chatroom.new(dbAdmin),
@@ -40,18 +43,18 @@ function PlatformData.new(dbAdmin, configurator, moderators, viewers)
     viewers = viewers
   }
   -- set metatable
-  setmetatable(platformData, {
+  setmetatable(dataIndex, {
     __index = function(_, k)
-      if PlatformDataMethods[k] then
-        return PlatformDataMethods[k]
-      elseif PlatformDataNotices[k] then
-        return PlatformDataNotices[k]
+      if DataIndexMethods[k] then
+        return DataIndexMethods[k]
+      elseif DataIndexNotices[k] then
+        return DataIndexNotices[k]
       else
         return nil
       end
     end
   })
-  return platformData
+  return dataIndex
 end
 
 --[[
@@ -60,7 +63,7 @@ INFO METHOD
 ===========
 ]]
 
-function PlatformDataMethods:info(msg)
+function DataIndexMethods:info(msg)
   return msg.reply({
     Configurator = self.configurator,
     Moderators = json.encode(self.moderators),
@@ -78,7 +81,7 @@ READ METHODS
 --- @param sql string The SQL query
 --- @param msg Message The message received
 --- @return Message queryResults The query results
-function PlatformDataMethods:query(sql, msg)
+function DataIndexMethods:query(sql, msg)
   local results = self.dbAdmin:exec(sql)
   return msg.reply({ Data = json.encode(results) })
 end
@@ -87,7 +90,7 @@ end
 --- @param market string The market ID
 --- @param msg Message The message received
 --- @return Message market The get market results
-function PlatformDataMethods:getMarket(market, msg)
+function DataIndexMethods:getMarket(market, msg)
   local query = [[
     SELECT
       m.*,
@@ -147,7 +150,7 @@ end
 --- Get markets
 --- @param msg Message The message received
 --- @return Message getMarkets The get markets results
-function PlatformDataMethods:getMarkets(params, msg)
+function DataIndexMethods:getMarkets(params, msg)
   local query = [[
     SELECT
       m.*,
@@ -270,7 +273,7 @@ CONFIGURATOR METHODS
 --- @param updateConfigurator string The new configurator address
 --- @param msg Message The message received
 --- @return Message updateConfiguratorNotice The update configurator notice
-function PlatformDataMethods:updateConfigurator(updateConfigurator, msg)
+function DataIndexMethods:updateConfigurator(updateConfigurator, msg)
   self.configurator = updateConfigurator
   return self.updateConfiguratorNotice(updateConfigurator, msg)
 end
@@ -279,7 +282,7 @@ end
 --- @param moderators table The list of moderators
 --- @param msg Message The message received
 --- @return Message updateModeratorsNotice The update moderators notice
-function PlatformDataMethods:updateModerators(moderators, msg)
+function DataIndexMethods:updateModerators(moderators, msg)
   self.moderators = moderators
   return self.updateModeratorsNotice(moderators, msg)
 end
@@ -288,9 +291,9 @@ end
 --- @param viewers table The list of viewers
 --- @param msg Message The message received
 --- @return Message updateViewersNotice The update viewers notice
-function PlatformDataMethods:updateViewers(viewers, msg)
+function DataIndexMethods:updateViewers(viewers, msg)
   self.viewers = viewers
   return self.updateViewersNotice(viewers, msg)
 end
 
-return PlatformData
+return DataIndex

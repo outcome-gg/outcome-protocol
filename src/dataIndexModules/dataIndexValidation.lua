@@ -2,12 +2,12 @@
 --[[
 =========================================================
 Part of the Outcome codebase © 2025. All Rights Reserved.
-See platformData.lua for full license details.
+See dataIndex.lua for full license details.
 =========================================================
 ]]
 
-local PlatformDataValidation = {}
-local sharedValidation = require('platformDataModules.sharedValidation')
+local DataIndexValidation = {}
+local sharedValidation = require('dataIndexModules.sharedValidation')
 local utils = require('platformDataModules.utils')
 local json = require('json')
 
@@ -29,7 +29,7 @@ end
 --- @param msg Message The message received
 --- @param viewers table<string> The list of approved viewers
 --- @return string The normalized SQL query
-function PlatformDataValidation.validateQuery(viewers, msg)
+function DataIndexValidation.validateQuery(viewers, msg)
   assert(utils.includes(msg.From, viewers), "Sender must be viewer!")
   local sql = tostring(msg.Data)
   assert(sql and type(sql) == "string", "SQL query is required!")
@@ -45,13 +45,13 @@ end
 
 --- Validate get market
 --- @param msg Message The message received
-function PlatformDataValidation.validateGetMarket(msg)
+function DataIndexValidation.validateGetMarket(msg)
   sharedValidation.validateAddress(msg.Tags.Market, "Market")
 end
 
 --- Validate get markets
 --- @param msg Message The message received
-function PlatformDataValidation.validateGetMarkets(msg)
+function DataIndexValidation.validateGetMarkets(msg)
   if msg.Tags.Status then
     assert(type(msg.Tags.Status) == "string", "Status must be a string!")
     assert(utils.includes(msg.Tags.Status, {"open", "closed", "resolved"}), "Status must be 'open', 'closed', or 'resolved'!")
@@ -76,14 +76,14 @@ end
 
 --- Validate updateConfigurator
 --- @param msg Message The message received
-function PlatformDataValidation.validateUpdateConfigurator(configurator, msg)
+function DataIndexValidation.validateUpdateConfigurator(configurator, msg)
   assert(msg.From == configurator, "Sender must be the configurator!")
   sharedValidation.validateAddress(msg.Tags.Configurator, "Configurator")
 end
 
 --- Validate updateModerators
 --- @param msg Message The message received
-function PlatformDataValidation.validateUpdateModerators(configurator, msg)
+function DataIndexValidation.validateUpdateModerators(configurator, msg)
   assert(msg.From == configurator, "Sender must be the configurator!")
   assert(type(msg.Tags.Moderators) == 'table', "Moderators is required!")
   local moderators = json.decode(msg.tags.Moderators)
@@ -94,7 +94,7 @@ end
 
 --- Validate updateViewers
 --- @param msg Message The message received
-function PlatformDataValidation.validateUpdateViewers(configurator, msg)
+function DataIndexValidation.validateUpdateViewers(configurator, msg)
   assert(msg.From == configurator, "Sender must be the configurator!")
   local viewers = json.decode(msg.tags.Viewers)
   for _, viewer in ipairs(viewers) do
@@ -102,4 +102,4 @@ function PlatformDataValidation.validateUpdateViewers(configurator, msg)
   end
 end
 
-return PlatformDataValidation
+return DataIndexValidation
