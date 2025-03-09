@@ -101,6 +101,19 @@ function MarketFactoryNotices.initMarketNotice(marketProcessIds, msg)
   })
 end
 
+--- Approve creator notice
+--- @param creator string The creator account address
+--- @param approved boolean The approval status, true if approved, false otherwise
+--- @param msg Message The message received
+--- @return Message approveCreatorNotice The approve creator notice
+function MarketFactoryNotices.approveCreatorNotice(creator, approved, msg)
+  return msg.reply({
+    Action = "Approve-Creator-Notice",
+    Creator = creator,
+    Approved = tostring(approved),
+  })
+end
+
 --- Update configurator notice
 --- @param configurator string The new configurator address
 --- @param msg Message The message received
@@ -112,25 +125,14 @@ function MarketFactoryNotices.updateConfiguratorNotice(configurator, msg)
   })
 end
 
---- Update stakedToken notice
---- @param stakedToken string The new staked token
+--- Update veToken notice
+--- @param veToken string The new veToken
 --- @param msg Message The message received
---- @return Message updateStakedTokenNotice The update staked token notice
-function MarketFactoryNotices.updateStakedTokenNotice(stakedToken, msg)
+--- @return Message updateVeTokenNotice The update veToken notice
+function MarketFactoryNotices.updateVeTokenNotice(veToken, msg)
   return msg.reply({
-    Action = "Update-Staked-Token-Notice",
-    Data = tostring(stakedToken)
-  })
-end
-
---- Update minStake notice
---- @param minStake number The new min stake
---- @param msg Message The message received
---- @return Message updateLpFeeNotice The update min stake notice
-function MarketFactoryNotices.updateMinStakeNotice(minStake, msg)
-  return msg.reply({
-    Action = "Update-Min-Stake-Notice",
-    Data = tostring(minStake)
+    Action = "Update-Ve-Token-Notice",
+    Data = tostring(veToken)
   })
 end
 

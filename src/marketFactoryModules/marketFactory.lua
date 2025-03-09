@@ -453,9 +453,10 @@ end
 --- @param msg Message The message received
 --- @return Message The events by creator response
 function MarketFactoryMethods:eventsByCreator(msg)
-  local creatorMarketEvents = self.eventConfigByCreator[msg.Tags.Creator] or {}
+  local creator = msg.Tags.Creator or msg.From
+  local creatorMarketEvents = self.eventConfigByCreator[creator] or {}
   return msg.reply({
-    Creator = msg.Tags.Creator or msg.From,
+    Creator = creator,
     Data = json.encode(creatorMarketEvents)
   })
 end
@@ -464,9 +465,10 @@ end
 --- @param msg Message The message received
 --- @return Message The markets by creator response
 function MarketFactoryMethods:marketsByCreator(msg)
-  local creatorMarkets = self.marketsSpawnedByCreator[msg.Tags.Creator] or {}
+  local creator = msg.Tags.Creator or msg.From
+  local creatorMarkets = self.marketsSpawnedByCreator[creator] or {}
   return msg.reply({
-    Creator = msg.Tags.Creator or msg.From,
+    Creator = creator,
     Data = json.encode(creatorMarkets)
   })
 end
@@ -483,10 +485,10 @@ function MarketFactoryMethods:getProcessId(msg)
 end
 
 --- Get latest process ID for creator
---- @param creator string The creator address
 --- @param msg Message The message received
 --- @return Message The get latest process ID for creator response
-function MarketFactoryMethods:getLatestProcessIdForCreator(creator, msg)
+function MarketFactoryMethods:getLatestProcessIdForCreator(msg)
+  local creator = msg.Tags.Creator or msg.From
   local creatorMarkets = self.marketsSpawnedByCreator[creator] or {}
   return msg.reply({
     Creator = creator,
@@ -500,14 +502,14 @@ VE TOKEN METHODS
 ================
 ]]
 
---- Approve market creator
+--- Approve creator
 --- @param creator string The creator address
 --- @param approved boolean True to approve, false to disapprove
 --- @param msg Message The message received
---- @return Message approveMarketCreatorNotice The approve market creator notice
-function MarketFactoryMethods:approveMarketCreator(creator, approved, msg)
+--- @return Message approveCreatorNotice The approve creator notice
+function MarketFactoryMethods:approveCreator(creator, approved, msg)
   self.approvedCreators[creator] = approved
-  return self.approveMarketCreatorNotice(creator, approved, msg)
+  return self.approveCreatorNotice(creator, approved, msg)
 end
 
 --[[
@@ -525,22 +527,13 @@ function MarketFactoryMethods:updateConfigurator(configurator, msg)
   return self.updateConfiguratorNotice(configurator, msg)
 end
 
---- Update stakedToken
---- @param stakedToken string The new stakedToken
+--- Update veToken
+--- @param veToken string The new veToken
 --- @param msg Message The message received
---- @return Message updateLpFeeNotice The update staked token notice
-function MarketFactoryMethods:updateStakedToken(stakedToken, msg)
-  self.stakedToken = stakedToken
-  return self.updateStakedTokenNotice(stakedToken, msg)
-end
-
---- Update minStake
---- @param minStake number The new min stake
---- @param msg Message The message received
---- @return Message updateLpFeeNotice The update min stake notice
-function MarketFactoryMethods:updateMinStake(minStake, msg)
-  self.minStake = minStake
-  return self.updateMinStakeNotice(minStake, msg)
+--- @return Message updateVeTokenNotice The update VE token notice
+function MarketFactoryMethods:updateVeToken(veToken, msg)
+  self.veToken = veToken
+  return self.updateVeTokenNotice(veToken, msg)
 end
 
 --- Update lpFee

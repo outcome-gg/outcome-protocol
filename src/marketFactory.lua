@@ -95,7 +95,7 @@ INFO HANDLER
 ]]
 
 --- Info handler
---- @param msg Message The message to handle
+--- @param msg Message The message received
 Handlers.add("Info", {Action = "Info"}, function(msg)
   MarketFactory:info(msg)
 end)
@@ -109,18 +109,18 @@ WRITE HANDLERS
 --- Create Event
 --- @warning This action will fail if the sender is not an approved creator.
 --- @warning This action will fail if the collateral token is not approved.
---- @param msg Message The message to handle
----   - msg.Tags.CollateralToken (string): The collateral token for the event.
----   - msg.Tags.DataIndex (string): The data index for the event.
----   - msg.Tags.OutcomeSlotCount (numeric string): The number of possible outcomes for the event.
----   - msg.Tags.Question (string): The question to be resolved by the event.
----   - msg.Tags.Rules (string): The rules of the event.
----   - msg.Tags.Category (string): The category of the event.
----   - msg.Tags.Subcategory (string): The subcategory of the event.
----   - msg.Tags.Logo (string): The logo of the event.
+--- @param msg Message The message to received, expected to contain:
+--- - msg.Tags.CollateralToken (string): The collateral token for the event.
+--- - msg.Tags.DataIndex (string): The data index for the event.
+--- - msg.Tags.OutcomeSlotCount (numeric string): The number of possible outcomes for the event.
+--- - msg.Tags.Question (string): The question to be resolved by the event.
+--- - msg.Tags.Rules (string): The rules of the event.
+--- - msg.Tags.Category (string): The category of the event.
+--- - msg.Tags.Subcategory (string): The subcategory of the event.
+--- - msg.Tags.Logo (string): The logo of the event.
 Handlers.add("Create-Event", {Action = "Create-Event"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateCreateEvent(
+  local success, err = marketFactoryValidation.createEvent(
     MarketFactory.approvedCollateralTokens,
     MarketFactory.approvedCreators,
     MarketFactory.testCollateral,
@@ -151,23 +151,23 @@ end)
 --- Spawn market handler
 --- @warning This action will fail if the sender is not an approved creator.
 --- @warning This action will fail if the collateral token is not approved.
---- @param msg Message The message to handle
----   - msg.Tags.CollateralToken (string): The collateral token for the event.
----   - msg.Tags.ResolutionAgent (string): The resolution agent for the event.
----   - msg.Tags.DataIndex (string): The data index for the event.
----   - msg.Tags.OutcomeSlotCount (numeric string): The number of possible outcomes for the event.
----   - msg.Tags.CreatorFee (numberic string): The fee for the creator of the event in basis points.
----   - msg.Tags.CreatorFeeTarget (string): The target for the creator fee.
----   - msg.Tags.Question (string): The question to be resolved by the event.
----   - msg.Tags.Rules (string): The rules of the event.
----   - msg.Tags.Category (string): The category of the event.
----   - msg.Tags.Subcategory (string): The subcategory of the event.
----   - msg.Tags.Logo (string): The logo of the LP token.
----   - msg.Tags.Logos (string): The logos of the position tokens (stringified table).
----   - msg.Tags.EventId (string): The event ID.
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.CollateralToken (string): The collateral token for the event.
+--- - msg.Tags.ResolutionAgent (string): The resolution agent for the event.
+--- - msg.Tags.DataIndex (string): The data index for the event.
+--- - msg.Tags.OutcomeSlotCount (numeric string): The number of possible outcomes for the event.
+--- - msg.Tags.CreatorFee (numberic string): The fee for the creator of the event in basis points.
+--- - msg.Tags.CreatorFeeTarget (string): The target for the creator fee.
+--- - msg.Tags.Question (string): The question to be resolved by the event.
+--- - msg.Tags.Rules (string): The rules of the event.
+--- - msg.Tags.Category (string): The category of the event.
+--- - msg.Tags.Subcategory (string): The subcategory of the event.
+--- - msg.Tags.Logo (string): The logo of the LP token.
+--- - msg.Tags.Logos (string): The logos of the position tokens (stringified table).
+--- - msg.Tags.EventId (string): The event ID.
 Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateSpawnMarket(
+  local success, err = marketFactoryValidation.spawnMarket(
     MarketFactory.approvedCollateralTokens,
     MarketFactory.approvedCreators,
     MarketFactory.testCollateral,
@@ -204,7 +204,7 @@ Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
 end)
 
 --- Init market handler
---- @param msg Message The message to handle
+--- @param msg Message The message received
 Handlers.add("Init-Market", {Action = "Init-Market"}, function(msg)
   MarketFactory:initMarket(msg)
 end)
@@ -216,22 +216,23 @@ READ HANDLERS
 ]]
 
 --- Markets pending handler
---- @param msg Message The message to handle
+--- @param msg Message The message received
 Handlers.add("Markets-Pending", {Action = "Markets-Pending"}, function(msg)
   MarketFactory:marketsPending(msg)
 end)
 
 --- Markets initialized handler
---- @param msg Message The message to handle
+--- @param msg Message The message received
 Handlers.add("Markets-Init", {Action = "Markets-Init"}, function(msg)
   MarketFactory:marketsInitialized(msg)
 end)
 
 --- Events by creator handler
---- @param msg Message The message to handle
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.Creator (string, optional): The address of the creator, defaults to the sender.
 Handlers.add("Events-By-Creator", {Action = "Events-By-Creator"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateEventsByCreator(msg)
+  local success, err = marketFactoryValidation.eventsByCreator(msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -245,10 +246,11 @@ Handlers.add("Events-By-Creator", {Action = "Events-By-Creator"}, function(msg)
 end)
 
 --- Markets by creator handler
---- @param msg Message The message to handle
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.Creator (string, optional): The address of the creator, defaults to the sender.
 Handlers.add("Markets-By-Creator", {Action = "Markets-By-Creator"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateMarketGroupsByCreator(msg)
+  local success, err = marketFactoryValidation.marketsByCreator(msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -263,16 +265,18 @@ end)
 
 --- Get process ID handler
 --- @notice Used to get the process ID of a spawned market by the spawn action message ID
---- @param msg Message The message to handle
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags["Original-Msg-Id"] (string): The message ID of the spawn action.
 Handlers.add("Get-Process-Id", {Action = "Get-Process-Id"}, function(msg)
   MarketFactory:getProcessId(msg)
 end)
 
 --- Get latest process ID for creator handler
---- @param msg Message The message to handle
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.Creator (string, optional): The address of the creator, defaults to the sender.
 Handlers.add("Get-Latest-Process-Id-For-Creator", {Action = "Get-Latest-Process-Id-For-Creator"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateGetLatestProcessIdForCreator(msg)
+  local success, err = marketFactoryValidation.getLatestProcessIdForCreator(msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -282,7 +286,7 @@ Handlers.add("Get-Latest-Process-Id-For-Creator", {Action = "Get-Latest-Process-
     return
   end
   -- If validation passes, get latest process ID for creator.
-  MarketFactory:getLatestProcessIdForCreator(msg.Tags.Creator, msg)
+  MarketFactory:getLatestProcessIdForCreator(msg)
 end)
 
 --[[
@@ -292,10 +296,13 @@ VE TOKEN HANDLERS
 ]]
 
 --- Approve creator
---- @param msg Message The message to handle
+--- @warning This action will fail if the sender is not the veToken process.
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.Creator (string): The address of the creator.
+--- - msg.Tags.Approved (string): Whether the creator is approved, "true" or "false".
 Handlers.add("Approve-Creator", {Action = "Approve-Creator"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateApproveCreator(MarketFactory.veToken, msg)
+  local success, err = marketFactoryValidation.approveCreator(MarketFactory.veToken, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -305,7 +312,8 @@ Handlers.add("Approve-Creator", {Action = "Approve-Creator"}, function(msg)
     return
   end
   -- If validation passes, approve creator.
-  MarketFactory:approveCreator(msg.Tags.Creator, msg)
+  local approved = string.lower(msg.Tags.Approved) == "true"
+  MarketFactory:approveCreator(msg.Tags.Creator, approved, msg)
 end)
 
 --[[
@@ -315,10 +323,12 @@ CONFIGURATOR HANDLERS
 ]]
 
 --- Update configurator handler
---- @param msg Message The message to handle
+--- @notice Only callable by the configurator
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.Configurator (string): The address of the new configurator.
 Handlers.add("Update-Configurator", {Action = "Update-Configurator"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateConfigurator(MarketFactory.configurator, msg)
+  local success, err = marketFactoryValidation.updateConfigurator(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -331,46 +341,32 @@ Handlers.add("Update-Configurator", {Action = "Update-Configurator"}, function(m
   MarketFactory:updateConfigurator(msg.Tags.Configurator, msg)
 end)
 
---- Update staked token handler
---- @param msg Message The message to handle
-Handlers.add("Update-Staked-Token", {Action = "Update-Staked-Token"}, function(msg)
+--- Update veToken handler
+--- @notice Only callable by the configurator
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.VeToken (string): The address of the new veToken.
+Handlers.add("Update-Ve-Token", {Action = "Update-Ve-Token"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateStakedToken(MarketFactory.configurator, msg)
+  local success, err = marketFactoryValidation.updateVeToken(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
-      Action = "Update-Staked-Token-Error",
+      Action = "Update-Ve-Token-Error",
       Error = err
     })
     return
   end
-  -- If validation passes, update stakedToken.
-  MarketFactory:updateStakedToken(msg.Tags.StakedToken, msg)
-end)
-
---- Update min stake
---- @param msg Message The message to handle
-Handlers.add("Update-Min-Stake", {Action = "Update-Min-Stake"}, function(msg)
-  -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateMinStake(MarketFactory.configurator, msg)
-  -- If validation fails, provide error response.
-  if not success then
-    msg.reply({
-      Action = "Update-Min-Stake-Error",
-      Error = err
-    })
-    return
-  end
-  -- If validation passes, update minStake.
-  local minStake = tonumber(msg.Tags.MinStake)
-  MarketFactory:updateMinStake(minStake, msg)
+  -- If validation passes, update veToken.
+  MarketFactory:updateVeToken(msg.Tags.VeToken, msg)
 end)
 
 --- Update LpFee handler
---- @param msg Message The message to handle
+--- @notice Only callable by the configurator
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.LpFee (numeric string): The new LP fee.
 Handlers.add("Update-Lp-Fee", {Action = "Update-Lp-Fee"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateLpFee(MarketFactory.configurator, msg)
+  local success, err = marketFactoryValidation.updateLpFee(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -385,10 +381,12 @@ Handlers.add("Update-Lp-Fee", {Action = "Update-Lp-Fee"}, function(msg)
 end)
 
 --- Update protocolFee handler
---- @param msg Message The message to handle
+--- @notice Only callable by the configurator
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.ProtocolFee (numeric string): The new protocol fee.
 Handlers.add("Update-Protocol-Fee", {Action = "Update-Protocol-Fee"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateProtocolFee(
+  local success, err = marketFactoryValidation.updateProtocolFee(
     MarketFactory.configurator,
     MarketFactory.maximumTakeFee,
     msg
@@ -407,10 +405,12 @@ Handlers.add("Update-Protocol-Fee", {Action = "Update-Protocol-Fee"}, function(m
 end)
 
 --- Update protocolFeeTarget handler
---- @param msg Message The message to handle
+--- @notice Only callable by the configurator
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.ProtocolFeeTarget (string): The new protocol fee target.
 Handlers.add("Update-Protocol-Fee-Target", {Action = "Update-Protocol-Fee-Target"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateProtocolFeeTarget(MarketFactory.configurator, msg)
+  local success, err = marketFactoryValidation.updateProtocolFeeTarget(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -424,10 +424,12 @@ Handlers.add("Update-Protocol-Fee-Target", {Action = "Update-Protocol-Fee-Target
 end)
 
 --- Update maximumTakeFee handler
---- @param msg Message The message to handle
+--- @notice Only callable by the configurator
+--- @param msg Message Themessage received, expected to contain:
+--- - msg.Tags.MaximumTakeFee (numeric string): The new maximum take fee.
 Handlers.add("Update-Maximum-Take-Fee", {Action = "Update-Maximum-Take-Fee"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateUpdateMaximumTakeFee(MarketFactory.configurator, msg)
+  local success, err = marketFactoryValidation.updateMaximumTakeFee(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -442,10 +444,13 @@ Handlers.add("Update-Maximum-Take-Fee", {Action = "Update-Maximum-Take-Fee"}, fu
 end)
 
 --- Approve collateralToken handler
---- @param msg Message The message to handle
+--- @notice Only callable by the configurator
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.CollateralToken (string): The address of the collateral token.
+--- - msg.Tags.Approved (string): Whether the collateral token is approved, "true" or "false".
 Handlers.add("Approve-Collateral-Token", {Action = "Approve-Collateral-Token"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateApproveCollateralToken(MarketFactory.configurator, msg)
+  local success, err = marketFactoryValidation.approveCollateralToken(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -460,10 +465,14 @@ Handlers.add("Approve-Collateral-Token", {Action = "Approve-Collateral-Token"}, 
 end)
 
 --- Transfer handler
---- @param msg Message The message to handle
+--- @notice Only callable by the configurator
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.Token (string): The token to transfer.
+--- - msg.Tags.Recipient (string): The address of the recipient.
+--- - msg.Tags.Quantity (numeric string): The quantity to transfer.
 Handlers.add("Transfer", {Action = "Transfer"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.validateTransfer(MarketFactory.configurator, msg)
+  local success, err = marketFactoryValidation.transfer(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -492,7 +501,7 @@ end)
 --- @param msg Message The message to handle
 Handlers.add("Debit-Notice", {Action = "Debit-Notice"}, function(msg)
   -- Validate input and raise error if invalid
-  local success, err = marketFactoryValidation.validateDebitNotice(msg)
+  local success, err = marketFactoryValidation.debitNotice(msg)
   assert(success, err)
   -- Forward success message to original sender
   msg.forward( msg.Tags["X-Sender"], {

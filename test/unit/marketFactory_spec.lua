@@ -142,7 +142,7 @@ describe("#marketFactory", function()
     }, info)
   end)
 
-  it("should create a market group", function()
+  it("should create an event", function()
     -- create a market group
     local notice = {}
     -- should not throw an error
@@ -317,7 +317,7 @@ describe("#marketFactory", function()
     assert.are.same(json.encode({mockProcessId}), msgReply.Data)
   end)
 
-  it("should get market groups by creator", function()
+  it("should get events by creator", function()
     FACTORY:createEvent(
       msgCreateMarketGroup.Tags["Collateral"],
       msgCreateMarketGroup.Tags["DataIndex"],
@@ -394,10 +394,60 @@ describe("#marketFactory", function()
     msg.Tags = {}
     msg.Tags.Creator = msgSpawnMarket.From
     assert.has_no.errors(function()
-      msgReply = FACTORY:getLatestProcessIdForCreator(msg.Tags.Creator, msg)
+      msgReply = FACTORY:getLatestProcessIdForCreator(msg)
     end)
     -- assert reply
     assert.are.same(mockProcessId, msgReply.Data)
+  end)
+
+  it("should approve creator", function()
+    FACTORY.approvedCreators = {}
+    local notice = {}
+    -- should not throw an error
+    assert.has_no.errors(function()
+      notice = FACTORY:approveCreator(
+        msgSpawnMarket.From,
+        true, -- approve
+        msg
+      )
+    end)
+    -- assert state change
+    local updatedCreators = {}
+    updatedCreators[msgSpawnMarket.From] = true
+
+    assert.are.same(updatedCreators, FACTORY.approvedCreators)
+    -- assert notice
+    assert.are.same({
+      Action = "Approve-Creator-Notice",
+      Approved = "true",
+      Creator = msgSpawnMarket.From
+    }, notice)
+  end)
+
+  it("should unapprove creator", function()
+    FACTORY.approvedCreators = {}
+    local notice = {}
+    -- should not throw an error
+    FACTORY:approveCreator(
+      msgSpawnMarket.From,
+      true, -- approve
+      msg
+    )
+    assert.has_no.errors(function()
+      notice = FACTORY:approveCreator(
+        msgSpawnMarket.From,
+        false, -- unapprove
+        msg
+      )
+    end)
+    -- assert state change
+    assert.are.same(constants.collateralTokens, FACTORY.collateralTokens)
+    -- assert notice
+    assert.are.same({
+      Action = "Approve-Creator-Notice",
+      Approved = "false",
+      Creator = msgSpawnMarket.From
+    }, notice)
   end)
 
   it("should update configurator", function()
@@ -416,6 +466,25 @@ describe("#marketFactory", function()
     assert.are.same({
       Action = "Update-Configurator-Notice",
       Data = newConfigurator
+    }, notice)
+  end)
+
+  it("should update veToken", function()
+    local notice = {}
+    -- should not throw an error
+    local newVeToken = "test-this-is-valid-arweave-wallet-address-4"
+    assert.has_no.errors(function()
+      notice = FACTORY:updateVeToken(
+        newVeToken,
+        msg
+      )
+    end)
+    -- assert state change
+    assert.are.same(newVeToken, FACTORY.veToken)
+    -- assert notice
+    assert.are.same({
+      Action = "Update-Ve-Token-Notice",
+      Data = newVeToken
     }, notice)
   end)
 

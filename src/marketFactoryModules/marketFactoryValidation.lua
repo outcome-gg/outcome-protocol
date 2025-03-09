@@ -22,7 +22,7 @@ WRITE METHODS
 --- @param testCollateral string The test collateral token
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateCreateEvent(approvedCollateralTokens, approvedCreators, testCollateral, msg)
+function marketFactoryValidation.createEvent(approvedCollateralTokens, approvedCreators, testCollateral, msg)
   local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
   if not success then return false, err end
 
@@ -59,7 +59,7 @@ end
 --- @param maximumTakeFee number The maximum take fee
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateSpawnMarket(approvedCollateralTokens, approvedCreators, testCollateral, protocolFee, maximumTakeFee, msg)
+function marketFactoryValidation.spawnMarket(approvedCollateralTokens, approvedCreators, testCollateral, protocolFee, maximumTakeFee, msg)
   local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
   if not success then return false, err end
 
@@ -108,24 +108,59 @@ READ METHODS
 ============
 ]]
 
---- Validates a marketsByCreator message
---- @param msg Message The message received
---- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateMarketsByCreator(msg)
-  return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
-end
-
 --- Validates an eventsByCreator message
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateEventsByCreator(msg)
-  return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
+function marketFactoryValidation.eventsByCreator(msg)
+  if msg.Tags.Creator then
+    return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
+  end
+  return true
+end
+
+--- Validates a marketsByCreator message
+--- @param msg Message The message received
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
+function marketFactoryValidation.marketsByCreator(msg)
+  if msg.Tags.Creator then
+    return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
+  end
+  return true
 end
 
 --- Validates a getLatestProcessIdForCreator message
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateGetLatestProcessIdForCreator(msg)
+function marketFactoryValidation.getLatestProcessIdForCreator(msg)
+  if msg.Tags.Creator then
+    return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
+  end
+  return true
+end
+
+--[[
+================
+VE TOKEN METHODS
+================
+]]
+
+--- Validates an approveCreator message
+--- @param veToken string The veToken process ID
+--- @param msg Message The message received
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
+function marketFactoryValidation.approveCreator(veToken, msg)
+  if msg.From ~= veToken then
+    return false, "Sender must be veToken!"
+  end
+
+  if type(msg.Tags.Approved) ~= "string" then
+    return false, "Approved is required!"
+  end
+
+  if not sharedUtils.isValidBooleanString(msg.Tags.Approved) then
+    return false, "Approved must be a boolean string!"
+  end
+
   return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
 end
 
@@ -139,18 +174,29 @@ CONFIGURATOR METHODS
 --- @param configurator string The current configurator
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateUpdateConfigurator(configurator, msg)
+function marketFactoryValidation.updateConfigurator(configurator, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
   return sharedValidation.validateAddress(msg.Tags.Configurator, "Configurator")
 end
 
+--- Validates an update veToken message
+--- @param configurator string The current configurator
+--- @param msg Message The message received
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
+function marketFactoryValidation.updateVeToken(configurator, msg)
+  if msg.From ~= configurator then
+    return false, "Sender must be configurator!"
+  end
+  return sharedValidation.validateAddress(msg.Tags.VeToken, "VeToken")
+end
+
 --- Validates an update lpFee message
 --- @param configurator string The current configurator
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateUpdateLpFee(configurator, msg)
+function marketFactoryValidation.updateLpFee(configurator, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
@@ -162,7 +208,7 @@ end
 --- @param maxTakeFee number The maximum take fee
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateUpdateProtocolFee(configurator, maxTakeFee, msg)
+function marketFactoryValidation.updateProtocolFee(configurator, maxTakeFee, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
@@ -176,7 +222,7 @@ end
 --- @param configurator string The current configurator
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateUpdateProtocolFeeTarget(configurator, msg)
+function marketFactoryValidation.updateProtocolFeeTarget(configurator, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
@@ -187,7 +233,7 @@ end
 --- @param configurator string The current configurator
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateUpdateMaximumTakeFee(configurator, msg)
+function marketFactoryValidation.updateMaximumTakeFee(configurator, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
@@ -198,7 +244,7 @@ end
 --- @param configurator string The current configurator
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateApproveCollateralToken(configurator, msg)
+function marketFactoryValidation.approveCollateralToken(configurator, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
@@ -216,7 +262,7 @@ end
 --- @param configurator string The current configurator
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateTransfer(configurator, msg)
+function marketFactoryValidation.transfer(configurator, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
@@ -233,7 +279,7 @@ end
 --- Validates a debit notice message
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.validateDebitNotice(msg)
+function marketFactoryValidation.debitNotice(msg)
   return sharedValidation.validateAddress(msg.Tags["X-Sender"], "X-Sender")
 end
 

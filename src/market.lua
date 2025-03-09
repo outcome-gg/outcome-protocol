@@ -657,7 +657,7 @@ Handlers.add("Merge-Positions", {Action = "Merge-Positions"}, function(msg)
 end)
 
 --- Report payouts handler
---- @warning Only callable by the resolution agent, and once, or the transaction will fail
+--- @notice Only callable by the resolution agent
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Payouts (stringified table): The payouts to report
 --- @note **Emits the following notices:**
@@ -969,6 +969,7 @@ CONFIGURATOR WRITE HANDLERS
 ]]
 
 --- Update configurator handler
+--- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Configurator (string): The new configurator.
 --- @note **Emits the following notices:**
@@ -993,6 +994,7 @@ Handlers.add('Update-Configurator', {Action = "Update-Configurator"}, function(m
 end)
 
 --- Update data index handler
+--- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.DataIndex (string): The new data index.
 --- @note **Emits the following notices:**
@@ -1017,6 +1019,7 @@ Handlers.add("Update-Data-Index", {Action = "Update-Data-Index"}, function(msg)
 end)
 
 --- Update take fee handler
+--- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.TakeFee (string): The new take fee.
 --- @note **Emits the following notices:**
@@ -1040,6 +1043,7 @@ Handlers.add('Update-Take-Fee', {Action = "Update-Take-Fee"}, function(msg)
 end)
 
 --- Update protocol fee target handler
+--- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.ProtocolFeeTarget (string): The new protocol fee target.
 --- @note **Emits the following notices:**
@@ -1063,6 +1067,7 @@ Handlers.add('Update-Protocol-Fee-Target', {Action = "Update-Protocol-Fee-Target
 end)
 
 --- Update logo handler
+--- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Logo (string): The new logo.
 --- @note **Emits the following notices:**
@@ -1086,6 +1091,7 @@ Handlers.add('Update-Logo', {Action = "Update-Logo"}, function(msg)
 end)
 
 --- Update logos handler
+--- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Logos (stringified table): The new logos.
 --- @note **Emits the following notices:**
