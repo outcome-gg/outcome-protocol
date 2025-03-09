@@ -321,6 +321,9 @@ Outcome.marketRedeemPositions(market)
 }
 ```
 
+
+[🔝 Back to Top](#table-of-contents)
+
 ## Architecture
 
 Outcome v2 follows a transient-style architecture, where each market operates as an independent process, executed with [`market.lua`](src/market.lua) and initialized with market-specific parameters.
@@ -332,6 +335,9 @@ Market resolution is autonomous via [`resolutionAgent.lua`](src/resolutionAgent.
 Core processes are **ownerless**, with [`configurator.lua`](src/configurator.lua) managing time-gated updates through token governance.
 
 ![Outcome v2 Architecture](docs/architecture.png)
+
+
+[🔝 Back to Top](#table-of-contents)
 
 ## Contracts
 
@@ -487,6 +493,9 @@ Core processes are **ownerless**, with [`configurator.lua`](src/configurator.lua
 
 TODO
 
+
+[🔝 Back to Top](#table-of-contents)
+
 ## Repository Structure
 
 All contracts reside in `/src`. Each contract consists of:
@@ -532,6 +541,8 @@ test
     └─ configurator_spec.lua
     └─ ...
 ```
+
+[🔝 Back to Top](#table-of-contents)
 
 ## Outcome Package
 
@@ -637,6 +648,8 @@ Outcome.configuratorInfo()
 | `tokenUpdateCollateralPrices(...)` |`C`| `collateralPrices`: Valid table of <Arweave address, Integer greater than 0> mappings | `Update-Collateral-Prices-Notice` |
 | `tokenUpdateCollateralFactors(...)` |`C`|  `collateralFactors`: Valid table of <Arweave address, Decimal greater than 0> mappings | `Update-Collateral-Factors-Notice` |
 | `tokenUpdateCollateralDenominations(...)` |`C`| `collateralDenominations`: Valid table of <Arweave address, Integer greater than 0> mappings | `Update-Collateral-Denominations-Notice` |
+
+[🔝 Back to Top](#table-of-contents)
 
 ## Testing
 
