@@ -43,7 +43,7 @@ local json = require('json')
 --- @field marketsSpawnedByCreator table<string, table<string>> List of markets spawned by creator
 --- @field marketsPendingInit table<string> List of markets pending initialization
 --- @field marketsInit table<string> List of initialized markets
---- @field marketProcessCode table<string, string> Market process code
+--- @field marketProcessCode string Market process code
 
 --- Create a new MarketFactory instance
 --- @param configurator string The configurator process ID
@@ -534,6 +534,15 @@ end
 function MarketFactoryMethods:updateVeToken(veToken, msg)
   self.veToken = veToken
   return self.updateVeTokenNotice(veToken, msg)
+end
+
+--- Update market process code
+--- @param code string The new market process code
+--- @param msg Message The message received
+--- @return Message updateMarketProcessCodeNotice The update market process code notice
+function MarketFactoryMethods:updateMarketProcessCode(code, msg)
+  self.marketProcessCode = code
+  return self.updateMarketProcessCodeNotice(msg)
 end
 
 --- Update lpFee

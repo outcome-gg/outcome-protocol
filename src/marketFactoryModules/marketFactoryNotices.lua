@@ -136,6 +136,15 @@ function MarketFactoryNotices.updateVeTokenNotice(veToken, msg)
   })
 end
 
+--- Update market process code notice
+--- @return Message updateMarketProcessCodeNotice The update market process code notice
+function MarketFactoryNotices.updateMarketProcessCodeNotice(msg)
+  return msg.reply({
+    Action = "Update-Market-Process-Code-Notice",
+    Data = "Successfully updated market process code"
+  })
+end
+
 --- Update lpFee notice
 --- @param lpFee number The new lp fee
 --- @param msg Message The message received

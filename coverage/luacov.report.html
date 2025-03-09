@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 33.33%"></span>
-                  <span><strong>33.33%</strong> Coverage</span>
+                  <span class="bg" style="width: 28.34%"></span>
+                  <span><strong>28.34%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>147</strong> Hits</span>
-               <span class="miss"><strong>294</strong> Missed</span>
+               <span class="hits"><strong>125</strong> Hits</span>
+               <span class="miss"><strong>316</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -335,11 +335,11 @@
             src/marketModules/conditionalTokens.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 13.98%"></span>
-                  <span><strong>13.98%</strong> Coverage</span>
+                  <span class="bg" style="width: 4.30%"></span>
+                  <span><strong>4.30%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>13</strong> Hits</span>
-               <span class="miss"><strong>80</strong> Missed</span>
+               <span class="hits"><strong>4</strong> Hits</span>
+               <span class="miss"><strong>89</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -364,8 +364,8 @@ https:&#47;&#47;outcome.gg&#47;tos
 <span class="fc" data-hits="1">local ConditionalTokensMethods = {}</span>
 <span class="fc" data-hits="1">local ConditionalTokensNotices = require(&#39;marketModules.conditionalTokensNotices&#39;)</span>
 <span class="fc" data-hits="1">local SemiFungibleTokens = require(&#39;marketModules.semiFungibleTokens&#39;)</span>
-<span class="fc" data-hits="1">local bint = require(&#39;.bint&#39;)(256)</span>
-<span class="fc" data-hits="1">local ao = ao or require(&#39;.ao&#39;)</span>
+<span class="nc">local bint = require(&#39;.bint&#39;)(256)</span>
+<span class="nc">local ao = ao or require(&#39;.ao&#39;)</span>
 
 --- Represents ConditionalTokens
 --- @class ConditionalTokens
@@ -400,7 +400,7 @@ https:&#47;&#47;outcome.gg&#47;tos
 --- @param protocolFee number The protocol fee to be paid, in basis points
 --- @param protocolFeeTarget string The process ID to receive the protocol fee
 --- @return ConditionalTokens conditionalTokens The new ConditionalTokens instance
-<span class="fc" data-hits="1">function ConditionalTokens.new(</span>
+<span class="nc">function ConditionalTokens.new(</span>
   name,
   ticker,
   logos,
@@ -458,7 +458,7 @@ end
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message| nil The position split notice if not cast
-<span class="fc" data-hits="1">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, cast, sendInterim, detached, msg)</span>
+<span class="nc">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, cast, sendInterim, detached, msg)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal split positions.
 <span class="nc">  local quantities = {}</span>
@@ -481,7 +481,7 @@ end
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message|nil The positions merge notice if not cast
-<span class="fc" data-hits="1">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, cast, sendInterim, detached, msg)</span>
+<span class="nc">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, cast, sendInterim, detached, msg)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
   -- Create equal merge positions.
 <span class="nc">  local quantities = {}</span>
@@ -511,7 +511,7 @@ end
 --- @param payouts table&lt;number&gt; The resolution agent&#39;s answer
 --- @param msg Message The message received
 --- @return Message reportPayoutsNotice The report payouts notice
-<span class="fc" data-hits="1">function ConditionalTokensMethods:reportPayouts(payouts, msg)</span>
+<span class="nc">function ConditionalTokensMethods:reportPayouts(payouts, msg)</span>
 <span class="nc">  assert(#payouts == #self.positionIds, &quot;Payouts must match outcome slot count!&quot;)</span>
 <span class="nc">  assert(msg.From == self.resolutionAgent, &quot;Sender not resolution agent!&quot;)</span>
 <span class="nc">  assert(self.payoutDenominator == 0, &quot;payout denominator already set&quot;)</span>
@@ -536,7 +536,7 @@ end
 --- @param sendInterim boolean If true, sends intermediate notices
 --- @param msg Message The message received
 --- @return Message|nil The payout redemption notice if not cast
-<span class="fc" data-hits="1">function ConditionalTokensMethods:redeemPositions(onBehalfOf, cast, sendInterim, msg)</span>
+<span class="nc">function ConditionalTokensMethods:redeemPositions(onBehalfOf, cast, sendInterim, msg)</span>
 <span class="nc">  local den = self.payoutDenominator</span>
 <span class="nc">  assert(den &gt; 0, &quot;market not resolved&quot;)</span>
 <span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;market not initialized&quot;)</span>
@@ -571,7 +571,7 @@ end
 --- @param totalPayout number The total payout assciated with the acount stake
 --- @param cast boolean The cast is set to true to silence the notice
 --- @return string The total payout minus fee amount
-<span class="fc" data-hits="1">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, cast)</span>
+<span class="nc">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, cast)</span>
 <span class="nc">  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))</span>
 <span class="nc">  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))</span>
 <span class="nc">  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))</span>
@@ -606,7 +606,7 @@ end
 <span class="nc">  return totalPayoutMinusFee</span>
 end
 
-<span class="fc" data-hits="1">return ConditionalTokens</span>
+<span class="nc">return ConditionalTokens</span>
 </pre>
       </div>
 
@@ -859,11 +859,11 @@ end
             src/marketModules/semiFungibleTokens.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 14.53%"></span>
-                  <span><strong>14.53%</strong> Coverage</span>
+                  <span class="bg" style="width: 3.42%"></span>
+                  <span><strong>3.42%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>17</strong> Hits</span>
-               <span class="miss"><strong>100</strong> Missed</span>
+               <span class="hits"><strong>4</strong> Hits</span>
+               <span class="miss"><strong>113</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -913,7 +913,7 @@ THE SOFTWARE.
 --- @param totalSupplyById table&lt;string, string&gt; The total supply of the token by ID
 --- @param denomination number The number of decimals
 --- @return SemiFungibleTokens semiFungibleTokens The new SemiFungibleTokens instance
-<span class="fc" data-hits="1">function SemiFungibleTokens.new(name, ticker, logos, balancesById, totalSupplyById, denomination)</span>
+<span class="nc">function SemiFungibleTokens.new(name, ticker, logos, balancesById, totalSupplyById, denomination)</span>
 <span class="nc">  local semiFungibleTokens = {</span>
     name = name,
     ticker = ticker,
@@ -944,7 +944,7 @@ end
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message|nil The mint notice if not cast
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:mint(to, id, quantity, cast, detached, msg)</span>
+<span class="nc">function SemiFungibleTokensMethods:mint(to, id, quantity, cast, detached, msg)</span>
 <span class="nc">  assert(quantity, &#39;Quantity is required!&#39;)</span>
 <span class="nc">  assert(bint.__lt(0, bint(quantity)), &#39;Quantity must be greater than zero!&#39;)</span>
   -- mint tokens
@@ -965,7 +965,7 @@ end
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message|nil The batch mint notice if not cast
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchMint(to, ids, quantities, cast, detached, msg)</span>
+<span class="nc">function SemiFungibleTokensMethods:batchMint(to, ids, quantities, cast, detached, msg)</span>
 <span class="nc">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
   -- mint tokens
 <span class="nc">  for i = 1, #ids do</span>
@@ -988,7 +988,7 @@ end
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message|nil The burn notice if not cast
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:burn(from, id, quantity, cast, detached, msg)</span>
+<span class="nc">function SemiFungibleTokensMethods:burn(from, id, quantity, cast, detached, msg)</span>
 <span class="nc">  assert(bint.__lt(0, bint(quantity)), &#39;Quantity must be greater than zero!&#39;)</span>
 <span class="nc">  assert(self.balancesById[id], &#39;Id must exist! &#39; .. id)</span>
 <span class="nc">  assert(self.balancesById[id][from], &#39;Account must hold token! :: &#39; .. id)</span>
@@ -1008,7 +1008,7 @@ end
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return Message|nil The batch burn notice if not cast
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, cast, detached, msg)</span>
+<span class="nc">function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, cast, detached, msg)</span>
 <span class="nc">  assert(#ids == #quantities, &#39;Ids and quantities must have the same lengths&#39;)</span>
 <span class="nc">  for i = 1, #ids do</span>
 <span class="nc">    assert(bint.__lt(0, quantities[i]), &#39;Quantity must be greater than zero!&#39;)</span>
@@ -1036,7 +1036,7 @@ end
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return table&lt;Message&gt;|Message|nil The transfer notices, error notice or nothing
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, detached, msg)</span>
+<span class="nc">function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, detached, msg)</span>
 <span class="nc">  if not self.balancesById[id] then self.balancesById[id] = {} end</span>
 <span class="nc">  if not self.balancesById[id][from] then self.balancesById[id][from] = &quot;0&quot; end</span>
 <span class="nc">  if not self.balancesById[id][recipient] then self.balancesById[id][recipient] = &quot;0&quot; end</span>
@@ -1065,7 +1065,7 @@ end
 --- @param detached boolean Whether to use `ao.send` or `msg.reply`
 --- @param msg Message The message received
 --- @return table&lt;Message&gt;|Message|nil The transfer notices, error notice or nothing
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, detached, msg)</span>
+<span class="nc">function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, detached, msg)</span>
 <span class="nc">  local ids_ = {}</span>
 <span class="nc">  local quantities_ = {}</span>
 
@@ -1098,7 +1098,7 @@ end
 --- @param recipient string|nil The process ID of the recipient (optional)
 --- @param id string The ID of the token
 --- @return string The balance of the account for the given ID
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBalance(sender, recipient, id)</span>
+<span class="nc">function SemiFungibleTokensMethods:getBalance(sender, recipient, id)</span>
 <span class="nc">  local bal = &#39;0&#39;</span>
   -- If ID is found then continue
 <span class="nc">  if self.balancesById[id] then</span>
@@ -1117,7 +1117,7 @@ end
 --- @param recipients table&lt;string&gt; The process IDs of the recipients
 --- @param ids table&lt;string&gt; The IDs of the tokens
 --- @return table&lt;string&gt; The balances of the recipients for each respective ID
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBatchBalance(recipients, ids)</span>
+<span class="nc">function SemiFungibleTokensMethods:getBatchBalance(recipients, ids)</span>
 <span class="nc">  assert(#recipients == #ids, &#39;Recipients and Ids must have same lengths&#39;)</span>
 <span class="nc">  local bals = {}</span>
 
@@ -1136,7 +1136,7 @@ end
 --- Get account balances of tokens with the given ID
 --- @param id string The ID of the token
 --- @return table&lt;string, string&gt; The account balances for the given ID
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBalances(id)</span>
+<span class="nc">function SemiFungibleTokensMethods:getBalances(id)</span>
 <span class="nc">  local bals = {}</span>
 <span class="nc">  if self.balancesById[id] then</span>
 <span class="nc">    bals = self.balancesById[id]</span>
@@ -1148,7 +1148,7 @@ end
 --- Get accounts&#39; balances of tokens with the given IDs
 --- @param positionIds table&lt;string&gt; The IDs of the tokens
 --- @return table&lt;string, table&lt;string, string&gt;&gt; The account balances for each respective ID
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getBatchBalances(positionIds)</span>
+<span class="nc">function SemiFungibleTokensMethods:getBatchBalances(positionIds)</span>
 <span class="nc">  local bals = {}</span>
 <span class="nc">  for i = 1, #positionIds do</span>
 <span class="nc">    bals[ positionIds[i] ] = {}</span>
@@ -1163,7 +1163,7 @@ end
 --- Get the logo for the token with the given ID
 --- @param id string The ID of the token
 --- @return string The Arweave TxID of the logo
-<span class="fc" data-hits="1">function SemiFungibleTokensMethods:getLogo(id)</span>
+<span class="nc">function SemiFungibleTokensMethods:getLogo(id)</span>
 <span class="nc">  local logo = &#39;&#39;</span>
 <span class="nc">  if self.logos[tonumber(id)] then</span>
 <span class="nc">    logo = self.logos[tonumber(id)]</span>
@@ -1172,7 +1172,7 @@ end
 <span class="nc">  return logo</span>
 end
 
-<span class="fc" data-hits="1">return SemiFungibleTokens</span>
+<span class="nc">return SemiFungibleTokens</span>
 </pre>
       </div>
 
@@ -1611,7 +1611,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-09 12:22:29
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-09 12:36:55
    </footer>
 
    <script type="text/javascript">

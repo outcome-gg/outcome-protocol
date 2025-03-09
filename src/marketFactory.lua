@@ -360,6 +360,25 @@ Handlers.add("Update-Ve-Token", {Action = "Update-Ve-Token"}, function(msg)
   MarketFactory:updateVeToken(msg.Tags.VeToken, msg)
 end)
 
+--- Update market process code handler
+--- @notice Only callable by the configurator
+--- @param msg Message The message received, expected to contain:
+--- - msg.Data (string): The new market process code.
+Handlers.add("Update-Market-Process-Code", {Action = "Update-Market-Process-Code"}, function(msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.updateMarketProcessCode(MarketFactory.configurator, msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Market-Process-Code-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update market process code.
+  MarketFactory:updateMarketProcessCode(msg.Data, msg)
+end)
+
 --- Update LpFee handler
 --- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
@@ -465,7 +484,7 @@ Handlers.add("Approve-Collateral-Token", {Action = "Approve-Collateral-Token"}, 
 end)
 
 --- Transfer handler
---- @notice Only callable by the configurator
+--- @notice Only callable by the configurator, used to retrieve any tokens sent in error.
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Token (string): The token to transfer.
 --- - msg.Tags.Recipient (string): The address of the recipient.
