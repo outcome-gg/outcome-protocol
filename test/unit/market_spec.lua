@@ -1214,6 +1214,8 @@ describe("#market", function()
     end)
     -- get balance
     -- should not throw an error
+    -- where recipient == nil
+    msgMintSingle.Tags.Recipient = nil
 		assert.has_no.errors(function()
       balance = Market:balanceById(
         msgMintSingle

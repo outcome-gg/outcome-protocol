@@ -28,6 +28,7 @@ local SemiFungibleTokensMethods = {}
 local SemiFungibleTokensNotices = require('marketModules.semiFungibleTokensNotices')
 local bint = require('.bint')(256)
 local sharedUtils = require("marketModules.sharedUtils")
+local json = require("json")
 
 -- Represents SemiFungibleTokens
 --- @class SemiFungibleTokens
@@ -228,23 +229,22 @@ function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantitie
   end
 end
 
---- Get account balance of tokens with the given ID
+--- Get the token balance for a specific account and token ID.
+--- @notice If `onBehalfOf` is provided, the balance for that account is returned;
+--- otherwise, the balance for `sender` is used.
 --- @param sender string The process ID of the sender
---- @param recipient string|nil The process ID of the recipient (optional)
+--- @param onBehalfOf string|nil An optional alternative process ID to query the balance for
 --- @param id string The ID of the token
 --- @return string The balance of the account for the given ID
-function SemiFungibleTokensMethods:getBalance(sender, recipient, id)
-  local bal = '0'
-  -- If ID is found then continue
+function SemiFungibleTokensMethods:getBalance(sender, onBehalfOf, id)
+  -- Use the alternative account if provided; otherwise default to sender
+  local account = onBehalfOf and onBehalfOf or sender
+  local bal = "0"
+  --- Check if the token ID exists
   if self.balancesById[id] then
-    -- If recipient is not provided, return the senders balance
-    if (recipient and self.balancesById[id][recipient]) then
-      bal = self.balancesById[id][recipient]
-    elseif self.balancesById[id][sender] then
-      bal = self.balancesById[id][sender]
-    end
+    -- Return the balance for the account or "0" if not found
+    bal = self.balancesById[id][account] or "0"
   end
-  -- return balance
   return bal
 end
 
