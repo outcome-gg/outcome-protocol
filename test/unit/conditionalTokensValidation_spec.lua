@@ -72,6 +72,14 @@ describe("#market #conditionalTokens #conditionalTokensValidation", function()
     assert.are.equal("Quantity must be an integer!", err)
   end)
 
+
+  it("should fail merge validation when onBehalfOf is invalid", function()
+    msgMerge.Tags.OnBehalfOf = "foo"
+    local success, err = conditionalTokensValidation.mergePositions(msgMerge, _G.CPMM)
+    assert.is_false(success)
+    assert.are.equal("onBehalfOf must be a valid Arweave address!", err)
+  end)
+
   it("should pass report payouts validation", function()
     local success, err = conditionalTokensValidation.reportPayouts(msgPayouts, resolutionAgent)
     assert.is_true(success)

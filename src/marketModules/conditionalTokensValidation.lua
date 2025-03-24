@@ -62,7 +62,7 @@ function ConditionalTokensValidation.mergePositions(msg, cpmm)
   local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
   local success, err
 
-  if not onBehalfOf then
+  if onBehalfOf ~= msg.From then
     success, err = sharedValidation.validateAddress(onBehalfOf, 'onBehalfOf')
     if not success then return false, err end
   end
@@ -97,7 +97,7 @@ function ConditionalTokensValidation.redeemPositions(msg)
   local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
   local success, err
 
-  if not onBehalfOf then
+  if onBehalfOf ~= msg.From then
     success, err = sharedValidation.validateAddress(onBehalfOf, 'onBehalfOf')
     if not success then return false, err end
   end
