@@ -120,6 +120,9 @@ end
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil The transfer notices, error notice or nothing
 function TokenMethods:transfer(from, recipient, quantity, cast, detached, msg)
+  assert(from ~= recipient, "Recipient must be different from sender!")
+  assert(bint.__lt(0, bint(quantity)), "Quantity must be greater than zero!")
+
   if not self.balances[from] then self.balances[from] = "0" end
   if not self.balances[recipient] then self.balances[recipient] = "0" end
 

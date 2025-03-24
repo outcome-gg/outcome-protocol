@@ -28,7 +28,6 @@ local SemiFungibleTokensMethods = {}
 local SemiFungibleTokensNotices = require('marketModules.semiFungibleTokensNotices')
 local bint = require('.bint')(256)
 local sharedUtils = require("marketModules.sharedUtils")
-local json = require("json")
 
 -- Represents SemiFungibleTokens
 --- @class SemiFungibleTokens
@@ -174,6 +173,9 @@ end
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil The transfer notices, error notice or nothing
 function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, detached, msg)
+  assert(from ~= recipient, "Recipient must be different from sender!")
+  assert(bint.__lt(0, bint(quantity)), "Quantity must be greater than zero!")
+
   if not self.balancesById[id] then self.balancesById[id] = {} end
   if not self.balancesById[id][from] then self.balancesById[id][from] = "0" end
   if not self.balancesById[id][recipient] then self.balancesById[id][recipient] = "0" end
@@ -202,6 +204,11 @@ end
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil The transfer notices, error notice or nothing
 function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, detached, msg)
+  assert(from ~= recipient, "Recipient must be different from sender!")
+  for i = 1, #ids do
+    assert(bint.__lt(0, bint(quantities[i])), "Quantity must be greater than zero!")
+  end
+
   local ids_ = {}
   local quantities_ = {}
 
