@@ -1229,6 +1229,148 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.are.equal("0", CPMM:feesWithdrawableBy(sender))
 	end)
 
+  -- The withdrawnFees[sender] function is overwritten when fees are collected. This should be accumulated instead.
+  -- The user can withdraw as many tokens as they please.
+  it("should fix FYEO-OUTCOME-01", function()
+    -- add funding
+    CPMM:addFunding(
+      msgAddFunding.Tags.Sender,
+      "1000", -- updated due to rounding error msgAddFunding.Tags.Quantity,
+      json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
+      false, -- castInterim
+      msgAddFunding
+    )
+    -- add funding from a different sender
+    CPMM:addFunding(
+      recipient, -- different sender
+      "1000", -- updated due to rounding error msgAddFunding.Tags.Quantity,
+      nil,
+      false, -- cast
+      false, -- castInterim
+      msgAddFunding
+    )
+    -- @dev withdrawnFees mapping updated to prevent user from withdrawing fees on any previous funding
+    assert.are.equal("1000", CPMM.withdrawnFees[sender])
+    assert.are.equal("1000", CPMM.withdrawnFees[recipient])
+    -- @dev no collected fees as no trading has occurred
+    assert.are.equal("0", CPMM:collectedFees())
+    -- @dev no fees withdrawable as no trading has occurred
+    assert.are.equal("0", CPMM:feesWithdrawableBy(sender))
+    assert.are.equal("0", CPMM:feesWithdrawableBy(recipient))
+
+    -- buy
+    assert.has.no.errors(function()
+      CPMM:buy(
+      msgBuy.From,
+      msgBuy.From, -- onBehalfOf is the same as sender
+      "1000", -- updated due to rounding error msgBuy.Tags.InvestmentAmount,
+      msgBuy.Tags.PositionId,
+      "1000", -- updated due to rounding error msgBuy.Tags.Quantity,
+      false, -- cast
+      false, -- castInterim
+      msgBuy
+      )
+    end)
+
+    -- @dev withdrawnFees unchanged
+    assert.are.equal("1000", CPMM.withdrawnFees[sender])
+    assert.are.equal("1000", CPMM.withdrawnFees[recipient])
+    -- @dev 1% LP fees
+    assert.are.equal("10", CPMM:collectedFees())
+    -- @dev Sender and recipient receive 50% of the fees each
+    assert.are.equal("5", CPMM:feesWithdrawableBy(sender))
+    assert.are.equal("5", CPMM:feesWithdrawableBy(recipient))
+
+    -- withdraw fees
+    -- should not throw an error
+		assert.has.no.error(function()
+      CPMM:withdrawFees(
+        sender,
+        sender,
+        false, -- cast
+        false, -- sendInterim
+        false, -- detached
+        msgBuy
+      )
+    end)
+
+    -- @dev sender withdrawnFees updated
+    assert.are.equal("1005", CPMM.withdrawnFees[sender])
+    assert.are.equal("1000", CPMM.withdrawnFees[recipient])
+    -- @dev 10 collected minus 5 withdrawn
+    assert.are.equal("5", CPMM:collectedFees())
+    -- @dev Sender has withdrawn their fees
+    assert.are.equal("0", CPMM:feesWithdrawableBy(sender))
+    assert.are.equal("5", CPMM:feesWithdrawableBy(recipient))
+
+    -- buy
+    assert.has.no.errors(function()
+      CPMM:buy(
+      msgBuy.From,
+      msgBuy.From, -- onBehalfOf is the same as sender
+      "1000", -- updated due to rounding error msgBuy.Tags.InvestmentAmount,
+      msgBuy.Tags.PositionId,
+      "1000", -- updated due to rounding error msgBuy.Tags.Quantity,
+      false, -- cast
+      false, -- castInterim
+      msgBuy
+      )
+    end)
+
+    -- @dev withdrawnFees unchanged
+    assert.are.equal("1005", CPMM.withdrawnFees[sender])
+    assert.are.equal("1000", CPMM.withdrawnFees[recipient])
+    -- @dev 5 + 10 (1% LP fee)
+    assert.are.equal("15", CPMM:collectedFees())
+    -- @dev Sender and recipient receive 50% of the fees each of new fee
+    assert.are.equal("5", CPMM:feesWithdrawableBy(sender))
+    assert.are.equal("10", CPMM:feesWithdrawableBy(recipient))
+
+    -- withdraw fees
+    -- second all should not throw an error
+		assert.has.no.error(function()
+      CPMM:withdrawFees(
+        sender,
+        sender,
+        false, -- cast
+        false, -- sendInterim
+        false, -- detached
+        msgBuy
+      )
+    end)
+
+    -- @dev sender withdrawnFees updated
+    assert.are.equal("1010", CPMM.withdrawnFees[sender])
+    assert.are.equal("1000", CPMM.withdrawnFees[recipient])
+    -- @dev 15 - 5 withdrawn
+    assert.are.equal("10", CPMM:collectedFees())
+    -- @dev Sender and recipient receive 50% of the fees each of new fee
+    assert.are.equal("0", CPMM:feesWithdrawableBy(sender))
+    assert.are.equal("10", CPMM:feesWithdrawableBy(recipient))
+
+    -- add funding
+    CPMM:addFunding(
+      msgAddFunding.Tags.Sender,
+      "1000", -- updated due to rounding error msgAddFunding.Tags.Quantity,
+      nil,
+      false, -- cast
+      false, -- castInterim
+      msgAddFunding
+    )
+
+    -- @dev sender withdrawnFees updated to prevent user from withdrawing fees on any previous funding
+    -- @dev updated amount not equal to funding amount due to update probabilities (the difference received as outcome tokens)
+    assert.are.equal("1517", CPMM.withdrawnFees[sender])
+    assert.are.equal("1000", CPMM.withdrawnFees[recipient])
+    -- @dev 15 - 5 withdrawn
+    assert.are.equal("10", CPMM:collectedFees())
+    -- @dev Sender and recipient receive 50% of the fees each of new fee
+    assert.are.equal("0", CPMM:feesWithdrawableBy(sender))
+    -- @dev number decreased due to small (yet necessary) rounding error (9.999 -> 9) to prevent underflow
+    assert.are.equal("9", CPMM:feesWithdrawableBy(recipient))
+	end)
+
   it("should withdraw fees during _beforeTokenTransfer", function()
     -- add funding
     CPMM:addFunding(

@@ -68,7 +68,7 @@ function CPMM.new(
   local cpmm = {
     configurator = configurator,
     poolBalances = {},
-    withdrawnFees = {},
+    withdrawnFees = {}, -- @dev for internal accounting: manipulated to prevent double withdrawal
     feePoolWeight = "0",
     totalWithdrawnFees = "0",
     lpFee = tonumber(lpFee)
@@ -367,7 +367,7 @@ function CPMMMethods:feesWithdrawableBy(account)
   local balance = self.token.balances[account] or '0'
   local rawAmount = '0'
   if bint(self.token.totalSupply) > 0 then
-    rawAmount = string.format('%.0f', (bint.__div(bint.__mul(bint(self:collectedFees()), bint(balance)), self.token.totalSupply)))
+    rawAmount = tostring(bint(bint.__mul(bint(self.feePoolWeight), bint(balance)) // self.token.totalSupply))
   end
   return tostring(bint.max(bint(bint.__sub(bint(rawAmount), bint(self.withdrawnFees[account] or '0'))), 0))
 end
@@ -383,7 +383,8 @@ end
 function CPMMMethods:withdrawFees(sender, onBehalfOf, cast, sendInterim, detached, msg)
   local feeAmount = self:feesWithdrawableBy(sender)
   if bint.__lt(0, bint(feeAmount)) then
-    self.withdrawnFees[sender] = feeAmount
+    local senderWithdrawnFees = self.withdrawnFees[sender] or "0"
+    self.withdrawnFees[sender] = tostring(bint.__add(bint(senderWithdrawnFees), bint(feeAmount)))
     self.totalWithdrawnFees = tostring(bint.__add(bint(self.totalWithdrawnFees), bint(feeAmount)))
     ao.send({
       Action = 'Transfer',
@@ -406,15 +407,24 @@ end
 --- @param sendInterim boolean If true, sends intermediate notices
 --- @param msg Message The message received
 function CPMMMethods:_beforeTokenTransfer(from, to, amount, cast, sendInterim, msg)
+  local withdrawnFeesTransfer = self.token.totalSupply == '0' and amount or tostring(bint(bint.__mul(bint(self.feePoolWeight), bint(amount)) // self.token.totalSupply))
   if from ~= nil and from ~= ao.id then
+    -- on burn or transfer
     self:withdrawFees(from, from, cast, sendInterim, true, msg) -- @dev `true`: sends detatched message
+  else
+    -- on mint
+    self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(withdrawnFeesTransfer)))
   end
-  local totalSupply = self.token.totalSupply
-  local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self:collectedFees()), bint(amount)), totalSupply)))
 
-  if from ~= nil and to ~= nil and from ~= ao.id then
-    self.withdrawnFees[from] = tostring(bint.__sub(bint(self.withdrawnFees[from] or '0'), bint(withdrawnFeesTransfer)))
+  if to ~= nil then
+    -- on mint or transfer
+    -- @dev to prevent holder from claiming fees on updated balance (double withdrawal)
     self.withdrawnFees[to] = tostring(bint.__add(bint(self.withdrawnFees[to] or '0'), bint(withdrawnFeesTransfer)))
+    -- @dev increase totalWithdrawnFees (offsets decrease in self:withdrawFees on transfer)
+    self.totalWithdrawnFees = tostring(bint.__add(bint(self.totalWithdrawnFees), bint(withdrawnFeesTransfer)))
+  else
+    -- on burn
+    self.feePoolWeight = tostring(bint.__sub(bint(self.feePoolWeight), bint(withdrawnFeesTransfer)))
   end
 end
 
