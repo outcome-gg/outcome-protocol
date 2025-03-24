@@ -264,6 +264,21 @@ function marketFactoryValidation.updateMaximumTakeFee(configurator, msg)
   return sharedValidation.validatePositiveIntegerOrZero(msg.Tags.MaximumTakeFee, "MaximumTakeFee")
 end
 
+--- Validate an update market process code message
+--- @param configurator string The current configurator
+--- @param msg Message The message received
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
+function marketFactoryValidation.updateMarketProcessCode(configurator, msg)
+  local success, err
+  if msg.From ~= configurator then
+    success, err = false, "Sender must be configurator!"
+  end
+  if type(msg.Tags.MarketProcessCode) ~= "string" then
+    success, err = false, "MarketProcessCode is required!"
+  end
+  return success, err
+end
+
 --- Validates an registerCollateralToken message
 --- @param configurator string The current configurator
 --- @param msg Message The message received

@@ -583,6 +583,25 @@ describe("#marketFactory", function()
     }, notice)
   end)
 
+  it("should update market process code", function()
+    local notice = {}
+    -- should not throw an error
+    local newMarketProcessCode = "print('hello world')"
+    assert.has_no.errors(function()
+      notice = FACTORY:updateMarketProcessCode(
+        newMarketProcessCode,
+        msg
+      )
+    end)
+    -- assert state change
+    assert.are.same(newMarketProcessCode, FACTORY.marketProcessCode)
+    -- assert notice
+    assert.are.same({
+      Action = "Update-Market-Process-Code-Notice",
+      Data = "Successfully updated market process code"
+    }, notice)
+  end)
+
   it("should register collateral token", function()
     -- reset collateralToken registerd state to nil
     FACTORY.registeredCollateralTokens[collateralToken] = nil
