@@ -316,298 +316,18 @@
 </head>
 <body onload="initialize()">
    <main>
-      <div class="file warning total">
+      <div class="file success-low total">
          <h1 class="title">
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 44.62%"></span>
-                  <span><strong>44.62%</strong> Coverage</span>
+                  <span class="bg" style="width: 67.66%"></span>
+                  <span><strong>67.66%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>116</strong> Hits</span>
-               <span class="miss"><strong>144</strong> Missed</span>
+               <span class="hits"><strong>113</strong> Hits</span>
+               <span class="miss"><strong>54</strong> Missed</span>
             </span>
          </h1>
-      </div>
-
-      <div class="hidden file danger" id="src-marketmodules-conditionaltokens">
-         <h2 class="title">
-            src/marketModules/conditionalTokens.lua
-            <span class="stats">
-               <span class="cov">
-                  <span class="bg" style="width: 3.23%"></span>
-                  <span><strong>3.23%</strong> Coverage</span>
-               </span>
-               <span class="hits"><strong>3</strong> Hits</span>
-               <span class="miss"><strong>90</strong> Missed</span>
-            </span>
-         </h2>
-         <pre class="prettyprint lang-lua linenums">--[[
-======================================================================================
-Outcome © 2025. All Rights Reserved.
-======================================================================================
-This code is proprietary and exclusively controlled by Outcome.
-
-You are permitted to build applications, integrations, and extensions that interact
-with the Outcome Protocol, provided such usage adheres to the official Outcome
-terms of service and does not result in unauthorized forks or clones of this codebase.
-
-Redistribution, reproduction, modification, or distribution of this code is strictly
-prohibited without explicit written permission from Outcome.
-
-By using this software, you agree to the Outcome Terms of Service:
-https:&#47;&#47;outcome.gg&#47;tos
-======================================================================================
-]]
-
-<span class="fc" data-hits="1">local ConditionalTokens = {}</span>
-<span class="fc" data-hits="1">local ConditionalTokensMethods = {}</span>
-<span class="fc" data-hits="1">local ConditionalTokensNotices = require(&#39;marketModules.conditionalTokensNotices&#39;)</span>
-<span class="nc">local SemiFungibleTokens = require(&#39;marketModules.semiFungibleTokens&#39;)</span>
-<span class="nc">local bint = require(&#39;.bint&#39;)(256)</span>
-<span class="nc">local ao = ao or require(&#39;.ao&#39;)</span>
-
---- Represents ConditionalTokens
---- @class ConditionalTokens
---- @field name string The token name
---- @field ticker string The token ticker
---- @field logos table&lt;string&gt; The token logos Arweave TxID for each ID
---- @field balancesById table&lt;string, table&lt;string, string&gt;&gt; The account token balances by ID
---- @field totalSupplyById table&lt;string, string&gt; The total supply of the token by ID
---- @field denomination number The number of decimals
---- @field resolutionAgent string The process ID of the resolution agent
---- @field collateralToken string The process ID of the collateral token
---- @field positionIds table&lt;string&gt; The position IDs representing outcomes
---- @field payoutNumerators table&lt;number&gt; The relative payouts for each outcome slot
---- @field payoutDenominator number The sum of payout numerators, zero if unreported
---- @field creatorFee number The creator fee to be paid, in basis points
---- @field creatorFeeTarget string The process ID to receive the creator fee
---- @field protocolFee number The protocol fee to be paid, in basis points
---- @field protocolFeeTarget string The process ID to receive the protocol fee
-
---- Creates a new ConditionalTokens instance
---- @param name string The token name
---- @param ticker string The token ticker
---- @param logos table&lt;string&gt; The token logos Arweave TxID for each ID
---- @param balancesById table&lt;string, table&lt;string, string&gt;&gt; The account token balances by ID
---- @param totalSupplyById table&lt;string, string&gt; The total supply of the token by ID
---- @param denomination number The number of decimals
---- @param resolutionAgent string The process ID of the resolution agent
---- @param collateralToken string The process ID of the collateral token
---- @param positionIds table&lt;string&gt; The position IDs representing outcomes
---- @param creatorFee number The creator fee to be paid, in basis points
---- @param creatorFeeTarget string The process ID to receive the creator fee
---- @param protocolFee number The protocol fee to be paid, in basis points
---- @param protocolFeeTarget string The process ID to receive the protocol fee
---- @return ConditionalTokens conditionalTokens The new ConditionalTokens instance
-<span class="nc">function ConditionalTokens.new(</span>
-  name,
-  ticker,
-  logos,
-  balancesById,
-  totalSupplyById,
-  denomination,
-  resolutionAgent,
-  collateralToken,
-  positionIds,
-  creatorFee,
-  creatorFeeTarget,
-  protocolFee,
-  protocolFeeTarget
-)
-  ---@class ConditionalTokens : SemiFungibleTokens
-<span class="nc">  local conditionalTokens = SemiFungibleTokens.new(name, ticker, logos, balancesById, totalSupplyById, denomination)</span>
-<span class="nc">  conditionalTokens.resolutionAgent = resolutionAgent</span>
-<span class="nc">  conditionalTokens.collateralToken = collateralToken</span>
-<span class="nc">  conditionalTokens.positionIds = positionIds</span>
-<span class="nc">  conditionalTokens.creatorFee = tonumber(creatorFee) or 0</span>
-<span class="nc">  conditionalTokens.creatorFeeTarget = creatorFeeTarget</span>
-<span class="nc">  conditionalTokens.protocolFee = tonumber(protocolFee) or 0</span>
-<span class="nc">  conditionalTokens.protocolFeeTarget = protocolFeeTarget</span>
-<span class="nc">  conditionalTokens.payoutDenominator = 0</span>
-  -- Initialize the payout vector as zeros.
-<span class="nc">  conditionalTokens.payoutNumerators = {}</span>
-<span class="nc">  for _ = 1, #positionIds do</span>
-<span class="nc">    table.insert(conditionalTokens.payoutNumerators, 0)</span>
-  end
-  -- Initialize the denominator to zero to indicate that the condition has not been resolved.
-<span class="nc">  conditionalTokens.payoutDenominator = 0</span>
-
-<span class="nc">  local semiFungibleTokensMetatable = getmetatable(conditionalTokens)</span>
-<span class="nc">  setmetatable(conditionalTokens, {</span>
-    __index = function(_, k)
-<span class="nc">      if ConditionalTokensMethods[k] then</span>
-<span class="nc">        return ConditionalTokensMethods[k]</span>
-<span class="nc">      elseif ConditionalTokensNotices[k] then</span>
-<span class="nc">        return ConditionalTokensNotices[k]</span>
-      else
-        -- Fallback directly to the parent metatable
-<span class="nc">        return semiFungibleTokensMetatable.__index(_, k)</span>
-      end
-    end
-  })
-<span class="nc">  return conditionalTokens</span>
-end
-
---- Split position
---- @param from string The process ID of the account that split the position
---- @param collateralToken string The process ID of the collateral token
---- @param quantity string The quantity of collateral to split
---- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices
---- @param detached boolean Whether to use `ao.send` or `msg.reply`
---- @param msg Message The message received
---- @return Message| nil The position split notice if not cast
-<span class="nc">function ConditionalTokensMethods:splitPosition(from, collateralToken, quantity, cast, sendInterim, detached, msg)</span>
-<span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
-  -- Create equal split positions.
-<span class="nc">  local quantities = {}</span>
-<span class="nc">  for _ = 1, #self.positionIds do</span>
-<span class="nc">    table.insert(quantities, quantity)</span>
-  end
-  -- Mint the stake in the split target positions.
-<span class="nc">  self:batchMint(from, self.positionIds, quantities, not sendInterim, true, msg) -- @dev `true`: sends detatched message</span>
-  -- Send notice.
-<span class="nc">  if not cast then return self.positionSplitNotice(from, collateralToken, quantity, detached, msg) end</span>
-end
-
---- Merge positions
---- @param from string The process ID of the account that merged the positions
---- @param onBehalfOf string The process ID of the account that will receive the collateral
---- @param quantity string The quantity of collateral to merge
---- @param isSell boolean True if the merge is a sell, false otherwise
---- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices
---- @param detached boolean Whether to use `ao.send` or `msg.reply`
---- @param msg Message The message received
---- @return Message|nil The positions merge notice if not cast
-<span class="nc">function ConditionalTokensMethods:mergePositions(from, onBehalfOf, quantity, isSell, cast, sendInterim, detached, msg)</span>
-<span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;Condition not prepared!&quot;)</span>
-  -- Create equal merge positions.
-<span class="nc">  local quantities = {}</span>
-<span class="nc">  for _ = 1, #self.positionIds do</span>
-<span class="nc">    table.insert(quantities, quantity)</span>
-  end
-  -- Burn equal quantiies from user positions.
-<span class="nc">  self:batchBurn(from, self.positionIds, quantities, not sendInterim, true, msg) -- @dev `true`: sends detatched message</span>
-  -- @dev below already handled within the sell method.
-  -- sell method w&#47; a different quantity and recipient.
-<span class="nc">  if not isSell then</span>
-    -- Return the collateral to the user.
-<span class="nc">    ao.send({</span>
-      Target = self.collateralToken,
-      Action = &quot;Transfer&quot;,
-      Quantity = quantity,
-      Recipient = onBehalfOf,
-    ---@diagnostic disable-next-line: assign-type-mismatch
-<span class="nc">      Cast = not sendInterim and &quot;true&quot; or nil</span>
-    })
-  end
-  -- Send notice.
-<span class="nc">  if not cast then return self.positionsMergeNotice(self.collateralToken, quantity, onBehalfOf, detached, msg) end</span>
-end
-
---- Report payouts
---- @param payouts table&lt;number&gt; The resolution agent&#39;s answer
---- @param msg Message The message received
---- @return Message reportPayoutsNotice The report payouts notice
-<span class="nc">function ConditionalTokensMethods:reportPayouts(payouts, msg)</span>
-<span class="nc">  assert(#payouts == #self.positionIds, &quot;Payouts must match outcome slot count!&quot;)</span>
-<span class="nc">  assert(msg.From == self.resolutionAgent, &quot;Sender not resolution agent!&quot;)</span>
-<span class="nc">  assert(self.payoutDenominator == 0, &quot;payout denominator already set&quot;)</span>
-  -- Set the payout vector for the condition.
-<span class="nc">  local den = 0</span>
-<span class="nc">  for i = 1, #self.positionIds do</span>
-<span class="nc">    local num = payouts[i]</span>
-<span class="nc">    den = den + num</span>
-<span class="nc">    assert(self.payoutNumerators[i] == 0, &quot;payout numerator already set&quot;)</span>
-<span class="nc">    self.payoutNumerators[i] = num</span>
-  end
-<span class="nc">  assert(den &gt; 0, &quot;payout is all zeroes&quot;)</span>
-<span class="nc">  self.payoutDenominator = den</span>
-  -- Send notice.
-<span class="nc">  return self.reportPayoutsNotice(msg.From, self.payoutNumerators, msg)</span>
-end
-
---- Redeem positions
---- Transfers any payout minus fees to the message sender
---- @param onBehalfOf string The process ID of the account to receive the collateral
---- @param cast boolean The cast is set to true to silence the notice
---- @param sendInterim boolean If true, sends intermediate notices
---- @param msg Message The message received
---- @return Message|nil The payout redemption notice if not cast
-<span class="nc">function ConditionalTokensMethods:redeemPositions(onBehalfOf, cast, sendInterim, msg)</span>
-<span class="nc">  local den = self.payoutDenominator</span>
-<span class="nc">  assert(den &gt; 0, &quot;market not resolved&quot;)</span>
-<span class="nc">  assert(self.payoutNumerators and #self.payoutNumerators &gt; 0, &quot;market not initialized&quot;)</span>
-<span class="nc">  local totalPayout = 0</span>
-<span class="nc">  local totalPayoutMinusFee = &quot;0&quot;</span>
-<span class="nc">  for i = 1, #self.positionIds do</span>
-<span class="nc">    local positionId = self.positionIds[i]</span>
-<span class="nc">    local payoutNumerator = self.payoutNumerators[tonumber(positionId)]</span>
-    -- Get the stake to redeem.
-<span class="nc">    if not self.balancesById[positionId] then self.balancesById[positionId] = {} end</span>
-<span class="nc">    if not self.balancesById[positionId][msg.From] then self.balancesById[positionId][msg.From] = &quot;0&quot; end</span>
-<span class="nc">    local payoutStake = self.balancesById[positionId][msg.From]</span>
-<span class="nc">    if bint.__lt(0, bint(payoutStake)) then</span>
-      -- Calculate the payout and burn position.
-<span class="nc">      totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) &#47; den)</span>
-<span class="nc">      self:burn(msg.From, positionId, payoutStake, not sendInterim, true, msg) -- @dev `true`: sends detatched message</span>
-    end
-  end
-  -- Return total payout minus take fee.
-<span class="nc">  if totalPayout &gt; 0 then</span>
-<span class="nc">    totalPayout = math.floor(totalPayout)</span>
-<span class="nc">    totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, onBehalfOf, totalPayout, not sendInterim)</span>
-  end
-  -- Send notice.
-<span class="nc">  if not cast then return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, onBehalfOf, msg) end</span>
-end
-
---- Return total payout minus take fee
---- Distributes payout and fees to the redeem account, creator and protocol
---- @param collateralToken string The collateral token
---- @param from string The account to receive the payout minus fees
---- @param totalPayout number The total payout assciated with the acount stake
---- @param cast boolean The cast is set to true to silence the notice
---- @return string The total payout minus fee amount
-<span class="nc">function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, cast)</span>
-<span class="nc">  local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))</span>
-<span class="nc">  local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))</span>
-<span class="nc">  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))</span>
-<span class="nc">  local totalPayoutMinusFee = tostring(bint.__sub(totalPayout, bint(takeFee)))</span>
-  -- prepare txns
-<span class="nc">  local protocolFeeTxn = {</span>
-    Target = collateralToken,
-    Action = &quot;Transfer&quot;,
-    Recipient = self.protocolFeeTarget,
-    Quantity = protocolFee,
-<span class="nc">    Cast = cast and &quot;true&quot; or nil</span>
-  }
-<span class="nc">  local creatorFeeTxn = {</span>
-    Target = collateralToken,
-    Action = &quot;Transfer&quot;,
-    Recipient = self.creatorFeeTarget,
-    Quantity = creatorFee,
-<span class="nc">    Cast = cast and &quot;true&quot; or nil</span>
-  }
-<span class="nc">  local totalPayoutMinutTakeFeeTxn = {</span>
-    Target = collateralToken,
-    Action = &quot;Transfer&quot;,
-    Recipient = from,
-    Quantity = totalPayoutMinusFee,
-<span class="nc">    Cast = cast and &quot;true&quot; or nil</span>
-  }
-  -- send txns
-<span class="nc">  ao.send(protocolFeeTxn)</span>
-<span class="nc">  ao.send(creatorFeeTxn)</span>
-<span class="nc">  ao.send(totalPayoutMinutTakeFeeTxn)</span>
-
-<span class="nc">  return totalPayoutMinusFee</span>
-end
-
-<span class="nc">return ConditionalTokens</span>
-</pre>
       </div>
 
       <div class="hidden file success-high" id="src-marketmodules-conditionaltokensnotices">
@@ -629,7 +349,7 @@ See conditionalTokens.lua for full license details.
 =========================================================
 ]]
 
-<span class="fc" data-hits="2">local json = require(&#39;json&#39;)</span>
+<span class="fc" data-hits="1">local json = require(&#39;json&#39;)</span>
 <span class="fc" data-hits="1">local ao = ao or require(&#39;.ao&#39;)</span>
 
 <span class="fc" data-hits="1">local ConditionalTokensNotices = {}</span>
@@ -1064,7 +784,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-24 12:06:24
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-24 12:17:54
    </footer>
 
    <script type="text/javascript">

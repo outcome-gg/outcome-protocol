@@ -37,8 +37,6 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     msgSell = { From = sender, Tags = { PositionId = "1", Quantity = quantity, ReturnAmount = returnAmount, MaxPositionTokensToSell = maxPositionTokensToSell } }
     msgCalcBuyAmount = { From = sender, Tags = { PositionId = "1", InvestmentAmount = investmentAmount } }
     msgCalcSellAmount = { From = sender, Tags = { PositionId = "1", ReturnAmount = returnAmount } }
-
-    
   end)
 
   -- ✅ Add Funding
@@ -88,6 +86,13 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     local success, err = cpmmValidation.addFunding(msgAddFunding, "0", positionIds)
     assert.is_false(success)
     assert.are.equal("Distribution item must be a number", err)
+  end)
+
+  it("should fail addFunding validation when distribution item is less than 0", function()
+    msgAddFunding.Tags["X-Distribution"] = json.encode({0, -1, 0})
+    local success, err = cpmmValidation.addFunding(msgAddFunding, "0", positionIds)
+    assert.is_false(success)
+    assert.are.equal("Distribution item must be greater than or equal to zero", err)
   end)
 
   it("should pass additional addFunding validation", function()

@@ -43,6 +43,9 @@ function cpmmValidation.addFunding(msg, totalSupply, positionIds)
       if type(distribution[i]) ~= "number" then
         return false, "Distribution item must be a number"
       end
+      if bint.__lt(distribution[i], 0) then
+        return false, "Distribution item must be greater than or equal to zero"
+      end
       distributionSum = distributionSum + distribution[i]
     end
 
