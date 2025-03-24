@@ -64,6 +64,7 @@ local json = require('json')
 --- @param approvedCreators table<string, boolean> The approved creators
 --- @param listedCollateralTokens table<string, table> The listed collateral tokens
 --- @param testCollateral string The test collateral token process ID
+--- @param maxIterations number The default maximum number of iterations allowed in the init market loop
 --- @return MarketFactory marketFactory The new MarketFactory instance
 function MarketFactory.new(
   configurator,
@@ -77,7 +78,8 @@ function MarketFactory.new(
   maximumTakeFee,
   approvedCreators,
   listedCollateralTokens,
-  testCollateral
+  testCollateral,
+  maxIterations
 )
   local marketFactory = {
     configurator = configurator,
@@ -99,7 +101,8 @@ function MarketFactory.new(
     marketsPendingInit = {},
     marketsInit = {},
     eventConfigByCreator = {},
-    marketProcessCode = marketProcessCode
+    marketProcessCode = marketProcessCode,
+    maxIterations = maxIterations
   }
   setmetatable(marketFactory, {
     __index = function(_, k)
@@ -428,9 +431,12 @@ function MarketFactoryMethods:initMarket(msg)
     -- send notice
     return self.initMarketNotice(processIds, msg)
    end
-  -- init pending markets
-  for i = 1, #processIds do
+  -- @dev Initialize pending markets with iteration cap to prevent DoS
+  -- Collect initialized process IDs
+  local initProcessIds = {}
+  for i = 1, math.min(#processIds, self.maxIterations) do
     local processId = processIds[i]
+    table.insert(initProcessIds, processId)
     ao.send({
       Target = processId,
       Action = "Eval",
@@ -463,10 +469,17 @@ function MarketFactoryMethods:initMarket(msg)
       msg
     )
   end
-  -- reset pending init
-  self.marketsPendingInit = {}
+  -- Rebuild the table with only unprocessed entries
+  local remaining = {}
+  if #processIds > self.maxIterations then
+    for i = self.maxIterations + 1, #processIds do
+      local processId = processIds[i]
+      remaining[processId] = self.marketsPendingInit[processId]
+    end
+  end
+  self.marketsPendingInit = remaining
   -- send notice
-  return self.initMarketNotice(processIds, msg)
+  return self.initMarketNotice(initProcessIds, msg)
 end
 
 --[[
@@ -619,6 +632,15 @@ end
 function MarketFactoryMethods:updateMaximumTakeFee(maximumTakeFee, msg)
   self.maximumTakeFee = maximumTakeFee
   return self.updateMaximumTakeFeeNotice(maximumTakeFee, msg)
+end
+
+--- Update maxIterations
+--- @param maxIterations number The new maxIterations
+--- @param msg Message The message received
+--- @return Message updateMaxIterationsNotice The update maxIterations notice
+function MarketFactoryMethods:updateMaxIterations(maxIterations, msg)
+  self.maxIterations = maxIterations
+  return self.updateMaxIterationsNotice(maxIterations, msg)
 end
 
 --- List collateral token

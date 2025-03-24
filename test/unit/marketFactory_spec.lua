@@ -51,7 +51,8 @@ describe("#marketFactory", function()
       constants.maximumTakeFee,
       constants.dev.approvedCreators,
       constants.dev.listedCollateralTokens,
-      constants.testCollateral
+      constants.testCollateral,
+      constants.maxIterations
     )
     -- create a message object
     msg = {
@@ -579,6 +580,25 @@ describe("#marketFactory", function()
     assert.are.same({
       Action = "Update-Maximum-Take-Fee-Notice",
       Data = newMaximumTakeFee
+    }, notice)
+  end)
+
+  it("should update maxIterations", function()
+    local notice = {}
+    -- should not throw an error
+    local newMaxIterations = 101
+    assert.has_no.errors(function()
+      notice = FACTORY:updateMaxIterations(
+        newMaxIterations,
+        msg
+      )
+    end)
+    -- assert state change
+    assert.are.same(newMaxIterations, FACTORY.maxIterations)
+    -- assert notice
+    assert.are.same({
+      Action = "Update-Max-Iterations-Notice",
+      Data = tostring(newMaxIterations)
     }, notice)
   end)
 

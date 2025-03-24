@@ -47,6 +47,7 @@ end
 --- @field approvedCreators table The approved creators
 --- @field approvedCollateralTokens table The approved collateral tokens
 --- @field testCollateral string The test collateral token
+--- @field maxIterations number The maximum number of iterations allowed in the init market loop
 
 --- Retrieve Market Factory Configuration
 --- Fetches configuration parameters, stored as constants
@@ -64,7 +65,8 @@ local function retrieveMarketFactoryConfig()
     maximumTakeFee = constants.maximumTakeFee,
     approvedCreators = Env == 'DEV' and constants.dev.approvedCreators or constants.prod.approvedCreators,
     registeredCollateralTokens = Env == 'DEV' and constants.dev.registeredCollateralTokens or constants.prod.registeredCollateralTokens,
-    testCollateral = constants.testCollateral
+    testCollateral = constants.testCollateral,
+    maxIterations = constants.maxIterations
   }
   return config
 end
@@ -84,7 +86,8 @@ if not MarketFactory or Env == 'DEV' then
     marketFactoryConfig.maximumTakeFee,
     marketFactoryConfig.approvedCreators,
     marketFactoryConfig.registeredCollateralTokens,
-    marketFactoryConfig.testCollateral
+    marketFactoryConfig.testCollateral,
+    marketFactoryConfig.maxIterations
   )
 end
 
@@ -464,6 +467,26 @@ Handlers.add("Update-Maximum-Take-Fee", {Action = "Update-Maximum-Take-Fee"}, fu
   -- If validation passes, update maximumTakeFee.
   local maximumTakeFee = tonumber(msg.Tags.MaximumTakeFee)
   MarketFactory:updateMaximumTakeFee(maximumTakeFee, msg)
+end)
+
+--- Update maxIterations handler
+--- @notice Only callable by the configurator
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.MaxIterations (numeric string): The new maximum iterations.
+Handlers.add("Update-Max-Iterations", {Action = "Update-Max-Iterations"}, function(msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.updateMaxIterations(MarketFactory.configurator, msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Update-Max-Iterations-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, update maxIterations.
+  local maxIterations = tonumber(msg.Tags.MaxIterations)
+  MarketFactory:updateMaxIterations(maxIterations, msg)
 end)
 
 --- List collateral token handler

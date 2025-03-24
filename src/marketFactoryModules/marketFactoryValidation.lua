@@ -264,6 +264,17 @@ function marketFactoryValidation.updateMaximumTakeFee(configurator, msg)
   return sharedValidation.validatePositiveIntegerOrZero(msg.Tags.MaximumTakeFee, "MaximumTakeFee")
 end
 
+--- Validate an update maxIterations message
+--- @param configurator string The current configurator
+--- @param msg Message The message received
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
+function marketFactoryValidation.updateMaxIterations(configurator, msg)
+  if msg.From ~= configurator then
+    return false, "Sender must be configurator!"
+  end
+  return sharedValidation.validatePositiveInteger(msg.Tags.MaxIterations, "MaxIterations")
+end
+
 --- Validate an update market process code message
 --- @param configurator string The current configurator
 --- @param msg Message The message received

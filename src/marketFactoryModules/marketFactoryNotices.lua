@@ -204,6 +204,17 @@ function MarketFactoryNotices.updateMaximumTakeFeeNotice(maximumTakeFee, msg)
   })
 end
 
+--- Update maxIterations notice
+--- @param maxIterations number The new maximum iterations
+--- @param msg Message The message received
+--- @return Message updateMaxIterationsNotice The update max iterations notice
+function MarketFactoryNotices.updateMaxIterationsNotice(maxIterations, msg)
+  return msg.reply({
+    Action = "Update-Max-Iterations-Notice",
+    Data = tostring(maxIterations)
+  })
+end
+
 --- List collateral token notice
 --- @param collateralToken string The collateral token address
 --- @param name string The collateral token name
