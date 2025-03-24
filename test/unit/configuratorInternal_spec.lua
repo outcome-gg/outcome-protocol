@@ -62,6 +62,7 @@ describe("#configurator #configuratorInternal", function()
   it("should stage update", function()
     -- stage update
     local notice = Configurator:stageUpdate(
+      "discriminator",
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -70,7 +71,7 @@ describe("#configurator #configuratorInternal", function()
     )
     -- assert staged
     assert.are.same({
-      [hash] = timestamp
+      ["discriminator" .. hash] = timestamp
     }, Configurator.staged)
     -- assert correct notice
     assert.are.same({
@@ -79,13 +80,14 @@ describe("#configurator #configuratorInternal", function()
       UpdateAction = msg.Tags.UpdateAction,
       UpdateTags = msg.Tags.UpdateTags,
       UpdateData = msg.Tags.UpdateData,
-      Hash = hash,
+      Hash = "discriminator" .. hash,
     }, notice)
 	end)
 
   it("should unstage update", function()
     -- stage update
     Configurator:stageUpdate(
+      "discriminator",
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -94,10 +96,11 @@ describe("#configurator #configuratorInternal", function()
     )
     -- assert staged
     assert.are.same({
-      [hash] = timestamp
+      ["discriminator" .. hash] = timestamp
     }, Configurator.staged)
     -- unstage update
     local notice = Configurator:unstageUpdate(
+      "discriminator",
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -109,7 +112,7 @@ describe("#configurator #configuratorInternal", function()
     -- assert correct notice
     assert.are.same({
       Action = 'Unstage-Update-Notice',
-      Hash = hash,
+      Hash = "discriminator" .. hash,
     }, notice)
 	end)
 
@@ -117,13 +120,14 @@ describe("#configurator #configuratorInternal", function()
     -- should throw an error
     assert.has.error(function()
       Configurator:unstageUpdate(
+        "discriminator",
         msg.Tags.UpdateProcess,
         msg.Tags.UpdateAction,
         msg.Tags.UpdateTags,
         msg.Tags.UpdateData,
         msg
       )
-    end, "Update not staged! Hash: " .. hash)
+    end, "Update not staged! Hash: " .. "discriminator" .. hash)
     -- nothing should be staged
     assert.are.same({}, Configurator.staged)
 	end)
@@ -131,6 +135,7 @@ describe("#configurator #configuratorInternal", function()
   it("should action update", function()
     -- stage update
     Configurator:stageUpdate(
+      "discriminator",
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -139,12 +144,13 @@ describe("#configurator #configuratorInternal", function()
     )
     -- assert staged
     assert.are.same({
-      [hash] = timestamp
+      ["discriminator" .. hash] = timestamp
     }, Configurator.staged)
     -- stub os.time to mock delay
     stub(os, "time", function() return timestamp + delay end)
     -- action update
     local notice = Configurator:actionUpdate(
+      "discriminator",
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -156,7 +162,7 @@ describe("#configurator #configuratorInternal", function()
     -- assert correct notice
     assert.are.same({
       Action = 'Action-Update-Notice',
-      Hash = hash,
+      Hash = "discriminator" .. hash,
     }, notice)
     -- restore the original os.time
     os.time:revert()
@@ -165,6 +171,7 @@ describe("#configurator #configuratorInternal", function()
   it("should fail to action update if not staged long enough", function()
     -- stage update
     Configurator:stageUpdate(
+      "discriminator",
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -173,11 +180,12 @@ describe("#configurator #configuratorInternal", function()
     )
     -- assert staged
     assert.are.same({
-      [hash] = timestamp
+      ["discriminator" .. hash] = timestamp
     }, Configurator.staged)
     -- should throw an error
     assert.has.error(function()
       Configurator:actionUpdate(
+        "discriminator",
         msg.Tags.UpdateProcess,
         msg.Tags.UpdateAction,
         msg.Tags.UpdateTags,
@@ -187,7 +195,7 @@ describe("#configurator #configuratorInternal", function()
     end, "Update not staged long enough! Remaining: 3000s.")
     -- assert still staged
     assert.are.same({
-      [hash] = timestamp
+      ["discriminator" ..hash] = timestamp
     }, Configurator.staged)
 	end)
 
@@ -195,13 +203,14 @@ describe("#configurator #configuratorInternal", function()
     -- should throw an error
     assert.has.error(function()
       Configurator:actionUpdate(
+        "discriminator",
         msg.Tags.UpdateProcess,
         msg.Tags.UpdateAction,
         msg.Tags.UpdateTags,
         msg.Tags.UpdateData,
         msg
       )
-    end, "Update not staged! Hash: " .. hash)
+    end, "Update not staged! Hash: " .. "discriminator" .. hash)
     -- nothing should be staged
     assert.are.same({}, Configurator.staged)
 	end)

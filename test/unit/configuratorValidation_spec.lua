@@ -14,7 +14,8 @@ describe("#configurator #configuratorValidation", function()
         UpdateProcess = "test-this-is-valid-arweave-wallet-address-2",
         UpdateAction = "action_name",
         UpdateTags = '{"key":"value"}',
-        UpdateData = '{"key":"value"}'
+        UpdateData = '{"key":"value"}',
+        Discriminator = "discriminator"
       }
     }
     msgAdmin = {

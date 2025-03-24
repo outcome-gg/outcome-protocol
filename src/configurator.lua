@@ -73,7 +73,7 @@ Handlers.add("Stage-Update", {Action = "Stage-Update"}, function(msg)
   -- If validation passes, stage the update.
   local updateTags = msg.Tags.UpdateTags or ""
   local updateData = msg.Tags.UpdateData or ""
-  return Configurator:stageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
+  return Configurator:stageUpdate(msg.Tags.Discriminator, msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
 end)
 
 --- Unstage update handler
@@ -96,7 +96,7 @@ Handlers.add("Unstage-Update", {Action = "Unstage-Update"}, function(msg)
   -- If validation passes, unstage the update.
   local updateTags = msg.Tags.UpdateTags or ""
   local updateData = msg.Tags.UpdateData or ""
-  return Configurator:unstageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
+  return Configurator:unstageUpdate(msg.Tags.Discriminator, msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
 end)
 
 --- Action update handler
@@ -119,7 +119,7 @@ Handlers.add("Action-Update", {Action = "Action-Update"}, function(msg)
   -- If validation passes, action the update.
   local updateTags = msg.Tags.UpdateTags or ""
   local updateData = msg.Tags.UpdateData or ""
-  return Configurator:actionUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
+  return Configurator:actionUpdate(msg.Tags.Discriminator, msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
 end)
 
 --[[

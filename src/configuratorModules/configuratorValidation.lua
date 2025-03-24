@@ -18,6 +18,9 @@ function ConfiguratorValidation.updateProcess(msg)
   if type(msg.Tags.UpdateProcess) ~= 'string' then
     return false, 'UpdateProcess is required and must be a string!'
   end
+  if type(msg.Tags.Discriminator) ~= 'string' then
+    return false, 'Discriminator is required and must be a string!'
+  end
   if not sharedUtils.isValidArweaveAddress(msg.Tags.UpdateProcess) then
     return false, 'UpdateProcess must be a valid Arweave address!'
   end

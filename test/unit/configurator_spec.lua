@@ -39,7 +39,8 @@ describe("#configurator", function()
         UpdateProcess = "test-this-is-valid-arweave-wallet-address-1",
         UpdateAction = "action_name",
         UpdateTags = '{"key":"value"}',
-        UpdateData = '{"key":"value"}'
+        UpdateData = '{"key":"value"}',
+        Discriminator = "discriminator",
       },
       reply = function(message) return message end
     }
@@ -94,7 +95,7 @@ describe("#configurator", function()
       UpdateAction = msgUpdate.Tags.UpdateAction,
       UpdateTags = msgUpdate.Tags.UpdateTags,
       UpdateData = msgUpdate.Tags.UpdateData,
-      Hash = hashUpdate,
+      Hash = msgUpdate.Tags.Discriminator .. hashUpdate,
     }, notice)
   end)
 
@@ -110,7 +111,7 @@ describe("#configurator", function()
     -- assert correct response
     assert.are.same({
       Action = 'Unstage-Update-Notice',
-      Hash = hashUpdate,
+      Hash = msgUpdate.Tags.Discriminator .. hashUpdate,
     }, notice)
   end)
 
@@ -128,7 +129,7 @@ describe("#configurator", function()
     -- assert correct response
     assert.are.same({
       Action = 'Action-Update-Notice',
-      Hash = hashUpdate,
+      Hash = msgUpdate.Tags.Discriminator .. hashUpdate,
     }, notice)
     -- restore the original os.time
     os.time:revert()

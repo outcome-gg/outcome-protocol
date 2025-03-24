@@ -62,14 +62,16 @@ function Configurator.new(admin, env)
 end
 
 --- Stages an update
+--- @param discriminator string The discriminator used to discern the type of update
 --- @param process string The process ID
 --- @param action string The action name
 --- @param tags string The JSON string of tags
 --- @param data string The JSON string of data
 --- @param msg Message The message received
 --- @return Message The stage update notice
-function ConfiguratorMethods:stageUpdate(process, action, tags, data, msg)
+function ConfiguratorMethods:stageUpdate(discriminator, process, action, tags, data, msg)
   local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()
+  hash = discriminator .. hash
   -- stage
   self.staged[hash] = os.time()
   -- stage notice
@@ -77,14 +79,16 @@ function ConfiguratorMethods:stageUpdate(process, action, tags, data, msg)
 end
 
 --- Unstages an update
+--- @param discriminator string The discriminator used to discern the type of update
 --- @param process string The process ID
 --- @param action string The action name
 --- @param tags string The JSON string of tags
 --- @param data string The JSON string of data
 --- @param msg Message The message received
 --- @return Message The unstage update notice
-function ConfiguratorMethods:unstageUpdate(process, action, tags, data, msg)
+function ConfiguratorMethods:unstageUpdate(discriminator, process, action, tags, data, msg)
   local hash = crypto.digest.keccak256(process .. action .. tags.. data).asHex()
+  hash = discriminator .. hash
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   -- unstage
   self.staged[hash] = nil
@@ -93,14 +97,16 @@ function ConfiguratorMethods:unstageUpdate(process, action, tags, data, msg)
 end
 
 --- Actions an update
+--- @param discriminator string The discriminator used to discern the type of update
 --- @param process string The process ID
 --- @param action string The action name
 --- @param tags string The JSON string of tags
 --- @param data string The JSON string of data
 --- @param msg Message The message received
 --- @return Message The action update notice
-function ConfiguratorMethods:actionUpdate(process, action, tags, data, msg)
+function ConfiguratorMethods:actionUpdate(discriminator, process, action, tags, data, msg)
   local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()
+  hash = discriminator .. hash
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   local remaining = self.staged[hash] + self.delay - os.time()
   assert(remaining <= 0, 'Update not staged long enough! Remaining: ' .. remaining .. 's.')
