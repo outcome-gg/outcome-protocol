@@ -22,6 +22,7 @@ local ConditionalTokensNotices = require('marketModules.conditionalTokensNotices
 local SemiFungibleTokens = require('marketModules.semiFungibleTokens')
 local bint = require('.bint')(256)
 local ao = ao or require('.ao')
+local sharedUtils = require("marketModules.sharedUtils")
 
 --- Represents ConditionalTokens
 --- @class ConditionalTokens
@@ -230,8 +231,8 @@ end
 function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, cast)
   local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))
   local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))
-  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))
-  local totalPayoutMinusFee = tostring(bint.__sub(totalPayout, bint(takeFee)))
+  local takeFee = sharedUtils.safeAdd(creatorFee, protocolFee)
+  local totalPayoutMinusFee = sharedUtils.safeSub(tostring(totalPayout), takeFee)
   -- prepare txns
   local protocolFeeTxn = {
     Target = collateralToken,

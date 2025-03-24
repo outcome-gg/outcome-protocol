@@ -7,6 +7,7 @@ See cpmm.lua for full license details.
 
 local cpmmValidation = {}
 local sharedValidation = require('marketModules.sharedValidation')
+local sharedUtils = require("marketModules.sharedUtils")
 local bint = require('.bint')(256)
 local json = require("json")
 
@@ -218,8 +219,8 @@ function cpmmValidation.updateTakeFee(msg, configurator)
   success, err = sharedValidation.validatePositiveIntegerOrZero(msg.Tags.ProtocolFee, 'ProtocolFee')
   if not success then return false, err end
 
-  local totalFee = bint.__add(bint(msg.Tags.CreatorFee), bint(msg.Tags.ProtocolFee))
-  if not bint.__lt(totalFee, 1000) then
+  local totalFee = sharedUtils.safeAdd(msg.Tags.CreatorFee, msg.Tags.ProtocolFee)
+  if not bint.__lt(bint(totalFee), 1000) then
     return false, 'Net fee must be less than or equal to 1000 bps'
   end
 

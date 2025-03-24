@@ -27,6 +27,7 @@ local SemiFungibleTokens = {}
 local SemiFungibleTokensMethods = {}
 local SemiFungibleTokensNotices = require('marketModules.semiFungibleTokensNotices')
 local bint = require('.bint')(256)
+local sharedUtils = require("marketModules.sharedUtils")
 
 -- Represents SemiFungibleTokens
 --- @class SemiFungibleTokens
@@ -83,8 +84,8 @@ function SemiFungibleTokensMethods:mint(to, id, quantity, cast, detached, msg)
   if not self.balancesById[id] then self.balancesById[id] = {} end
   if not self.balancesById[id][to] then self.balancesById[id][to] = "0" end
   if not self.totalSupplyById[id] then self.totalSupplyById[id] = "0" end
-  self.balancesById[id][to] = tostring(bint.__add(self.balancesById[id][to], bint(quantity)))
-  self.totalSupplyById[id] = tostring(bint.__add(self.totalSupplyById[id], bint(quantity)))
+  self.balancesById[id][to] = sharedUtils.safeAdd(self.balancesById[id][to], quantity)
+  self.totalSupplyById[id] = sharedUtils.safeAdd(self.totalSupplyById[id], quantity)
   -- send notice
   if not cast then return self.mintSingleNotice(to, id, quantity, detached, msg) end
 end
@@ -105,8 +106,8 @@ function SemiFungibleTokensMethods:batchMint(to, ids, quantities, cast, detached
     if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end
     if not self.balancesById[ ids[i] ][to] then self.balancesById[ ids[i] ][to] = "0" end
     if not self.totalSupplyById[ ids[i] ] then self.totalSupplyById[ ids[i] ] = "0" end
-    self.balancesById[ ids[i] ][to] = tostring(bint.__add(self.balancesById[ ids[i] ][to], quantities[i]))
-    self.totalSupplyById[ ids[i] ] = tostring(bint.__add(self.totalSupplyById[ ids[i] ], quantities[i]))
+    self.balancesById[ ids[i] ][to] = sharedUtils.safeAdd(self.balancesById[ ids[i] ][to], quantities[i])
+    self.totalSupplyById[ ids[i] ] = sharedUtils.safeAdd(self.totalSupplyById[ ids[i] ], quantities[i])
   end
   -- send notice
   if not cast then return self.mintBatchNotice(to, ids, quantities, detached, msg) end
@@ -126,8 +127,8 @@ function SemiFungibleTokensMethods:burn(from, id, quantity, cast, detached, msg)
   assert(self.balancesById[id][from], 'Account must hold token! :: ' .. id)
   assert(bint.__le(bint(quantity), self.balancesById[id][from]), 'Account must have sufficient tokens! ' .. id)
   -- burn tokens
-  self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], bint(quantity)))
-  self.totalSupplyById[id] = tostring(bint.__sub(self.totalSupplyById[id], bint(quantity)))
+  self.balancesById[id][from] = sharedUtils.safeSub(self.balancesById[id][from], quantity)
+  self.totalSupplyById[id] = sharedUtils.safeSub(self.totalSupplyById[id], quantity)
   -- send notice
   if not cast then return self.burnSingleNotice(from, id, quantity, detached, msg) end
 end
@@ -151,8 +152,8 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, cast, detach
   -- burn tokens
   local remainingBalances = {}
   for i = 1, #ids do
-    self.balancesById[ ids[i] ][from] = tostring(bint.__sub(self.balancesById[ ids[i] ][from], quantities[i]))
-    self.totalSupplyById[ ids[i] ] = tostring(bint.__sub(self.totalSupplyById[ ids[i] ], quantities[i]))
+    self.balancesById[ ids[i] ][from] = sharedUtils.safeSub(self.balancesById[ ids[i] ][from], quantities[i])
+    self.totalSupplyById[ ids[i] ] = sharedUtils.safeSub(self.totalSupplyById[ ids[i] ], quantities[i])
     remainingBalances[i] = self.balancesById[ ids[i] ][from]
   end
   -- send notice
@@ -173,11 +174,10 @@ function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity,
   if not self.balancesById[id][from] then self.balancesById[id][from] = "0" end
   if not self.balancesById[id][recipient] then self.balancesById[id][recipient] = "0" end
 
-  local qty = bint(quantity)
-  local balance = bint(self.balancesById[id][from])
-  if bint.__le(qty, balance) then
-    self.balancesById[id][from] = tostring(bint.__sub(balance, qty))
-    self.balancesById[id][recipient] = tostring(bint.__add(self.balancesById[id][recipient], qty))
+  local balance = self.balancesById[id][from]
+  if bint.__le(bint(quantity), bint(balance)) then
+    self.balancesById[id][from] = sharedUtils.safeSub(balance, quantity)
+    self.balancesById[id][recipient] = sharedUtils.safeAdd(self.balancesById[id][recipient], quantity)
 
     -- Only send the notifications if the cast tag is not set
     if not cast then
@@ -206,12 +206,12 @@ function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantitie
     if not self.balancesById[ ids[i] ][from] then self.balancesById[ ids[i] ][from] = "0" end
     if not self.balancesById[ ids[i] ][recipient] then self.balancesById[ ids[i] ][recipient] = "0" end
 
-    local qty = bint(quantities[i])
-    local balance = bint(self.balancesById[ ids[i] ][from])
+    local qty = quantities[i]
+    local balance = self.balancesById[ ids[i] ][from]
 
-    if bint.__le(qty, balance) then
-      self.balancesById[ ids[i] ][from] = tostring(bint.__sub(balance, qty))
-      self.balancesById[ ids[i] ][recipient] = tostring(bint.__add(self.balancesById[ ids[i] ][recipient], qty))
+    if bint.__le(bint(qty), bint(balance)) then
+      self.balancesById[ ids[i] ][from] = sharedUtils.safeSub(balance, qty)
+      self.balancesById[ ids[i] ][recipient] = sharedUtils.safeAdd(self.balancesById[ ids[i] ][recipient], qty)
       table.insert(ids_, ids[i])
       table.insert(quantities_, quantities[i])
     else

@@ -33,6 +33,7 @@ local Token = {}
 local TokenMethods = {}
 local TokenNotices = require('marketModules.tokenNotices')
 local bint = require('.bint')(256)
+local sharedUtils = require("marketModules.sharedUtils")
 
 --- Represents a Token
 --- @class Token
@@ -86,8 +87,8 @@ function TokenMethods:mint(to, quantity, cast, detached, msg)
   assert(bint.__lt(0, bint(quantity)), 'Quantity must be greater than zero!')
   -- Mint tokens
   if not self.balances[to] then self.balances[to] = '0' end
-  self.balances[to] = tostring(bint.__add(bint(self.balances[to]), bint(quantity)))
-  self.totalSupply = tostring(bint.__add(bint(self.totalSupply), bint(quantity)))
+  self.balances[to] = sharedUtils.safeAdd(self.balances[to], quantity)
+  self.totalSupply = sharedUtils.safeAdd(self.totalSupply, quantity)
   -- Send notice
   if not cast then return self.mintNotice(to, quantity, detached, msg) end
 end
@@ -104,8 +105,8 @@ function TokenMethods:burn(from, quantity, cast, detached, msg)
   assert(self.balances[from], 'Must have token balance!')
   assert(bint.__le(bint(quantity), self.balances[from]), 'Must have sufficient tokens!')
   -- Burn tokens
-  self.balances[from] = tostring(bint.__sub(self.balances[from], bint(quantity)))
-  self.totalSupply = tostring(bint.__sub(bint(self.totalSupply), bint(quantity)))
+  self.balances[from] = sharedUtils.safeSub(self.balances[from], quantity)
+  self.totalSupply = sharedUtils.safeSub(self.totalSupply, quantity)
   -- Send notice
   if not cast then return self.burnNotice(quantity, detached, msg) end
 end
@@ -122,12 +123,11 @@ function TokenMethods:transfer(from, recipient, quantity, cast, detached, msg)
   if not self.balances[from] then self.balances[from] = "0" end
   if not self.balances[recipient] then self.balances[recipient] = "0" end
 
-  local qty = bint(quantity)
-  local balance = bint(self.balances[from])
+  local balance = self.balances[from]
 
-  if bint.__le(qty, balance) then
-    self.balances[from] = tostring(bint.__sub(balance, qty))
-    self.balances[recipient] = tostring(bint.__add(self.balances[recipient], qty))
+  if bint.__le(bint(quantity), bint(balance)) then
+    self.balances[from] = sharedUtils.safeSub(balance, quantity)
+    self.balances[recipient] = sharedUtils.safeAdd(self.balances[recipient], quantity)
 
     -- Only send the notifications to the Sender and Recipient
     -- if the Cast tag is not set on the Transfer message

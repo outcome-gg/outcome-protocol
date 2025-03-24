@@ -24,6 +24,7 @@ local bint = require('.bint')(256)
 local utils = require(".utils")
 local token = require('marketModules.token')
 local conditionalTokens = require('marketModules.conditionalTokens')
+local sharedUtils = require("marketModules.sharedUtils")
 
 --- Represents a CPMM (Constant Product Market Maker)
 --- @class CPMM
@@ -277,14 +278,14 @@ function CPMMMethods:calcProbabilities()
   local probabilities = {}
   -- Calculate total balance
   for i = 1, #self.tokens.positionIds do
-    totalBalance = bint.__add(totalBalance, bint(poolBalances[i]))
+    totalBalance = sharedUtils.safeAdd(totalBalance, poolBalances[i])
   end
-  assert(bint.__lt(bint(0), totalBalance), 'Total pool balance must be greater than zero!')
+  assert(bint.__lt(bint(0), bint(totalBalance)), 'Total pool balance must be greater than zero!')
   -- Calculate probabilities for each positionId
   for i = 1, #self.tokens.positionIds do
     local positionId = self.tokens.positionIds[i]
     local balance = bint(poolBalances[i])
-    local probability = tostring(bint.__div(balance, totalBalance))
+    local probability = tostring(bint.__div(balance, bint(totalBalance)))
     probabilities[positionId] = probability
   end
   return probabilities
@@ -305,8 +306,8 @@ function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minPosi
   assert(bint.__le(minPositionTokensToBuy, bint(positionTokensToBuy)), "Minimum position tokens not reached!")
   -- Calculate investmentAmountMinusFees.
   local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(investmentAmount, self.lpFee), 1e4)))
-  self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
-  local investmentAmountMinusFees = tostring(bint.__sub(investmentAmount, bint(feeAmount)))
+  self.feePoolWeight = sharedUtils.safeAdd(self.feePoolWeight, feeAmount)
+  local investmentAmountMinusFees = sharedUtils.safeSub(tostring(investmentAmount), feeAmount)
   -- Split position through all conditions
   self.tokens:splitPosition(ao.id, self.tokens.collateralToken, investmentAmountMinusFees, not sendInterim, sendInterim, true, msg) --- @dev `true`: sends detatched message
   -- Transfer buy position to onBehalfOf
@@ -329,9 +330,16 @@ function CPMMMethods:sell(from, onBehalfOf, returnAmount, positionId, maxPositio
   local positionTokensToSell = self:calcSellAmount(returnAmount, positionId)
   assert(bint.__le(bint(positionTokensToSell), bint(maxPositionTokensToSell)), "Maximum sell amount exceeded!")
   -- Calculate returnAmountPlusFees.
-  local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(returnAmount, self.lpFee), bint.__sub(1e4, self.lpFee))))
-  self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
-  local returnAmountPlusFees = tostring(bint.__add(returnAmount, bint(feeAmount)))
+  local feeAmount = tostring(
+    bint.ceil(
+      bint.__div(
+        bint.__mul(returnAmount, self.lpFee),
+        bint(sharedUtils.safeSub(string.format('%.0f', 1e4), tostring(self.lpFee)))
+      )
+    )
+  )
+  self.feePoolWeight = sharedUtils.safeAdd(self.feePoolWeight, feeAmount)
+  local returnAmountPlusFees = sharedUtils.safeAdd(tostring(returnAmount), feeAmount)
   -- Check sufficient liquidity within the process or revert.
   local collataralBalance = ao.send({Target = self.tokens.collateralToken, Action = "Balance", ["X-Action"] = "Check Liquidity"}).receive().Data
   assert(bint.__le(bint(returnAmountPlusFees), bint(collataralBalance)), "Insufficient liquidity!")
@@ -364,12 +372,12 @@ end
 --- @param account string The process ID of the account
 --- @return string The fees withdrawable by the account
 function CPMMMethods:feesWithdrawableBy(account)
-  local balance = self.token.balances[account] or '0'
-  local rawAmount = '0'
+  local balance = self.token.balances[account] or "0"
+  local rawAmount = "0"
   if bint(self.token.totalSupply) > 0 then
     rawAmount = tostring(bint(bint.__mul(bint(self.feePoolWeight), bint(balance)) // self.token.totalSupply))
   end
-  return tostring(bint.max(bint(bint.__sub(bint(rawAmount), bint(self.withdrawnFees[account] or '0'))), 0))
+  return tostring(bint.max(bint(sharedUtils.safeSub(rawAmount, self.withdrawnFees[account] or "0")), 0))
 end
 
 --- Withdraw fees
@@ -384,8 +392,8 @@ function CPMMMethods:withdrawFees(sender, onBehalfOf, cast, sendInterim, detache
   local feeAmount = self:feesWithdrawableBy(sender)
   if bint.__lt(0, bint(feeAmount)) then
     local senderWithdrawnFees = self.withdrawnFees[sender] or "0"
-    self.withdrawnFees[sender] = tostring(bint.__add(bint(senderWithdrawnFees), bint(feeAmount)))
-    self.totalWithdrawnFees = tostring(bint.__add(bint(self.totalWithdrawnFees), bint(feeAmount)))
+    self.withdrawnFees[sender] = sharedUtils.safeAdd(senderWithdrawnFees, feeAmount)
+    self.totalWithdrawnFees = sharedUtils.safeAdd(self.totalWithdrawnFees, feeAmount)
     ao.send({
       Action = 'Transfer',
       Target = self.tokens.collateralToken,
@@ -413,18 +421,18 @@ function CPMMMethods:_beforeTokenTransfer(from, to, amount, cast, sendInterim, m
     self:withdrawFees(from, from, cast, sendInterim, true, msg) -- @dev `true`: sends detatched message
   else
     -- on mint
-    self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(withdrawnFeesTransfer)))
+    self.feePoolWeight = sharedUtils.safeAdd(self.feePoolWeight, withdrawnFeesTransfer)
   end
 
   if to ~= nil then
     -- on mint or transfer
     -- @dev to prevent holder from claiming fees on updated balance (double withdrawal)
-    self.withdrawnFees[to] = tostring(bint.__add(bint(self.withdrawnFees[to] or '0'), bint(withdrawnFeesTransfer)))
+    self.withdrawnFees[to] = sharedUtils.safeAdd(self.withdrawnFees[to] or '0', withdrawnFeesTransfer)
     -- @dev increase totalWithdrawnFees (offsets decrease in self:withdrawFees on transfer)
-    self.totalWithdrawnFees = tostring(bint.__add(bint(self.totalWithdrawnFees), bint(withdrawnFeesTransfer)))
+    self.totalWithdrawnFees = sharedUtils.safeAdd(self.totalWithdrawnFees, withdrawnFeesTransfer)
   else
     -- on burn
-    self.feePoolWeight = tostring(bint.__sub(bint(self.feePoolWeight), bint(withdrawnFeesTransfer)))
+    self.feePoolWeight = sharedUtils.safeSub(self.feePoolWeight, withdrawnFeesTransfer)
   end
 end
 

@@ -6,6 +6,7 @@ See market.lua for full license details.
 ]]
 
 local sharedUtils = {}
+local bint = require('.bint')(256)
 
 --- Verify if extracted value is a JSON simple value
 --- @param value any
@@ -86,6 +87,40 @@ end
 --- @return boolean
 function sharedUtils.isValidBooleanString(value)
   return type(value) == "string" and (string.lower(value) == "true" or string.lower(value) == "false")
+end
+
+--- Safely adds two numeric strings using bint, with overflow detection.
+--- @param a string A string representing an integer value
+--- @param b string A string representing an integer value
+--- @return string The sum of a and b as a string
+function sharedUtils.safeAdd(a, b)
+  local aInt = bint(a)
+  local bInt = bint(b)
+  local result = bint.__add(aInt, bInt)
+
+  -- Overflow check: if the result is smaller than either operand, assume overflow
+  if bint.__lt(result, aInt) or bint.__lt(result, bInt) then
+    error("Overflow detected in safeAdd")
+  end
+
+  return tostring(result)
+end
+
+--- Safely subtracts b from a using bint, with underflow detection.
+--- @param a string A string representing an integer value.
+--- @param b string A string representing an integer value.
+--- @return string The difference (a - b) as a string.
+function sharedUtils.safeSub(a, b)
+  local aInt = bint(a)
+  local bInt = bint(b)
+
+  -- Underflow check: a must be >= b
+  if bint.__lt(aInt, bInt) then
+    error("Underflow detected in safeSub")
+  end
+
+  local result = bint.__sub(aInt, bInt)
+  return tostring(result)
 end
 
 return sharedUtils
