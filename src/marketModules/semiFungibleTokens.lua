@@ -100,6 +100,9 @@ end
 --- @return Message|nil The batch mint notice if not cast
 function SemiFungibleTokensMethods:batchMint(to, ids, quantities, cast, detached, msg)
   assert(#ids == #quantities, 'Ids and quantities must have the same lengths')
+  for i = 1, #ids do
+    assert(bint.__lt(0, quantities[i]), 'Quantity must be greater than zero!')
+  end
   -- mint tokens
   for i = 1, #ids do
     -- @dev spacing to resolve text to code eval issue
