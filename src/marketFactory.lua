@@ -466,54 +466,46 @@ Handlers.add("Update-Maximum-Take-Fee", {Action = "Update-Maximum-Take-Fee"}, fu
   MarketFactory:updateMaximumTakeFee(maximumTakeFee, msg)
 end)
 
---- Register collateral token handler
+--- List collateral token handler
 --- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.CollateralToken (string): The address of the collateral token.
 --- - msg.Tags.Name (string): The name of the collateral token.
 --- - msg.Tags.Ticker (string): The ticker of the collateral token.
 --- - msg.Tags.Denomination (numeric string): The decimals of the collateral token.
---- - msg.Tags.Approved (string): Whether the collateral token is approved, "true" or "false".
-Handlers.add("Register-Collateral-Token", {Action = "Register-Collateral-Token"}, function(msg)
+Handlers.add("List-Collateral-Token", {Action = "List-Collateral-Token"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.registerCollateralToken(MarketFactory.configurator, msg)
+  local success, err = marketFactoryValidation.listCollateralToken(MarketFactory.configurator, MarketFactory.listedCollateralTokens, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
-      Action = "Register-Collateral-Token-Error",
+      Action = "List-Collateral-Token-Error",
       Error = err
     })
     return
   end
-  -- If validation passes, register collateralToken.
+  -- If validation passes, list collateralToken.
   local denomination = tonumber(msg.Tags.Denomination)
-  local approved = string.lower(msg.Tags.Approved) == "true"
-  MarketFactory:registerCollateralToken(msg.Tags.CollateralToken, msg.Tags.Name, msg.Tags.Ticker, denomination, approved, msg)
+  MarketFactory:listCollateralToken(msg.Tags.CollateralToken, msg.Tags.Name, msg.Tags.Ticker, denomination, msg)
 end)
 
---- Approve collateral token handler
+--- Delist collateral token handler
 --- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.CollateralToken (string): The address of the collateral token.
---- - msg.Tags.Approved (string): Whether the collateral token is approved, "true" or "false".
-Handlers.add("Approve-Collateral-Token", {Action = "Approve-Collateral-Token"}, function(msg)
+Handlers.add("Delist-Collateral-Token", {Action = "Delist-Collateral-Token"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.approveCollateralToken(
-    MarketFactory.configurator,
-    MarketFactory.registeredCollateralTokens,
-    msg
-  )
+  local success, err = marketFactoryValidation.delistCollateralToken(MarketFactory.configurator, MarketFactory.listedCollateralTokens, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
-      Action = "Approve-Collateral-Token-Error",
+      Action = "Delist-Collateral-Token-Error",
       Error = err
     })
     return
   end
-  -- If validation passes, approve collateralToken.
-  local approved = string.lower(msg.Tags.Approved) == "true"
-  MarketFactory:approveCollateralToken(msg.Tags.CollateralToken, approved, msg)
+  -- If validation passes, delist collateralToken.
+  MarketFactory:delistCollateralToken(msg.Tags.CollateralToken, msg)
 end)
 
 --- Transfer handler

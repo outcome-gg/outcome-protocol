@@ -279,17 +279,22 @@ function marketFactoryValidation.updateMarketProcessCode(configurator, msg)
   return success, err
 end
 
---- Validates an registerCollateralToken message
+--- Validates a listCollateralToken message
 --- @param configurator string The current configurator
+--- @param listedCollateralTokens table<string, any> The listed collateral tokens
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.registerCollateralToken(configurator, msg)
+function marketFactoryValidation.listCollateralToken(configurator, listedCollateralTokens, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
 
   local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
   if not success then return false, err end
+
+  if listedCollateralTokens[msg.Tags.CollateralToken] then
+    return false, "CollateralToken already listed!"
+  end
 
   if type(msg.Tags.Name) ~= 'string' then
     return false, 'Name is required!'
@@ -302,19 +307,15 @@ function marketFactoryValidation.registerCollateralToken(configurator, msg)
   success, err = sharedValidation.validatePositiveInteger(msg.Tags.Denomination, "Denomination")
   if not success then return false, err end
 
-  if not sharedUtils.isValidBooleanString(msg.Tags.Approved) then
-    return false, "Approved must be a boolean string!"
-  end
-
   return true
 end
 
---- Validates an approveCollateralToken message
+--- Validates a delistCollateralToken message
 --- @param configurator string The current configurator
---- @param registeredCollateralTokens table<string, table> The registered collateral tokens
+--- @param listedCollateralTokens table<string, any> The listed collateral tokens
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.approveCollateralToken(configurator, registeredCollateralTokens, msg)
+function marketFactoryValidation.delistCollateralToken(configurator, listedCollateralTokens, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
@@ -322,12 +323,8 @@ function marketFactoryValidation.approveCollateralToken(configurator, registered
   local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
   if not success then return false, err end
 
-  if not registeredCollateralTokens[msg.Tags.CollateralToken] then
-    return false, "CollateralToken not registered!"
-  end
-
-  if not sharedUtils.isValidBooleanString(msg.Tags.Approved) then
-    return false, "Approved must be a boolean string!"
+  if not listedCollateralTokens[msg.Tags.CollateralToken] then
+    return false, "CollateralToken not listed!"
   end
 
   return true

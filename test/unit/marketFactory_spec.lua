@@ -50,7 +50,7 @@ describe("#marketFactory", function()
       constants.dev.protocolFeeTarget,
       constants.maximumTakeFee,
       constants.dev.approvedCreators,
-      constants.dev.registeredCollateralTokens,
+      constants.dev.listedCollateralTokens,
       constants.testCollateral
     )
     -- create a message object
@@ -119,12 +119,11 @@ describe("#marketFactory", function()
       reply = function(message) return message end,
       forward = function(target, message) return message end
     }
-    -- add collateral to registered collateral tokens
-    FACTORY.registeredCollateralTokens[collateralToken] = {
+    -- add collateral to listed collateral tokens
+    FACTORY.listedCollateralTokens[collateralToken] = {
       name = "test",
       ticker = "TEST",
-      denomination = 9,
-      approved = true
+      denomination = 9
     }
 	end)
 
@@ -144,7 +143,7 @@ describe("#marketFactory", function()
       ProtocolFeeTarget = constants.dev.protocolFeeTarget,
       MaximumTakeFee = tostring(constants.maximumTakeFee),
       ApprovedCreators = json.encode(constants.dev.approvedCreators),
-      RegisteredCollateralTokens = json.encode(constants.dev.registeredCollateralTokens),
+      ListedCollateralTokens = json.encode(constants.dev.listedCollateralTokens),
       TestCollateral = constants.testCollateral,
     }, info)
   end)
@@ -602,76 +601,54 @@ describe("#marketFactory", function()
     }, notice)
   end)
 
-  it("should register collateral token", function()
+  it("should list collateral token", function()
     -- reset collateralToken registerd state to nil
-    FACTORY.registeredCollateralTokens[collateralToken] = nil
+    FACTORY.listedCollateralTokens[collateralToken] = nil
     local notice = {}
     -- should not throw an error
     assert.has_no.errors(function()
-      notice = FACTORY:registerCollateralToken(
+      notice = FACTORY:listCollateralToken(
         collateralToken,
         "Test",
         "TEST",
         12,
-        true, -- approve
         msg
       )
     end)
     -- assert state change
-    assert.are.same(true, FACTORY.registeredCollateralTokens[collateralToken].approved)
-    assert.are.same("Test", FACTORY.registeredCollateralTokens[collateralToken].name)
-    assert.are.same("TEST", FACTORY.registeredCollateralTokens[collateralToken].ticker)
-    assert.are.same(12, FACTORY.registeredCollateralTokens[collateralToken].denomination)
+    assert.are.same("Test", FACTORY.listedCollateralTokens[collateralToken].name)
+    assert.are.same("TEST", FACTORY.listedCollateralTokens[collateralToken].ticker)
+    assert.are.same(12, FACTORY.listedCollateralTokens[collateralToken].denomination)
     -- assert notice
     assert.are.same({
-      Action = "Register-Collateral-Token-Notice",
+      Action = "List-Collateral-Token-Notice",
       Name = "Test",
       Ticker = "TEST",
       Denomination = "12",
-      Approved = "true",
       CollateralToken = collateralToken
     }, notice)
   end)
 
-  it("should approve collateral token", function()
-    -- set approved to false
-    FACTORY.registeredCollateralTokens[collateralToken].approved = false
+  it("should delist collateral token", function()
+    -- reset collateralToken registerd state to nil
+    FACTORY.listedCollateralTokens[collateralToken] = {
+      name = "test",
+      ticker = "TEST",
+      denomination = 9
+    }
     local notice = {}
     -- should not throw an error
     assert.has_no.errors(function()
-      notice = FACTORY:approveCollateralToken(
+      notice = FACTORY:delistCollateralToken(
         collateralToken,
-        true, -- approve
         msg
       )
     end)
     -- assert state change
-    assert.are.same(true, FACTORY.registeredCollateralTokens[collateralToken].approved)
+    assert.are.same(nil, FACTORY.listedCollateralTokens[collateralToken])
     -- assert notice
     assert.are.same({
-      Action = "Approve-Collateral-Token-Notice",
-      Approved = "true",
-      CollateralToken = collateralToken
-    }, notice)
-  end)
-
-  it("should unapprove collateral token", function()
-    -- set approved to true
-    FACTORY.registeredCollateralTokens[collateralToken].approved = true
-    local notice = {}
-    assert.has_no.errors(function()
-      notice = FACTORY:approveCollateralToken(
-        collateralToken,
-        false, -- unapprove
-        msg
-      )
-    end)
-    -- assert state change
-    assert.are.same(constants.collateralTokens, FACTORY.collateralTokens)
-    -- assert notice
-    assert.are.same({
-      Action = "Approve-Collateral-Token-Notice",
-      Approved = "false",
+      Action = "Delist-Collateral-Token-Notice",
       CollateralToken = collateralToken
     }, notice)
   end)

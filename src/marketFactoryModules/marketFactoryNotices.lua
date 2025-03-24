@@ -204,35 +204,31 @@ function MarketFactoryNotices.updateMaximumTakeFeeNotice(maximumTakeFee, msg)
   })
 end
 
---- Register collateral token notice
+--- List collateral token notice
 --- @param collateralToken string The collateral token address
 --- @param name string The collateral token name
 --- @param ticker string The collateral token ticker
 --- @param denomination number The denomination; the number of decimal places
---- @param approved boolean The approval status, true if approved, false otherwise
 --- @param msg Message The message received
---- @return Message registerCollateralTokenNotice The approve collateral token notice
-function MarketFactoryNotices.registerCollateralTokenNotice(collateralToken, name, ticker, denomination, approved, msg)
+--- @return Message listCollateralTokenNotice The list collateral token notice
+function MarketFactoryNotices.listCollateralTokenNotice(collateralToken, name, ticker, denomination, msg)
   return msg.reply({
-    Action = "Register-Collateral-Token-Notice",
+    Action = "List-Collateral-Token-Notice",
     CollateralToken = collateralToken,
     Name = name,
     Ticker = ticker,
-    Denomination = tostring(denomination),
-    Approved = tostring(approved),
+    Denomination = tostring(denomination)
   })
 end
 
---- Approve collateral token notice
+--- Delist collateral token notice
 --- @param collateralToken string The collateral token address
---- @param approved boolean The approval status, true if approved, false otherwise
 --- @param msg Message The message received
---- @return Message approveCollateralTokenNotice The approve collateral token notice
-function MarketFactoryNotices.approveCollateralTokenNotice(collateralToken, approved, msg)
+--- @return Message delistCollateralTokenNotice The delist collateral token notice
+function MarketFactoryNotices.delistCollateralTokenNotice(collateralToken, msg)
   return msg.reply({
-    Action = "Approve-Collateral-Token-Notice",
-    CollateralToken = collateralToken,
-    Approved = tostring(approved),
+    Action = "Delist-Collateral-Token-Notice",
+    CollateralToken = collateralToken
   })
 end
 

@@ -27,7 +27,6 @@ local json = require('json')
 --- @field name string The name of the collateral token
 --- @field ticker string The ticker of the collateral token
 --- @field denomination number The number of decimals of the collateral token
---- @field approved boolean Whether the collateral token is approved
 
 --- Represents a MarketFactory
 --- @class MarketFactory
@@ -41,7 +40,7 @@ local json = require('json')
 --- @field protocolFeeTarget string The default protocol fee target
 --- @field maximumTakeFee number The default maximum take fee in basis points
 --- @field approvedCreators table<string, boolean> Approved creators
---- @field registeredCollateralTokens table<string, table> Registered collateral tokens
+--- @field listedCollateralTokens table<string, table> Listed collateral tokens
 --- @field testCollateral string The test collateral token process ID
 --- @field payoutNumerators table<string, table<number>> Payout Numerators for each outcomeSlot
 --- @field payoutDenominator table<string, number> Payout Denominator
@@ -63,7 +62,7 @@ local json = require('json')
 --- @param protocolFeeTarget string The default protocol fee target
 --- @param maximumTakeFee number The default maximum take fee
 --- @param approvedCreators table<string, boolean> The approved creators
---- @param registeredCollateralTokens table<string, table> The registered collateral tokens
+--- @param listedCollateralTokens table<string, table> The listed collateral tokens
 --- @param testCollateral string The test collateral token process ID
 --- @return MarketFactory marketFactory The new MarketFactory instance
 function MarketFactory.new(
@@ -77,7 +76,7 @@ function MarketFactory.new(
   protocolFeeTarget,
   maximumTakeFee,
   approvedCreators,
-  registeredCollateralTokens,
+  listedCollateralTokens,
   testCollateral
 )
   local marketFactory = {
@@ -91,7 +90,7 @@ function MarketFactory.new(
     protocolFeeTarget = protocolFeeTarget,
     maximumTakeFee = maximumTakeFee,
     approvedCreators = approvedCreators,
-    registeredCollateralTokens = registeredCollateralTokens,
+    listedCollateralTokens = listedCollateralTokens,
     testCollateral = testCollateral,
     messageToProcessMapping = {},
     processToMessageMapping = {},
@@ -134,7 +133,7 @@ function MarketFactoryMethods:info(msg)
     ProtocolFeeTarget = self.protocolFeeTarget,
     MaximumTakeFee = tostring(self.maximumTakeFee),
     ApprovedCreators = json.encode(self.approvedCreators),
-    RegisteredCollateralTokens = json.encode(self.registeredCollateralTokens),
+    ListedCollateralTokens = json.encode(self.listedCollateralTokens),
     TestCollateral = self.testCollateral
   })
 end
@@ -269,7 +268,7 @@ function MarketFactoryMethods:createEvent(collateral, dataIndex, outcomeSlotCoun
   if not self.eventConfigByCreator[msg.From] then self.eventConfigByCreator[msg.From] = {} end
   self.eventConfigByCreator[msg.From][msg.Id] = config
   -- retrieve denomination
-  local denomination = self.registeredCollateralTokens[collateral].denomination
+  local denomination = self.listedCollateralTokens[collateral].denomination
   -- log event
   logEvent(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, msg.From, msg)
   -- send notice
@@ -344,7 +343,7 @@ function MarketFactoryMethods:spawnMarket(
     end
   end
   -- retrieve denomination
-  local denomination = self.registeredCollateralTokens[collateralToken].denomination
+  local denomination = self.listedCollateralTokens[collateralToken].denomination
   -- spawn market
   ao.spawn(ao.env.Module.Id, {
     -- Factory parameters
@@ -622,34 +621,31 @@ function MarketFactoryMethods:updateMaximumTakeFee(maximumTakeFee, msg)
   return self.updateMaximumTakeFeeNotice(maximumTakeFee, msg)
 end
 
---- Register collateral token
+--- List collateral token
 --- @param collateralToken string The collateral token address
 --- @param name string The name of the collateral token
 --- @param ticker string The ticker of the collateral token
 --- @param denomination number The number of decimals
---- @param approved boolean Whether the collateral token is approved
 --- @param msg Message The message received
---- @return Message registerCollateralTokenNotice The registerCollateralToken notice
-function MarketFactoryMethods:registerCollateralToken(collateralToken, name, ticker, denomination, approved, msg)
+--- @return Message listCollateralTokenNotice The listCollateralToken notice
+function MarketFactoryMethods:listCollateralToken(collateralToken, name, ticker, denomination, msg)
   --- @type CollateralTokenDetail
   local tokenDetail = {
     name = name,
     ticker = ticker,
-    denomination = denomination,
-    approved = approved
+    denomination = denomination
   }
-  self.registeredCollateralTokens[collateralToken] = tokenDetail
-  return self.registerCollateralTokenNotice(collateralToken, name, ticker, denomination, approved, msg)
+  self.listedCollateralTokens[collateralToken] = tokenDetail
+  return self.listCollateralTokenNotice(collateralToken, name, ticker, denomination, msg)
 end
 
---- Approve collateral token
---- @param collateralToken string The approved collateral token address
---- @param approved boolean True to approve, false to disapprove
+--- Delist collateral token
+--- @param collateralToken string The collateral token address
 --- @param msg Message The message received
---- @return Message approveCollateralTokenNotice The approveCollateralToken notice
-function MarketFactoryMethods:approveCollateralToken(collateralToken, approved, msg)
-  self.registeredCollateralTokens[collateralToken].approved = approved
-  return self.approveCollateralTokenNotice(collateralToken, approved, msg)
+--- @return Message delistCollateralTokenNotice The delistCollateralToken notice
+function MarketFactoryMethods:delistCollateralToken(collateralToken, msg)
+  self.listedCollateralTokens[collateralToken] = nil
+  return self.delistCollateralTokenNotice(collateralToken, msg)
 end
 
 --- Transfer
