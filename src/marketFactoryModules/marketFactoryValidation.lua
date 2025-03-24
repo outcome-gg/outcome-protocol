@@ -101,7 +101,7 @@ function marketFactoryValidation.spawnMarket(registeredCollateralTokens, approve
   success, err = sharedValidation.validateAddress(msg.Tags.CreatorFeeTarget, "CreatorFeeTarget")
   if not success then return false, err end
 
-  local totalFee = bint.__add(bint(msg.Tags.CreatorFee), bint(protocolFee))
+  local totalFee = sharedUtils.safeAdd(msg.Tags.CreatorFee, protocolFee)
   if not bint.__le(totalFee, bint(maximumTakeFee)) then
     return false, 'Total fee must be less than or equal to maximum take fee'
   end
