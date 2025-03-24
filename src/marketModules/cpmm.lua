@@ -72,7 +72,8 @@ function CPMM.new(
     withdrawnFees = {}, -- @dev for internal accounting: manipulated to prevent double withdrawal
     feePoolWeight = "0",
     totalWithdrawnFees = "0",
-    lpFee = tonumber(lpFee)
+    lpFee = tonumber(lpFee),
+    proposedConfigurator = nil, -- @dev used for two-step configurator update
   }
   cpmm.token = token.new(
     name .. " LP Token",
@@ -456,13 +457,23 @@ function CPMMMethods:transfer(from, recipient, quantity, cast, sendInterim, deta
   return self.token:transfer(from, recipient, quantity, cast, detached, msg)
 end
 
---- Update configurator
---- @param configurator string The process ID of the new configurator
+--- Propose configurator
+--- @param configurator string The proposed configurator address
 --- @param msg Message The message received
---- @return Message The update configurator notice
-function CPMMMethods:updateConfigurator(configurator, msg)
-  self.configurator = configurator
-  return self.updateConfiguratorNotice(configurator, msg)
+--- @return Message proposeConfiguratorNotice The propose configurator notice
+function CPMMMethods:proposeConfigurator(configurator, msg)
+  self.proposedConfigurator = configurator
+  return self.proposeConfiguratorNotice(configurator, msg)
+end
+
+--- Accept configurator
+--- @param msg Message The message received
+--- @return Message acceptConfiguratorNotice The stage update configurator notice
+function CPMMMethods:acceptConfigurator(msg)
+  assert(msg.From == self.proposedConfigurator, "Sender must be the proposed configurator")
+  self.configurator = self.proposedConfigurator
+  self.proposedConfigurator = nil
+  return self.acceptConfiguratorNotice(msg)
 end
 
 --- Update take fee

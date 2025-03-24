@@ -192,16 +192,26 @@ function cpmmValidation.withdrawFees(msg)
   return true
 end
 
---- Validates update configurator
---- @param msg Message The message to be validated
---- @param configurator string The configurator address
---- @return boolean, string|nil
-function cpmmValidation.updateConfigurator(msg, configurator)
+--- Validates a propose configurator message
+--- @param msg Message The message received
+--- @param configurator string The current configurator
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
+function cpmmValidation.proposeConfigurator(msg, configurator)
   if msg.From ~= configurator then
-    return false, 'Sender must be configurator!'
+    return false, "Sender must be configurator!"
   end
+  return sharedValidation.validateAddress(msg.Tags.Configurator, "Configurator")
+end
 
-  return sharedValidation.validateAddress(msg.Tags.Configurator, 'Configurator')
+--- Validates an accept configurator message
+--- @param msg Message The message received
+--- @param proposedConfigurator string The proposed configurator
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
+function cpmmValidation.acceptConfigurator(msg, proposedConfigurator)
+  if msg.From ~= proposedConfigurator then
+    return false, "Sender must be proposedConfigurator!"
+  end
+  return true
 end
 
 --- Validates update take fee

@@ -194,15 +194,26 @@ CONFIGURATOR METHODS
 ====================
 ]]
 
---- Validates an update configurator message
+--- Validates a propose configurator message
 --- @param configurator string The current configurator
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.updateConfigurator(configurator, msg)
+function marketFactoryValidation.proposeConfigurator(configurator, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
   return sharedValidation.validateAddress(msg.Tags.Configurator, "Configurator")
+end
+
+--- Validates an accept configurator message
+--- @param proposedConfigurator string The proposed configurator
+--- @param msg Message The message received
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
+function marketFactoryValidation.acceptConfigurator(proposedConfigurator, msg)
+  if msg.From ~= proposedConfigurator then
+    return false, "Sender must be proposedConfigurator!"
+  end
+  return true
 end
 
 --- Validates an update veToken message

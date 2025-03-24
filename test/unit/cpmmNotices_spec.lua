@@ -281,14 +281,24 @@ describe("#market #conditionalTokens #cpmmNotices", function()
     assert.are.same(noticeSell, notice)
 	end)
 
-  it("should send updateConfiguratorNotice", function()
-    local notice = cpmmNotices.updateConfiguratorNotice(
+  it("should send proposeConfiguratorNotice", function()
+    local notice = cpmmNotices.proposeConfiguratorNotice(
       msgUpdateConfigurator.Tags.Configurator,
       msgUpdateConfigurator
     )
     assert.are.same({
-      Action = "Update-Configurator-Notice",
+      Action = "Propose-Configurator-Notice",
       Data = msgUpdateConfigurator.Tags.Configurator
+    }, notice)
+	end)
+
+  it("should send acceptConfiguratorNotice", function()
+    local notice = cpmmNotices.acceptConfiguratorNotice(
+      msgUpdateConfigurator
+    )
+    assert.are.same({
+      Action = "Accept-Configurator-Notice",
+      Data = msgUpdateConfigurator.From
     }, notice)
 	end)
 

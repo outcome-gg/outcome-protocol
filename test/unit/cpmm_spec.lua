@@ -1528,15 +1528,38 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     local notice = {}
     -- should not throw an error
 		assert.has.no.error(function()
-      notice = CPMM:updateConfigurator(
+      notice = CPMM:proposeConfigurator(
       msgUpdateConfigurator.Tags.Configurator,
       msgUpdateConfigurator
     )
     end)
     -- assert state
-    assert.are.equal(msgUpdateConfigurator.Tags.Configurator, CPMM.configurator)
+    assert.are.equal(msgUpdateConfigurator.Tags.Configurator, CPMM.proposedConfigurator)
     -- assert notice
-    assert.are.equal("Update-Configurator-Notice", notice.Action)
+    assert.are.equal("Propose-Configurator-Notice", notice.Action)
+    assert.are.equal(msgUpdateConfigurator.Tags.Configurator, notice.Data)
+	end)
+
+  it("should accept configurator", function()
+    local notice = {}
+        -- should not throw an error
+		assert.has.no.error(function()
+      CPMM:proposeConfigurator(
+      msgUpdateConfigurator.Tags.Configurator,
+      msgUpdateConfigurator
+    )
+    end)
+    -- should not throw an error
+    msgUpdateConfigurator.From = msgUpdateConfigurator.Tags.Configurator
+		assert.has.no.error(function()
+      notice = CPMM:acceptConfigurator(
+      msgUpdateConfigurator
+    )
+    end)
+    -- assert state
+    assert.are.equal(msgUpdateConfigurator.From, CPMM.configurator)
+    -- assert notice
+    assert.are.equal("Accept-Configurator-Notice", notice.Action)
     assert.are.equal(msgUpdateConfigurator.Tags.Configurator, notice.Data)
 	end)
 

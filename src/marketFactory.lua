@@ -329,23 +329,41 @@ CONFIGURATOR HANDLERS
 =====================
 ]]
 
---- Update configurator handler
+--- Propose configurator handler
 --- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
---- - msg.Tags.Configurator (string): The address of the new configurator.
-Handlers.add("Update-Configurator", {Action = "Update-Configurator"}, function(msg)
+--- - msg.Tags.Configurator (string): The address of the proposed configurator.
+Handlers.add("Propose-Configurator", {Action = "Propose-Configurator"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.updateConfigurator(MarketFactory.configurator, msg)
+  local success, err = marketFactoryValidation.proposeConfigurator(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
-      Action = "Update-Configurator-Error",
+      Action = "Propose-Configurator-Error",
       Error = err
     })
     return
   end
-  -- If validation passes, update configurator.
-  MarketFactory:updateConfigurator(msg.Tags.Configurator, msg)
+  -- If validation passes, propose configurator.
+  MarketFactory:proposeConfigurator(msg.Tags.Configurator, msg)
+end)
+
+--- Accept configurator handler
+--- @notice Only callable by the proposedConfigurator
+--- @param msg Message The message received
+Handlers.add("Accept-Configurator", {Action = "Accept-Configurator"}, function(msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.proposeConfigurator(MarketFactory.proposedConfigurator, msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Accept-Configurator-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, accept configurator.
+  MarketFactory:acceptConfigurator(msg)
 end)
 
 --- Update veToken handler

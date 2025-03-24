@@ -102,7 +102,8 @@ function MarketFactory.new(
     marketsInit = {},
     eventConfigByCreator = {},
     marketProcessCode = marketProcessCode,
-    maxIterations = maxIterations
+    maxIterations = maxIterations, -- @dev used to prevent DoS
+    proposedConfigurator = nil -- @dev used for two-step configurator update
   }
   setmetatable(marketFactory, {
     __index = function(_, k)
@@ -571,13 +572,23 @@ CONFIGURATOR METHODS
 ====================
 ]]
 
---- Update configurator
---- @param configurator string The new configurator address
+--- Propose configurator
+--- @param configurator string The proposed configurator address
 --- @param msg Message The message received
---- @return Message updateConfiguratorNotice The update configurator notice
-function MarketFactoryMethods:updateConfigurator(configurator, msg)
-  self.configurator = configurator
-  return self.updateConfiguratorNotice(configurator, msg)
+--- @return Message proposeConfiguratorNotice The propose configurator notice
+function MarketFactoryMethods:proposeConfigurator(configurator, msg)
+  self.proposedConfigurator = configurator
+  return self.proposeConfiguratorNotice(configurator, msg)
+end
+
+--- Accept configurator
+--- @param msg Message The message received
+--- @return Message acceptConfiguratorNotice The stage update configurator notice
+function MarketFactoryMethods:acceptConfigurator(msg)
+  assert(msg.From == self.proposedConfigurator, "Sender must be the proposed configurator")
+  self.configurator = self.proposedConfigurator
+  self.proposedConfigurator = nil
+  return self.acceptConfiguratorNotice(msg)
 end
 
 --- Update veToken

@@ -290,23 +290,37 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     assert.are.equal("ReturnAmount must be a valid number!", err)
   end)
 
-  it("should pass updateConfigurator validation", function()
+  it("should pass proposeConfigurator validation", function()
     msgConfigurator.Tags.Configurator = "test-this-is-valid-arweave-wallet-address-7"
-    local success, err = cpmmValidation.updateConfigurator(msgConfigurator, configurator)
+    local success, err = cpmmValidation.proposeConfigurator(msgConfigurator, configurator)
     assert.is_true(success)
     assert.is_nil(err)
   end)
 
-  it("should fail updateConfigurator validation when sender is not configurator", function()
+  it("should pass acceptConfigurator validation", function()
+    msgConfigurator.From = "test-this-is-valid-arweave-wallet-address-7"
+    local success, err = cpmmValidation.acceptConfigurator(msgConfigurator, "test-this-is-valid-arweave-wallet-address-7")
+    assert.is_true(success)
+    assert.is_nil(err)
+  end)
+
+  it("should fail proposeConfigurator validation when sender is not configurator", function()
     msgConfigurator.From = "test-this-is-valid-arweave-wallet-address-8"
-    local success, err = cpmmValidation.updateConfigurator(msgConfigurator, configurator)
+    local success, err = cpmmValidation.proposeConfigurator(msgConfigurator, configurator)
     assert.is_false(success)
     assert.are.equal("Sender must be configurator!", err)
   end)
 
-  it("should fail updateConfigurator validation when Configurator is missing", function()
+  it("should faoñ acceptConfigurator validation when sender is not the proposedConfigurator", function()
+    msgConfigurator.From = "test-this-is-valid-arweave-wallet-address-X"
+    local success, err = cpmmValidation.acceptConfigurator(msgConfigurator, "test-this-is-valid-arweave-wallet-address-7")
+    assert.is_false(success)
+    assert.are.equal("Sender must be proposedConfigurator!", err)
+  end)
+
+  it("should fail proposeConfigurator validation when Configurator is missing", function()
     msgConfigurator.Tags.Configurator = nil
-    local success, err = cpmmValidation.updateConfigurator(msgConfigurator, configurator)
+    local success, err = cpmmValidation.proposeConfigurator(msgConfigurator, configurator)
     assert.is_false(success)
     assert.are.equal("Configurator is required and must be a string!", err)
   end)

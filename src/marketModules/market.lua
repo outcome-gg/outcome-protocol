@@ -521,11 +521,18 @@ CONFIGURATOR WRITE METHODS
 ==========================
 ]]
 
---- Update configurator
+--- Propose configurator
 --- @param msg Message The message received
---- @return Message updateConfiguratorNotice The update configurator notice
-function MarketMethods:updateConfigurator(msg)
-  return self.cpmm:updateConfigurator(msg.Tags.Configurator, msg)
+--- @return Message proposeConfiguratorNotice The propose configurator notice
+function MarketMethods:proposeConfigurator(msg)
+  return self.cpmm:proposeConfigurator(msg.Tags.Configurator, msg)
+end
+
+--- Accept configurator
+--- @param msg Message The message received
+--- @return Message acceptConfiguratorNotice The accept configurator notice
+function MarketMethods:acceptConfigurator(msg)
+  return self.cpmm:acceptConfigurator(msg)
 end
 
 --- Update data index

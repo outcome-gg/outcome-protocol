@@ -105,14 +105,24 @@ function CPMMNotices.withdrawFeesNotice(feeAmount, onBehalfOf, detached, msg)
   return ao.send(notice)
 end
 
---- Sends an update configurator notice
---- @param configurator string The updated configurator address
+--- Propose configurator notice
+--- @param configurator string The proposed configurator address
 --- @param msg Message The message received
---- @return Message The configurator updated notice
-function CPMMNotices.updateConfiguratorNotice(configurator, msg)
+--- @return Message proposeConfiguratorNotice The propose configurator notice
+function CPMMNotices.proposeConfiguratorNotice(configurator, msg)
   return msg.reply({
-    Action = "Update-Configurator-Notice",
+    Action = "Propose-Configurator-Notice",
     Data = configurator
+  })
+end
+
+--- Accept configurator notice
+--- @param msg Message The message received
+--- @return Message acceptConfiguratorNotice The accept configurator notice
+function CPMMNotices.acceptConfiguratorNotice(msg)
+  return msg.reply({
+    Action = "Accept-Configurator-Notice",
+    Data = msg.From
   })
 end
 

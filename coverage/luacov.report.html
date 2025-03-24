@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 63.74%"></span>
-                  <span><strong>63.74%</strong> Coverage</span>
+                  <span class="bg" style="width: 62.64%"></span>
+                  <span><strong>62.64%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>116</strong> Hits</span>
-               <span class="miss"><strong>66</strong> Missed</span>
+               <span class="hits"><strong>114</strong> Hits</span>
+               <span class="miss"><strong>68</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -443,11 +443,11 @@ end
             src/marketModules/conditionalTokensValidation.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 84.31%"></span>
-                  <span><strong>84.31%</strong> Coverage</span>
+                  <span class="bg" style="width: 82.35%"></span>
+                  <span><strong>82.35%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>43</strong> Hits</span>
-               <span class="miss"><strong>8</strong> Missed</span>
+               <span class="hits"><strong>42</strong> Hits</span>
+               <span class="miss"><strong>9</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -489,17 +489,17 @@ end
 --- @param payouts any The payouts to be validated
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
 local function validatePayouts(payouts)
-<span class="fc" data-hits="4">  if not payouts then</span>
+<span class="fc" data-hits="3">  if not payouts then</span>
 <span class="fc" data-hits="1">    return false, &quot;Payouts is required!&quot;</span>
   end
-<span class="fc" data-hits="3">  if not sharedUtils.isJSONArray(payouts) then</span>
+<span class="fc" data-hits="2">  if not sharedUtils.isJSONArray(payouts) then</span>
 <span class="fc" data-hits="1">    return false, &quot;Payouts must be a valid JSON Array!&quot;</span>
   end
 
-<span class="fc" data-hits="2">  local decodedPayouts = json.decode(payouts)</span>
-<span class="fc" data-hits="6">  for _, payout in ipairs(decodedPayouts) do</span>
-<span class="fc" data-hits="5">    if not tonumber(payout) then</span>
-<span class="fc" data-hits="1">      return false, &quot;Payouts item must be a valid number!&quot;</span>
+<span class="fc" data-hits="1">  local decodedPayouts = json.decode(payouts)</span>
+<span class="fc" data-hits="3">  for _, payout in ipairs(decodedPayouts) do</span>
+<span class="fc" data-hits="2">    if not tonumber(payout) then</span>
+<span class="nc">      return false, &quot;Payouts item must be a valid number!&quot;</span>
     end
   end
 
@@ -563,11 +563,11 @@ end
 --- @param resolutionAgent string The resolution agent process ID
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
 <span class="fc" data-hits="1">function ConditionalTokensValidation.reportPayouts(msg, resolutionAgent)</span>
-<span class="fc" data-hits="5">  if msg.From ~= resolutionAgent then</span>
+<span class="fc" data-hits="4">  if msg.From ~= resolutionAgent then</span>
 <span class="fc" data-hits="1">    return false, &quot;Sender must be the resolution agent!&quot;</span>
   end
 
-<span class="fc" data-hits="4">  return validatePayouts(msg.Tags.Payouts)</span>
+<span class="fc" data-hits="3">  return validatePayouts(msg.Tags.Payouts)</span>
 end
 
 <span class="fc" data-hits="1">return ConditionalTokensValidation</span>
@@ -579,11 +579,11 @@ end
             src/marketModules/sharedUtils.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 44.23%"></span>
-                  <span><strong>44.23%</strong> Coverage</span>
+                  <span class="bg" style="width: 42.31%"></span>
+                  <span><strong>42.31%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>23</strong> Hits</span>
-               <span class="miss"><strong>29</strong> Missed</span>
+               <span class="hits"><strong>22</strong> Hits</span>
+               <span class="miss"><strong>30</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -601,14 +601,14 @@ See market.lua for full license details.
 --- @return boolean
 local function isSimpleValue(value)
   -- Trim whitespace
-<span class="fc" data-hits="5">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
+<span class="fc" data-hits="2">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
   -- Check for a quoted string: &quot;someValue&quot;
-<span class="fc" data-hits="5">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
-<span class="fc" data-hits="1">    return true</span>
+<span class="fc" data-hits="2">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
+<span class="nc">    return true</span>
   end
   -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
-<span class="fc" data-hits="4">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
-<span class="fc" data-hits="4">    return true</span>
+<span class="fc" data-hits="2">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
+<span class="fc" data-hits="2">    return true</span>
   end
   -- Check for boolean
 <span class="nc">  if string.lower(value) == &quot;true&quot; or string.lower(value) == &quot;false&quot; then</span>
@@ -647,20 +647,20 @@ end
 --- @param str any
 --- @return boolean
 <span class="fc" data-hits="1">function sharedUtils.isJSONArray(str)</span>
-<span class="fc" data-hits="3">  if type(str) ~= &quot;string&quot; then return false end</span>
+<span class="fc" data-hits="2">  if type(str) ~= &quot;string&quot; then return false end</span>
   -- Trim whitespace
-<span class="fc" data-hits="3">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
+<span class="fc" data-hits="2">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
   -- Ensure it starts with `[` and ends with `]`
-<span class="fc" data-hits="3">  local isArray = str:match(&quot;^%[%s*(.-)%s*%]$&quot;)</span>
-<span class="fc" data-hits="3">  if not isArray then return false end</span>
+<span class="fc" data-hits="2">  local isArray = str:match(&quot;^%[%s*(.-)%s*%]$&quot;)</span>
+<span class="fc" data-hits="2">  if not isArray then return false end</span>
   -- Split the array elements and validate each one
-<span class="fc" data-hits="7">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
-<span class="fc" data-hits="5">    value = value:match(&quot;^%s*(.-)%s*$&quot;) -- Trim whitespace around each value</span>
-<span class="fc" data-hits="5">    if not isSimpleValue(value) then</span>
+<span class="fc" data-hits="3">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
+<span class="fc" data-hits="2">    value = value:match(&quot;^%s*(.-)%s*$&quot;) -- Trim whitespace around each value</span>
+<span class="fc" data-hits="2">    if not isSimpleValue(value) then</span>
 <span class="nc">      return false</span>
     end
   end
-<span class="fc" data-hits="2">  return true</span>
+<span class="fc" data-hits="1">  return true</span>
 end
 
 --- Verify if a valid Arweave address
@@ -819,7 +819,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-24 18:07:59
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-24 20:16:22
    </footer>
 
    <script type="text/javascript">

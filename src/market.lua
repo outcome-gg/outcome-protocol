@@ -969,29 +969,53 @@ CONFIGURATOR WRITE HANDLERS
 ===========================
 ]]
 
---- Update configurator handler
+--- Propose configurator handler
 --- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
---- - msg.Tags.Configurator (string): The new configurator.
+--- - msg.Tags.Configurator (string): The proposed configurator.
 --- @note **Emits the following notices:**
 --- **⚠️ Error Handling (Sent on failed input validation)**
---- - `Update-Configurator-Error`: **market → sender** -- Returns an error message
+--- - `Propose-Configurator-Error`: **market → sender** -- Returns an error message
 --- @note **Emits the following notices:**
 --- **✅ Success Notice**
---- - `Update-Configurator-Notice`: **market → sender** -- Logs the update configurator action
-Handlers.add('Update-Configurator', {Action = "Update-Configurator"}, function(msg)
+--- - `Propose-Configurator-Notice`: **market → sender** -- Logs the propose configurator action
+Handlers.add('Propose-Configurator', {Action = "Propose-Configurator"}, function(msg)
   -- Validate input
-  local success, err = cpmmValidation.updateConfigurator(msg, Market.cpmm.configurator)
+  local success, err = cpmmValidation.proposeConfigurator(msg, Market.cpmm.configurator)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
-      Action = "Update-Configurator-Error",
+      Action = "Propose-Configurator-Error",
       Error = err
     })
     return
   end
-  -- If validation passes, update the configurator.
-  Market:updateConfigurator(msg)
+  -- If validation passes, propose the configurator.
+  Market:proposeConfigurator(msg)
+end)
+
+--- Accept configurator handler
+--- @notice Only callable by the proposedConfigurator
+--- @param msg Message The message received.
+--- @note **Emits the following notices:**
+--- **⚠️ Error Handling (Sent on failed input validation)**
+--- - `Accept-Configurator-Error`: **market → sender** -- Returns an error message
+--- @note **Emits the following notices:**
+--- **✅ Success Notice**
+--- - `Accept-Configurator-Notice`: **market → sender** -- Logs the accept configurator action
+Handlers.add('Accept-Configurator', {Action = "Accept-Configurator"}, function(msg)
+  -- Validate input
+  local success, err = cpmmValidation.acceptConfigurator(msg, Market.cpmm.proposedConfigurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Accpet-Configurator-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, accept the configurator.
+  Market:acceptConfigurator(msg)
 end)
 
 --- Update data index handler

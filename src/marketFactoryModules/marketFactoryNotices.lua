@@ -129,14 +129,24 @@ function MarketFactoryNotices.approveCreatorNotice(creator, approved, msg)
   })
 end
 
---- Update configurator notice
---- @param configurator string The new configurator address
+--- Propose configurator notice
+--- @param configurator string The proposed configurator address
 --- @param msg Message The message received
---- @return Message updateConfiguratorNotice The update configurator notice
-function MarketFactoryNotices.updateConfiguratorNotice(configurator, msg)
+--- @return Message proposeConfiguratorNotice The propose configurator notice
+function MarketFactoryNotices.proposeConfiguratorNotice(configurator, msg)
   return msg.reply({
-    Action = "Update-Configurator-Notice",
+    Action = "Propose-Configurator-Notice",
     Data = configurator
+  })
+end
+
+--- Accept configurator notice
+--- @param msg Message The message received
+--- @return Message acceptConfiguratorNotice The accept configurator notice
+function MarketFactoryNotices.acceptConfiguratorNotice(msg)
+  return msg.reply({
+    Action = "Accept-Configurator-Notice",
+    Data = msg.From
   })
 end
 

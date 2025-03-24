@@ -1311,19 +1311,42 @@ describe("#market", function()
     assert.are.same(json.decode(msgMintBatch.Tags.Quantities)[2], Market.cpmm.tokens.balancesById[json.decode(msgMintBatch.Tags.PositionIds)[2]][msgMintBatch.Tags.Recipient])
 	end)
 
-  it("should update configurator", function()
+  it("should propose configurator", function()
     local notice = {}
     -- should not throw an error
 		assert.has.no.error(function()
-      notice = Market:updateConfigurator(
+      notice = Market:proposeConfigurator(
+        msgUpdateConfigurator
+      )
+    end)
+    -- assert state
+    assert.are.equal(msgUpdateConfigurator.Tags.Configurator, Market.cpmm.proposedConfigurator)
+    -- assert notice
+    assert.are.equal("Propose-Configurator-Notice", notice.Action)
+    assert.are.equal(msgUpdateConfigurator.Tags.Configurator, notice.Data)
+	end)
+
+  it("should accept configurator", function()
+    local notice = {}
+        -- should not throw an error
+		assert.has.no.error(function()
+      Market:proposeConfigurator(
+        msgUpdateConfigurator
+      )
+    end)
+    -- should not throw an error
+		assert.has.no.error(function()
+      msgUpdateConfigurator.From = msgUpdateConfigurator.Tags.Configurator
+      notice = Market:acceptConfigurator(
         msgUpdateConfigurator
       )
     end)
     -- assert state
     assert.are.equal(msgUpdateConfigurator.Tags.Configurator, Market.cpmm.configurator)
+    assert.are.equal(nil, Market.cpmm.proposedConfigurator)
     -- assert notice
-    assert.are.equal("Update-Configurator-Notice", notice.Action)
-    assert.are.equal(msgUpdateConfigurator.Tags.Configurator, notice.Data)
+    assert.are.equal("Accept-Configurator-Notice", notice.Action)
+    assert.are.equal(msgUpdateConfigurator.From, notice.Data)
 	end)
 
   it("should update data index", function()

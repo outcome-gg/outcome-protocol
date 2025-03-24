@@ -469,24 +469,77 @@ describe("#marketFactory", function()
     }, notice)
   end)
 
-  it("should update configurator", function()
+  it("should propose configurator", function()
     local notice = {}
     -- should not throw an error
     local newConfigurator = "test-this-is-valid-arweave-wallet-address-4"
     assert.has_no.errors(function()
-      notice = FACTORY:updateConfigurator(
+      notice = FACTORY:proposeConfigurator(
         newConfigurator,
         msg
       )
     end)
     -- assert state change
-    assert.are.same(newConfigurator, FACTORY.configurator)
+    assert.are.same(newConfigurator, FACTORY.proposedConfigurator)
     -- assert notice
     assert.are.same({
-      Action = "Update-Configurator-Notice",
+      Action = "Propose-Configurator-Notice",
       Data = newConfigurator
     }, notice)
   end)
+
+  it("should accept configurator", function()
+    local notice = {}
+    -- should not throw an error
+    local proposedConfigurator = "test-this-is-valid-arweave-wallet-address-4"
+    assert.has_no.errors(function()
+      notice = FACTORY:proposeConfigurator(
+        proposedConfigurator,
+        msg
+      )
+    end)
+    -- assert state change
+    assert.are.same(proposedConfigurator, FACTORY.proposedConfigurator)
+    -- assert notice
+    assert.are.same({
+      Action = "Propose-Configurator-Notice",
+      Data = proposedConfigurator
+    }, notice)
+    -- should not throw an error from proposed configurator
+    msg.From = proposedConfigurator
+    assert.has_no.errors(function()
+      notice = FACTORY:acceptConfigurator(
+        msg
+      )
+    end)
+    -- assert state change
+    assert.are.same(proposedConfigurator, FACTORY.configurator)
+    assert.are.same(nil, FACTORY.proposedConfigurator)
+    -- assert notice
+    assert.are.same({
+      Action = "Accept-Configurator-Notice",
+      Data = proposedConfigurator
+    }, notice)
+  end)
+
+  -- it("should update configurator", function()
+  --   local notice = {}
+  --   -- should not throw an error
+  --   local newConfigurator = "test-this-is-valid-arweave-wallet-address-4"
+  --   assert.has_no.errors(function()
+  --     notice = FACTORY:updateConfigurator(
+  --       newConfigurator,
+  --       msg
+  --     )
+  --   end)
+  --   -- assert state change
+  --   assert.are.same(newConfigurator, FACTORY.configurator)
+  --   -- assert notice
+  --   assert.are.same({
+  --     Action = "Update-Configurator-Notice",
+  --     Data = newConfigurator
+  --   }, notice)
+  -- end)
 
   it("should update veToken", function()
     local notice = {}
