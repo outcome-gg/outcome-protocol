@@ -836,7 +836,7 @@ SEMI-FUNGIBLE TOKENS READ HANDLERS
 --- - Data (string): The Balance.
 Handlers.add("Balance-By-Id", {Action = "Balance-By-Id"}, function(msg)
   -- Validate input
-  local success, err = semiFungibleTokensValidation.balanceById(msg, Market.cpmm.tokens.positionIds)
+  local success, err = semiFungibleTokensValidation.balance(msg, Market.cpmm.tokens.positionIds)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -860,7 +860,7 @@ end)
 --- - Data (string): The balances of all accounts filtered by ID (stringified table).
 Handlers.add('Balances-By-Id', {Action = "Balances-By-Id"}, function(msg)
   -- Validate input
-  local success, err = semiFungibleTokensValidation.balancesById(msg, Market.cpmm.tokens.positionIds)
+  local success, err = semiFungibleTokensValidation.balance(msg, Market.cpmm.tokens.positionIds)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({

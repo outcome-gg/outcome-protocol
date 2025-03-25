@@ -62,23 +62,11 @@ function semiFungibleTokensValidation.transferBatch(msg, validPositionIds)
   return true
 end
 
---- Validates a balanceById message
+--- Validates a balanceById or balancesById message
 --- @param msg Message The message received
 --- @param validPositionIds table<string> The array of valid token IDs
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
-function semiFungibleTokensValidation.balanceById(msg, validPositionIds)
-  if msg.Tags.Recipient then
-    local success, err = sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
-    if not success then return false, err end
-  end
-  return sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
-end
-
---- Validates a balancesById message
---- @param msg Message The message received
---- @param validPositionIds table<string> The array of valid token IDs
---- @return boolean, string|nil Returns true on success, or false and an error message on failure
-function semiFungibleTokensValidation.balancesById(msg, validPositionIds)
+function semiFungibleTokensValidation.balance(msg, validPositionIds)
   if msg.Tags.Recipient then
     local success, err = sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
     if not success then return false, err end
