@@ -49,7 +49,7 @@ describe("#marketFactory", function()
       constants.protocolFee,
       constants.dev.protocolFeeTarget,
       constants.maximumTakeFee,
-      constants.dev.approvedCreators,
+      constants.dev.allowedCreators,
       constants.dev.listedCollateralTokens,
       constants.testCollateral,
       constants.maxIterations
@@ -143,7 +143,7 @@ describe("#marketFactory", function()
       ProtocolFee = tostring(constants.protocolFee),
       ProtocolFeeTarget = constants.dev.protocolFeeTarget,
       MaximumTakeFee = tostring(constants.maximumTakeFee),
-      ApprovedCreators = json.encode(constants.dev.approvedCreators),
+      AllowedCreators = json.encode(constants.dev.allowedCreators),
       ListedCollateralTokens = json.encode(constants.dev.listedCollateralTokens),
       TestCollateral = constants.testCollateral,
     }, info)
@@ -419,14 +419,13 @@ describe("#marketFactory", function()
     assert.are.same(mockProcessId, msgReply.Data)
   end)
 
-  it("should approve creator", function()
-    FACTORY.approvedCreators = {}
+  it("should allow creator", function()
+    FACTORY.allowedCreators = {}
     local notice = {}
     -- should not throw an error
     assert.has_no.errors(function()
-      notice = FACTORY:approveCreator(
+      notice = FACTORY:allowCreator(
         msgSpawnMarket.From,
-        true, -- approve
         msg
       )
     end)
@@ -434,28 +433,25 @@ describe("#marketFactory", function()
     local updatedCreators = {}
     updatedCreators[msgSpawnMarket.From] = true
 
-    assert.are.same(updatedCreators, FACTORY.approvedCreators)
+    assert.are.same(updatedCreators, FACTORY.allowedCreators)
     -- assert notice
     assert.are.same({
-      Action = "Approve-Creator-Notice",
-      Approved = "true",
-      Creator = msgSpawnMarket.From
+      Action = "Allow-Creator-Notice",
+      Data = msgSpawnMarket.From
     }, notice)
   end)
 
   it("should unapprove creator", function()
-    FACTORY.approvedCreators = {}
+    FACTORY.allowedCreators = {}
     local notice = {}
     -- should not throw an error
-    FACTORY:approveCreator(
+    FACTORY:allowCreator(
       msgSpawnMarket.From,
-      true, -- approve
       msg
     )
     assert.has_no.errors(function()
-      notice = FACTORY:approveCreator(
+      notice = FACTORY:disallowCreator(
         msgSpawnMarket.From,
-        false, -- unapprove
         msg
       )
     end)
@@ -463,9 +459,8 @@ describe("#marketFactory", function()
     assert.are.same(constants.collateralTokens, FACTORY.collateralTokens)
     -- assert notice
     assert.are.same({
-      Action = "Approve-Creator-Notice",
-      Approved = "false",
-      Creator = msgSpawnMarket.From
+      Action = "Disallow-Creator-Notice",
+      Data = msgSpawnMarket.From
     }, notice)
   end)
 

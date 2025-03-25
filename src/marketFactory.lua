@@ -44,8 +44,8 @@ end
 --- @field lpFee number The Market LP fee
 --- @field protocolFee number The Market Protocol fee
 --- @field protocolFeeTarget string The Market Protocol fee target
---- @field approvedCreators table The approved creators
---- @field approvedCollateralTokens table The approved collateral tokens
+--- @field allowedCreators table The allowed creators
+--- @field listedCollateralTokens table The listed collateral tokens
 --- @field testCollateral string The test collateral token
 --- @field maxIterations number The maximum number of iterations allowed in the init market loop
 
@@ -63,8 +63,8 @@ local function retrieveMarketFactoryConfig()
     protocolFee = constants.protocolFee,
     protocolFeeTarget = Env == 'DEV' and constants.dev.protocolFeeTarget or constants.prod.protocolFeeTarget,
     maximumTakeFee = constants.maximumTakeFee,
-    approvedCreators = Env == 'DEV' and constants.dev.approvedCreators or constants.prod.approvedCreators,
-    registeredCollateralTokens = Env == 'DEV' and constants.dev.registeredCollateralTokens or constants.prod.registeredCollateralTokens,
+    allowedCreators = Env == 'DEV' and constants.dev.allowedCreators or constants.prod.allowedCreators,
+    listedCollateralTokens = Env == 'DEV' and constants.dev.listedCollateralTokens or constants.prod.listedCollateralTokens,
     testCollateral = constants.testCollateral,
     maxIterations = constants.maxIterations
   }
@@ -84,8 +84,8 @@ if not MarketFactory or Env == 'DEV' then
     marketFactoryConfig.protocolFee,
     marketFactoryConfig.protocolFeeTarget,
     marketFactoryConfig.maximumTakeFee,
-    marketFactoryConfig.approvedCreators,
-    marketFactoryConfig.registeredCollateralTokens,
+    marketFactoryConfig.allowedCreators,
+    marketFactoryConfig.listedCollateralTokens,
     marketFactoryConfig.testCollateral,
     marketFactoryConfig.maxIterations
   )
@@ -110,8 +110,8 @@ WRITE HANDLERS
 ]]
 
 --- Create Event
---- @warning This action will fail if the sender is not an approved creator.
---- @warning This action will fail if the collateral token is not approved.
+--- @warning This action will fail if the sender is not an allowed creator.
+--- @warning This action will fail if the collateral token is not listed.
 --- @param msg Message The message to received, expected to contain:
 --- - msg.Tags.CollateralToken (string): The collateral token for the event.
 --- - msg.Tags.DataIndex (string): The data index for the event.
@@ -124,8 +124,8 @@ WRITE HANDLERS
 Handlers.add("Create-Event", {Action = "Create-Event"}, function(msg)
   -- Validate input
   local success, err = marketFactoryValidation.createEvent(
-    MarketFactory.approvedCollateralTokens,
-    MarketFactory.approvedCreators,
+    MarketFactory.listedCollateralTokens,
+    MarketFactory.allowedCreators,
     MarketFactory.testCollateral,
     msg
   )
@@ -152,8 +152,8 @@ Handlers.add("Create-Event", {Action = "Create-Event"}, function(msg)
 end)
 
 --- Spawn market handler
---- @warning This action will fail if the sender is not an approved creator.
---- @warning This action will fail if the collateral token is not registered or approved.
+--- @warning This action will fail if the sender is not an allowed creator.
+--- @warning This action will fail if the collateral token is not listed.
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.CollateralToken (string): The collateral token for the event.
 --- - msg.Tags.ResolutionAgent (string): The resolution agent for the event.
@@ -173,8 +173,8 @@ end)
 Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
   -- Validate input
   local success, err = marketFactoryValidation.spawnMarket(
-    MarketFactory.registeredCollateralTokens,
-    MarketFactory.approvedCreators,
+    MarketFactory.listedCollateralTokens,
+    MarketFactory.allowedCreators,
     MarketFactory.testCollateral,
     MarketFactory.protocolFee,
     MarketFactory.maximumTakeFee,
@@ -302,25 +302,50 @@ VE TOKEN HANDLERS
 =================
 ]]
 
---- Approve creator
+--- Allow creator
 --- @warning This action will fail if the sender is not the veToken process.
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Creator (string): The address of the creator.
---- - msg.Tags.Approved (string): Whether the creator is approved, "true" or "false".
-Handlers.add("Approve-Creator", {Action = "Approve-Creator"}, function(msg)
+Handlers.add("Allow-Creator", {Action = "Allow-Creator"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.approveCreator(MarketFactory.veToken, msg)
+  local success, err = marketFactoryValidation.allowCreator(
+    MarketFactory.veToken,
+    MarketFactory.allowedCreators,
+    msg
+  )
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
-      Action = "Approve-Creator-Error",
+      Action = "Allow-Creator-Error",
       Error = err
     })
     return
   end
-  -- If validation passes, approve creator.
-  local approved = string.lower(msg.Tags.Approved) == "true"
-  MarketFactory:approveCreator(msg.Tags.Creator, approved, msg)
+  -- If validation passes, allow creator.
+  MarketFactory:allowCreator(msg.Tags.Creator, msg)
+end)
+
+--- Disallow creator
+--- @warning This action will fail if the sender is not the veToken process.
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.Creator (string): The address of the creator.
+Handlers.add("Disallow-Creator", {Action = "Disallow-Creator"}, function(msg)
+  -- Validate input
+  local success, err = marketFactoryValidation.disallowCreator(
+    MarketFactory.veToken,
+    MarketFactory.allowedCreators,
+    msg
+  )
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Disallow-Creator-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, disallow creator.
+  MarketFactory:disallowCreator(msg.Tags.Creator, msg)
 end)
 
 --[[

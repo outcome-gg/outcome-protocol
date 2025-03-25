@@ -116,16 +116,25 @@ function MarketFactoryNotices.initMarketNotice(marketProcessIds, msg)
   })
 end
 
---- Approve creator notice
+--- Allow creator notice
 --- @param creator string The creator account address
---- @param approved boolean The approval status, true if approved, false otherwise
 --- @param msg Message The message received
---- @return Message approveCreatorNotice The approve creator notice
-function MarketFactoryNotices.approveCreatorNotice(creator, approved, msg)
+--- @return Message allowCreatorNotice The allow creator notice
+function MarketFactoryNotices.allowCreatorNotice(creator, msg)
   return msg.reply({
-    Action = "Approve-Creator-Notice",
-    Creator = creator,
-    Approved = tostring(approved),
+    Action = "Allow-Creator-Notice",
+    Data = creator
+  })
+end
+
+--- Disallow creator notice
+--- @param creator string The creator account address
+--- @param msg Message The message received
+--- @return Message disallowCreatorNotice The disallow creator notice
+function MarketFactoryNotices.disallowCreatorNotice(creator, msg)
+  return msg.reply({
+    Action = "Disallow-Creator-Notice",
+    Data = creator
   })
 end
 

@@ -39,7 +39,7 @@ local json = require('json')
 --- @field protocolFee number The default protocol fee in basis points
 --- @field protocolFeeTarget string The default protocol fee target
 --- @field maximumTakeFee number The default maximum take fee in basis points
---- @field approvedCreators table<string, boolean> Approved creators
+--- @field allowedCreators table<string, boolean> Allowed creators
 --- @field listedCollateralTokens table<string, table> Listed collateral tokens
 --- @field testCollateral string The test collateral token process ID
 --- @field payoutNumerators table<string, table<number>> Payout Numerators for each outcomeSlot
@@ -61,7 +61,7 @@ local json = require('json')
 --- @param protocolFee number The default protocol fee
 --- @param protocolFeeTarget string The default protocol fee target
 --- @param maximumTakeFee number The default maximum take fee
---- @param approvedCreators table<string, boolean> The approved creators
+--- @param allowedCreators table<string, boolean> The allowed creators
 --- @param listedCollateralTokens table<string, table> The listed collateral tokens
 --- @param testCollateral string The test collateral token process ID
 --- @param maxIterations number The default maximum number of iterations allowed in the init market loop
@@ -76,7 +76,7 @@ function MarketFactory.new(
   protocolFee,
   protocolFeeTarget,
   maximumTakeFee,
-  approvedCreators,
+  allowedCreators,
   listedCollateralTokens,
   testCollateral,
   maxIterations
@@ -91,7 +91,7 @@ function MarketFactory.new(
     protocolFee = protocolFee,
     protocolFeeTarget = protocolFeeTarget,
     maximumTakeFee = maximumTakeFee,
-    approvedCreators = approvedCreators,
+    allowedCreators = allowedCreators,
     listedCollateralTokens = listedCollateralTokens,
     testCollateral = testCollateral,
     messageToProcessMapping = {},
@@ -136,7 +136,7 @@ function MarketFactoryMethods:info(msg)
     ProtocolFee = tostring(self.protocolFee),
     ProtocolFeeTarget = self.protocolFeeTarget,
     MaximumTakeFee = tostring(self.maximumTakeFee),
-    ApprovedCreators = json.encode(self.approvedCreators),
+    AllowedCreators = json.encode(self.allowedCreators),
     ListedCollateralTokens = json.encode(self.listedCollateralTokens),
     TestCollateral = self.testCollateral
   })
@@ -556,14 +556,22 @@ VE TOKEN METHODS
 ================
 ]]
 
---- Approve creator
+--- Allow creator
 --- @param creator string The creator address
---- @param approved boolean True to approve, false to disapprove
 --- @param msg Message The message received
---- @return Message approveCreatorNotice The approve creator notice
-function MarketFactoryMethods:approveCreator(creator, approved, msg)
-  self.approvedCreators[creator] = approved
-  return self.approveCreatorNotice(creator, approved, msg)
+--- @return Message allowCreatorNotice The allow creator notice
+function MarketFactoryMethods:allowCreator(creator, msg)
+  self.allowedCreators[creator] = true
+  return self.allowCreatorNotice(creator, msg)
+end
+
+--- Disallow creator
+--- @param creator string The creator address
+--- @param msg Message The message received
+--- @return Message disallowCreatorNotice The disallow creator notice
+function MarketFactoryMethods:disallowCreator(creator, msg)
+  self.allowedCreators[creator] = false
+  return self.disallowCreatorNotice(creator, msg)
 end
 
 --[[

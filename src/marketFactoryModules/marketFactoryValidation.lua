@@ -55,22 +55,22 @@ WRITE METHODS
 ]]
 
 --- Validates a createEvent message
---- @param approvedCollateralTokens table<string, boolean> A set of approved collateral tokens
---- @param approvedCreators table<string, boolean> A set of approved creators
+--- @param listedCollateralTokens table<string, any> A set of listed collateral tokens
+--- @param allowedCreators table<string, boolean> A set of allowed creators
 --- @param testCollateral string The test collateral token
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.createEvent(approvedCollateralTokens, approvedCreators, testCollateral, msg)
+function marketFactoryValidation.createEvent(listedCollateralTokens, allowedCreators, testCollateral, msg)
   local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
   if not success then return false, err end
 
-  if not approvedCollateralTokens[msg.Tags.CollateralToken] then
-    return false, "CollateralToken not approved!"
+  if not listedCollateralTokens[msg.Tags.CollateralToken] then
+    return false, "CollateralToken not listed!"
   end
 
-  -- @dev Creator doesn't have to be approved when using test collateral
-  if msg.Tags.CollateralToken ~= testCollateral and not approvedCreators[msg.From] then
-    return false, "Creator not approved!"
+  -- @dev Creator doesn't have to be allowed when using test collateral
+  if msg.Tags.CollateralToken ~= testCollateral and not allowedCreators[msg.From] then
+    return false, "Creator not allowed!"
   end
 
   success, err = sharedValidation.validateAddress(msg.Tags.DataIndex, "DataIndex")
@@ -107,28 +107,24 @@ function marketFactoryValidation.createEvent(approvedCollateralTokens, approvedC
 end
 
 --- Validates a spawnMarket message
---- @param registeredCollateralTokens table<string, table> The registered collateral tokens
---- @param approvedCreators table<string, boolean> A set of approved creators
+--- @param listedCollateralTokens table<string, table> The listed collateral tokens
+--- @param allowedCreators table<string, boolean> A set of allowed creators
 --- @param testCollateral string The test collateral token
 --- @param protocolFee number The protocol fee
 --- @param maximumTakeFee number The maximum take fee
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.spawnMarket(registeredCollateralTokens, approvedCreators, testCollateral, protocolFee, maximumTakeFee, msg)
+function marketFactoryValidation.spawnMarket(listedCollateralTokens, allowedCreators, testCollateral, protocolFee, maximumTakeFee, msg)
   local success, err = sharedValidation.validateAddress(msg.Tags.CollateralToken, "CollateralToken")
   if not success then return false, err end
 
-  if not registeredCollateralTokens[msg.Tags.CollateralToken] then
-    return false, "CollateralToken not registered!"
+  if not listedCollateralTokens[msg.Tags.CollateralToken] then
+    return false, "CollateralToken not listed!"
   end
 
-  if not registeredCollateralTokens[msg.Tags.CollateralToken].approved then
-    return false, "CollateralToken not approved!"
-  end
-
-  -- @dev Creator doesn't have to be approved when using test collateral
-  if msg.Tags.CollateralToken ~= testCollateral and not approvedCreators[msg.From] then
-    return false, "Creator not approved!"
+  -- @dev Creator doesn't have to be allowed when using test collateral
+  if msg.Tags.CollateralToken ~= testCollateral and not allowedCreators[msg.From] then
+    return false, "Creator not allowed!"
   end
 
   success, err = sharedValidation.validateAddress(msg.Tags.ResolutionAgent, "ResolutionAgent")
@@ -225,21 +221,35 @@ VE TOKEN METHODS
 ================
 ]]
 
---- Validates an approveCreator message
+--- Validates an allowCreator message
 --- @param veToken string The veToken process ID
+--- @param allowedCreators table<string, boolean> A set of allowed creators
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.approveCreator(veToken, msg)
+function marketFactoryValidation.allowCreator(veToken, allowedCreators, msg)
   if msg.From ~= veToken then
     return false, "Sender must be veToken!"
   end
 
-  if type(msg.Tags.Approved) ~= "string" then
-    return false, "Approved is required!"
+  if allowedCreators[msg.Tags.Creator] then
+    return false, "Creator already allowed!"
   end
 
-  if not sharedUtils.isValidBooleanString(msg.Tags.Approved) then
-    return false, "Approved must be a boolean string!"
+  return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
+end
+
+--- Validates a disallowCreator message
+--- @param veToken string The veToken process ID
+--- @param allowedCreators table<string, boolean> A set of allowed creators
+--- @param msg Message The message received
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
+function marketFactoryValidation.disallowCreator(veToken, allowedCreators, msg)
+  if msg.From ~= veToken then
+    return false, "Sender must be veToken!"
+  end
+
+  if not allowedCreators[msg.Tags.Creator] then
+    return false, "Creator already disallowed!"
   end
 
   return sharedValidation.validateAddress(msg.Tags.Creator, "Creator")
