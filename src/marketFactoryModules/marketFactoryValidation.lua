@@ -11,6 +11,44 @@ local sharedUtils = require('marketFactoryModules.sharedUtils')
 local bint = require('.bint')(256)
 
 --[[
+================
+INTERNAL METHODS
+================
+]]
+
+--- Validates startTime
+--- @param startTime number The startTime to be validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+local function validateStartTime(startTime)
+  if startTime < os.time() then
+    return false, "StartTime must be in the future!"
+  end
+
+  if startTime > os.time() + (365 * 24 * 60 * 60 * 1000) then
+    return false, "StartTime must be within one year!"
+  end
+
+  return true
+end
+
+--- Validates endTime
+--- @param endTime number|nil The endTime to be validated
+--- @param startTime number|nil The startTime or nil
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+local function validateEndTime(endTime, startTime)
+  if endTime < os.time() then
+    return false, "EndTime must be in the future!"
+  end
+
+  startTime = startTime and startTime or 0
+  if endTime < startTime then
+    return false, "EndTime must be after StartTime!"
+  end
+
+  return true
+end
+
+--[[
 =============
 WRITE METHODS
 =============
@@ -51,10 +89,17 @@ function marketFactoryValidation.createEvent(approvedCollateralTokens, approvedC
   if msg.Tags.StartTime then
     success, err = sharedValidation.validatePositiveInteger(msg.Tags.StartTime, "StartTime")
     if not success then return false, err end
+
+    success, err = validateStartTime(tonumber(msg.Tags.StartTime))
+    if not success then return false, err end
   end
 
   if msg.Tags.EndTime then
     success, err = sharedValidation.validatePositiveInteger(msg.Tags.EndTime, "EndTime")
+    if not success then return false, err end
+
+    local startTime = msg.Tags.StartTime and tonumber(msg.Tags.StartTime) or nil
+    success, err = validateEndTime(tonumber(msg.Tags.EndTime), startTime)
     if not success then return false, err end
   end
 
@@ -95,7 +140,12 @@ function marketFactoryValidation.spawnMarket(registeredCollateralTokens, approve
   success, err = sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")
   if not success then return false, err end
 
-  success, err = sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, "CreatorFee")
+  local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
+  if outcomeSlotCount > 256 then
+    return false, "OutcomeSlotCount must be less than or equal to 256!"
+  end
+
+  success, err = sharedValidation.validateBasisPoints(msg.Tags.CreatorFee, "CreatorFee")
   if not success then return false, err end
 
   success, err = sharedValidation.validateAddress(msg.Tags.CreatorFeeTarget, "CreatorFeeTarget")
@@ -109,10 +159,17 @@ function marketFactoryValidation.spawnMarket(registeredCollateralTokens, approve
   if msg.Tags.StartTime then
     success, err = sharedValidation.validatePositiveInteger(msg.Tags.StartTime, "StartTime")
     if not success then return false, err end
+
+    success, err = validateStartTime(tonumber(msg.Tags.StartTime))
+    if not success then return false, err end
   end
 
   if msg.Tags.EndTime then
     success, err = sharedValidation.validatePositiveInteger(msg.Tags.EndTime, "EndTime")
+    if not success then return false, err end
+
+    local startTime = msg.Tags.StartTime and tonumber(msg.Tags.StartTime) or nil
+    success, err = validateEndTime(tonumber(msg.Tags.EndTime), startTime)
     if not success then return false, err end
   end
 
@@ -235,7 +292,7 @@ function marketFactoryValidation.updateLpFee(configurator, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
-  return sharedValidation.validatePositiveIntegerOrZero(msg.Tags.LpFee, "LpFee")
+  return sharedValidation.validateBasisPoints(msg.Tags.LpFee, "LpFee")
 end
 
 --- Validates an update protocolFee message
@@ -247,10 +304,15 @@ function marketFactoryValidation.updateProtocolFee(configurator, maxTakeFee, msg
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
+
+  local success, err = sharedValidation.validateBasisPoints(msg.Tags.ProtocolFee, "ProtocolFee")
+  if not success then return false, err end
+
   if not bint.__le(bint(msg.Tags.ProtocolFee), bint(maxTakeFee)) then
     return false, 'Protocol fee must be less than or equal to max take fee'
   end
-  return sharedValidation.validatePositiveIntegerOrZero(msg.Tags.ProtocolFee, "ProtocolFee")
+
+  return true
 end
 
 --- Validates an update protocolFeeTarget message
@@ -272,7 +334,7 @@ function marketFactoryValidation.updateMaximumTakeFee(configurator, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
-  return sharedValidation.validatePositiveIntegerOrZero(msg.Tags.MaximumTakeFee, "MaximumTakeFee")
+  return sharedValidation.validateBasisPoints(msg.Tags.MaximumTakeFee, "MaximumTakeFee")
 end
 
 --- Validate an update maxIterations message

@@ -49,6 +49,9 @@ local function validatePayouts(payouts)
     if not tonumber(payout) then
       return false, "Payouts item must be a valid number!"
     end
+    if tonumber(payout) < 0 then
+      return false, "Payouts item must be greater than or equal to zero!"
+    end
   end
 
   return true

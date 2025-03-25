@@ -223,16 +223,15 @@ function cpmmValidation.updateTakeFee(msg, configurator)
     return false, 'Sender must be configurator!'
   end
 
-  local success, err = sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, 'CreatorFee')
+  local success, err = sharedValidation.validateBasisPoints(msg.Tags.CreatorFee, 'CreatorFee')
   if not success then return false, err end
 
-  success, err = sharedValidation.validatePositiveIntegerOrZero(msg.Tags.ProtocolFee, 'ProtocolFee')
+  success, err = sharedValidation.validateBasisPoints(msg.Tags.ProtocolFee, 'ProtocolFee')
   if not success then return false, err end
 
   local totalFee = sharedUtils.safeAdd(msg.Tags.CreatorFee, msg.Tags.ProtocolFee)
-  if not bint.__lt(bint(totalFee), 1000) then
-    return false, 'Net fee must be less than or equal to 1000 bps'
-  end
+  success, err = sharedValidation.validateBasisPoints(totalFee, 'TotalFee')
+  if not success then return false, err end
 
   return true
 end

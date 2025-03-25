@@ -2,7 +2,10 @@ local configuratorValidation = require("configuratorModules.configuratorValidati
 
 -- Mock the Configurator object
 ---@diagnostic disable-next-line: missing-fields
-_G.Configurator = { admin = "test-this-is-valid-arweave-wallet-address-1" }
+_G.Configurator = { 
+  admin = "test-this-is-valid-arweave-wallet-address-1",
+  maxDelay = 365 * 24 * 60 * 60 * 1000
+}
 
 local msg, msgAdmin, msgDelay
 

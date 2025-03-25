@@ -75,6 +75,9 @@ function ConfiguratorValidation.updateDelay(msg)
   if delay % 1 ~= 0 then
     return false, 'UpdateDelay must be an integer!'
   end
+  if delay > Configurator.maxDelay then
+    return false, 'UpdateDelay must be less than or equal to ' .. Configurator.maxDelay .. '!'
+  end
 
   return true
 end

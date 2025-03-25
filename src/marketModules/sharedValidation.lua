@@ -84,4 +84,27 @@ function sharedValidation.validatePositiveIntegerOrZero(quantity, tagName)
   return true
 end
 
+--- Validates basis points
+--- @param basisPoints any The basis points to be validated
+--- @param tagName string The name of the tag being validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function sharedValidation.validateBasisPoints(basisPoints, tagName)
+  if type(basisPoints) ~= 'string' then
+    return false, tagName .. ' is required and must be a string!'
+  end
+
+  local num = tonumber(basisPoints)
+  if not num then
+    return false, tagName .. ' must be a valid number!'
+  end
+  if num < 0 or num > 10000 then
+    return false, tagName .. ' must be between 0 and 10000 (basis points)!'
+  end
+  if num % 1 ~= 0 then
+    return false, tagName .. ' must be an integer!'
+  end
+
+  return true
+end
+
 return sharedValidation

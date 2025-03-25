@@ -25,8 +25,9 @@ local crypto = require('.crypto')
 
 -- Default Configurator delay
 ConfiguratorDelay = {
-  DEV = 3 * 1000,                -- 3 seconds in milliseconds
-  PROD = 3 * 24 * 60 * 60 * 1000 -- 3 days in milliseconds
+  DEV = 3 * 1000,                 -- 3 seconds in milliseconds
+  PROD = 3 * 24 * 60 * 60 * 1000, -- 3 days in milliseconds
+  MAX = 365 * 24 * 60 * 60 * 1000 -- 365 days in milliseconds
 }
 
 --- Represents a Configurator
@@ -47,6 +48,7 @@ function Configurator.new(admin, env)
   local configurator = {
     admin = admin,
     delay = ConfiguratorDelay[env],
+    maxDelay = ConfiguratorDelay.MAX,
     staged = {},
   }
   setmetatable(configurator, {

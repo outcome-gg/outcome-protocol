@@ -341,11 +341,11 @@ describe("#market #conditionalTokens #cpmmValidation", function()
   end)
 
   it("should fail updateTakeFee validation when sum of fees exceeds 1000 bps", function()
-    msgConfigurator.Tags.CreatorFee = "900"
-    msgConfigurator.Tags.ProtocolFee = "200"
+    msgConfigurator.Tags.CreatorFee = "9000"
+    msgConfigurator.Tags.ProtocolFee = "2000"
     local success, err = cpmmValidation.updateTakeFee(msgConfigurator, configurator)
     assert.is_false(success)
-    assert.are.equal("Net fee must be less than or equal to 1000 bps", err)
+    assert.are.equal("TotalFee must be between 0 and 10000 (basis points)!", err)
   end)
 
   it("should pass updateProtocolFeeTarget validation", function()
