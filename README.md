@@ -400,9 +400,9 @@ For a deeper look at system interactions, we've provided detailed sequence diagr
 | Action                | Required Role                    | Required Tags                          | Optional Tags                   | Result                 | 
 | --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 
 | `Info`  | | | | `Info-Response` |  
-| `Stage-Update`        | `A` | `UpdateProcess`: Valid Arweave address<br>`UpdateAction`: String | `UpdateTags`: Valid stringified Key-Value JSON<br>`UpdateData`: Valid Key-Value JSON | `Stage-Update-Notice` |
-| `Unstage-Update`      | `A` | `UpdateProcess`: Valid Arweave address<br>`UpdateAction`: String | `UpdateTags`: Valid stringified Key-Value JSON<br>`UpdateData`: Valid Key-Value JSON | `Unstage-Update-Notice` | 
-| `Action-Update`       | `A` | `UpdateProcess`: Valid Arweave address<br>`UpdateAction`: String | `UpdateTags`: Valid stringified Key-Value JSON<br>`UpdateData`: Valid Key-Value JSON | `Action-Update-Notice` |
+| `Stage-Update`        | `A` | `Discriminator`: String <br>`UpdateProcess`: Valid Arweave address<br>`UpdateAction`: String | `UpdateTags`: Valid stringified Key-Value JSON<br>`UpdateData`: Valid Key-Value JSON | `Stage-Update-Notice` |
+| `Unstage-Update`      | `A` | `Discriminator`: String <br>`UpdateProcess`: Valid Arweave address<br>`UpdateAction`: String | `UpdateTags`: Valid stringified Key-Value JSON<br>`UpdateData`: Valid Key-Value JSON | `Unstage-Update-Notice` | 
+| `Action-Update`       | `A` | `Discriminator`: String <br>`UpdateProcess`: Valid Arweave address<br>`UpdateAction`: String | `UpdateTags`: Valid stringified Key-Value JSON<br>`UpdateData`: Valid Key-Value JSON | `Action-Update-Notice` |
 | `Stage-Update-Admin`  | `A` | `UpdateAdmin`: Valid Arweave address | | `Stage-Update-Admin-Notice` | 
 | `Unstage-Update-Admin`| `A` | `UpdateAdmin`: Valid Arweave address | | `Unstage-Update-Admin-Notice` |  
 | `Action-Update-Admin` | `A` | `UpdateAdmin`: Valid Arweave address | | `Action-Update-Admin-Notice` | 
@@ -476,7 +476,8 @@ For a deeper look at system interactions, we've provided detailed sequence diagr
 | `Position-Balances` || `PositionId`: Integer greater than 0 | | `Balances-By-Id-Response` |
 | `Position-Batch-Balance` || `PositionIds`: Valid JSON Array of Integers greater than 0<br>`Recipients`: Valid JSON Array of Arweave addresses | | `Position-Batch-Balance-Response` |
 | `Position-Batch-Balances` || `PositionIds`: Valid JSON Array of Integers greater than 0 | | `Position-Batch-Balances-Response` |
-| `Update-Configurator` | `C` | `Configurator`: Valid Arweave address | | `Update-Configurator-Notice` |
+| `Propose-Configurator` | `C` | `Configurator`: Valid Arweave address | | `Propose-Configurator-Notice` |
+| `Accept-Configurator` | `C` | | | `Accept-Configurator-Notice` |
 | `Update-Incentives` | `C` | `Incentives`: Valid Arweave address | | `Update-Incentives-Notice` |
 | `Update-Take-Fee` | `C` | `CreatorFee`: Integer greater than 0<br> `ProtocolFee`: Integer greater than 0 | | `Update-Take-Fee-Notice` |
 | `Update-Protocol-Fee-Target` | `C` | `ProtocolFeeTarget`: Valid Arweave address | | `Update-Protocol-Fee-Target-Notice` |
@@ -497,14 +498,18 @@ For a deeper look at system interactions, we've provided detailed sequence diagr
 | `Markets-By-Creator`|| | `Creator`: Valid Arweave address | `Markets-By-Creator-Response` |
 | `Get-Process-Id` || `Original-Msg-Id`: Valid Arweave address | | `Get-Process-Id-Response` |
 | `Get-Latest-Process-Id-For-Creator`  || | `Creator`: Valid Arweave address | `Get-Latest-Process-Id-For-Creator-Response` |
-| `Approve-Creator` | `S` | `Creator`: Valid Arweave address<br>`Approved`: Boolean (true or false) | | `Approve-Creator-Notice` |
-| `Update-Configurator`| `C` | `Configurator`: Valid Arweave address | | `Update-Configurator-Notice` |
+| `Allow-Creator` | `S` | `Creator`: Valid Arweave address | | `Allow-Creator-Notice` |
+| `Disallow-Creator` | `S` | `Creator`: Valid Arweave address | | `Disallow-Creator-Notice` |
+| `Propose-Configurator` | `C` | `Configurator`: Valid Arweave address | | `Propose-Configurator-Notice` |
+| `Accept-Configurator` | `C` | | | `Accept-Configurator-Notice` |
 | `Update-Incentives` | `C` | `Incentives`: Valid Arweave address | | `Update-Incentives-Notice` |
 | `Update-Lp-Fee` | `C` | `LpFee`: Integer greater than or equal to 0 | | `Update-Lp-Fee-Notice` |
 | `Update-Protocol-Fee` | `C` | `ProtocolFee`: Integer greater than or equal to 0 | | `Update-Protocol-Fee-Notice` |
 | `Update-Protocol-Fee-Target` | `C` | `ProtocolFeeTarget`: Valid Arweave address | | `Update-Protocol-Fee-Target-Notice` |
+| `Update-Max-Iterations` | `C` | `MaxIterations`: Integer greater than 0 | | `Update-Max-Iterations-Notice` |
 | `Update-Maximum-Take-Fee` | `C` | `MaximumTakeFee`: Integer greater than or equal to 0 | | `Update-Maximum-Take-Fee-Notice` |
-| `Register-Collateral-Token` | `C` | `CollateralToken`: Valid Arweave address<br>`Name`: String<br>`Ticker`: String<br>`Denomination`: Integer greater than zero<br>`Approved`: Boolean (true or false) | | `Register-Collateral-Token-Notice` |
+| `List-Collateral-Token` | `C` | `CollateralToken`: Valid Arweave address<br>`Name`: String<br>`Ticker`: String<br>`Denomination`: Integer greater than zero| | `List-Collateral-Token-Notice` |
+| `Delist-Collateral-Token` | `C` | `CollateralToken`: Valid Arweave address | | `Delist-Collateral-Token-Notice` |
 | `Transfer` | `C` |`Token`:  Valid Arweave address<br>`Quantity`: Integer greater than 0<br>`Recipient`: Valid Arweave address | `X-*`: Tags beginning with "X-" | `Transfer-Notice`<br>`Transfer-Success-Notice` |
 
 ### OCM Token

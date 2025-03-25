@@ -55,6 +55,7 @@ UPDATE WRITE HANDLERS
 ]]
 --- Stage update handler
 --- @param msg Message The message received, expected to contain:
+--- - msg.Tags.Discriminator string The discriminator
 --- - msg.Tags.UpdateProcess string The update process
 --- - msg.Tags.UpdateAction string The update action
 --- - msg.Tags.UpdateTags? string|nil The update tags or `nil`
@@ -78,6 +79,7 @@ end)
 
 --- Unstage update handler
 --- @param msg Message The message received, expected to contain:
+--- - msg.Tags.Discriminator string The discriminator
 --- - msg.Tags.UpdateProcess string The update process
 --- - msg.Tags.UpdateAction string The update action
 --- - msg.Tags.UpdateTags? string|nil The update tags or `nil`
@@ -101,6 +103,7 @@ end)
 
 --- Action update handler
 --- @param msg Message The message received, expected to contain:
+--- - msg.Tags.Discriminator string The discriminator
 --- - msg.Tags.UpdateProcess string The update process
 --- - msg.Tags.UpdateAction string The update action
 --- - msg.Tags.UpdateTags? string|nil The update tags or `nil`
