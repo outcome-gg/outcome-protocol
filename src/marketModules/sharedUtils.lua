@@ -79,7 +79,7 @@ end
 --- @param address any
 --- @return boolean
 function sharedUtils.isValidArweaveAddress(address)
-	return type(address) == "string" and #address == 43 and string.match(address, "^[%w-_]+$") ~= nil
+	return type(address) == "string" and #address == 43 and string.match(address, "^[A-Za-z0-9_-]+$") ~= nil
 end
 
 --- Verify if a valid boolean string
