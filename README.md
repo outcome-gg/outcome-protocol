@@ -626,9 +626,9 @@ Outcome.configuratorInfo()
 | Method                | Req. Role  | Required Parameters                    | Result                 |
 | --------------------- | -------------- | -------------------------------------- | ---------------------- |
 | `configuratorInfo()`        ||  | `Info-Response` |
-| `configuratorStageUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Stage-Update-Notice` |
-| `configuratorUnstageUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Unstage-Update-Notice` |
-| `configuratorActionUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Action-Update-Notice` |
+| `configuratorStageUpdate(...)` |`A`| `discriminator`: String<br>`updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Stage-Update-Notice` |
+| `configuratorUnstageUpdate(...)` |`A`| `discriminator`: String<br>`updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Unstage-Update-Notice` |
+| `configuratorActionUpdate(...)` |`A`| `discriminator`: String<br>`updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Action-Update-Notice` |
 | `configuratorStageUpdateAdmin(...)` |`A`| `updateAdmin`: Valid Arweave address | `Stage-Update-Admin-Notice` |
 | `configuratorUnstageUpdateAdmin(...)` |`A`| `updateAdmin`: Valid Arweave address | `Unstage-Update-Admin-Notice` |
 | `configuratorActionUpdateAdmin(...)` |`A`| `updateAdmin`: Valid Arweave address | `Action-Update-Admin-Notice` |
@@ -660,26 +660,33 @@ Outcome.configuratorInfo()
 | `marketPositionBalances(...)`||  `market`: Valid Arweave address<br>`positionId`: Integer greater than 0 | `Position-Balances-Response` |
 | `marketPositionBatchBalance(...)` || `market`: Valid Arweave address<br>`positionIds`: Valid JSON Array of integers greater than 0<br>`recipient`: Valid JSON Array of Arweave addresses | `Position-Batch-Balance-Response` |
 | `marketPositionBatchBalances(...)` || `market`: Valid Arweave address<br>`positionIds`: Valid JSON Array of integers greater than 0 | `Position-Batch-Balances-Response` |
-| `marketUpdateConfigurator(...)` |`C`| `market`: Valid Arweave address<br>`configurator`: Valid Arweave address |  `Update-Configurator-Notice` |
-| `marketUpdateIncentives(...)`  |`C`| `market`: Valid Arweave address<br>`incentives`: Valid Arweave address |  `Update-Incentives-Notice` |
+| `marketProposeConfigurator(...)` |`C`| `market`: Valid Arweave address<br>`configurator`: Valid Arweave address |  `Propose-Configurator-Notice` |
+| `marketAcceptConfigurator(...)` |`C`| `market`: Valid Arweave address|  `Accept-Configurator-Notice` |
+| `marketUpdateDataIndex(...)`  |`C`| `market`: Valid Arweave address<br>`dataIndex`: Valid Arweave address |  `Update-Data-Index-Notice` |
 | `marketUpdateTakeFee(...)` |`C`| `market`: Valid Arweave address<br>`creatorFee`: Integer greater than or equal to 0<br>`protocolFee`: Integer greater than or equal to 0 | `Update-Take-Fee-Notice` |
 | `marketUpdateProtocolFeeTarget(...)` |`C`| `market`: Valid Arweave address<br>`protocolFeeTarget`: Valid Arweave address | `Update-Protocol-Fee-Target-Notice` |
 | `marketUpdateLogo(...)` |`C`| `market`: Valid Arweave address<br>`logo`: String |  `Update-Logo-Notice` |
+| `marketUpdateLogos(...)` |`C`| `market`: Valid Arweave address<br>`logos`: Valid JSON Array of strings |  `Update-Logos-Notice` |
 | `marketFactoryInfo()` ||  |  | `Info-Response` |
-| `marketFactorySpawnMarket(...)`  || `collateralToken`: Valid Arweave address<br> `resolutionAgent`: Valid Arweave address<br>`dataIndex`: Valid Arweave address<br>`outcomeSlotCount`: Integer greater than or equal to 2<br>`question`: String<br>`category`: String<br>`subcategory`: String<br>`logo`:String<br>`rules`: String<br>`creatorFee`: Integer greater than or equal to 0<br>`creatorFeeTarget`: Valid Arweave address  | `Spawn-Market-Notice` |
+| `marketFactoryCreateEvent(...)`  || `collateralToken`: Valid Arweave address<br>`dataIndex`: Valid Arweave Address<br>`outcomeSlotCount`: Integer greater than or equal to 2, less than or equal to 256<br>`question`: String<br>`rules`: String<br>`category`: String<br>`subcategory`: String<br>`logo`:String | `Create-Event-Notice` |
+| `marketFactorySpawnMarket(...)`  || `collateralToken`: Valid Arweave address<br> `resolutionAgent`: Valid Arweave address<br>`dataIndex`: Valid Arweave address<br>`outcomeSlotCount`: Integer greater than or equal to 2, less than or equal to 256<br>`question`: String<br>`rules`: String<br>`category`: String<br>`subcategory`: String<br>`logo`:String<br>`creatorFee`: Integer greater than or equal to 0<br>`creatorFeeTarget`: Valid Arweave address  | `Spawn-Market-Notice` |
 | `marketFactoryInitMarket()` ||  |  `Init-Market-Notice`<br>`Log-Market-Notice` |
 | `marketFactoryMarketsPending()` ||  | `Markets-Pending-Response` |
 | `marketFactoryMarketsInit()` ||  |  `Markets-Init-Response` |
 | `marketFactoryMarketsByCreator()` ||  |  `Markets-By-Creator-Response` |
 | `marketFactoryGetProcessId()` ||  |  `Get-Process-Id-Response` |
 | `marketFactoryGetLatestProcessIdForCreator()`  ||  |  `Get-Latest-Process-Id-For-Creator-Response` |
-| `marketFactoryUpdateConfigurator(...)` |`C`|  `configurator`: Valid Arweave address |  `-Update-Configurator-Notice` |
-| `marketFactoryUpdateIncentives(...)` |`C`| `incentives`: Valid Arweave address |  `Update-Incentives-Notice` |
+| `marketFactoryProposeConfigurator(...)` |`C`|  `configurator`: Valid Arweave address |  `Propose-Configurator-Notice` |
+| `marketFactoryAcceptConfigurator(...)` |`C`|  |  `Accept-Configurator-Notice` |
+| `marketFactoryUpdateVeToken(...)` |`C`|  `veToken`: Valid Arweave address |  `Update-Ve-Token-Notice` |
+| `marketFactoryUpdateMarketProcessCode(...)` |`C`|  `marketProcessCode`: String |  `Update-Market-Process-Code-Notice` |
 | `marketFactoryUpdateLpFee(...)`   |`C`|  `lpFee`: Integer greater than or equal to 0 |  `Update-LP-Fee-Notice` |
 | `marketFactoryUpdateProtocolFee(...)`  |`C`|  `protocolFee`: Integer greater than or equal to 0 |  `Update-Protocol-Fee-Notice` |
 | `marketFactoryUpdateProtocolFeeTarget(...)` |`C`| `protocolFeeTarget`: Valid Arweave address |  `Update-Protocol-Fee-Target-Notice` |
 | `marketFactoryUpdateMaximumTakeFee(...)` |`C`|  `maximumTakeFee`: Integer greater than or equal to 0 |  `Update-Maximum-Take-Fee-Notice` |
-| `marketFactoryApproveCollateral(...)` |`C`|  `collateral`: Valid Arweave address<br>`approved`: Boolean (`true` or `false`) |  `Approve-Collateral-Notice` |
+| `marketFactoryUpdateMaximumIterations(...)` |`C`|  `maximumIterations`: Integer greater than 0 |  `Update-Maximum-Iterations-Notice` |
+| `marketFactoryListCollateralToken(...)` |`C`|  `collateral`: Valid Arweave address<br>`name`: string<br>`ticker`: string<br>`denomination`: Integer greater than 0 | `List-Collateral-Token-Notice` |
+| `marketFactoryDelistCollateralToken(...)` |`C`|  `collateral`: Valid Arweave address | `Delist-Collateral-Token-Notice` |
 | `marketFactoryTransfer(...)` |`C`| `token`: Valid Arweave address<br>`quantity`: Integer greater than 0<br>`recipient`: Valid Arweave address |  `Transfer-Notice`<br>`Transfer-Success-Notice` |
 | `tokenInfo()` ||  |  `Info-Response` |
 | `tokenClaim()` ||  |  `Debit-Notice`<br>`Credit-Notice`<br>`Claim-Notice` |
