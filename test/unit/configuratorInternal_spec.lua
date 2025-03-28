@@ -76,6 +76,7 @@ describe("#configurator #configuratorInternal", function()
     -- assert correct notice
     assert.are.same({
       Action = 'Stage-Update-Notice',
+      Discriminator = "discriminator",
       UpdateProcess = msg.Tags.UpdateProcess,
       UpdateAction = msg.Tags.UpdateAction,
       UpdateTags = msg.Tags.UpdateTags,

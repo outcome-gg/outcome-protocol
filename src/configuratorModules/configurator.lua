@@ -77,7 +77,7 @@ function ConfiguratorMethods:stageUpdate(discriminator, process, action, tags, d
   -- stage
   self.staged[hash] = os.time()
   -- stage notice
-  return self.stageUpdateNotice(process, action, tags, data, hash, msg)
+  return self.stageUpdateNotice(discriminator, process, action, tags, data, hash, msg)
 end
 
 --- Unstages an update

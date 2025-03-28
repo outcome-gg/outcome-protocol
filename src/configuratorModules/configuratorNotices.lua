@@ -8,6 +8,7 @@ See configurator.lua for full license details.
 local ConfiguratorNotices = {}
 
 --- Sends a stage update notice
+--- @param discriminator string The discriminator
 --- @param process string The process ID
 --- @param action string The action name
 --- @param tags string The JSON string of tags
@@ -15,9 +16,10 @@ local ConfiguratorNotices = {}
 --- @param hash string The hash of the update
 --- @param msg Message The message received
 --- @return Message The stage update notice
-function ConfiguratorNotices.stageUpdateNotice(process, action, tags, data, hash, msg)
+function ConfiguratorNotices.stageUpdateNotice(discriminator, process, action, tags, data, hash, msg)
   return msg.reply({
     Action = 'Stage-Update-Notice',
+    Discriminator = discriminator,
     UpdateProcess = process,
     UpdateAction = action,
     UpdateTags = tags,

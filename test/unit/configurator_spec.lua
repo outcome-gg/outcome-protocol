@@ -36,11 +36,11 @@ describe("#configurator", function()
     msgUpdate = {
       From = admin,
       Tags = {
+        Discriminator = "discriminator",
         UpdateProcess = "test-this-is-valid-arweave-wallet-address-1",
         UpdateAction = "action_name",
         UpdateTags = '{"key":"value"}',
-        UpdateData = '{"key":"value"}',
-        Discriminator = "discriminator",
+        UpdateData = '{"key":"value"}'
       },
       reply = function(message) return message end
     }
@@ -91,6 +91,7 @@ describe("#configurator", function()
     -- assert correct response
     assert.are.same({
       Action = 'Stage-Update-Notice',
+      Discriminator = msgUpdate.Tags.Discriminator,
       UpdateProcess = msgUpdate.Tags.UpdateProcess,
       UpdateAction = msgUpdate.Tags.UpdateAction,
       UpdateTags = msgUpdate.Tags.UpdateTags,
