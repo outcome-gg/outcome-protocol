@@ -47,7 +47,7 @@ end
 --- @field allowedCreators table The allowed creators
 --- @field listedCollateralTokens table The listed collateral tokens
 --- @field testCollateral string The test collateral token
---- @field maxIterations number The maximum number of iterations allowed in the init market loop
+--- @field maximumIterations number The maximum number of iterations allowed in the init market loop
 
 --- Retrieve Market Factory Configuration
 --- Fetches configuration parameters, stored as constants
@@ -66,7 +66,7 @@ local function retrieveMarketFactoryConfig()
     allowedCreators = Env == 'DEV' and constants.dev.allowedCreators or constants.prod.allowedCreators,
     listedCollateralTokens = Env == 'DEV' and constants.dev.listedCollateralTokens or constants.prod.listedCollateralTokens,
     testCollateral = constants.testCollateral,
-    maxIterations = constants.maxIterations
+    maximumIterations = constants.maximumIterations
   }
   return config
 end
@@ -87,7 +87,7 @@ if not MarketFactory or Env == 'DEV' then
     marketFactoryConfig.allowedCreators,
     marketFactoryConfig.listedCollateralTokens,
     marketFactoryConfig.testCollateral,
-    marketFactoryConfig.maxIterations
+    marketFactoryConfig.maximumIterations
   )
 end
 
@@ -99,6 +99,16 @@ INFO HANDLER
 
 --- Info handler
 --- @param msg Message The message received
+--- @note **Replies with the following tags:**
+--- Configurator (string): The MarketFactory Configurator, used for admin actions
+--- VeToken (string): The MarketFactory VeToken, used for (dis)allowing creators
+--- LpFee (string): The MarketFactory LP Fee in basis points
+--- ProtocolFee (string): The MarketFactory Protocol Fee in basis points
+--- ProtocolFeeTarget (string): The MarketFactory Protocol Fee Target
+--- MaximumTakeFee (string): The MarketFactory Maximum Take Fee (ProtocolFee + CreatorFee) in basis points
+--- AllowedCreators (string): The MarketFactory Allowed Creators
+--- ListedCollateralTokens (string): The MarketFactory Listed Collateral Tokens
+--- TestCollateral (string): The MarketFactory Test Collateral Token
 Handlers.add("Info", {Action = "Info"}, function(msg)
   MarketFactory:info(msg)
 end)
@@ -158,9 +168,9 @@ end)
 --- - msg.Tags.CollateralToken (string): The collateral token for the event.
 --- - msg.Tags.ResolutionAgent (string): The resolution agent for the event.
 --- - msg.Tags.DataIndex (string): The data index for the event.
---- - msg.Tags.OutcomeSlotCount (numeric string): The number of possible outcomes for the event.
 --- - msg.Tags.CreatorFee (numberic string): The fee for the creator of the event in basis points.
 --- - msg.Tags.CreatorFeeTarget (string): The target for the creator fee.
+--- - msg.Tags.OutcomeSlotCount (numeric string): The number of possible outcomes for the event.
 --- - msg.Tags.Question (string): The question to be resolved by the event.
 --- - msg.Tags.Rules (string): The rules of the event.
 --- - msg.Tags.Category (string): The category of the event.
@@ -512,24 +522,24 @@ Handlers.add("Update-Maximum-Take-Fee", {Action = "Update-Maximum-Take-Fee"}, fu
   MarketFactory:updateMaximumTakeFee(maximumTakeFee, msg)
 end)
 
---- Update maxIterations handler
+--- Update maximumIterations handler
 --- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
---- - msg.Tags.MaxIterations (numeric string): The new maximum iterations.
-Handlers.add("Update-Max-Iterations", {Action = "Update-Max-Iterations"}, function(msg)
+--- - msg.Tags.MaximumIterations (numeric string): The new maximum iterations.
+Handlers.add("Update-Maximum-Iterations", {Action = "Update-Maximum-Iterations"}, function(msg)
   -- Validate input
-  local success, err = marketFactoryValidation.updateMaxIterations(MarketFactory.configurator, msg)
+  local success, err = marketFactoryValidation.updateMaximumIterations(MarketFactory.configurator, msg)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
-      Action = "Update-Max-Iterations-Error",
+      Action = "Update-Maximum-Iterations-Error",
       Error = err
     })
     return
   end
-  -- If validation passes, update maxIterations.
-  local maxIterations = tonumber(msg.Tags.MaxIterations)
-  MarketFactory:updateMaxIterations(maxIterations, msg)
+  -- If validation passes, update maximumIterations.
+  local maximumIterations = tonumber(msg.Tags.MaximumIterations)
+  MarketFactory:updateMaximumIterations(maximumIterations, msg)
 end)
 
 --- List collateral token handler

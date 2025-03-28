@@ -105,7 +105,9 @@ local function createMarket(outcomeSlotCount)
     "Subcategory",
     "Logo_TxID", -- LP token logo
     logos, -- position token logos
-    "", -- eventId (empty string to signify stand-alone market)
+    nil, -- eventId (nil to signify stand-alone market)
+    os.time(), -- start time (now)
+    os.time() + 86400, -- end time (24 hours from now)
     250, -- creator fee (in basis points)
     coinBurner -- creator fee target (to use a valid Arweave address)
   )

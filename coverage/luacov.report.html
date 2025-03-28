@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 58.46%"></span>
-                  <span><strong>58.46%</strong> Coverage</span>
+                  <span class="bg" style="width: 47.18%"></span>
+                  <span><strong>47.18%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>114</strong> Hits</span>
-               <span class="miss"><strong>81</strong> Missed</span>
+               <span class="hits"><strong>92</strong> Hits</span>
+               <span class="miss"><strong>103</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -438,16 +438,16 @@ end
 </pre>
       </div>
 
-      <div class="hidden file success-medium" id="src-marketmodules-conditionaltokensvalidation">
+      <div class="hidden file warning" id="src-marketmodules-conditionaltokensvalidation">
          <h2 class="title">
             src/marketModules/conditionalTokensValidation.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 77.36%"></span>
-                  <span><strong>77.36%</strong> Coverage</span>
+                  <span class="bg" style="width: 58.49%"></span>
+                  <span><strong>58.49%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>41</strong> Hits</span>
-               <span class="miss"><strong>12</strong> Missed</span>
+               <span class="hits"><strong>31</strong> Hits</span>
+               <span class="miss"><strong>22</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -489,24 +489,24 @@ end
 --- @param payouts any The payouts to be validated
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
 local function validatePayouts(payouts)
-<span class="fc" data-hits="1">  if not payouts then</span>
+<span class="nc">  if not payouts then</span>
 <span class="nc">    return false, &quot;Payouts is required!&quot;</span>
   end
-<span class="fc" data-hits="1">  if not sharedUtils.isJSONArray(payouts) then</span>
+<span class="nc">  if not sharedUtils.isJSONArray(payouts) then</span>
 <span class="nc">    return false, &quot;Payouts must be a valid JSON Array!&quot;</span>
   end
 
-<span class="fc" data-hits="1">  local decodedPayouts = json.decode(payouts)</span>
-<span class="fc" data-hits="3">  for _, payout in ipairs(decodedPayouts) do</span>
-<span class="fc" data-hits="2">    if not tonumber(payout) then</span>
+<span class="nc">  local decodedPayouts = json.decode(payouts)</span>
+<span class="nc">  for _, payout in ipairs(decodedPayouts) do</span>
+<span class="nc">    if not tonumber(payout) then</span>
 <span class="nc">      return false, &quot;Payouts item must be a valid number!&quot;</span>
     end
-<span class="fc" data-hits="2">    if tonumber(payout) &lt; 0 then</span>
+<span class="nc">    if tonumber(payout) &lt; 0 then</span>
 <span class="nc">      return false, &quot;Payouts item must be greater than or equal to zero!&quot;</span>
     end
   end
 
-<span class="fc" data-hits="1">  return true</span>
+<span class="nc">  return true</span>
 end
 
 --- Validates the mergePositions message.
@@ -566,27 +566,27 @@ end
 --- @param resolutionAgent string The resolution agent process ID
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
 <span class="fc" data-hits="1">function ConditionalTokensValidation.reportPayouts(msg, resolutionAgent)</span>
-<span class="fc" data-hits="2">  if msg.From ~= resolutionAgent then</span>
-<span class="fc" data-hits="1">    return false, &quot;Sender must be the resolution agent!&quot;</span>
+<span class="nc">  if msg.From ~= resolutionAgent then</span>
+<span class="nc">    return false, &quot;Sender must be the resolution agent!&quot;</span>
   end
 
-<span class="fc" data-hits="1">  return validatePayouts(msg.Tags.Payouts)</span>
+<span class="nc">  return validatePayouts(msg.Tags.Payouts)</span>
 end
 
 <span class="fc" data-hits="1">return ConditionalTokensValidation</span>
 </pre>
       </div>
 
-      <div class="hidden file warning" id="src-marketmodules-sharedutils">
+      <div class="hidden file danger" id="src-marketmodules-sharedutils">
          <h2 class="title">
             src/marketModules/sharedUtils.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 42.31%"></span>
-                  <span><strong>42.31%</strong> Coverage</span>
+                  <span class="bg" style="width: 19.23%"></span>
+                  <span><strong>19.23%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>22</strong> Hits</span>
-               <span class="miss"><strong>30</strong> Missed</span>
+               <span class="hits"><strong>10</strong> Hits</span>
+               <span class="miss"><strong>42</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -604,14 +604,14 @@ See market.lua for full license details.
 --- @return boolean
 local function isSimpleValue(value)
   -- Trim whitespace
-<span class="fc" data-hits="2">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
+<span class="nc">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
   -- Check for a quoted string: &quot;someValue&quot;
-<span class="fc" data-hits="2">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
+<span class="nc">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
 <span class="nc">    return true</span>
   end
   -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
-<span class="fc" data-hits="2">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
-<span class="fc" data-hits="2">    return true</span>
+<span class="nc">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
+<span class="nc">    return true</span>
   end
   -- Check for boolean
 <span class="nc">  if string.lower(value) == &quot;true&quot; or string.lower(value) == &quot;false&quot; then</span>
@@ -650,20 +650,20 @@ end
 --- @param str any
 --- @return boolean
 <span class="fc" data-hits="1">function sharedUtils.isJSONArray(str)</span>
-<span class="fc" data-hits="1">  if type(str) ~= &quot;string&quot; then return false end</span>
+<span class="nc">  if type(str) ~= &quot;string&quot; then return false end</span>
   -- Trim whitespace
-<span class="fc" data-hits="1">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
+<span class="nc">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
   -- Ensure it starts with `[` and ends with `]`
-<span class="fc" data-hits="1">  local isArray = str:match(&quot;^%[%s*(.-)%s*%]$&quot;)</span>
-<span class="fc" data-hits="1">  if not isArray then return false end</span>
+<span class="nc">  local isArray = str:match(&quot;^%[%s*(.-)%s*%]$&quot;)</span>
+<span class="nc">  if not isArray then return false end</span>
   -- Split the array elements and validate each one
-<span class="fc" data-hits="3">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
-<span class="fc" data-hits="2">    value = value:match(&quot;^%s*(.-)%s*$&quot;) -- Trim whitespace around each value</span>
-<span class="fc" data-hits="2">    if not isSimpleValue(value) then</span>
+<span class="nc">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
+<span class="nc">    value = value:match(&quot;^%s*(.-)%s*$&quot;) -- Trim whitespace around each value</span>
+<span class="nc">    if not isSimpleValue(value) then</span>
 <span class="nc">      return false</span>
     end
   end
-<span class="fc" data-hits="1">  return true</span>
+<span class="nc">  return true</span>
 end
 
 --- Verify if a valid Arweave address
@@ -845,7 +845,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-28 13:29:42
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-03-28 21:15:47
    </footer>
 
    <script type="text/javascript">

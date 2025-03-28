@@ -562,8 +562,8 @@ end
 function CPMMNotices.withdrawFeesNotice(feeAmount, onBehalfOf, detached, msg)
   local notice = {
     Action = "Withdraw-Fees-Notice",
-    OnBehalfOf = onBehalfOf,
     FeeAmount = tostring(feeAmount),
+    OnBehalfOf = onBehalfOf,
     Data = "Successfully withdrew fees"
   }
   if not detached then return msg.reply(notice) end
@@ -3861,7 +3861,7 @@ constants.marketConfig = {
   configurator = "b9hj1yVw3eWGIggQgJxRDj1t8SZFCezctYD-7U5nYFk",
   dataIndex = "rXSAUKwZhJkIBTIEyBl1rf8Gtk_88RKQFsx5JvDOwlE",
   collateralToken = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
-  resolutionAgent = "l_nS0XtDPkNNQkrG01QpEUOAxsfIhnPjeP2Y3zbHlio",
+  resolutionAgent = "MVia8FDE5YgmLEztGROS0yFysxM7RSXGGo2FcKbXHSM",
   creator = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
   question = "Liquid Ops oUSDC interest reaches 8% in March",
   rules = "Where we're going, we don't need rules",
@@ -4862,9 +4862,9 @@ CPMM WRITE HANDLERS
 ---   * JSON-encoded table specifying the initial distribution of funding.
 ---   * Required on the first call to `addFunding`.
 ---   * Must NOT be included in subsequent calls, or the operation will fail.
+--- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the LP tokens.
 --- - msg.Tags.Cast (string, optional): The cast is set to silence the final notice (default `nil`to broadcast).
 --- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
---- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the LP tokens.
 --- @note **Emits the following notices:**
 --- **🔄 Execution Transfers**
 --- - `Debit-Notice`: **collateral → provider**     -- Transfers collateral tokens from the provider
@@ -4876,7 +4876,7 @@ CPMM WRITE HANDLERS
 --- **✨ Interim Notices (Default silenced) **
 --- - `Mint-Batch-Notice`: **market → market**      -- Mints position tokens to the market
 --- - `Split-Position-Notice`: **market → market**  -- Splits collateral into position tokens
---- - `Mint-Notice`: **market → provider**             -- Mints LP tokens to the provider
+--- - `Mint-Notice`: **market → onBehalfOf**             -- Mints LP tokens to the onBehalfOf address
 --- **✅ Success Notice (Default broadcast)**
 --- - `Log-Funding-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the funding
 --- **📊 Logging & Analytics**
@@ -4909,17 +4909,17 @@ end)
 --- @notice Calling `marketRemoveFunding` will simultaneously return the liquidity provider's share of accrued fees
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Quantity (string): The amount of LP tokens to burn (numeric string).
+--- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the position tokens.
 --- - msg.Tags.Cast (string, optional): The cast is set to silence the final notice (default `nil`to broadcast).
 --- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
---- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the position tokens.
 --- @note **Emits the following notices:**
 --- **⚠️ Error Handling (Sent on failed input validation)**
 --- - `Remove-Funding-Error`: **market → provider** -- Returns an error message
 --- **✨ Interim Notices (Default silenced)**
---- - `Withdraw-Fees-Notice`: **market → provider**  -- Distributes accrued LP fees to the provider
+--- - `Withdraw-Fees-Notice`: **market → provider**  -- Distributes accrued LP fees to the onBehalfOf address
 --- - `Burn-Notice`: **market → market**  -- Burns the returned LP tokens
 --- - `Debit-Batch-Notice`: **market → market** -- Transfers position tokens from the market
---- - `Credit-Batch-Notice`: **market → provider** -- Transfers position tokens to the provider
+--- - `Credit-Batch-Notice`: **market → onBehalfOf** -- Transfers position tokens to the onBehalfOf address
 --- **📊 Logging & Analytics**
 --- - `Log-Funding-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the funding
 --- **✅ Success Notice (Default broadcast)**
@@ -4952,9 +4952,10 @@ end)
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Quantity (string): The amount of collateral tokens transferred, i.e. the investment amount (numeric string).
 --- - msg.Tags["X-PositionId"] (string): The position ID of the outcome token to purchase.
---- - msg.Tags.Cast (string, optional): The cast is set to silence the final notice (default `nil`to broadcast).
---- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
---- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the position tokens.
+--- - msg.Tags["X-MinPositionTokensToBuy"] (string): The minimum number of outcome position tokens to purchase (numeric string).
+--- - msg.Tags["X-OnBehalfOf"] (string, optional): The address of the account to receive the position tokens.
+--- - msg.Tags["X-Cast"] (string, optional): The cast is set to silence the final notice (default `nil`to broadcast).
+--- - msg.Tags["X-SendInterim"] (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
 --- @note **Emits the following notices:**
 --- **🔄 Execution Transfers**
 --- - `Debit-Notice`: **collateral → buyer**     -- Transfers collateral from the buyer
@@ -4967,7 +4968,7 @@ end)
 --- - `Mint-Batch-Notice`: **market → market**      -- Mints new position tokens
 --- - `Split-Position-Notice`: **market → market**  -- Splits collateral into position tokens
 --- - `Debit-Single-Notice`: **market → market**    -- Transfers position tokens from the market
---- - `Credit-Single-Notice`: **market → buyer**    -- Transfers position tokens to the buyer
+--- - `Credit-Single-Notice`: **market → onBehalfOf**    -- Transfers position tokens to the onBehalfOf address
 --- **📊 Logging & Analytics**
 --- - `Log-Prediction-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the prediction
 --- - `Log-Probabilities-Notice`: **market → Outcome.dataIndex**                            -- Logs the updated probabilities
@@ -4975,11 +4976,11 @@ end)
 --- - `Buy-Notice`: **market → buyer**  -- Logs the buy action
 --- @note **Replies with the following tags:**
 --- Action (string): "Buy-Notice"
---- OnBehalfOf (string): The address of the account to receive the position tokens
 --- InvestmentAmount (string): The amount of collateral tokens transferred, i.e. the investment amount (numeric string).
 --- FeeAmount (string): The amount of fees paid (numeric string).
 --- PositionId (string): The position ID of the outcome token purchased.
 --- PositionTokensBought (string): The amount of outcome position tokens purchased (numeric string).
+--- OnBehalfOf (string): The address of the account to receive the position tokens
 --- Data (string): "Successfully bought"
 Handlers.add("Buy", isBuy, function(msg)
   -- Validate input
@@ -5006,9 +5007,9 @@ end)
 --- - msg.Tags.ReturnAmount (string): The amount of collateral tokens to receive (numeric string).
 --- - msg.Tags.PositionId (string): The position ID of the outcome token to sell.
 --- - msg.Tags.MaxPositionTokensToSell (string) The maximum number of position tokens to sell (numeric string).
+--- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the collateral tokens.
 --- - msg.Tags.Cast (string, optional): The cast is set to silence the final notice (default `nil`to broadcast).
 --- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
---- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the collateral tokens.
 --- @note **Emits the following notices:**
 --- **⚠️ Error Handling (Sent on failed input validation)**
 --- - `Sell-Error`: **market → seller** -- Returns an error message
@@ -5018,9 +5019,9 @@ end)
 --- - `Batch-Burn-Notice`: **market → market**      -- Burns sold position tokens
 --- - `Merge-Positions-Notice`: **market → market** -- Merges sold position tokens back to collateral
 --- - `Debit-Notice`: **collateral → market**       -- Transfers collateral from the seller
---- - `Credit-Notice`: **collateral → seller**       -- Transfers collateral to the buyer
---- - `Debit-Single-Notice`: **market → seller**     -- Returns unburned position tokens from the market
---- - `Credit-Single-Notice`: **market → market**   -- Returns unburned position tokens to the seller
+--- - `Credit-Notice`: **collateral → seller**       -- Transfers collateral to the onBehalfOf address
+--- - `Debit-Single-Notice`: **market → market**     -- Returns unburned position tokens from the market
+--- - `Credit-Single-Notice`: **market → seller**   -- Returns unburned position tokens to the onBehalfOf address
 --- **📊 Logging & Analytics**
 --- - `Log-Prediction-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the prediction
 --- - `Log-Probabilities-Notice`: **market → Outcome.dataIndex**                            -- Logs the updated probabilities
@@ -5028,11 +5029,11 @@ end)
 --- - `Sell-Notice`: **market → seller** -- Logs the sell action
 --- @note **Replies with the following tags:**
 --- Action (string): "Sell-Notice"
---- OnBehalfOf (string): The address of the account to receive the collateral tokens
 --- ReturnAmount (string): The amount of collateral tokens to receive (numeric string).
 --- FeeAmount (string): The amount of fees paid (numeric string).
 --- PositionId (string): The position ID of the outcome token sold.
 --- PositionTokensSold (string): The amount of outcome position tokens sold (numeric string).
+--- OnBehalfOf (string): The address of the account to receive the collateral tokens
 --- Data (string): "Successfully sold"
 Handlers.add("Sell", {Action = "Sell"}, function(msg)
   -- Validate input
@@ -5051,6 +5052,7 @@ end)
 
 --- Withdraw fees handler
 --- @param msg Message The message received, expected to contain:
+--- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the fees.
 --- - msg.Tags.Cast (string, optional): The cast is set to silence the final notice (default `nil`to broadcast).
 --- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
 --- @note **Emits the following notices:**
@@ -5063,8 +5065,8 @@ end)
 --- - `Withdraw-Fees-Notice`: **market → provider** -- Logs the withdraw fees action
 --- @note **Replies with the following tags:**
 --- Action (string): "Withdraw-Fees-Notice"
---- OnBehalfOf (string): The address of the account to receive the fees
 --- FeeAmount (string): The amount of fees withdrawn (numeric string).
+--- OnBehalfOf (string): The address of the account to receive the fees
 --- Data (string): "Successfully withdrew fees"
 Handlers.add("Withdraw-Fees", {Action = "Withdraw-Fees"}, function(msg)
   -- Validate input
@@ -5277,9 +5279,9 @@ CONDITIONAL TOKENS WRITE HANDLERS
 --- Merge positions handler
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.Quantity The quantity of outcome position tokens from each position ID to merge for collataral
+--- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the position tokens.
 --- - msg.Tags.Cast (string, optional): The cast is set to silence the final notice (default `nil`to broadcast).
 --- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
---- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the position tokens.
 --- @note **Emits the following notices:**
 --- **⚠️ Error Handling (Sent on failed input validation)**
 --- - `Merge-Positions-Error`: **market → sender** -- Returns an error message
@@ -5291,9 +5293,9 @@ CONDITIONAL TOKENS WRITE HANDLERS
 --- - `Merge-Positions-Notice`: **market → holder**  -- Logs the merge positions action
 --- @note **Replies with the following tags:**
 --- - Action (string): "Merge-Positions-Notice"
---- - OnBehalfOf (string): The address of the account to receive the collateral tokens
 --- - Quantity (string): The quantity of outcome position tokens merged for collateral (numeric string)
 --- - CollateralToken (string): The collateral token process ID
+--- - OnBehalfOf (string): The address of the account to receive the collateral tokens
 --- - Data (string): "Successfully merged positions"
 Handlers.add("Merge-Positions", {Action = "Merge-Positions"}, function(msg)
   -- Validate input

@@ -20,12 +20,12 @@ INTERNAL METHODS
 --- @param startTime number The startTime to be validated
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
 local function validateStartTime(startTime)
-  if startTime < os.time() then
-    return false, "StartTime must be in the future!"
+  if startTime < os.time() - (30 * 24 * 60 * 60 * 1000) then
+    return false, "StartTime must be earliest T- one month!"
   end
 
   if startTime > os.time() + (365 * 24 * 60 * 60 * 1000) then
-    return false, "StartTime must be within one year!"
+    return false, "StartTime must be latest T+ one year!"
   end
 
   return true
@@ -85,6 +85,11 @@ function marketFactoryValidation.createEvent(listedCollateralTokens, allowedCrea
 
   success, err = sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")
   if not success then return false, err end
+
+  local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
+  if outcomeSlotCount > 256 then
+    return false, "OutcomeSlotCount must be less than or equal to 256!"
+  end
 
   if msg.Tags.StartTime then
     success, err = sharedValidation.validatePositiveInteger(msg.Tags.StartTime, "StartTime")
@@ -347,15 +352,15 @@ function marketFactoryValidation.updateMaximumTakeFee(configurator, msg)
   return sharedValidation.validateBasisPoints(msg.Tags.MaximumTakeFee, "MaximumTakeFee")
 end
 
---- Validate an update maxIterations message
+--- Validate an update maximumIterations message
 --- @param configurator string The current configurator
 --- @param msg Message The message received
 --- @return boolean, string|nil Returns true if valid, otherwise false and an error message
-function marketFactoryValidation.updateMaxIterations(configurator, msg)
+function marketFactoryValidation.updateMaximumIterations(configurator, msg)
   if msg.From ~= configurator then
     return false, "Sender must be configurator!"
   end
-  return sharedValidation.validatePositiveInteger(msg.Tags.MaxIterations, "MaxIterations")
+  return sharedValidation.validatePositiveInteger(msg.Tags.MaximumIterations, "MaximumIterations")
 end
 
 --- Validate an update market process code message

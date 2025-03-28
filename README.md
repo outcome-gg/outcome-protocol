@@ -506,7 +506,7 @@ For a deeper look at system interactions, we've provided detailed sequence diagr
 | `Update-Lp-Fee` | `C` | `LpFee`: Integer greater than or equal to 0 | | `Update-Lp-Fee-Notice` |
 | `Update-Protocol-Fee` | `C` | `ProtocolFee`: Integer greater than or equal to 0 | | `Update-Protocol-Fee-Notice` |
 | `Update-Protocol-Fee-Target` | `C` | `ProtocolFeeTarget`: Valid Arweave address | | `Update-Protocol-Fee-Target-Notice` |
-| `Update-Max-Iterations` | `C` | `MaxIterations`: Integer greater than 0 | | `Update-Max-Iterations-Notice` |
+| `Update-Maximum-Iterations` | `C` | `MaximumIterations`: Integer greater than 0 | | `Update-Maximum-Iterations-Notice` |
 | `Update-Maximum-Take-Fee` | `C` | `MaximumTakeFee`: Integer greater than or equal to 0 | | `Update-Maximum-Take-Fee-Notice` |
 | `List-Collateral-Token` | `C` | `CollateralToken`: Valid Arweave address<br>`Name`: String<br>`Ticker`: String<br>`Denomination`: Integer greater than zero| | `List-Collateral-Token-Notice` |
 | `Delist-Collateral-Token` | `C` | `CollateralToken`: Valid Arweave address | | `Delist-Collateral-Token-Notice` |

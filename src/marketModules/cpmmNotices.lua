@@ -96,8 +96,8 @@ end
 function CPMMNotices.withdrawFeesNotice(feeAmount, onBehalfOf, detached, msg)
   local notice = {
     Action = "Withdraw-Fees-Notice",
-    OnBehalfOf = onBehalfOf,
     FeeAmount = tostring(feeAmount),
+    OnBehalfOf = onBehalfOf,
     Data = "Successfully withdrew fees"
   }
   if not detached then return msg.reply(notice) end

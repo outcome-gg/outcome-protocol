@@ -658,7 +658,7 @@ MARKET: CPMM WRITE
 --- @param collateral string The collateral token process ID
 --- @param quantity string The quantity of collateral tokens to transfer, a.k.a. the funding amount
 --- @param distribution table<number>|nil The initial probability distribution. **Pass `nil` for subsequent funding**
---- @param onBehalfOf string? The recipient of the outcome position tokens. **Defaults to the sender if omitted.**
+--- @param onBehalfOf string? The recipient of the outcome LP tokens. **Defaults to the sender if omitted.**
 --- @param sendInterim string? The sendInterim is set to send interim notices. **Defaults to silenced if omitted.**
 --- @note **Emits the following notices:**
 --- **🔄 Execution Transfers**
@@ -667,7 +667,7 @@ MARKET: CPMM WRITE
 --- **✨ Interim Notices (Default silenced)**
 --- - `Mint-Batch-Notice`: **market → market**      -- Mints position tokens to the market
 --- - `Split-Position-Notice`: **market → market**  -- Splits collateral into position tokens
---- - `Mint-Notice`: **market → ao.id**             -- Mints LP tokens to the provider
+--- - `Mint-Notice`: **market → ao.id**             -- Mints LP tokens to the onBehalfOf address
 --- **📊 Logging & Analytics**
 --- - `Log-Funding-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the funding
 --- **✅ Success Notice**
@@ -714,6 +714,7 @@ end
 --- @field SendAmounts table The amounts of position tokens sent back to the provider
 --- @field CollateralRemovedFromFeePool string The quantity collateral received as fees
 --- @field SharesToBurn string The number of LP shares to burn
+--- @field OnBehalfOf string The recipient of the position tokens
 
 --- Market remove funding
 --- @notice Calling `marketRemoveFunding` will simultaneously return the liquidity provider's share of accrued fees
@@ -725,13 +726,13 @@ end
 --- - `Withdraw-Fees-Notice`: **market → ao.id**  -- Distributes accrued LP fees to the provider
 --- - `Burn-Notice`: **market → market**  -- Burns the returned LP tokens
 --- - `Debit-Batch-Notice`: **market → market** -- Transfers position tokens from the market
---- - `Credit-Batch-Notice`: **market → ao.id** -- Transfers position tokens to the provider
+--- - `Credit-Batch-Notice`: **market → ao.id** -- Transfers position tokens to the onBehalfOf address
 --- **📊 Logging & Analytics**
 --- - `Log-Funding-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the funding
 --- **✅ Success Notice**
 --- - `Remove-Funding-Notice`: **market → ao.id** -- Logs the remove funding action
 --- @return MarketRemoveFundingtNotice The market remove funding notice
-function Outcome.marketRemoveFunding(market, quantity, sendInterim)
+function Outcome.marketRemoveFunding(market, quantity, onBehalfOf, sendInterim)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   validatePositiveIntegerGreaterThanZero(quantity, "quantity")
@@ -740,6 +741,7 @@ function Outcome.marketRemoveFunding(market, quantity, sendInterim)
     Target = market,
     Action = "Remove-Funding",
     Quantity = quantity,
+    OnBehalfOf = onBehalfOf or ao.id,
     ---@diagnostic disable-next-line: assign-type-mismatch
     SendInterim = sendInterim and "true" or nil
   }).receive()
@@ -749,6 +751,7 @@ function Outcome.marketRemoveFunding(market, quantity, sendInterim)
     SendAmounts = json.decode(notice.Tags.SendAmounts),
     CollateralRemovedFromFeePool = notice.Tags.CollateralRemovedFromFeePool,
     SharesToBurn = notice.Tags.SharesToBurn,
+    OnBehalfOf = notice.Tags.OnBehalfOf,
     Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
@@ -761,9 +764,9 @@ end
 --- @field Quantity string The quantity of collateral tokens transferred
 --- @field Recipient string The recipient of the debit, i.e. the market process ID
 --- @field X-Action string The forwarded action
---- @field X-OnBehalfOf string The recipient of the outcome position tokens
 --- @field X-PositionId string The outcome position token position ID
 --- @field X-MinPositionTokensToBuy string The minimum outcome position tokens to buy
+--- @field X-OnBehalfOf string The recipient of the outcome position tokens
 
 --- Market buy
 --- @warning Ensure sufficient liquidity exists before calling `marketBuy`, or the transaction may fail
@@ -798,7 +801,6 @@ function Outcome.marketBuy(market, collateral, quantity, positionId, minPosition
   validatePositiveIntegerGreaterThanZero(positionId, "positionId")
   validatePositiveIntegerOrZero(minPositionTokensToBuy, "minPositionTokensToBuy")
   if onBehalfOf then validateValidArweaveAddress(onBehalfOf, "onBehalfOf") end
-  onBehalfOf = onBehalfOf or ao.id
   -- Send and receive response
   local notice = ao.send({
     Target = collateral,
@@ -808,7 +810,7 @@ function Outcome.marketBuy(market, collateral, quantity, positionId, minPosition
     ["X-Action"] = "Buy",
     ["X-PositionId"] = positionId,
     ["X-MinPositionTokensToBuy"] = minPositionTokensToBuy,
-    ["X-OnBehalfOf"] = onBehalfOf,
+    ["X-OnBehalfOf"] = onBehalfOf or ao.id,
     ---@diagnostic disable-next-line: assign-type-mismatch
     ["X-SendInterim"] = sendInterim and "true" or nil,
   }).receive()
@@ -835,6 +837,7 @@ end
 --- @field FeeAmount string The fee amount paid to the liquidity pool
 --- @field PositionId string The outcome position token position ID
 --- @field PositionTokensSold string The number of outcome position tokens sold
+--- @field OnBehalfOf string The recipient of the outcome position tokens
 
 --- Market sell
 --- @warning Ensure sufficient liquidity exists before calling `marketSell`, or the transaction may fail
@@ -843,29 +846,31 @@ end
 --- @param returnAmount string The quantity of collateral tokens to receive
 --- @param positionId string The outcome position token position ID
 --- @param maxPositionTokensToSell string The max outcome position tokens to sell
+--- @param onBehalfOf string? The recipient of the outcome position tokens. **Defaults to the sender if omitted.**
 --- @param sendInterim string? The sendInterim is set to send interim notices. **Defaults to silenced if omitted.**
 --- @note **Emits the following notices:**
 --- **✨ Interim Notices (Default silenced)**
---- - `Debit-Single-Notice`: **market → ao.id**     -- Transfers sold position tokens from the seller
---- - `Credit-Single-Notice`: **market → market**   -- Transfers sold position tokens to the market
---- - `Batch-Burn-Notice`: **market → market**      -- Burns sold position tokens
---- - `Merge-Positions-Notice`: **market → market** -- Merges sold position tokens back to collateral
---- - `Debit-Notice`: **collateral → market**       -- Transfers collateral from the seller
---- - `Credit-Notice`: **collateral → ao.id**       -- Transfers collateral to the buyer
---- - `Debit-Single-Notice`: **market → ao.id**     -- Returns unburned position tokens from the market
---- - `Credit-Single-Notice`: **market → market**   -- Returns unburned position tokens to the seller
+--- - `Debit-Single-Notice`: **market → ao.id**          -- Transfers sold position tokens from the seller
+--- - `Credit-Single-Notice`: **market → market**        -- Transfers sold position tokens to the market
+--- - `Batch-Burn-Notice`: **market → market**           -- Burns sold position tokens
+--- - `Merge-Positions-Notice`: **market → market**      -- Merges sold position tokens back to collateral
+--- - `Debit-Notice`: **collateral → market**            -- Transfers collateral from the seller
+--- - `Credit-Notice`: **collateral → onBehalfOf**       -- Transfers collateral to the onBehalfOf address
+--- - `Debit-Single-Notice`: **market → market**         -- Returns unburned position tokens from the market
+--- - `Credit-Single-Notice`: **market → onBehalfOf**    -- Returns unburned position tokens to the onBehalfOf address
 --- **📊 Logging & Analytics**
 --- - `Log-Prediction-Notice`: **market → Outcome.token**and **market → Outcome.dataIndex** -- Logs the prediction
 --- - `Log-Probabilities-Notice`: **market → Outcome.dataIndex**                            -- Logs the updated probabilities
 --- **✅ Success Notice**
 --- - `Sell-Notice`: **market → ao.id** -- Logs the sell action
 --- @return MarketSellNotice The market sell notice
-function Outcome.marketSell(market, returnAmount, positionId, maxPositionTokensToSell, sendInterim)
+function Outcome.marketSell(market, returnAmount, positionId, maxPositionTokensToSell, onBehalfOf, sendInterim)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   validatePositiveIntegerGreaterThanZero(returnAmount, "returnAmount")
   validatePositiveIntegerGreaterThanZero(positionId, "positionId")
   validatePositiveIntegerGreaterThanZero(maxPositionTokensToSell, "maxPositionTokensToSell")
+  if onBehalfOf then validateValidArweaveAddress(onBehalfOf, "onBehalfOf") end
   -- Send and receive response
   local notice = ao.send({
     Target = market,
@@ -873,6 +878,7 @@ function Outcome.marketSell(market, returnAmount, positionId, maxPositionTokensT
     ReturnAmount = returnAmount,
     PositionId = positionId,
     MaxPositionTokensToSell = maxPositionTokensToSell,
+    OnBehalfOf = onBehalfOf or ao.id,
     ---@diagnostic disable-next-line: assign-type-mismatch
     SendInterim = sendInterim and "true" or nil,
   }).receive()
@@ -883,6 +889,7 @@ function Outcome.marketSell(market, returnAmount, positionId, maxPositionTokensT
     FeeAmount = notice.Tags.FeeAmount,
     PositionId = notice.Tags.PositionId,
     PositionTokensSold = notice.Tags.PositionTokensSold,
+    OnBehalfOf = notice.Tags.OnBehalfOf,
     Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
@@ -891,8 +898,8 @@ function Outcome.marketSell(market, returnAmount, positionId, maxPositionTokensT
 end
 
 --- @class MarketWithdrawFeesNotice: BaseNotice
---- @field Collateral string The collateral token
 --- @field FeeAmount string The fee amount withdrawn
+--- @field OnBehalfOf string The recipient of the fee withdrawal
 
 --- Market withdraw fees
 --- @param market string The market process ID
@@ -918,7 +925,7 @@ function Outcome.marketWithdrawFees(market, sendInterim)
   return {
     Action = notice.Tags.Action,
     FeeAmount = notice.Tags.FeeAmount,
-    Collateral = notice.From,
+    OnBehalfOf = notice.Tags.OnBehalfOf,
     Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
@@ -1593,25 +1600,25 @@ MARKET: CONFIGURATOR
 ====================
 ]]
 
---- @class MarketUpdateConfiguratorNotice: BaseNotice
---- @field Configurator string The new configurator process ID
+--- @class MarketProposeConfiguratorNotice: BaseNotice
+--- @field Configurator string The proposed configurator process ID
 
---- Market update configurator
+--- Market propose configurator
 --- @warning Only callable by the market configurator, or the transaction will fail
 --- @param market string The market process ID
 --- @param configurator string The new configurator process ID
 --- @note **Emits the following notices:**
 --- **✅ Success Notice**
---- - `Update-Configurator-Notice`: **market → ao.id** -- Logs the update configurator action
---- @return MarketUpdateConfiguratorNotice The market update configurator notice
-function Outcome.marketUpdateConfigurator(market, configurator)
+--- - `Propose-Configurator-Notice`: **market → ao.id** -- Logs the propose configurator action
+--- @return MarketProposeConfiguratorNotice The market propose configurator notice
+function Outcome.marketProposeConfigurator(market, configurator)
   -- Validate input
   validateValidArweaveAddress(market, "market")
   validateValidArweaveAddress(configurator, "configurator")
   -- Send and receive response
   local notice = ao.send({
     Target = market,
-    Action = "Update-Configurator",
+    Action = "Propose-Configurator",
     Configurator = configurator
   }).receive()
   -- Return formatted response
@@ -1625,31 +1632,60 @@ function Outcome.marketUpdateConfigurator(market, configurator)
   }
 end
 
---- @class MarketUpdateIncentivesNotice: BaseNotice
---- @field Incentives string The new incentives process ID
+--- @class MarketAcceptConfiguratorNotice: BaseNotice
+--- @field Configurator string The accepted configurator process ID
 
---- Market update incentives
---- @warning Only callable by the market configurator, or the transaction will fail
+--- Market accept configurator
+--- @warning Only callable by the market proposedConfigurator, or the transaction will fail
 --- @param market string The market process ID
---- @param incentives string The new incentives process ID
 --- @note **Emits the following notices:**
 --- **✅ Success Notice**
---- - `Update-Incentives-Notice`: **market → ao.id** -- Logs the update incentives action
---- @return MarketUpdateIncentivesNotice The market update incentives notice
-function Outcome.marketUpdateIncentives(market, incentives)
+--- - `Accept-Configurator-Notice`: **market → ao.id** -- Logs the accept configurator action
+--- @return MarketAcceptConfiguratorNotice The market accept configurator notice
+function Outcome.marketAcceptConfigurator(market)
   -- Validate input
   validateValidArweaveAddress(market, "market")
-  validateValidArweaveAddress(incentives, "incentives")
   -- Send and receive response
   local notice = ao.send({
     Target = market,
-    Action = "Update-Incentives",
-    Incentives = incentives
+    Action = "Accept-Configurator"
   }).receive()
   -- Return formatted response
   return {
     Action = notice.Tags.Action,
-    Incentives = notice.Data,
+    Configurator = notice.Data,
+    Error = notice.Tags.Error or nil,
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
+end
+
+--- @class MarketUpdateDataIndexNotice: BaseNotice
+--- @field DataIndex string The new dataIndex process ID
+
+--- Market update dataIndex
+--- @warning Only callable by the market configurator, or the transaction will fail
+--- @param market string The market process ID
+--- @param dataIndex string The new dataIndex process ID
+--- @note **Emits the following notices:**
+--- **✅ Success Notice**
+--- - `Update-Data-Index-Notice`: **market → ao.id** -- Logs the update data index action
+--- @return MarketUpdateDataIndexNotice The market update data index notice
+function Outcome.marketUpdateDataIndex(market, dataIndex)
+  -- Validate input
+  validateValidArweaveAddress(market, "market")
+  validateValidArweaveAddress(dataIndex, "dataIndex")
+  -- Send and receive response
+  local notice = ao.send({
+    Target = market,
+    Action = "Update-Data-Index",
+    DataIndex = dataIndex
+  }).receive()
+  -- Return formatted response
+  return {
+    Action = notice.Tags.Action,
+    DataIndex = notice.Data,
     Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
@@ -1763,6 +1799,42 @@ function Outcome.marketUpdateLogo(market, logo)
   }
 end
 
+--- @class MarketUpdateLogosNotice: BaseNotice
+--- @field Logos table<string> The new logos URLs for each market position token
+
+--- Market update logos
+--- @warning Only callable by the market configurator, or the transaction will fail
+--- @param market string The market process ID
+--- @param logos table<string> The new logos Arweave TxIDs
+--- @note **Emits the following notices:**
+--- **✅ Success Notice**
+--- - `Update-Logos-Notice`: **market → ao.id** -- Logs the update logos action
+--- @return MarketUpdateLogosNotice The market update logo notice
+function Outcome.marketUpdateLogos(market, logos)
+  -- Validate input
+  validateValidArweaveAddress(market, "market")
+  assert(logos, "`logos` is required.")
+  assert(type(logos) == "table", "`logos` must be a table.")
+  for i, logo in ipairs(logos) do
+    assert(type(logo) == "string", "`logos[" .. i .. "]` must be a string.")
+  end
+  -- Send and receive response
+  local notice = ao.send({
+    Target = market,
+    Action = "Update-Logos",
+    Logos = json.encode(logos)
+  }).receive()
+  -- Return formatted response
+  return {
+    Action = notice.Tags.Action,
+    Logos = notice.Data,
+    Error = notice.Tags.Error or nil,
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
+end
+
 --[[
 ====================
 MARKET FACTORY: INFO
@@ -1771,13 +1843,14 @@ MARKET FACTORY: INFO
 
 --- @class MarketFactoryInfo: BaseMessage
 --- @field Configurator string The market factory configurator process ID
---- @field Incentives string The market factory incentives process ID
---- @field DataIndex string The market factory data index process ID
+--- @field VeToken string The market factory VE Token process ID
 --- @field LpFee number The market factory LP fee
 --- @field ProtocolFee number The market factory protocol fee
 --- @field ProtocolFeeTarget string The market factory protocol fee target
 --- @field MaximumTakeFee number The market factory maximum take fee
---- @field ApprovedCollateralTokens table<string> The market factory approved collateral tokens
+--- @field AllowedCreators table<string> The market factory allowed creators
+--- @field ListedCollateralTokens table<string> The market factory listed collateral tokens
+--- @field TestCollateral string The market factory test collateral token process ID
 
 --- Market factory info
 --- @return MarketFactoryInfo The market factory info
@@ -1790,13 +1863,14 @@ function Outcome.marketFactoryInfo()
   -- Return formatted response
   return {
     Configurator = info.Tags.Configurator,
-    Incentives = info.Tags.Incentives,
-    DataIndex = info.Tags.DataIndex,
+    VeToken = info.Tags.VeToken,
     LpFee = tonumber(info.Tags.LpFee),
     ProtocolFee = tonumber(info.Tags.ProtocolFee),
     ProtocolFeeTarget = info.Tags.ProtocolFeeTarget,
     MaximumTakeFee = tonumber(info.Tags.MaximumTakeFee),
-    ApprovedCollateralTokens = json.decode(info.Tags.ApprovedCollateralTokens),
+    AllowedCreators = json.decode(info.Tags.AllowedCreators),
+    ListedCollateralTokens = json.decode(info.Tags.ListedCollateralTokens),
+    TestCollateral = info.Tags.TestCollateral,
     MessageId = info.Id,
     Timestamp = info.Timestamp,
     ["Block-Height"] = info["Block-Height"]
@@ -1879,10 +1953,10 @@ function Outcome.marketFactoryCreateEvent(
     DataIndex = notice.Tags.DataIndex,
     OutcomeSlotCount = tonumber(notice.Tags.OutcomeSlotCount),
     Question = notice.Tags.Question,
+    Rules = notice.Tags.Rules,
     Category = notice.Tags.Category,
     Subcategory = notice.Tags.Subcategory,
     Logo = notice.Tags.Logo,
-    Rules = notice.Tags.Rules,
     Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
@@ -1901,6 +1975,8 @@ end
 --- @field Subcategory string The market subcategory
 --- @field Logo string The market LP token logo Arweave TxID
 --- @field Logos table<string> The market position tokens logo Arweave TxIDs
+--- @field StartTime number The market start time in millisecond
+--- @field EndTime number The market end time in millisecond
 --- @field Creator string The creator process ID
 --- @field CreatorFee number The creator fee in basis points
 --- @field CreatorFeeTarget string The creator fee target process ID
@@ -1919,6 +1995,8 @@ end
 --- @param logo string The market LP token logo Arweave TxID
 --- @param logos table<string> The market position tokens logo Arweave TxIDs
 --- @param eventId string|nil The event ID or `nil` if not applicable
+--- @param startTime number The market start time in milliseconds
+--- @param endTime number The market end time in milliseconds
 --- @param creatorFee number The creator fee in basis points
 --- @param creatorFeeTarget string The creator fee target process ID
 --- @note **Emits the following notices:**
@@ -1939,6 +2017,8 @@ function Outcome.marketFactorySpawnMarket(
   logo,
   logos,
   eventId,
+  startTime,
+  endTime,
   creatorFee,
   creatorFeeTarget
 )
@@ -1965,6 +2045,13 @@ function Outcome.marketFactorySpawnMarket(
   for _, l in ipairs(logos) do
     assert(type(l) == "string", "`logos` must be a table of strings.")
   end
+  if eventId then
+    assert(type(eventId) == "string", "`eventId` must be a string.")
+  end
+  assert(startTime, "`startTime` is required.")
+  assert(type(startTime) == "number", "`startTime` must be a number.")
+  assert(endTime, "`endTime` is required.")
+  assert(type(endTime) == "number", "`endTime` must be a number.")
   validatePositiveIntegerOrZero(tostring(creatorFee), "creatorFee")
   validateValidArweaveAddress(creatorFeeTarget, "creatorFeeTarget")
   -- Send and receive response
@@ -1982,6 +2069,8 @@ function Outcome.marketFactorySpawnMarket(
     Logo = logo,
     Logos = json.encode(logos),
     EventId = eventId or "",
+    StartTime = tostring(startTime),
+    EndTime = tostring(endTime),
     CreatorFee = tostring(creatorFee),
     CreatorFeeTarget = creatorFeeTarget
   }).receive()
@@ -1999,6 +2088,8 @@ function Outcome.marketFactorySpawnMarket(
     Logos = json.decode(notice.Tags.Logos),
     Rules = notice.Tags.Rules,
     EventId = notice.Tags.EventId,
+    StartTime = tonumber(notice.Tags.StartTime),
+    EndTime = tonumber(notice.Tags.EndTime),
     Creator = notice.Tags.Creator,
     CreatorFee = tonumber(notice.Tags.CreatorFee),
     CreatorFeeTarget = notice.Tags.CreatorFeeTarget,
@@ -2191,28 +2282,37 @@ function Outcome.marketFactoryGetLatestProcessIdForCreator(creator)
 end
 
 --[[
+========================
+MARKET FACTORY: VE TOKEN
+========================
+]]
+
+-- TODO: `Allow-Creator`
+-- TODO: `Disallow-Creator`
+
+--[[
 ============================
 MARKET FACTORY: CONFIGURATOR
 ============================
 ]]
 
---- @class MarketFactoryUpdateConfiguratorNotice: BaseNotice
---- @field Configurator string The new configurator process ID
+--- @class MarketFactoryProposeConfiguratorNotice: BaseNotice
+--- @field Configurator string The proposed configurator process ID
 
---- Market factory update configurator
+--- Market factory propose configurator
 --- @warning Only callable by the market factory configurator, or the transaction will fail
---- @param configurator string The new configurator process ID
+--- @param configurator string The proposed configurator process ID
 --- @note **Emits the following notices:**
 --- **✅ Success Notice**
---- - `Update-Configurator-Notice`: **marketFactory → ao.id** -- Logs the update configurator action
---- @return MarketFactoryUpdateConfiguratorNotice The market factory update configurator notice
-function Outcome.marketFactoryUpdateConfigurator(configurator)
+--- - `Propose-Configurator-Notice`: **marketFactory → ao.id** -- Logs the propose configurator action
+--- @return MarketFactoryProposeConfiguratorNotice The market factory propose configurator notice
+function Outcome.marketFactoryProposeConfigurator(configurator)
   -- Validate input
   validateValidArweaveAddress(configurator, "configurator")
   -- Send and receive response
   local notice = ao.send({
     Target = Outcome.marketFactory,
-    Action = "Update-Configurator",
+    Action = "Propose-Configurator",
     Configurator = configurator
   }).receive()
   -- Return formatted response
@@ -2226,29 +2326,23 @@ function Outcome.marketFactoryUpdateConfigurator(configurator)
   }
 end
 
---- @class MarketFactoryUpdateStakedTokenNotice: BaseNotice
---- @field StakedToken string The new staked token process ID
 
---- Market factory update staked token
---- @warning Only callable by the market factory configurator, or the transaction will fail
---- @param stakedToken string The new staked token process ID
+--- Market factory accept configurator
+--- @warning Only callable by the market factory proposedConfigurator, or the transaction will fail
 --- @note **Emits the following notices:**
 --- **✅ Success Notice**
---- - `Update-Staked-Token-Notice`: **marketFactory → ao.id** -- Logs the update staked token action
---- @return MarketFactoryUpdateStakedTokenNotice The market factory update staked token notice
-function Outcome.marketFactoryUpdateStakedToken(stakedToken)
-  -- Validate input
-  validateValidArweaveAddress(stakedToken, "stakedToken")
+--- - `Accept-Configurator-Notice`: **marketFactory → ao.id** -- Logs the accept configurator action
+--- @return MarketFactoryProposeConfiguratorNotice The market factory propose configurator notice
+function Outcome.marketFactoryAcceptConfigurator()
   -- Send and receive response
   local notice = ao.send({
     Target = Outcome.marketFactory,
-    Action = "Update-Staked-Token",
-    StakedToken = stakedToken
+    Action = "Accept-Configurator"
   }).receive()
   -- Return formatted response
   return {
     Action = notice.Tags.Action,
-    StakedToken = notice.Data,
+    Configurator = notice.Data,
     Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
@@ -2256,29 +2350,59 @@ function Outcome.marketFactoryUpdateStakedToken(stakedToken)
   }
 end
 
---- @class MarketFactoryUpdateMinStakeNotice: BaseNotice
---- @field MinStake number The new min stake
+--- @class MarketFactoryUpdateVeTokenNotice: BaseNotice
+--- @field VeToken string The new VE token process ID
 
---- Market factory update min stake
+--- Market factory update VE token
 --- @warning Only callable by the market factory configurator, or the transaction will fail
---- @param minStake number The new min stake
+--- @param veToken string The new VE token process ID
 --- @note **Emits the following notices:**
 --- **✅ Success Notice**
---- - `Update-Min-Stake-Notice`: **marketFactory → ao.id** -- Logs the update min stake action
---- @return MarketFactoryUpdateMinStakeNotice The market factory update min stake notice
-function Outcome.marketFactoryUpdateMinStake(minStake)
+--- - `Update-Ve-Token-Notice`: **marketFactory → ao.id** -- Logs the update VE token action
+--- @return MarketFactoryUpdateVeTokenNotice The market factory update VE token notice
+function Outcome.marketFactoryUpdateVeToken(veToken)
   -- Validate input
-  validatePositiveIntegerOrZero(tostring(minStake), "minStake")
+  validateValidArweaveAddress(veToken, "veToken")
   -- Send and receive response
   local notice = ao.send({
     Target = Outcome.marketFactory,
-    Action = "Update-Min-Stake",
-    MinStake = tostring(minStake)
+    Action = "Update-Ve-Token",
+    VeToken = veToken
   }).receive()
   -- Return formatted response
   return {
     Action = notice.Tags.Action,
-    MinStake = tonumber(notice.Data),
+    VeToken = notice.Data,
+    Error = notice.Tags.Error or nil,
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
+end
+
+--- @class MarketFactoryUpdateMarketProcessCodeNotice: BaseNotice
+
+--- Market factory update market process code
+--- @warning Only callable by the market factory configurator, or the transaction will fail
+--- @param marketProcessCode string The new market process code
+--- @note **Emits the following notices:**
+--- **✅ Success Notice**
+--- - `Update-Market-Process-Code-Notice`: **marketFactory → ao.id** -- Logs the update market process code action
+--- @return MarketFactoryUpdateMarketProcessCodeNotice The market factory update market process code notice
+function Outcome.marketFactoryUpdateMarketProcessCode(marketProcessCode)
+  -- Validate input
+  assert(marketProcessCode, "`marketProcessCode` is required.")
+  assert(type(marketProcessCode) == "string", "`marketProcessCode` must be a string.")
+  -- Send and receive response
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Update-Market-Process-Code",
+    Data = marketProcessCode
+  }).receive()
+  -- Return formatted response
+  return {
+    Action = notice.Tags.Action,
+    Data = notice.Data,
     Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,
@@ -2406,35 +2530,107 @@ function Outcome.marketFactoryUpdateMaximumTakeFee(maximumTakeFee)
   }
 end
 
---- @class MarketFactoryApproveCollateralTokenNotice: BaseNotice
---- @field Collateral string The collateral token process ID
---- @field Approved boolean The approval status
+--- @class MarketFactoryUpdateMaximumIterationsNotice: BaseNotice
+--- @field MaximumIterations number The new maximum number of iterations in the init market call
 
---- Market factory approve collateral token
+--- Market factory update maximum iterations
 --- @warning Only callable by the market factory configurator, or the transaction will fail
---- @param collateral string The collateral token process ID
---- @param approved boolean The approval status
+--- @param maximumIterations number The new maximum iterations
 --- @note **Emits the following notices:**
 --- **✅ Success Notice**
---- - `Approve-Collateral-Token-Notice`: **marketFactory → ao.id** -- Logs the approve collateral token action
---- @return MarketFactoryApproveCollateralTokenNotice The market factory approve collateral token notice
-function Outcome.marketFactoryApproveCollateralToken(collateral, approved)
+--- - `Update-Maximum-Iterations-Notice`: **marketFactory → ao.id** -- Logs the update maximum iterations action
+--- @return MarketFactoryUpdateMaximumIterationsNotice The market factory update maximum iterations notice
+function Outcome.marketFactoryUpdateMaximumIterations(maximumIterations)
   -- Validate input
-  validateValidArweaveAddress(collateral, "collateral")
-  assert(approved ~= nil, "`approved` is required.")
-  assert(type(approved) == "boolean", "`approved` must be a boolean.")
+  validatePositiveIntegerGreaterThanZero(tostring(maximumIterations), "maximumIterations")
   -- Send and receive response
   local notice = ao.send({
     Target = Outcome.marketFactory,
-    Action = "Approve-Collateral-Token",
+    Action = "Update-Maximum-Iterations",
+    MaximumIterations = tostring(maximumIterations)
+  }).receive()
+  -- Return formatted response
+  return {
+    Action = notice.Tags.Action,
+    MaximumIterations = tonumber(notice.Data),
+    Error = notice.Tags.Error or nil,
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
+end
+
+--- @class MarketFactoryListCollateralTokenNotice: BaseNotice
+--- @field CollateralToken string The collateral token process ID
+--- @field Name string The collateral token name
+--- @field Ticker string The collateral token ticker
+--- @field Denomination number The collateral token denomination
+
+--- Market factory list collateral token
+--- @warning Only callable by the market factory configurator, or the transaction will fail
+--- @param collateral string The collateral token process ID
+--- @param name string The collateral token name
+--- @param ticker string The collateral token ticker
+--- @param denomination number The collateral token denomination
+--- @note **Emits the following notices:**
+--- **✅ Success Notice**
+--- - `List-Collateral-Token-Notice`: **marketFactory → ao.id** -- Logs the list collateral token action
+--- @return MarketFactoryListCollateralTokenNotice The market factory list collateral token notice
+function Outcome.marketFactoryListCollateralToken(collateral, name, ticker, denomination)
+  -- Validate input
+  validateValidArweaveAddress(collateral, "collateral")
+  assert(name, "`name` is required.")
+  assert(type(name) == "string", "`name` must be a string.")
+  assert(ticker, "`ticker` is required.")
+  assert(type(ticker) == "string", "`ticker` must be a string.")
+  validatePositiveIntegerGreaterThanZero(denomination, "denomination")
+  -- Send and receive response
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "List-Collateral-Token",
     CollateralToken = collateral,
-    Approved = tostring(approved)
+    Name = name,
+    Ticker = ticker,
+    Denomination = tostring(denomination)
   }).receive()
   -- Return formatted response
   return {
     Action = notice.Tags.Action,
     Collateral = notice.Tags.CollateralToken,
-    Approved = notice.Tags.Approved == "true",
+    Name = notice.Tags.Name,
+    Ticker = notice.Tags.Ticker,
+    Denomination = tonumber(notice.Tags.Denomination),
+    Error = notice.Tags.Error or nil,
+    MessageId = notice.Id,
+    Timestamp = notice.Timestamp,
+    ["Block-Height"] = notice["Block-Height"]
+  }
+end
+
+
+--- @class MarketFactoryDelistCollateralTokenNotice: BaseNotice
+--- @field CollateralToken string The collateral token process ID
+
+--- Market factory delist collateral token
+--- @warning Only callable by the market factory configurator, or the transaction will fail
+--- @param collateral string The collateral token process ID
+--- @note **Emits the following notices:**
+--- **✅ Success Notice**
+--- - `Delist-Collateral-Token-Notice`: **marketFactory → ao.id** -- Logs the delist collateral token action
+--- @return MarketFactoryDelistCollateralTokenNotice The market factory delist collateral token notice
+function Outcome.marketFactoryDelistCollateralToken(collateral)
+  -- Validate input
+  validateValidArweaveAddress(collateral, "collateral")
+  -- Send and receive response
+  local notice = ao.send({
+    Target = Outcome.marketFactory,
+    Action = "Delist-Collateral-Token",
+    CollateralToken = collateral
+  }).receive()
+  -- Return formatted response
+  return {
+    Action = notice.Tags.Action,
+    Collateral = notice.Tags.CollateralToken,
     Error = notice.Tags.Error or nil,
     MessageId = notice.Id,
     Timestamp = notice.Timestamp,

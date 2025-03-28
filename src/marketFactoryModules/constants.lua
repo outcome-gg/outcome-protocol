@@ -14,7 +14,7 @@ local constants = {
   protocolFee = 250,
   maximumTakeFee = 500,
   testCollateral = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
-  maxIterations = 50
+  maximumIterations = 50
 }
 constants.dev = {
   configurator = "XZrrfWA17ljL8msjXvG3kYx2mo5odhlgJJ8bWo6lxwo",

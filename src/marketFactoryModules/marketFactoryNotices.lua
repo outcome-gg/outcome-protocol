@@ -223,14 +223,14 @@ function MarketFactoryNotices.updateMaximumTakeFeeNotice(maximumTakeFee, msg)
   })
 end
 
---- Update maxIterations notice
---- @param maxIterations number The new maximum iterations
+--- Update maximumIterations notice
+--- @param maximumIterations number The new maximum iterations
 --- @param msg Message The message received
---- @return Message updateMaxIterationsNotice The update max iterations notice
-function MarketFactoryNotices.updateMaxIterationsNotice(maxIterations, msg)
+--- @return Message updateMaximumIterationsNotice The update max iterations notice
+function MarketFactoryNotices.updateMaximumIterationsNotice(maximumIterations, msg)
   return msg.reply({
-    Action = "Update-Max-Iterations-Notice",
-    Data = tostring(maxIterations)
+    Action = "Update-Maximum-Iterations-Notice",
+    Data = tostring(maximumIterations)
   })
 end
 
