@@ -68,8 +68,8 @@ Spawn a new prediction market.
 - `logo`: Arweave transaction ID of the LP token logo image.
 - `logos`: Aweave transaction IDs of the position token logo images.
 - `eventId`: The event ID for market groups, set to `nil` if not applicable.
-- `startTime`: Market start time as a Unix timestamp in milliseconds (e.g. `os.time()` for now).
-- `endTime`: Market end time as a Unix timestamp in milliseconds (e.g. `os.time() + 86400000` for 24 hours from now).
+- `startTime`: Market start time as a Unix timestamp in ms (e.g. `os.time()` for now).
+- `endTime`: Market end time as a Unix timestamp in ms (e.g. `os.time() + 86400000` for 24 hours from now).
 - `creatorFeeBps`: Creator fee in basis points (e.g., `250` for a `2.5%` fee).
 - `creatorFeeTarget`: Address receiving the creator fee (set to `ao.id` for Quickstart).
 
