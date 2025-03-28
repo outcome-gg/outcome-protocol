@@ -1216,8 +1216,6 @@ function sharedUtils.safeSub(a, b)
 
   -- Underflow check: b must be <= a
   if not bint.__le(bInt, aInt) then
-    print("bInt: " .. tostring(bInt))
-    print("aInt: " .. tostring(aInt))
     error("Underflow detected in safeSub")
   end
 
@@ -2766,7 +2764,6 @@ local utils = require(".utils")
 local token = require('marketModules.token')
 local conditionalTokens = require('marketModules.conditionalTokens')
 local sharedUtils = require("marketModules.sharedUtils")
-local json = require("json")
 
 --- Represents a CPMM (Constant Product Market Maker)
 --- @class CPMM
