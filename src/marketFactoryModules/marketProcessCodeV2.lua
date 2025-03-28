@@ -571,14 +571,24 @@ function CPMMNotices.withdrawFeesNotice(feeAmount, onBehalfOf, detached, msg)
   return ao.send(notice)
 end
 
---- Sends an update configurator notice
---- @param configurator string The updated configurator address
+--- Propose configurator notice
+--- @param configurator string The proposed configurator address
 --- @param msg Message The message received
---- @return Message The configurator updated notice
-function CPMMNotices.updateConfiguratorNotice(configurator, msg)
+--- @return Message proposeConfiguratorNotice The propose configurator notice
+function CPMMNotices.proposeConfiguratorNotice(configurator, msg)
   return msg.reply({
-    Action = "Update-Configurator-Notice",
+    Action = "Propose-Configurator-Notice",
     Data = configurator
+  })
+end
+
+--- Accept configurator notice
+--- @param msg Message The message received
+--- @return Message acceptConfiguratorNotice The accept configurator notice
+function CPMMNotices.acceptConfiguratorNotice(msg)
+  return msg.reply({
+    Action = "Accept-Configurator-Notice",
+    Data = msg.From
   })
 end
 
@@ -1086,6 +1096,140 @@ end
 
 _G.package.loaded["marketModules.tokenNotices"] = _loaded_mod_marketModules_tokenNotices()
 
+-- module: "marketModules.sharedUtils"
+local function _loaded_mod_marketModules_sharedUtils()
+--[[
+=========================================================
+Part of the Outcome codebase © 2025. All Rights Reserved.
+See market.lua for full license details.
+=========================================================
+]]
+
+local sharedUtils = {}
+local bint = require('.bint')(256)
+
+--- Verify if extracted value is a JSON simple value
+--- @param value any
+--- @return boolean
+local function isSimpleValue(value)
+  -- Trim whitespace
+  value = value:match("^%s*(.-)%s*$") or value
+  -- Check for a quoted string: "someValue"
+  if value:match('^"[^"]*"$') then
+    return true
+  end
+  -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
+  if value:match('^[-]?%d+%.?%d*$') then
+    return true
+  end
+  -- Check for boolean
+  if string.lower(value) == "true" or string.lower(value) == "false" then
+    return true
+  end
+  return false
+end
+
+--- Verify if a valid JSON object
+--- @param str any
+--- @return boolean
+function sharedUtils.isValidKeyValueJSON(str)
+  if type(str) ~= "string" then return false end
+  -- Trim whitespace
+  str = str:match("^%s*(.-)%s*$")
+  -- Ensure it starts with `{` and ends with `}`
+  local isObject = str:match("^%{%s*(.-)%s*%}$")
+  if not isObject then return false end
+  -- This pattern only extracts the key and the entire raw value
+  local keyValuePattern = '^%s*"([^"]+)"%s*:%s*(.-)%s*$'
+  -- Check all key-value pairs
+  for keyValue in isObject:gmatch("[^,]+") do
+    local key, rawValue = keyValue:match(keyValuePattern)
+    if not key or not rawValue then
+      return false
+    end
+    -- Now validate that rawValue is a valid JSON simple value
+    if not isSimpleValue(rawValue) then
+      return false
+    end
+  end
+  return true
+end
+
+--- Verify if a valid JSON array
+--- @param str any
+--- @return boolean
+function sharedUtils.isJSONArray(str)
+  if type(str) ~= "string" then return false end
+  -- Trim whitespace
+  str = str:match("^%s*(.-)%s*$")
+  -- Ensure it starts with `[` and ends with `]`
+  local isArray = str:match("^%[%s*(.-)%s*%]$")
+  if not isArray then return false end
+  -- Split the array elements and validate each one
+  for value in isArray:gmatch("[^,]+") do
+    value = value:match("^%s*(.-)%s*$") -- Trim whitespace around each value
+    if not isSimpleValue(value) then
+      return false
+    end
+  end
+  return true
+end
+
+--- Verify if a valid Arweave address
+--- @param address any
+--- @return boolean
+function sharedUtils.isValidArweaveAddress(address)
+	return type(address) == "string" and #address == 43 and string.match(address, "^[A-Za-z0-9_-]+$") ~= nil
+end
+
+--- Verify if a valid boolean string
+--- @param value any
+--- @return boolean
+function sharedUtils.isValidBooleanString(value)
+  return type(value) == "string" and (string.lower(value) == "true" or string.lower(value) == "false")
+end
+
+--- Safely adds two numeric strings using bint, with overflow detection.
+--- @param a string A string representing an integer value
+--- @param b string A string representing an integer value
+--- @return string The sum of a and b as a string
+function sharedUtils.safeAdd(a, b)
+  local aInt = bint(a)
+  local bInt = bint(b)
+  local result = bint.__add(aInt, bInt)
+
+  -- Overflow check: if the result is smaller than either operand, assume overflow
+  if bint.__lt(result, aInt) or bint.__lt(result, bInt) then
+    error("Overflow detected in safeAdd")
+  end
+
+  return tostring(result)
+end
+
+--- Safely subtracts b from a using bint, with underflow detection.
+--- @param a string A string representing an integer value.
+--- @param b string A string representing an integer value.
+--- @return string The difference (a - b) as a string.
+function sharedUtils.safeSub(a, b)
+  local aInt = bint(a)
+  local bInt = bint(b)
+
+  -- Underflow check: b must be <= a
+  if not bint.__le(bInt, aInt) then
+    print("bInt: " .. tostring(bInt))
+    print("aInt: " .. tostring(aInt))
+    error("Underflow detected in safeSub")
+  end
+
+  local result = bint.__sub(aInt, bInt)
+  return tostring(result)
+end
+
+return sharedUtils
+end
+
+_G.package.loaded["marketModules.sharedUtils"] = _loaded_mod_marketModules_sharedUtils()
+
 -- module: "marketModules.token"
 local function _loaded_mod_marketModules_token()
 --[[
@@ -1123,6 +1267,7 @@ local Token = {}
 local TokenMethods = {}
 local TokenNotices = require('marketModules.tokenNotices')
 local bint = require('.bint')(256)
+local sharedUtils = require("marketModules.sharedUtils")
 
 --- Represents a Token
 --- @class Token
@@ -1176,8 +1321,8 @@ function TokenMethods:mint(to, quantity, cast, detached, msg)
   assert(bint.__lt(0, bint(quantity)), 'Quantity must be greater than zero!')
   -- Mint tokens
   if not self.balances[to] then self.balances[to] = '0' end
-  self.balances[to] = tostring(bint.__add(bint(self.balances[to]), bint(quantity)))
-  self.totalSupply = tostring(bint.__add(bint(self.totalSupply), bint(quantity)))
+  self.balances[to] = sharedUtils.safeAdd(self.balances[to], quantity)
+  self.totalSupply = sharedUtils.safeAdd(self.totalSupply, quantity)
   -- Send notice
   if not cast then return self.mintNotice(to, quantity, detached, msg) end
 end
@@ -1194,8 +1339,8 @@ function TokenMethods:burn(from, quantity, cast, detached, msg)
   assert(self.balances[from], 'Must have token balance!')
   assert(bint.__le(bint(quantity), self.balances[from]), 'Must have sufficient tokens!')
   -- Burn tokens
-  self.balances[from] = tostring(bint.__sub(self.balances[from], bint(quantity)))
-  self.totalSupply = tostring(bint.__sub(bint(self.totalSupply), bint(quantity)))
+  self.balances[from] = sharedUtils.safeSub(self.balances[from], quantity)
+  self.totalSupply = sharedUtils.safeSub(self.totalSupply, quantity)
   -- Send notice
   if not cast then return self.burnNotice(quantity, detached, msg) end
 end
@@ -1209,15 +1354,17 @@ end
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil The transfer notices, error notice or nothing
 function TokenMethods:transfer(from, recipient, quantity, cast, detached, msg)
+  assert(from ~= recipient, "Recipient must be different from sender!")
+  assert(bint.__lt(0, bint(quantity)), "Quantity must be greater than zero!")
+
   if not self.balances[from] then self.balances[from] = "0" end
   if not self.balances[recipient] then self.balances[recipient] = "0" end
 
-  local qty = bint(quantity)
-  local balance = bint(self.balances[from])
+  local balance = self.balances[from]
 
-  if bint.__le(qty, balance) then
-    self.balances[from] = tostring(bint.__sub(balance, qty))
-    self.balances[recipient] = tostring(bint.__add(self.balances[recipient], qty))
+  if bint.__le(bint(quantity), bint(balance)) then
+    self.balances[from] = sharedUtils.safeSub(balance, quantity)
+    self.balances[recipient] = sharedUtils.safeAdd(self.balances[recipient], quantity)
 
     -- Only send the notifications to the Sender and Recipient
     -- if the Cast tag is not set on the Transfer message
@@ -2024,6 +2171,7 @@ local SemiFungibleTokens = {}
 local SemiFungibleTokensMethods = {}
 local SemiFungibleTokensNotices = require('marketModules.semiFungibleTokensNotices')
 local bint = require('.bint')(256)
+local sharedUtils = require("marketModules.sharedUtils")
 
 -- Represents SemiFungibleTokens
 --- @class SemiFungibleTokens
@@ -2080,8 +2228,8 @@ function SemiFungibleTokensMethods:mint(to, id, quantity, cast, detached, msg)
   if not self.balancesById[id] then self.balancesById[id] = {} end
   if not self.balancesById[id][to] then self.balancesById[id][to] = "0" end
   if not self.totalSupplyById[id] then self.totalSupplyById[id] = "0" end
-  self.balancesById[id][to] = tostring(bint.__add(self.balancesById[id][to], bint(quantity)))
-  self.totalSupplyById[id] = tostring(bint.__add(self.totalSupplyById[id], bint(quantity)))
+  self.balancesById[id][to] = sharedUtils.safeAdd(self.balancesById[id][to], quantity)
+  self.totalSupplyById[id] = sharedUtils.safeAdd(self.totalSupplyById[id], quantity)
   -- send notice
   if not cast then return self.mintSingleNotice(to, id, quantity, detached, msg) end
 end
@@ -2096,14 +2244,17 @@ end
 --- @return Message|nil The batch mint notice if not cast
 function SemiFungibleTokensMethods:batchMint(to, ids, quantities, cast, detached, msg)
   assert(#ids == #quantities, 'Ids and quantities must have the same lengths')
+  for i = 1, #ids do
+    assert(bint.__lt(0, quantities[i]), 'Quantity must be greater than zero!')
+  end
   -- mint tokens
   for i = 1, #ids do
     -- @dev spacing to resolve text to code eval issue
     if not self.balancesById[ ids[i] ] then self.balancesById[ ids[i] ] = {} end
     if not self.balancesById[ ids[i] ][to] then self.balancesById[ ids[i] ][to] = "0" end
     if not self.totalSupplyById[ ids[i] ] then self.totalSupplyById[ ids[i] ] = "0" end
-    self.balancesById[ ids[i] ][to] = tostring(bint.__add(self.balancesById[ ids[i] ][to], quantities[i]))
-    self.totalSupplyById[ ids[i] ] = tostring(bint.__add(self.totalSupplyById[ ids[i] ], quantities[i]))
+    self.balancesById[ ids[i] ][to] = sharedUtils.safeAdd(self.balancesById[ ids[i] ][to], quantities[i])
+    self.totalSupplyById[ ids[i] ] = sharedUtils.safeAdd(self.totalSupplyById[ ids[i] ], quantities[i])
   end
   -- send notice
   if not cast then return self.mintBatchNotice(to, ids, quantities, detached, msg) end
@@ -2123,8 +2274,8 @@ function SemiFungibleTokensMethods:burn(from, id, quantity, cast, detached, msg)
   assert(self.balancesById[id][from], 'Account must hold token! :: ' .. id)
   assert(bint.__le(bint(quantity), self.balancesById[id][from]), 'Account must have sufficient tokens! ' .. id)
   -- burn tokens
-  self.balancesById[id][from] = tostring(bint.__sub(self.balancesById[id][from], bint(quantity)))
-  self.totalSupplyById[id] = tostring(bint.__sub(self.totalSupplyById[id], bint(quantity)))
+  self.balancesById[id][from] = sharedUtils.safeSub(self.balancesById[id][from], quantity)
+  self.totalSupplyById[id] = sharedUtils.safeSub(self.totalSupplyById[id], quantity)
   -- send notice
   if not cast then return self.burnSingleNotice(from, id, quantity, detached, msg) end
 end
@@ -2148,8 +2299,8 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, cast, detach
   -- burn tokens
   local remainingBalances = {}
   for i = 1, #ids do
-    self.balancesById[ ids[i] ][from] = tostring(bint.__sub(self.balancesById[ ids[i] ][from], quantities[i]))
-    self.totalSupplyById[ ids[i] ] = tostring(bint.__sub(self.totalSupplyById[ ids[i] ], quantities[i]))
+    self.balancesById[ ids[i] ][from] = sharedUtils.safeSub(self.balancesById[ ids[i] ][from], quantities[i])
+    self.totalSupplyById[ ids[i] ] = sharedUtils.safeSub(self.totalSupplyById[ ids[i] ], quantities[i])
     remainingBalances[i] = self.balancesById[ ids[i] ][from]
   end
   -- send notice
@@ -2166,15 +2317,17 @@ end
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil The transfer notices, error notice or nothing
 function SemiFungibleTokensMethods:transferSingle(from, recipient, id, quantity, cast, detached, msg)
+  assert(from ~= recipient, "Recipient must be different from sender!")
+  assert(bint.__lt(0, bint(quantity)), "Quantity must be greater than zero!")
+
   if not self.balancesById[id] then self.balancesById[id] = {} end
   if not self.balancesById[id][from] then self.balancesById[id][from] = "0" end
   if not self.balancesById[id][recipient] then self.balancesById[id][recipient] = "0" end
 
-  local qty = bint(quantity)
-  local balance = bint(self.balancesById[id][from])
-  if bint.__le(qty, balance) then
-    self.balancesById[id][from] = tostring(bint.__sub(balance, qty))
-    self.balancesById[id][recipient] = tostring(bint.__add(self.balancesById[id][recipient], qty))
+  local balance = self.balancesById[id][from]
+  if bint.__le(bint(quantity), bint(balance)) then
+    self.balancesById[id][from] = sharedUtils.safeSub(balance, quantity)
+    self.balancesById[id][recipient] = sharedUtils.safeAdd(self.balancesById[id][recipient], quantity)
 
     -- Only send the notifications if the cast tag is not set
     if not cast then
@@ -2195,6 +2348,11 @@ end
 --- @param msg Message The message received
 --- @return table<Message>|Message|nil The transfer notices, error notice or nothing
 function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantities, cast, detached, msg)
+  assert(from ~= recipient, "Recipient must be different from sender!")
+  for i = 1, #ids do
+    assert(bint.__lt(0, bint(quantities[i])), "Quantity must be greater than zero!")
+  end
+
   local ids_ = {}
   local quantities_ = {}
 
@@ -2203,12 +2361,12 @@ function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantitie
     if not self.balancesById[ ids[i] ][from] then self.balancesById[ ids[i] ][from] = "0" end
     if not self.balancesById[ ids[i] ][recipient] then self.balancesById[ ids[i] ][recipient] = "0" end
 
-    local qty = bint(quantities[i])
-    local balance = bint(self.balancesById[ ids[i] ][from])
+    local qty = quantities[i]
+    local balance = self.balancesById[ ids[i] ][from]
 
-    if bint.__le(qty, balance) then
-      self.balancesById[ ids[i] ][from] = tostring(bint.__sub(balance, qty))
-      self.balancesById[ ids[i] ][recipient] = tostring(bint.__add(self.balancesById[ ids[i] ][recipient], qty))
+    if bint.__le(bint(qty), bint(balance)) then
+      self.balancesById[ ids[i] ][from] = sharedUtils.safeSub(balance, qty)
+      self.balancesById[ ids[i] ][recipient] = sharedUtils.safeAdd(self.balancesById[ ids[i] ][recipient], qty)
       table.insert(ids_, ids[i])
       table.insert(quantities_, quantities[i])
     else
@@ -2222,23 +2380,22 @@ function SemiFungibleTokensMethods:transferBatch(from, recipient, ids, quantitie
   end
 end
 
---- Get account balance of tokens with the given ID
+--- Get the token balance for a specific account and token ID.
+--- @notice If `onBehalfOf` is provided, the balance for that account is returned;
+--- otherwise, the balance for `sender` is used.
 --- @param sender string The process ID of the sender
---- @param recipient string|nil The process ID of the recipient (optional)
+--- @param onBehalfOf string|nil An optional alternative process ID to query the balance for
 --- @param id string The ID of the token
 --- @return string The balance of the account for the given ID
-function SemiFungibleTokensMethods:getBalance(sender, recipient, id)
-  local bal = '0'
-  -- If ID is found then continue
+function SemiFungibleTokensMethods:getBalance(sender, onBehalfOf, id)
+  -- Use the alternative account if provided; otherwise default to sender
+  local account = onBehalfOf and onBehalfOf or sender
+  local bal = "0"
+  --- Check if the token ID exists
   if self.balancesById[id] then
-    -- If recipient is not provided, return the senders balance
-    if (recipient and self.balancesById[id][recipient]) then
-      bal = self.balancesById[id][recipient]
-    elseif self.balancesById[id][sender] then
-      bal = self.balancesById[id][sender]
-    end
+    -- Return the balance for the account or "0" if not found
+    bal = self.balancesById[id][account] or "0"
   end
-  -- return balance
   return bal
 end
 
@@ -2333,6 +2490,7 @@ local ConditionalTokensNotices = require('marketModules.conditionalTokensNotices
 local SemiFungibleTokens = require('marketModules.semiFungibleTokens')
 local bint = require('.bint')(256)
 local ao = ao or require('.ao')
+local sharedUtils = require("marketModules.sharedUtils")
 
 --- Represents ConditionalTokens
 --- @class ConditionalTokens
@@ -2541,8 +2699,8 @@ end
 function ConditionalTokensMethods:returnTotalPayoutMinusTakeFee(collateralToken, from, totalPayout, cast)
   local protocolFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.protocolFee), 1e4)))
   local creatorFee =  tostring(bint.ceil(bint.__div(bint.__mul(totalPayout, self.creatorFee), 1e4)))
-  local takeFee = tostring(bint.__add(bint(creatorFee), bint(protocolFee)))
-  local totalPayoutMinusFee = tostring(bint.__sub(totalPayout, bint(takeFee)))
+  local takeFee = sharedUtils.safeAdd(creatorFee, protocolFee)
+  local totalPayoutMinusFee = sharedUtils.safeSub(tostring(totalPayout), takeFee)
   -- prepare txns
   local protocolFeeTxn = {
     Target = collateralToken,
@@ -2607,6 +2765,8 @@ local bint = require('.bint')(256)
 local utils = require(".utils")
 local token = require('marketModules.token')
 local conditionalTokens = require('marketModules.conditionalTokens')
+local sharedUtils = require("marketModules.sharedUtils")
+local json = require("json")
 
 --- Represents a CPMM (Constant Product Market Maker)
 --- @class CPMM
@@ -2651,10 +2811,11 @@ function CPMM.new(
   local cpmm = {
     configurator = configurator,
     poolBalances = {},
-    withdrawnFees = {},
+    withdrawnFees = {}, -- @dev for internal accounting: manipulated to prevent double withdrawal
     feePoolWeight = "0",
     totalWithdrawnFees = "0",
-    lpFee = tonumber(lpFee)
+    lpFee = tonumber(lpFee),
+    proposedConfigurator = nil, -- @dev used for two-step configurator update
   }
   cpmm.token = token.new(
     name .. " LP Token",
@@ -2860,14 +3021,14 @@ function CPMMMethods:calcProbabilities()
   local probabilities = {}
   -- Calculate total balance
   for i = 1, #self.tokens.positionIds do
-    totalBalance = bint.__add(totalBalance, bint(poolBalances[i]))
+    totalBalance = sharedUtils.safeAdd(totalBalance, poolBalances[i])
   end
-  assert(bint.__lt(bint(0), totalBalance), 'Total pool balance must be greater than zero!')
+  assert(bint.__lt(bint(0), bint(totalBalance)), 'Total pool balance must be greater than zero!')
   -- Calculate probabilities for each positionId
   for i = 1, #self.tokens.positionIds do
     local positionId = self.tokens.positionIds[i]
     local balance = bint(poolBalances[i])
-    local probability = tostring(bint.__div(balance, totalBalance))
+    local probability = tostring(bint.__div(balance, bint(totalBalance)))
     probabilities[positionId] = probability
   end
   return probabilities
@@ -2888,8 +3049,8 @@ function CPMMMethods:buy(from, onBehalfOf, investmentAmount, positionId, minPosi
   assert(bint.__le(minPositionTokensToBuy, bint(positionTokensToBuy)), "Minimum position tokens not reached!")
   -- Calculate investmentAmountMinusFees.
   local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(investmentAmount, self.lpFee), 1e4)))
-  self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
-  local investmentAmountMinusFees = tostring(bint.__sub(investmentAmount, bint(feeAmount)))
+  self.feePoolWeight = sharedUtils.safeAdd(self.feePoolWeight, feeAmount)
+  local investmentAmountMinusFees = sharedUtils.safeSub(tostring(investmentAmount), feeAmount)
   -- Split position through all conditions
   self.tokens:splitPosition(ao.id, self.tokens.collateralToken, investmentAmountMinusFees, not sendInterim, sendInterim, true, msg) --- @dev `true`: sends detatched message
   -- Transfer buy position to onBehalfOf
@@ -2912,9 +3073,16 @@ function CPMMMethods:sell(from, onBehalfOf, returnAmount, positionId, maxPositio
   local positionTokensToSell = self:calcSellAmount(returnAmount, positionId)
   assert(bint.__le(bint(positionTokensToSell), bint(maxPositionTokensToSell)), "Maximum sell amount exceeded!")
   -- Calculate returnAmountPlusFees.
-  local feeAmount = tostring(bint.ceil(bint.__div(bint.__mul(returnAmount, self.lpFee), bint.__sub(1e4, self.lpFee))))
-  self.feePoolWeight = tostring(bint.__add(bint(self.feePoolWeight), bint(feeAmount)))
-  local returnAmountPlusFees = tostring(bint.__add(returnAmount, bint(feeAmount)))
+  local feeAmount = tostring(
+    bint.ceil(
+      bint.__div(
+        bint.__mul(returnAmount, self.lpFee),
+        bint(sharedUtils.safeSub(string.format('%.0f', 1e4), tostring(self.lpFee)))
+      )
+    )
+  )
+  self.feePoolWeight = sharedUtils.safeAdd(self.feePoolWeight, feeAmount)
+  local returnAmountPlusFees = sharedUtils.safeAdd(tostring(returnAmount), feeAmount)
   -- Check sufficient liquidity within the process or revert.
   local collataralBalance = ao.send({Target = self.tokens.collateralToken, Action = "Balance", ["X-Action"] = "Check Liquidity"}).receive().Data
   assert(bint.__le(bint(returnAmountPlusFees), bint(collataralBalance)), "Insufficient liquidity!")
@@ -2947,12 +3115,12 @@ end
 --- @param account string The process ID of the account
 --- @return string The fees withdrawable by the account
 function CPMMMethods:feesWithdrawableBy(account)
-  local balance = self.token.balances[account] or '0'
-  local rawAmount = '0'
+  local balance = self.token.balances[account] or "0"
+  local rawAmount = "0"
   if bint(self.token.totalSupply) > 0 then
-    rawAmount = string.format('%.0f', (bint.__div(bint.__mul(bint(self:collectedFees()), bint(balance)), self.token.totalSupply)))
+    rawAmount = tostring(bint(bint.__mul(bint(self.feePoolWeight), bint(balance)) // self.token.totalSupply))
   end
-  return tostring(bint.max(bint(bint.__sub(bint(rawAmount), bint(self.withdrawnFees[account] or '0'))), 0))
+  return tostring(bint.max(bint(sharedUtils.safeSub(rawAmount, self.withdrawnFees[account] or "0")), 0))
 end
 
 --- Withdraw fees
@@ -2966,8 +3134,9 @@ end
 function CPMMMethods:withdrawFees(sender, onBehalfOf, cast, sendInterim, detached, msg)
   local feeAmount = self:feesWithdrawableBy(sender)
   if bint.__lt(0, bint(feeAmount)) then
-    self.withdrawnFees[sender] = feeAmount
-    self.totalWithdrawnFees = tostring(bint.__add(bint(self.totalWithdrawnFees), bint(feeAmount)))
+    local senderWithdrawnFees = self.withdrawnFees[sender] or "0"
+    self.withdrawnFees[sender] = sharedUtils.safeAdd(senderWithdrawnFees, feeAmount)
+    self.totalWithdrawnFees = sharedUtils.safeAdd(self.totalWithdrawnFees, feeAmount)
     ao.send({
       Action = 'Transfer',
       Target = self.tokens.collateralToken,
@@ -2980,7 +3149,7 @@ function CPMMMethods:withdrawFees(sender, onBehalfOf, cast, sendInterim, detache
   if not cast then return self.withdrawFeesNotice(feeAmount, onBehalfOf, detached, msg) end
 end
 
---- Before token transfer
+--- @dev Hook called before any token transfer (mint, burn, or transfer)
 --- Updates fee accounting before token transfers
 --- @param from string|nil The process ID of the account executing the transaction
 --- @param to string|nil The process ID of the account receiving the transaction
@@ -2989,15 +3158,28 @@ end
 --- @param sendInterim boolean If true, sends intermediate notices
 --- @param msg Message The message received
 function CPMMMethods:_beforeTokenTransfer(from, to, amount, cast, sendInterim, msg)
+  local withdrawnFeesTransfer = self.token.totalSupply == '0' and amount or tostring(bint(bint.__mul(bint(self.feePoolWeight), bint(amount)) // self.token.totalSupply))
   if from ~= nil and from ~= ao.id then
+    -- Transfer or burn
     self:withdrawFees(from, from, cast, sendInterim, true, msg) -- @dev `true`: sends detatched message
+  else
+    -- Mint
+    -- @dev Adjust fee tracking to exclude newly minted tokens from prior fee accrual
+    self.feePoolWeight = sharedUtils.safeAdd(self.feePoolWeight, withdrawnFeesTransfer)
+    self.totalWithdrawnFees = sharedUtils.safeAdd(self.totalWithdrawnFees, withdrawnFeesTransfer)
+    -- Note: `self.withdrawFees(...)` adjusts `withdrawnFees` accordingly
   end
-  local totalSupply = self.token.totalSupply
-  local withdrawnFeesTransfer = totalSupply == '0' and amount or tostring(bint(bint.__div(bint.__mul(bint(self:collectedFees()), bint(amount)), totalSupply)))
 
-  if from ~= nil and to ~= nil and from ~= ao.id then
-    self.withdrawnFees[from] = tostring(bint.__sub(bint(self.withdrawnFees[from] or '0'), bint(withdrawnFeesTransfer)))
-    self.withdrawnFees[to] = tostring(bint.__add(bint(self.withdrawnFees[to] or '0'), bint(withdrawnFeesTransfer)))
+  if to ~= nil then
+    -- Transfer or mint
+    -- @dev Prevent new holder from claiming fees on newly received balance
+    self.withdrawnFees[to] = sharedUtils.safeAdd(self.withdrawnFees[to] or '0', withdrawnFeesTransfer)
+  elseif from ~= nil then
+    -- Burn
+    -- @dev Reverse fee tracking changes from mint to maintain consistency
+    self.feePoolWeight = sharedUtils.safeSub(self.feePoolWeight, withdrawnFeesTransfer)
+    self.totalWithdrawnFees = sharedUtils.safeSub(self.totalWithdrawnFees, withdrawnFeesTransfer)
+    self.withdrawnFees[from] = sharedUtils.safeSub(self.withdrawnFees[from] or '0', withdrawnFeesTransfer)
   end
 end
 
@@ -3021,13 +3203,23 @@ function CPMMMethods:transfer(from, recipient, quantity, cast, sendInterim, deta
   return self.token:transfer(from, recipient, quantity, cast, detached, msg)
 end
 
---- Update configurator
---- @param configurator string The process ID of the new configurator
+--- Propose configurator
+--- @param configurator string The proposed configurator address
 --- @param msg Message The message received
---- @return Message The update configurator notice
-function CPMMMethods:updateConfigurator(configurator, msg)
-  self.configurator = configurator
-  return self.updateConfiguratorNotice(configurator, msg)
+--- @return Message proposeConfiguratorNotice The propose configurator notice
+function CPMMMethods:proposeConfigurator(configurator, msg)
+  self.proposedConfigurator = configurator
+  return self.proposeConfiguratorNotice(configurator, msg)
+end
+
+--- Accept configurator
+--- @param msg Message The message received
+--- @return Message acceptConfiguratorNotice The stage update configurator notice
+function CPMMMethods:acceptConfigurator(msg)
+  assert(msg.From == self.proposedConfigurator, "Sender must be the proposed configurator")
+  self.configurator = self.proposedConfigurator
+  self.proposedConfigurator = nil
+  return self.acceptConfiguratorNotice(msg)
 end
 
 --- Update take fee
@@ -3598,11 +3790,18 @@ CONFIGURATOR WRITE METHODS
 ==========================
 ]]
 
---- Update configurator
+--- Propose configurator
 --- @param msg Message The message received
---- @return Message updateConfiguratorNotice The update configurator notice
-function MarketMethods:updateConfigurator(msg)
-  return self.cpmm:updateConfigurator(msg.Tags.Configurator, msg)
+--- @return Message proposeConfiguratorNotice The propose configurator notice
+function MarketMethods:proposeConfigurator(msg)
+  return self.cpmm:proposeConfigurator(msg.Tags.Configurator, msg)
+end
+
+--- Accept configurator
+--- @param msg Message The message received
+--- @return Message acceptConfiguratorNotice The accept configurator notice
+function MarketMethods:acceptConfigurator(msg)
+  return self.cpmm:acceptConfigurator(msg)
 end
 
 --- Update data index
@@ -3665,7 +3864,7 @@ constants.marketConfig = {
   configurator = "b9hj1yVw3eWGIggQgJxRDj1t8SZFCezctYD-7U5nYFk",
   dataIndex = "rXSAUKwZhJkIBTIEyBl1rf8Gtk_88RKQFsx5JvDOwlE",
   collateralToken = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
-  resolutionAgent = "KFHd4LyPakSIi0AyAFWDKUYJLKNVj7IiZE9n6H225Zw",
+  resolutionAgent = "l_nS0XtDPkNNQkrG01QpEUOAxsfIhnPjeP2Y3zbHlio",
   creator = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
   question = "Liquid Ops oUSDC interest reaches 8% in March",
   rules = "Where we're going, we don't need rules",
@@ -3688,103 +3887,6 @@ return constants
 end
 
 _G.package.loaded["marketModules.constants"] = _loaded_mod_marketModules_constants()
-
--- module: "marketModules.sharedUtils"
-local function _loaded_mod_marketModules_sharedUtils()
---[[
-=========================================================
-Part of the Outcome codebase © 2025. All Rights Reserved.
-See market.lua for full license details.
-=========================================================
-]]
-
-local sharedUtils = {}
-
---- Verify if extracted value is a JSON simple value
---- @param value any
---- @return boolean
-local function isSimpleValue(value)
-  -- Trim whitespace
-  value = value:match("^%s*(.-)%s*$") or value
-  -- Check for a quoted string: "someValue"
-  if value:match('^"[^"]*"$') then
-    return true
-  end
-  -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
-  if value:match('^[-]?%d+%.?%d*$') then
-    return true
-  end
-  -- Check for boolean
-  if string.lower(value) == "true" or string.lower(value) == "false" then
-    return true
-  end
-  return false
-end
-
---- Verify if a valid JSON object
---- @param str any
---- @return boolean
-function sharedUtils.isValidKeyValueJSON(str)
-  if type(str) ~= "string" then return false end
-  -- Trim whitespace
-  str = str:match("^%s*(.-)%s*$")
-  -- Ensure it starts with `{` and ends with `}`
-  local isObject = str:match("^%{%s*(.-)%s*%}$")
-  if not isObject then return false end
-  -- This pattern only extracts the key and the entire raw value
-  local keyValuePattern = '^%s*"([^"]+)"%s*:%s*(.-)%s*$'
-  -- Check all key-value pairs
-  for keyValue in isObject:gmatch("[^,]+") do
-    local key, rawValue = keyValue:match(keyValuePattern)
-    if not key or not rawValue then
-      return false
-    end
-    -- Now validate that rawValue is a valid JSON simple value
-    if not isSimpleValue(rawValue) then
-      return false
-    end
-  end
-  return true
-end
-
---- Verify if a valid JSON array
---- @param str any
---- @return boolean
-function sharedUtils.isJSONArray(str)
-  if type(str) ~= "string" then return false end
-  -- Trim whitespace
-  str = str:match("^%s*(.-)%s*$")
-  -- Ensure it starts with `[` and ends with `]`
-  local isArray = str:match("^%[%s*(.-)%s*%]$")
-  if not isArray then return false end
-  -- Split the array elements and validate each one
-  for value in isArray:gmatch("[^,]+") do
-    value = value:match("^%s*(.-)%s*$") -- Trim whitespace around each value
-    if not isSimpleValue(value) then
-      return false
-    end
-  end
-  return true
-end
-
---- Verify if a valid Arweave address
---- @param address any
---- @return boolean
-function sharedUtils.isValidArweaveAddress(address)
-	return type(address) == "string" and #address == 43 and string.match(address, "^[%w-_]+$") ~= nil
-end
-
---- Verify if a valid boolean string
---- @param value any
---- @return boolean
-function sharedUtils.isValidBooleanString(value)
-  return type(value) == "string" and (string.lower(value) == "true" or string.lower(value) == "false")
-end
-
-return sharedUtils
-end
-
-_G.package.loaded["marketModules.sharedUtils"] = _loaded_mod_marketModules_sharedUtils()
 
 -- module: "marketModules.sharedValidation"
 local function _loaded_mod_marketModules_sharedValidation()
@@ -3874,6 +3976,29 @@ function sharedValidation.validatePositiveIntegerOrZero(quantity, tagName)
   return true
 end
 
+--- Validates basis points
+--- @param basisPoints any The basis points to be validated
+--- @param tagName string The name of the tag being validated
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function sharedValidation.validateBasisPoints(basisPoints, tagName)
+  if type(basisPoints) ~= 'string' then
+    return false, tagName .. ' is required and must be a string!'
+  end
+
+  local num = tonumber(basisPoints)
+  if not num then
+    return false, tagName .. ' must be a valid number!'
+  end
+  if num < 0 or num > 10000 then
+    return false, tagName .. ' must be between 0 and 10000 (basis points)!'
+  end
+  if num % 1 ~= 0 then
+    return false, tagName .. ' must be an integer!'
+  end
+
+  return true
+end
+
 return sharedValidation
 
 end
@@ -3891,6 +4016,7 @@ See cpmm.lua for full license details.
 
 local cpmmValidation = {}
 local sharedValidation = require('marketModules.sharedValidation')
+local sharedUtils = require("marketModules.sharedUtils")
 local bint = require('.bint')(256)
 local json = require("json")
 
@@ -3926,6 +4052,9 @@ function cpmmValidation.addFunding(msg, totalSupply, positionIds)
     for i = 1, #distribution do
       if type(distribution[i]) ~= "number" then
         return false, "Distribution item must be a number"
+      end
+      if bint.__lt(distribution[i], 0) then
+        return false, "Distribution item must be greater than or equal to zero"
       end
       distributionSum = distributionSum + distribution[i]
     end
@@ -4072,16 +4201,26 @@ function cpmmValidation.withdrawFees(msg)
   return true
 end
 
---- Validates update configurator
---- @param msg Message The message to be validated
---- @param configurator string The configurator address
---- @return boolean, string|nil
-function cpmmValidation.updateConfigurator(msg, configurator)
+--- Validates a propose configurator message
+--- @param msg Message The message received
+--- @param configurator string The current configurator
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
+function cpmmValidation.proposeConfigurator(msg, configurator)
   if msg.From ~= configurator then
-    return false, 'Sender must be configurator!'
+    return false, "Sender must be configurator!"
   end
+  return sharedValidation.validateAddress(msg.Tags.Configurator, "Configurator")
+end
 
-  return sharedValidation.validateAddress(msg.Tags.Configurator, 'Configurator')
+--- Validates an accept configurator message
+--- @param msg Message The message received
+--- @param proposedConfigurator string The proposed configurator
+--- @return boolean, string|nil Returns true if valid, otherwise false and an error message
+function cpmmValidation.acceptConfigurator(msg, proposedConfigurator)
+  if msg.From ~= proposedConfigurator then
+    return false, "Sender must be proposedConfigurator!"
+  end
+  return true
 end
 
 --- Validates update take fee
@@ -4093,16 +4232,15 @@ function cpmmValidation.updateTakeFee(msg, configurator)
     return false, 'Sender must be configurator!'
   end
 
-  local success, err = sharedValidation.validatePositiveIntegerOrZero(msg.Tags.CreatorFee, 'CreatorFee')
+  local success, err = sharedValidation.validateBasisPoints(msg.Tags.CreatorFee, 'CreatorFee')
   if not success then return false, err end
 
-  success, err = sharedValidation.validatePositiveIntegerOrZero(msg.Tags.ProtocolFee, 'ProtocolFee')
+  success, err = sharedValidation.validateBasisPoints(msg.Tags.ProtocolFee, 'ProtocolFee')
   if not success then return false, err end
 
-  local totalFee = bint.__add(bint(msg.Tags.CreatorFee), bint(msg.Tags.ProtocolFee))
-  if not bint.__lt(totalFee, 1000) then
-    return false, 'Net fee must be less than or equal to 1000 bps'
-  end
+  local totalFee = sharedUtils.safeAdd(msg.Tags.CreatorFee, msg.Tags.ProtocolFee)
+  success, err = sharedValidation.validateBasisPoints(totalFee, 'TotalFee')
+  if not success then return false, err end
 
   return true
 end
@@ -4305,23 +4443,11 @@ function semiFungibleTokensValidation.transferBatch(msg, validPositionIds)
   return true
 end
 
---- Validates a balanceById message
+--- Validates a balanceById or balancesById message
 --- @param msg Message The message received
 --- @param validPositionIds table<string> The array of valid token IDs
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
-function semiFungibleTokensValidation.balanceById(msg, validPositionIds)
-  if msg.Tags.Recipient then
-    local success, err = sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
-    if not success then return false, err end
-  end
-  return sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
-end
-
---- Validates a balancesById message
---- @param msg Message The message received
---- @param validPositionIds table<string> The array of valid token IDs
---- @return boolean, string|nil Returns true on success, or false and an error message on failure
-function semiFungibleTokensValidation.balancesById(msg, validPositionIds)
+function semiFungibleTokensValidation.balance(msg, validPositionIds)
   if msg.Tags.Recipient then
     local success, err = sharedValidation.validateAddress(msg.Tags.Recipient, 'Recipient')
     if not success then return false, err end
@@ -4450,6 +4576,9 @@ local function validatePayouts(payouts)
     if not tonumber(payout) then
       return false, "Payouts item must be a valid number!"
     end
+    if tonumber(payout) < 0 then
+      return false, "Payouts item must be greater than or equal to zero!"
+    end
   end
 
   return true
@@ -4463,7 +4592,7 @@ function ConditionalTokensValidation.mergePositions(msg, cpmm)
   local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
   local success, err
 
-  if not onBehalfOf then
+  if onBehalfOf ~= msg.From then
     success, err = sharedValidation.validateAddress(onBehalfOf, 'onBehalfOf')
     if not success then return false, err end
   end
@@ -4498,7 +4627,7 @@ function ConditionalTokensValidation.redeemPositions(msg)
   local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
   local success, err
 
-  if not onBehalfOf then
+  if onBehalfOf ~= msg.From then
     success, err = sharedValidation.validateAddress(onBehalfOf, 'onBehalfOf')
     if not success then return false, err end
   end
@@ -5363,7 +5492,7 @@ SEMI-FUNGIBLE TOKENS READ HANDLERS
 --- - Data (string): The Balance.
 Handlers.add("Balance-By-Id", {Action = "Balance-By-Id"}, function(msg)
   -- Validate input
-  local success, err = semiFungibleTokensValidation.balanceById(msg, Market.cpmm.tokens.positionIds)
+  local success, err = semiFungibleTokensValidation.balance(msg, Market.cpmm.tokens.positionIds)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -5387,7 +5516,7 @@ end)
 --- - Data (string): The balances of all accounts filtered by ID (stringified table).
 Handlers.add('Balances-By-Id', {Action = "Balances-By-Id"}, function(msg)
   -- Validate input
-  local success, err = semiFungibleTokensValidation.balancesById(msg, Market.cpmm.tokens.positionIds)
+  local success, err = semiFungibleTokensValidation.balance(msg, Market.cpmm.tokens.positionIds)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -5496,29 +5625,53 @@ CONFIGURATOR WRITE HANDLERS
 ===========================
 ]]
 
---- Update configurator handler
+--- Propose configurator handler
 --- @notice Only callable by the configurator
 --- @param msg Message The message received, expected to contain:
---- - msg.Tags.Configurator (string): The new configurator.
+--- - msg.Tags.Configurator (string): The proposed configurator.
 --- @note **Emits the following notices:**
 --- **⚠️ Error Handling (Sent on failed input validation)**
---- - `Update-Configurator-Error`: **market → sender** -- Returns an error message
+--- - `Propose-Configurator-Error`: **market → sender** -- Returns an error message
 --- @note **Emits the following notices:**
 --- **✅ Success Notice**
---- - `Update-Configurator-Notice`: **market → sender** -- Logs the update configurator action
-Handlers.add('Update-Configurator', {Action = "Update-Configurator"}, function(msg)
+--- - `Propose-Configurator-Notice`: **market → sender** -- Logs the propose configurator action
+Handlers.add('Propose-Configurator', {Action = "Propose-Configurator"}, function(msg)
   -- Validate input
-  local success, err = cpmmValidation.updateConfigurator(msg, Market.cpmm.configurator)
+  local success, err = cpmmValidation.proposeConfigurator(msg, Market.cpmm.configurator)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
-      Action = "Update-Configurator-Error",
+      Action = "Propose-Configurator-Error",
       Error = err
     })
     return
   end
-  -- If validation passes, update the configurator.
-  Market:updateConfigurator(msg)
+  -- If validation passes, propose the configurator.
+  Market:proposeConfigurator(msg)
+end)
+
+--- Accept configurator handler
+--- @notice Only callable by the proposedConfigurator
+--- @param msg Message The message received.
+--- @note **Emits the following notices:**
+--- **⚠️ Error Handling (Sent on failed input validation)**
+--- - `Accept-Configurator-Error`: **market → sender** -- Returns an error message
+--- @note **Emits the following notices:**
+--- **✅ Success Notice**
+--- - `Accept-Configurator-Notice`: **market → sender** -- Logs the accept configurator action
+Handlers.add('Accept-Configurator', {Action = "Accept-Configurator"}, function(msg)
+  -- Validate input
+  local success, err = cpmmValidation.acceptConfigurator(msg, Market.cpmm.proposedConfigurator)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Accpet-Configurator-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, accept the configurator.
+  Market:acceptConfigurator(msg)
 end)
 
 --- Update data index handler

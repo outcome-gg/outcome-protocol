@@ -114,8 +114,10 @@ function sharedUtils.safeSub(a, b)
   local aInt = bint(a)
   local bInt = bint(b)
 
-  -- Underflow check: a must be >= b
-  if bint.__lt(aInt, bInt) then
+  -- Underflow check: b must be <= a
+  if not bint.__le(bInt, aInt) then
+    print("bInt: " .. tostring(bInt))
+    print("aInt: " .. tostring(aInt))
     error("Underflow detected in safeSub")
   end
 

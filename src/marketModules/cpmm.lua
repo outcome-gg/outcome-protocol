@@ -25,6 +25,7 @@ local utils = require(".utils")
 local token = require('marketModules.token')
 local conditionalTokens = require('marketModules.conditionalTokens')
 local sharedUtils = require("marketModules.sharedUtils")
+local json = require("json")
 
 --- Represents a CPMM (Constant Product Market Maker)
 --- @class CPMM
@@ -407,7 +408,7 @@ function CPMMMethods:withdrawFees(sender, onBehalfOf, cast, sendInterim, detache
   if not cast then return self.withdrawFeesNotice(feeAmount, onBehalfOf, detached, msg) end
 end
 
---- Before token transfer
+--- @dev Hook called before any token transfer (mint, burn, or transfer)
 --- Updates fee accounting before token transfers
 --- @param from string|nil The process ID of the account executing the transaction
 --- @param to string|nil The process ID of the account receiving the transaction
@@ -418,22 +419,26 @@ end
 function CPMMMethods:_beforeTokenTransfer(from, to, amount, cast, sendInterim, msg)
   local withdrawnFeesTransfer = self.token.totalSupply == '0' and amount or tostring(bint(bint.__mul(bint(self.feePoolWeight), bint(amount)) // self.token.totalSupply))
   if from ~= nil and from ~= ao.id then
-    -- on burn or transfer
+    -- Transfer or burn
     self:withdrawFees(from, from, cast, sendInterim, true, msg) -- @dev `true`: sends detatched message
   else
-    -- on mint
+    -- Mint
+    -- @dev Adjust fee tracking to exclude newly minted tokens from prior fee accrual
     self.feePoolWeight = sharedUtils.safeAdd(self.feePoolWeight, withdrawnFeesTransfer)
+    self.totalWithdrawnFees = sharedUtils.safeAdd(self.totalWithdrawnFees, withdrawnFeesTransfer)
+    -- Note: `self.withdrawFees(...)` adjusts `withdrawnFees` accordingly
   end
 
   if to ~= nil then
-    -- on mint or transfer
-    -- @dev to prevent holder from claiming fees on updated balance (double withdrawal)
+    -- Transfer or mint
+    -- @dev Prevent new holder from claiming fees on newly received balance
     self.withdrawnFees[to] = sharedUtils.safeAdd(self.withdrawnFees[to] or '0', withdrawnFeesTransfer)
-    -- @dev increase totalWithdrawnFees (offsets decrease in self:withdrawFees on transfer)
-    self.totalWithdrawnFees = sharedUtils.safeAdd(self.totalWithdrawnFees, withdrawnFeesTransfer)
-  else
-    -- on burn
+  elseif from ~= nil then
+    -- Burn
+    -- @dev Reverse fee tracking changes from mint to maintain consistency
     self.feePoolWeight = sharedUtils.safeSub(self.feePoolWeight, withdrawnFeesTransfer)
+    self.totalWithdrawnFees = sharedUtils.safeSub(self.totalWithdrawnFees, withdrawnFeesTransfer)
+    self.withdrawnFees[from] = sharedUtils.safeSub(self.withdrawnFees[from] or '0', withdrawnFeesTransfer)
   end
 end
 

@@ -169,7 +169,7 @@ local function runTests()
     res and res.MessageId or "Unknown"
   )
   binaryMarket = res and res.ProcessId or nil
-  -- binaryMarket = "qr5PScIzm5deZ0RWyVO1lSO5SdNIodbDlTPSR7xJgqw"
+  -- binaryMarket = "pSi6YD2-1XVLM2BhG_Nrqpu0qjzkfGiDJh-xvveSbxU"
   print("binaryMarket: " .. tostring(binaryMarket))
 
   -- testName = "Create Categorical Market"
