@@ -1975,8 +1975,8 @@ end
 --- @field Subcategory string The market subcategory
 --- @field Logo string The market LP token logo Arweave TxID
 --- @field Logos table<string> The market position tokens logo Arweave TxIDs
---- @field StartTime number The market start time in millisecond
---- @field EndTime number The market end time in millisecond
+--- @field StartTime number The market start time as a Unix timestamp in millisecond
+--- @field EndTime number The market end time as a Unix timestamp in millisecond
 --- @field Creator string The creator process ID
 --- @field CreatorFee number The creator fee in basis points
 --- @field CreatorFeeTarget string The creator fee target process ID

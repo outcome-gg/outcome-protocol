@@ -68,6 +68,8 @@ Spawn a new prediction market.
 - `logo`: Arweave transaction ID of the LP token logo image.
 - `logos`: Aweave transaction IDs of the position token logo images.
 - `eventId`: The event ID for market groups, set to `nil` if not applicable.
+- `startTime`: Market start time as a Unix timestamp in milliseconds (e.g. `os.time()` for now).
+- `endTime`: Market end time as a Unix timestamp in milliseconds (e.g. `os.time() + 86400000` for 24 hours from now).
 - `creatorFeeBps`: Creator fee in basis points (e.g., `250` for a `2.5%` fee).
 - `creatorFeeTarget`: Address receiving the creator fee (set to `ao.id` for Quickstart).
 
@@ -85,6 +87,8 @@ res = Outcome.marketFactorySpawnMarket(
   "UkS-mdoiG8hcAClhKK8ch4ZhEzla0mCPDOix9hpdSFE",
   {"UkS-mdoiG8hcAClhKK8ch4ZhEzla0mCPDOix9hpdSFE", "UkS-mdoiG8hcAClhKK8ch4ZhEzla0mCPDOix9hpdSFE"},
   nil,
+  os.time(),
+  os.time() + 86400000,
   250,
   ao.id
 )
@@ -99,16 +103,18 @@ res = Outcome.marketFactorySpawnMarket(
   CollateralToken = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU",
   DataIndex = "nWx096_XneRb6TlvIadeeLQ_RF2LPxogQyl_2tNR-P4",
   Action = "Spawn-Market-Notice",
-  Original-Msg-Id = "0-cRVofFMjOGyzqfc2t0HwtexkBekLe3d0bOjg0jLbc",
+  Original-Msg-Id = "KMPFNu85N96BYvujSLewXrVY19DmQ04djF1bvJySlPg",
   Creator = "nWx096_XneRb6TlvIadeeLQ_RF2LPxogQyl_2tNR-P4",
   Question = "$A0 surpasses $AR market cap by the end of 2025",
   Subcategory = "Prices",
-  Timestamp = 1741428466002,
+  Timestamp = 1743193578135,
+  StartTime = 1743193577223,
+  EndTime = 1743279977223,
   MessageId = "iTnyZt9SiBerbrCCvXWHm2amkwf7JC8aNaW_EsGHkPc",
   CreatorFeeTarget = "nWx096_XneRb6TlvIadeeLQ_RF2LPxogQyl_2tNR-P4",
   Logos = '["UkS-mdoiG8hcAClhKK8ch4ZhEzla0mCPDOix9hpdSFE","UkS-mdoiG8hcAClhKK8ch4ZhEzla0mCPDOix9hpdSFE"]',
   CreatorFee = 250,
-  Block-Height = 1624539,
+  Block-Height = 1638363,
   OutcomeSlotCount = 2,
   Category = "Crypto"
 }

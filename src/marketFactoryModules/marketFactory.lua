@@ -251,8 +251,8 @@ WRITE METHODS
 --- @param category string|nil The category of the event
 --- @param subcategory string|nil The subcategory of the event
 --- @param logo string|nil The logo of the event
---- @param startTime string|nil The start time of the event
---- @param endTime string|nil The end time of the event
+--- @param startTime string|nil The start time of the event as a Unix timestamp in milliseconds, or nil
+--- @param endTime string|nil The end time of the event as a Unix timestamp in milliseconds, or nil
 --- @param msg Message The message received
 --- @return Message The create event message
 function MarketFactoryMethods:createEvent(collateral, dataIndex, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, msg)
@@ -291,8 +291,8 @@ end
 --- @param logo string|nil The logo of the LP token
 --- @param logos table<string>|nil The logos of the position tokens
 --- @param eventId string|nil The event ID or nil
---- @param startTime string|nil The start time or nil
---- @param endTime string|nil The end time or nil
+--- @param startTime string|nil The start time as a Unix timestamp in milliseconds, or nil
+--- @param endTime string|nil The end time as a Unix timestamp in milliseconds, or nil
 --- @param creator string The creator address / process ID
 --- @param creatorFee number The creator fee in basis points
 --- @param creatorFeeTarget string The creator fee target address / process ID
