@@ -25,7 +25,6 @@ local utils = require(".utils")
 local token = require('marketModules.token')
 local conditionalTokens = require('marketModules.conditionalTokens')
 local sharedUtils = require("marketModules.sharedUtils")
-local json = require("json")
 
 --- Represents a CPMM (Constant Product Market Maker)
 --- @class CPMM
