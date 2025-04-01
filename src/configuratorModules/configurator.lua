@@ -64,33 +64,33 @@ function Configurator.new(admin, env)
 end
 
 --- Stages an update
---- @param discriminator string The discriminator used to discern the type of update
 --- @param process string The process ID
 --- @param action string The action name
 --- @param tags string The JSON string of tags
 --- @param data string The JSON string of data
 --- @param msg Message The message received
 --- @return Message The stage update notice
-function ConfiguratorMethods:stageUpdate(discriminator, process, action, tags, data, msg)
+function ConfiguratorMethods:stageUpdate(process, action, tags, data, msg)
+  -- hash with descriminator to prevent collisions
   local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()
-  hash = discriminator .. hash
+  hash = "update" .. hash
   -- stage
   self.staged[hash] = os.time()
   -- stage notice
-  return self.stageUpdateNotice(discriminator, process, action, tags, data, hash, msg)
+  return self.stageUpdateNotice(process, action, tags, data, hash, msg)
 end
 
 --- Unstages an update
---- @param discriminator string The discriminator used to discern the type of update
 --- @param process string The process ID
 --- @param action string The action name
 --- @param tags string The JSON string of tags
 --- @param data string The JSON string of data
 --- @param msg Message The message received
 --- @return Message The unstage update notice
-function ConfiguratorMethods:unstageUpdate(discriminator, process, action, tags, data, msg)
+function ConfiguratorMethods:unstageUpdate(process, action, tags, data, msg)
+  -- hash with descriminator to prevent collisions
   local hash = crypto.digest.keccak256(process .. action .. tags.. data).asHex()
-  hash = discriminator .. hash
+  hash = "update" .. hash
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   -- unstage
   self.staged[hash] = nil
@@ -99,16 +99,16 @@ function ConfiguratorMethods:unstageUpdate(discriminator, process, action, tags,
 end
 
 --- Actions an update
---- @param discriminator string The discriminator used to discern the type of update
 --- @param process string The process ID
 --- @param action string The action name
 --- @param tags string The JSON string of tags
 --- @param data string The JSON string of data
 --- @param msg Message The message received
 --- @return Message The action update notice
-function ConfiguratorMethods:actionUpdate(discriminator, process, action, tags, data, msg)
+function ConfiguratorMethods:actionUpdate(process, action, tags, data, msg)
+  -- hash with descriminator to prevent collisions
   local hash = crypto.digest.keccak256(process .. action .. tags .. data).asHex()
-  hash = discriminator .. hash
+  hash = "update" .. hash
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   local remaining = self.staged[hash] + self.delay - os.time()
   assert(remaining <= 0, 'Update not staged long enough! Remaining: ' .. remaining .. 's.')
@@ -135,7 +135,9 @@ end
 --- @param msg Message The message received
 --- @return Message The stage update admin notice
 function ConfiguratorMethods:stageUpdateAdmin(updateAdmin, msg)
+  -- hash with descriminator to prevent collisions
   local hash = crypto.digest.keccak256(updateAdmin).asHex()
+  hash = "updateAdmin" .. hash
   -- stage
   self.staged[hash] = os.time()
   -- stage notice
@@ -147,7 +149,9 @@ end
 --- @param msg string The message received
 --- @return Message The unstage update admin notice
 function ConfiguratorMethods:unstageUpdateAdmin(updateAdmin, msg)
+  -- hash with descriminator to prevent collisions
   local hash = crypto.digest.keccak256(updateAdmin).asHex()
+  hash = "updateAdmin" .. hash
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   -- unstage
   self.staged[hash] = nil
@@ -160,7 +164,9 @@ end
 --- @param msg string The message received
 --- @return Message The action update admin notice
 function ConfiguratorMethods:actionUpdateAdmin(updateAdmin, msg)
+  -- hash with descriminator to prevent collisions
   local hash = crypto.digest.keccak256(updateAdmin).asHex()
+  hash = "updateAdmin" .. hash
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   local remaining = self.staged[hash] + self.delay - os.time()
   assert(remaining <= 0, 'Update not staged long enough! Remaining: ' .. remaining .. 's.')
@@ -177,7 +183,9 @@ end
 --- @param msg string The message received
 --- @return Message The stage update delay notice
 function ConfiguratorMethods:stageUpdateDelay(delayInSeconds, msg)
+  -- hash with descriminator to prevent collisions
   local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()
+  hash = "updateDelay" .. hash
   self.staged[hash] = os.time()
   -- stage notice
   return self.stageUpdateDelayNotice(delayInSeconds, hash, msg)
@@ -188,7 +196,9 @@ end
 --- @param msg string The message received
 --- @return Message The unstage update delay notice
 function ConfiguratorMethods:unstageUpdateDelay(delayInSeconds, msg)
+  -- hash with descriminator to prevent collisions
   local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()
+  hash = "updateDelay" .. hash
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   -- unstage
   self.staged[hash] = nil
@@ -201,7 +211,9 @@ end
 --- @param msg string The message received
 --- @return Message The action update delay notice
 function ConfiguratorMethods:actionUpdateDelay(delayInSeconds, msg)
+  -- hash with descriminator to prevent collisions
   local hash = crypto.digest.keccak256(tostring(delayInSeconds)).asHex()
+  hash = "updateDelay" .. hash
   assert(self.staged[hash], 'Update not staged! Hash: ' .. hash)
   local remaining = self.staged[hash] + self.delay - os.time()
   assert(remaining <= 0, 'Update not staged long enough! Remaining: ' .. remaining .. 's.')

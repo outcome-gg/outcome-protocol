@@ -237,7 +237,6 @@ CONFIGURATOR: WRITE
 ]]
 
 --- @class ConfiguratorStageUpdateNotice: BaseNotice
---- @field Discriminator string The discriminator
 --- @field UpdateProcess string The process to update
 --- @field UpdateAction string The update message action
 --- @field UpdateTags string The update message tags
@@ -246,7 +245,6 @@ CONFIGURATOR: WRITE
 
 --- Configurator stage update
 --- @warning Only callable by the configurator admin, else the transaction will fail
---- @param discriminator string The discriminator
 --- @param updateProcess string The process to update
 --- @param updateAction string The update message action
 --- @param updateTags table|nil The update message tags or `nil`
@@ -255,10 +253,8 @@ CONFIGURATOR: WRITE
 --- **✅ Success Notice**
 --- - `Stage-Update-Notice`: **configurator → ao.id** -- Logs the stage update action
 --- @return ConfiguratorStageUpdateNotice The configurator stage update notice
-function Outcome.configuratorStageUpdate(discriminator, updateProcess, updateAction, updateTags, updateData)
+function Outcome.configuratorStageUpdate(updateProcess, updateAction, updateTags, updateData)
   -- Validate input
-  assert(discriminator, "`discriminator` is required.")
-  assert(type(discriminator) == "string", "`discriminator` must be a string.")
   assert(updateProcess, "`updateProcess` is required.")
   assert(sharedUtils.isValidArweaveAddress(updateProcess), "`updateProcess` must be a valid Arweave address.")
   assert(updateAction, "`updateAction` is required.")
@@ -269,7 +265,6 @@ function Outcome.configuratorStageUpdate(discriminator, updateProcess, updateAct
   local notice = ao.send({
     Target = Outcome.configurator,
     Action = "Stage-Update",
-    Discriminator = discriminator,
     UpdateProcess = updateProcess,
     UpdateAction = updateAction,
     ---@diagnostic disable-next-line: assign-type-mismatch
@@ -298,7 +293,6 @@ end
 --- Configurator unstage update
 --- @warning Only callable by the configurator admin, else the transaction will fail
 --- @warning Update must be staged, else the transaction will fail
---- @param discriminator string The discriminator
 --- @param updateProcess string The process to update
 --- @param updateAction string The update message action
 --- @param updateTags table|nil The update message tags or `nil`
@@ -307,10 +301,8 @@ end
 --- **✅ Success Notice**
 --- - `Unstage-Update-Notice`: **configurator → ao.id** -- Logs the unstage update action
 --- @return ConfiguratorUnstageUpdateNotice The configurator unstage update notice
-function Outcome.configuratorUnstageUpdate(discriminator, updateProcess, updateAction, updateTags, updateData)
+function Outcome.configuratorUnstageUpdate(updateProcess, updateAction, updateTags, updateData)
   -- Validate input
-  assert(discriminator, "`discriminator` is required.")
-  assert(type(discriminator) == "string", "`discriminator` must be a string.")
   assert(updateProcess, "`updateProcess` is required.")
   assert(sharedUtils.isValidArweaveAddress(updateProcess), "`updateProcess` must be a valid Arweave address.")
   assert(updateAction, "`updateAction` is required.")
@@ -321,7 +313,6 @@ function Outcome.configuratorUnstageUpdate(discriminator, updateProcess, updateA
   local notice = ao.send({
     Target = Outcome.configurator,
     Action = "Unstage-Update",
-    Discriminator = discriminator,
     UpdateProcess = updateProcess,
     UpdateAction = updateAction,
     ---@diagnostic disable-next-line: assign-type-mismatch
@@ -345,7 +336,6 @@ end
 --- Configurator action update
 --- @warning Only callable by the configurator admin, else the transaction will fail
 --- @warning Update must have been staged for at least the delay period; otherwise, the transaction will fail
---- @param discriminator string The discriminator
 --- @param updateProcess string The process to update
 --- @param updateAction string The update message action
 --- @param updateTags table|nil The update message tags or `nil`
@@ -354,10 +344,8 @@ end
 --- **✅ Success Notice**
 --- - `Action-Update-Notice`: **configurator → ao.id** -- Logs the action update action
 --- @return ConfiguratorActionUpdateNotice The configurator action update notice
-function Outcome.configuratorActionUpdate(discriminator, updateProcess, updateAction, updateTags, updateData)
+function Outcome.configuratorActionUpdate(updateProcess, updateAction, updateTags, updateData)
   -- Validate input
-  assert(discriminator, "`discriminator` is required.")
-  assert(type(discriminator) == "string", "`discriminator` must be a string.")
   assert(updateProcess, "`updateProcess` is required.")
   assert(sharedUtils.isValidArweaveAddress(updateProcess), "`updateProcess` must be a valid Arweave address.")
   assert(updateAction, "`updateAction` is required.")
@@ -368,7 +356,6 @@ function Outcome.configuratorActionUpdate(discriminator, updateProcess, updateAc
   local notice = ao.send({
     Target = Outcome.configurator,
     Action = "Action-Update",
-    Discriminator = discriminator,
     UpdateProcess = updateProcess,
     UpdateAction = updateAction,
     ---@diagnostic disable-next-line: assign-type-mismatch

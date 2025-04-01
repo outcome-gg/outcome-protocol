@@ -17,7 +17,6 @@ describe("#configurator #configuratorNotices", function()
     msg = {
       From = admin,
       Tags = {
-        Discriminator = "discriminator",
         UpdateProcess = "test-this-is-valid-arweave-wallet-address-2",
         UpdateAction = "action_name",
         UpdateTags = '{"key":"value"}',
@@ -31,7 +30,6 @@ describe("#configurator #configuratorNotices", function()
 
   it("should send stageUpdateNotice", function()
     local notice = configuratorNotices.stageUpdateNotice(
-      msg.Tags.Discriminator,
       msg.Tags.UpdateProcess,
       msg.Tags.UpdateAction,
       msg.Tags.UpdateTags,
@@ -41,7 +39,6 @@ describe("#configurator #configuratorNotices", function()
     )
 		assert.are.same({
       Action = 'Stage-Update-Notice',
-      Discriminator = msg.Tags.Discriminator,
       UpdateProcess = msg.Tags.UpdateProcess,
       UpdateAction = msg.Tags.UpdateAction,
       UpdateTags = msg.Tags.UpdateTags,

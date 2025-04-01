@@ -15,9 +15,6 @@ function ConfiguratorValidation.updateProcess(msg)
   if msg.From ~= Configurator.admin then
     return false, 'Sender must be admin!'
   end
-  if type(msg.Tags.Discriminator) ~= 'string' then
-    return false, 'Discriminator is required and must be a string!'
-  end
   if type(msg.Tags.UpdateProcess) ~= 'string' then
     return false, 'UpdateProcess is required and must be a string!'
   end

@@ -36,7 +36,6 @@ describe("#configurator", function()
     msgUpdate = {
       From = admin,
       Tags = {
-        Discriminator = "discriminator",
         UpdateProcess = "test-this-is-valid-arweave-wallet-address-1",
         UpdateAction = "action_name",
         UpdateTags = '{"key":"value"}',
@@ -91,12 +90,11 @@ describe("#configurator", function()
     -- assert correct response
     assert.are.same({
       Action = 'Stage-Update-Notice',
-      Discriminator = msgUpdate.Tags.Discriminator,
       UpdateProcess = msgUpdate.Tags.UpdateProcess,
       UpdateAction = msgUpdate.Tags.UpdateAction,
       UpdateTags = msgUpdate.Tags.UpdateTags,
       UpdateData = msgUpdate.Tags.UpdateData,
-      Hash = msgUpdate.Tags.Discriminator .. hashUpdate,
+      Hash = "update" .. hashUpdate,
     }, notice)
   end)
 
@@ -112,7 +110,7 @@ describe("#configurator", function()
     -- assert correct response
     assert.are.same({
       Action = 'Unstage-Update-Notice',
-      Hash = msgUpdate.Tags.Discriminator .. hashUpdate,
+      Hash = "update" ..hashUpdate,
     }, notice)
   end)
 
@@ -130,7 +128,7 @@ describe("#configurator", function()
     -- assert correct response
     assert.are.same({
       Action = 'Action-Update-Notice',
-      Hash = msgUpdate.Tags.Discriminator .. hashUpdate,
+      Hash = "update" ..hashUpdate,
     }, notice)
     -- restore the original os.time
     os.time:revert()
@@ -145,7 +143,7 @@ describe("#configurator", function()
     assert.are.same({
       Action = 'Stage-Update-Delay-Notice',
       UpdateDelay = msgUpdateDelay.Tags.UpdateDelay,
-      Hash = hashUpdateDelay,
+      Hash = "updateDelay" .. hashUpdateDelay,
     }, notice)
   end)
 
@@ -161,7 +159,7 @@ describe("#configurator", function()
     -- assert correct response
     assert.are.same({
       Action = 'Unstage-Update-Delay-Notice',
-      Hash = hashUpdateDelay,
+      Hash = "updateDelay" .. hashUpdateDelay,
     }, notice)
   end)
 
@@ -179,7 +177,7 @@ describe("#configurator", function()
     -- assert correct response
     assert.are.same({
       Action = 'Action-Update-Delay-Notice',
-      Hash = hashUpdateDelay,
+      Hash = "updateDelay" .. hashUpdateDelay,
     }, notice)
     -- restore the original os.time
     os.time:revert()
@@ -194,7 +192,7 @@ describe("#configurator", function()
     assert.are.same({
       Action = 'Stage-Update-Admin-Notice',
       UpdateAdmin = msgUpdateAdmin.Tags.UpdateAdmin,
-      Hash = hashUpdateAdmin
+      Hash = "updateAdmin" .. hashUpdateAdmin
     }, notice)
   end)
 
@@ -210,7 +208,7 @@ describe("#configurator", function()
     -- assert correct response
     assert.are.same({
       Action = 'Unstage-Update-Admin-Notice',
-      Hash = hashUpdateAdmin,
+      Hash = "updateAdmin" .. hashUpdateAdmin,
     }, notice)
   end)
 
@@ -229,7 +227,7 @@ describe("#configurator", function()
     -- assert correct response
     assert.are.same({
       Action = 'Action-Update-Admin-Notice',
-      Hash = hashUpdateAdmin,
+      Hash = "updateAdmin" .. hashUpdateAdmin,
     }, notice)
     -- restore the original os.time
     os.time:revert()

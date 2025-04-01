@@ -406,9 +406,9 @@ For a deeper look at system interactions, we've provided detailed sequence diagr
 | Action                | Required Role                    | Required Tags                          | Optional Tags                   | Result                 | 
 | --------------------- | -------------------------------- |-------------------------------------- | ------------------------------- | ---------------------- | 
 | `Info`  | | | | `Info-Response` |  
-| `Stage-Update`        | `A` | `Discriminator`: String <br>`UpdateProcess`: Valid Arweave address<br>`UpdateAction`: String | `UpdateTags`: Valid stringified Key-Value JSON<br>`UpdateData`: Valid Key-Value JSON | `Stage-Update-Notice` |
-| `Unstage-Update`      | `A` | `Discriminator`: String <br>`UpdateProcess`: Valid Arweave address<br>`UpdateAction`: String | `UpdateTags`: Valid stringified Key-Value JSON<br>`UpdateData`: Valid Key-Value JSON | `Unstage-Update-Notice` | 
-| `Action-Update`       | `A` | `Discriminator`: String <br>`UpdateProcess`: Valid Arweave address<br>`UpdateAction`: String | `UpdateTags`: Valid stringified Key-Value JSON<br>`UpdateData`: Valid Key-Value JSON | `Action-Update-Notice` |
+| `Stage-Update`        | `A` | `UpdateProcess`: Valid Arweave address<br>`UpdateAction`: String | `UpdateTags`: Valid stringified Key-Value JSON<br>`UpdateData`: Valid Key-Value JSON | `Stage-Update-Notice` |
+| `Unstage-Update`      | `A` | `UpdateProcess`: Valid Arweave address<br>`UpdateAction`: String | `UpdateTags`: Valid stringified Key-Value JSON<br>`UpdateData`: Valid Key-Value JSON | `Unstage-Update-Notice` | 
+| `Action-Update`       | `A` | `UpdateProcess`: Valid Arweave address<br>`UpdateAction`: String | `UpdateTags`: Valid stringified Key-Value JSON<br>`UpdateData`: Valid Key-Value JSON | `Action-Update-Notice` |
 | `Stage-Update-Admin`  | `A` | `UpdateAdmin`: Valid Arweave address | | `Stage-Update-Admin-Notice` | 
 | `Unstage-Update-Admin`| `A` | `UpdateAdmin`: Valid Arweave address | | `Unstage-Update-Admin-Notice` |  
 | `Action-Update-Admin` | `A` | `UpdateAdmin`: Valid Arweave address | | `Action-Update-Admin-Notice` | 
@@ -626,9 +626,9 @@ Outcome.configuratorInfo()
 | Method                | Req. Role  | Required Parameters                    | Result                 |
 | --------------------- | -------------- | -------------------------------------- | ---------------------- |
 | `configuratorInfo()`        ||  | `Info-Response` |
-| `configuratorStageUpdate(...)` |`A`| `discriminator`: String<br>`updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Stage-Update-Notice` |
-| `configuratorUnstageUpdate(...)` |`A`| `discriminator`: String<br>`updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Unstage-Update-Notice` |
-| `configuratorActionUpdate(...)` |`A`| `discriminator`: String<br>`updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Action-Update-Notice` |
+| `configuratorStageUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Stage-Update-Notice` |
+| `configuratorUnstageUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Unstage-Update-Notice` |
+| `configuratorActionUpdate(...)` |`A`| `updateProcess`: Valid Arweave address<br>`updateAction`: String<br>`updateTags`: Valid stringified Key-Value JSON or `nil`<br>`updateData`: Valid stringified Key-Value JSON or `nil` | `Action-Update-Notice` |
 | `configuratorStageUpdateAdmin(...)` |`A`| `updateAdmin`: Valid Arweave address | `Stage-Update-Admin-Notice` |
 | `configuratorUnstageUpdateAdmin(...)` |`A`| `updateAdmin`: Valid Arweave address | `Unstage-Update-Admin-Notice` |
 | `configuratorActionUpdateAdmin(...)` |`A`| `updateAdmin`: Valid Arweave address | `Action-Update-Admin-Notice` |

@@ -55,7 +55,6 @@ UPDATE WRITE HANDLERS
 ]]
 --- Stage update handler
 --- @param msg Message The message received, expected to contain:
---- - msg.Tags.Discriminator string The discriminator
 --- - msg.Tags.UpdateProcess string The update process
 --- - msg.Tags.UpdateAction string The update action
 --- - msg.Tags.UpdateTags? string|nil The update tags or `nil`
@@ -74,12 +73,11 @@ Handlers.add("Stage-Update", {Action = "Stage-Update"}, function(msg)
   -- If validation passes, stage the update.
   local updateTags = msg.Tags.UpdateTags or ""
   local updateData = msg.Tags.UpdateData or ""
-  return Configurator:stageUpdate(msg.Tags.Discriminator, msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
+  return Configurator:stageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
 end)
 
 --- Unstage update handler
 --- @param msg Message The message received, expected to contain:
---- - msg.Tags.Discriminator string The discriminator
 --- - msg.Tags.UpdateProcess string The update process
 --- - msg.Tags.UpdateAction string The update action
 --- - msg.Tags.UpdateTags? string|nil The update tags or `nil`
@@ -98,12 +96,11 @@ Handlers.add("Unstage-Update", {Action = "Unstage-Update"}, function(msg)
   -- If validation passes, unstage the update.
   local updateTags = msg.Tags.UpdateTags or ""
   local updateData = msg.Tags.UpdateData or ""
-  return Configurator:unstageUpdate(msg.Tags.Discriminator, msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
+  return Configurator:unstageUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
 end)
 
 --- Action update handler
 --- @param msg Message The message received, expected to contain:
---- - msg.Tags.Discriminator string The discriminator
 --- - msg.Tags.UpdateProcess string The update process
 --- - msg.Tags.UpdateAction string The update action
 --- - msg.Tags.UpdateTags? string|nil The update tags or `nil`
@@ -122,7 +119,7 @@ Handlers.add("Action-Update", {Action = "Action-Update"}, function(msg)
   -- If validation passes, action the update.
   local updateTags = msg.Tags.UpdateTags or ""
   local updateData = msg.Tags.UpdateData or ""
-  return Configurator:actionUpdate(msg.Tags.Discriminator, msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
+  return Configurator:actionUpdate(msg.Tags.UpdateProcess, msg.Tags.UpdateAction, updateTags, updateData, msg)
 end)
 
 --[[
