@@ -94,16 +94,28 @@ end
 --- @param b string A string representing an integer value
 --- @return string The sum of a and b as a string
 function sharedUtils.safeAdd(a, b)
-  local aInt = bint(a)
-  local bInt = bint(b)
-  local result = bint.__add(aInt, bInt)
-
-  -- Overflow check: if the result is smaller than either operand, assume overflow
-  if bint.__lt(result, aInt) or bint.__lt(result, bInt) then
+  -- Check if both a and b are valid numeric strings and integers
+  local numA, numB = tonumber(a), tonumber(b)
+  if not numA or not numB then
+    error("Non-numeric string provided to safeAdd")
+  end
+  if numA % 1 ~= 0 or numB % 1 ~= 0 then
+    error("Non-integer string provided to safeAdd")
+  end
+  -- Convert to bint
+  local intA = bint(a)
+  local intB = bint(b)
+  -- Overflow check
+  if (intA > 0 and intB > bint.__sub(bint.maxinteger(), intA)) then
     error("Overflow detected in safeAdd")
   end
-
-  return tostring(result)
+  -- Underflow check
+  if (intA < 0 and intB < bint.__sub(bint.mininteger(), intA)) then
+    error("Underflow detected in safeAdd")
+  end
+  -- Return result
+  local result = tostring(bint.__add(intA, intB))
+  return result
 end
 
 --- Safely subtracts b from a using bint, with underflow detection.
@@ -111,15 +123,27 @@ end
 --- @param b string A string representing an integer value.
 --- @return string The difference (a - b) as a string.
 function sharedUtils.safeSub(a, b)
-  local aInt = bint(a)
-  local bInt = bint(b)
-
-  -- Underflow check: b must be <= a
-  if not bint.__le(bInt, aInt) then
+  -- Check if both a and b are valid numeric strings and integers
+  local numA, numB = tonumber(a), tonumber(b)
+  if not numA or not numB then
+    error("Non-numeric string provided to safeSub")
+  end
+  if numA % 1 ~= 0 or numB % 1 ~= 0 then
+    error("Non-integer string provided to safeSub")
+  end
+  -- Convert to bint
+  local intA = bint(a)
+  local intB = bint(b)
+  -- Overflow check
+  if (intB < 0 and intA > bint.__add(bint.maxinteger(), intB)) then
+    error("Overflow detected in safeSub")
+  end
+  -- Underflow check
+  if (intB > 0 and intA < bint.__add(bint.mininteger(), intB)) then
     error("Underflow detected in safeSub")
   end
-
-  local result = bint.__sub(aInt, bInt)
+  -- Return result
+  local result = bint.__sub(intA, intB)
   return tostring(result)
 end
 

@@ -275,7 +275,7 @@ end
 --- @return table<string, number> probabilities A table mapping each positionId to its probability (as a decimal percentage)
 function CPMMMethods:calcProbabilities()
   local poolBalances = self:getPoolBalances()
-  local totalBalance = bint(0)
+  local totalBalance = "0"
   local probabilities = {}
   -- Calculate total balance
   for i = 1, #self.tokens.positionIds do

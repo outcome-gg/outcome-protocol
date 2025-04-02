@@ -321,11 +321,11 @@
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 57.44%"></span>
-                  <span><strong>57.44%</strong> Coverage</span>
+                  <span class="bg" style="width: 40.67%"></span>
+                  <span><strong>40.67%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>112</strong> Hits</span>
-               <span class="miss"><strong>83</strong> Missed</span>
+               <span class="hits"><strong>85</strong> Hits</span>
+               <span class="miss"><strong>124</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -438,16 +438,16 @@ end
 </pre>
       </div>
 
-      <div class="hidden file success-low" id="src-marketmodules-conditionaltokensvalidation">
+      <div class="hidden file warning" id="src-marketmodules-conditionaltokensvalidation">
          <h2 class="title">
             src/marketModules/conditionalTokensValidation.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 73.58%"></span>
-                  <span><strong>73.58%</strong> Coverage</span>
+                  <span class="bg" style="width: 52.83%"></span>
+                  <span><strong>52.83%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>39</strong> Hits</span>
-               <span class="miss"><strong>14</strong> Missed</span>
+               <span class="hits"><strong>28</strong> Hits</span>
+               <span class="miss"><strong>25</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -467,19 +467,19 @@ See conditionalTokens.lua for full license details.
 --- @param quantity any The quantity to be validated
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
 local function validateQuantity(quantity)
-<span class="fc" data-hits="6">  if type(quantity) ~= &#39;string&#39; then</span>
+<span class="fc" data-hits="4">  if type(quantity) ~= &#39;string&#39; then</span>
 <span class="fc" data-hits="1">    return false, &#39;Quantity is required and must be a string!&#39;</span>
   end
 
-<span class="fc" data-hits="5">  local num = tonumber(quantity)</span>
-<span class="fc" data-hits="5">  if not num then</span>
+<span class="fc" data-hits="3">  local num = tonumber(quantity)</span>
+<span class="fc" data-hits="3">  if not num then</span>
 <span class="fc" data-hits="1">    return false, &#39;Quantity must be a valid number!&#39;</span>
   end
-<span class="fc" data-hits="4">  if num &lt;= 0 then</span>
-<span class="fc" data-hits="2">    return false, &#39;Quantity must be greater than zero!&#39;</span>
+<span class="fc" data-hits="2">  if num &lt;= 0 then</span>
+<span class="fc" data-hits="1">    return false, &#39;Quantity must be greater than zero!&#39;</span>
   end
-<span class="fc" data-hits="2">  if num % 1 ~= 0 then</span>
-<span class="fc" data-hits="1">    return false, &#39;Quantity must be an integer!&#39;</span>
+<span class="fc" data-hits="1">  if num % 1 ~= 0 then</span>
+<span class="nc">    return false, &#39;Quantity must be an integer!&#39;</span>
   end
 
 <span class="fc" data-hits="1">  return true</span>
@@ -489,19 +489,19 @@ end
 --- @param payouts any The payouts to be validated
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
 local function validatePayouts(payouts)
-<span class="fc" data-hits="1">  if not payouts then</span>
+<span class="nc">  if not payouts then</span>
 <span class="nc">    return false, &quot;Payouts is required!&quot;</span>
   end
-<span class="fc" data-hits="1">  if not sharedUtils.isJSONArray(payouts) then</span>
+<span class="nc">  if not sharedUtils.isJSONArray(payouts) then</span>
 <span class="nc">    return false, &quot;Payouts must be a valid JSON Array!&quot;</span>
   end
 
-<span class="fc" data-hits="1">  local decodedPayouts = json.decode(payouts)</span>
-<span class="fc" data-hits="2">  for _, payout in ipairs(decodedPayouts) do</span>
-<span class="fc" data-hits="1">    if not tonumber(payout) then</span>
+<span class="nc">  local decodedPayouts = json.decode(payouts)</span>
+<span class="nc">  for _, payout in ipairs(decodedPayouts) do</span>
+<span class="nc">    if not tonumber(payout) then</span>
 <span class="nc">      return false, &quot;Payouts item must be a valid number!&quot;</span>
     end
-<span class="fc" data-hits="1">    if tonumber(payout) &lt; 0 then</span>
+<span class="nc">    if tonumber(payout) &lt; 0 then</span>
 <span class="nc">      return false, &quot;Payouts item must be greater than or equal to zero!&quot;</span>
     end
   end
@@ -514,16 +514,16 @@ end
 --- @param cpmm CPMM The CPMM instance for checking token balances
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
 <span class="fc" data-hits="1">function ConditionalTokensValidation.mergePositions(msg, cpmm)</span>
-<span class="fc" data-hits="7">  local onBehalfOf = msg.Tags[&#39;OnBehalfOf&#39;] or msg.From</span>
+<span class="fc" data-hits="4">  local onBehalfOf = msg.Tags[&#39;OnBehalfOf&#39;] or msg.From</span>
   local success, err
 
-<span class="fc" data-hits="7">  if onBehalfOf ~= msg.From then</span>
-<span class="fc" data-hits="1">    success, err = sharedValidation.validateAddress(onBehalfOf, &#39;onBehalfOf&#39;)</span>
-<span class="fc" data-hits="1">    if not success then return false, err end</span>
+<span class="fc" data-hits="4">  if onBehalfOf ~= msg.From then</span>
+<span class="nc">    success, err = sharedValidation.validateAddress(onBehalfOf, &#39;onBehalfOf&#39;)</span>
+<span class="nc">    if not success then return false, err end</span>
   end
 
-<span class="fc" data-hits="6">  success, err = validateQuantity(msg.Tags.Quantity)</span>
-<span class="fc" data-hits="6">  if not success then return false, err end</span>
+<span class="fc" data-hits="4">  success, err = validateQuantity(msg.Tags.Quantity)</span>
+<span class="fc" data-hits="4">  if not success then return false, err end</span>
 
   -- Check user balances for each position
 <span class="fc" data-hits="4">  for i = 1, #cpmm.tokens.positionIds do</span>
@@ -566,27 +566,27 @@ end
 --- @param resolutionAgent string The resolution agent process ID
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
 <span class="fc" data-hits="1">function ConditionalTokensValidation.reportPayouts(msg, resolutionAgent)</span>
-<span class="fc" data-hits="1">  if msg.From ~= resolutionAgent then</span>
+<span class="nc">  if msg.From ~= resolutionAgent then</span>
 <span class="nc">    return false, &quot;Sender must be the resolution agent!&quot;</span>
   end
 
-<span class="fc" data-hits="1">  return validatePayouts(msg.Tags.Payouts)</span>
+<span class="nc">  return validatePayouts(msg.Tags.Payouts)</span>
 end
 
 <span class="fc" data-hits="1">return ConditionalTokensValidation</span>
 </pre>
       </div>
 
-      <div class="hidden file warning" id="src-marketmodules-sharedutils">
+      <div class="hidden file danger" id="src-marketmodules-sharedutils">
          <h2 class="title">
             src/marketModules/sharedUtils.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 42.31%"></span>
-                  <span><strong>42.31%</strong> Coverage</span>
+                  <span class="bg" style="width: 13.64%"></span>
+                  <span><strong>13.64%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>22</strong> Hits</span>
-               <span class="miss"><strong>30</strong> Missed</span>
+               <span class="hits"><strong>9</strong> Hits</span>
+               <span class="miss"><strong>57</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -604,14 +604,14 @@ See market.lua for full license details.
 --- @return boolean
 local function isSimpleValue(value)
   -- Trim whitespace
-<span class="fc" data-hits="2">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
+<span class="nc">  value = value:match(&quot;^%s*(.-)%s*$&quot;) or value</span>
   -- Check for a quoted string: &quot;someValue&quot;
-<span class="fc" data-hits="2">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
+<span class="nc">  if value:match(&#39;^&quot;[^&quot;]*&quot;$&#39;) then</span>
 <span class="nc">    return true</span>
   end
   -- Check for a number (integer or float, optional minus sign): 123, -123, 123.45
-<span class="fc" data-hits="2">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
-<span class="fc" data-hits="2">    return true</span>
+<span class="nc">  if value:match(&#39;^[-]?%d+%.?%d*$&#39;) then</span>
+<span class="nc">    return true</span>
   end
   -- Check for boolean
 <span class="nc">  if string.lower(value) == &quot;true&quot; or string.lower(value) == &quot;false&quot; then</span>
@@ -650,27 +650,27 @@ end
 --- @param str any
 --- @return boolean
 <span class="fc" data-hits="1">function sharedUtils.isJSONArray(str)</span>
-<span class="fc" data-hits="1">  if type(str) ~= &quot;string&quot; then return false end</span>
+<span class="nc">  if type(str) ~= &quot;string&quot; then return false end</span>
   -- Trim whitespace
-<span class="fc" data-hits="1">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
+<span class="nc">  str = str:match(&quot;^%s*(.-)%s*$&quot;)</span>
   -- Ensure it starts with `[` and ends with `]`
-<span class="fc" data-hits="1">  local isArray = str:match(&quot;^%[%s*(.-)%s*%]$&quot;)</span>
-<span class="fc" data-hits="1">  if not isArray then return false end</span>
+<span class="nc">  local isArray = str:match(&quot;^%[%s*(.-)%s*%]$&quot;)</span>
+<span class="nc">  if not isArray then return false end</span>
   -- Split the array elements and validate each one
-<span class="fc" data-hits="3">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
-<span class="fc" data-hits="2">    value = value:match(&quot;^%s*(.-)%s*$&quot;) -- Trim whitespace around each value</span>
-<span class="fc" data-hits="2">    if not isSimpleValue(value) then</span>
+<span class="nc">  for value in isArray:gmatch(&quot;[^,]+&quot;) do</span>
+<span class="nc">    value = value:match(&quot;^%s*(.-)%s*$&quot;) -- Trim whitespace around each value</span>
+<span class="nc">    if not isSimpleValue(value) then</span>
 <span class="nc">      return false</span>
     end
   end
-<span class="fc" data-hits="1">  return true</span>
+<span class="nc">  return true</span>
 end
 
 --- Verify if a valid Arweave address
 --- @param address any
 --- @return boolean
 <span class="fc" data-hits="1">function sharedUtils.isValidArweaveAddress(address)</span>
-<span class="fc" data-hits="1">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[A-Za-z0-9_-]+$&quot;) ~= nil</span>
+<span class="nc">	return type(address) == &quot;string&quot; and #address == 43 and string.match(address, &quot;^[A-Za-z0-9_-]+$&quot;) ~= nil</span>
 end
 
 --- Verify if a valid boolean string
@@ -685,16 +685,28 @@ end
 --- @param b string A string representing an integer value
 --- @return string The sum of a and b as a string
 <span class="fc" data-hits="1">function sharedUtils.safeAdd(a, b)</span>
-<span class="nc">  local aInt = bint(a)</span>
-<span class="nc">  local bInt = bint(b)</span>
-<span class="nc">  local result = bint.__add(aInt, bInt)</span>
-
-  -- Overflow check: if the result is smaller than either operand, assume overflow
-<span class="nc">  if bint.__lt(result, aInt) or bint.__lt(result, bInt) then</span>
+  -- Check if both a and b are valid numeric strings and integers
+<span class="nc">  local numA, numB = tonumber(a), tonumber(b)</span>
+<span class="nc">  if not numA or not numB then</span>
+<span class="nc">    error(&quot;Non-numeric string provided to safeAdd: &quot; .. tostring(numA) .. &quot; &quot; .. tostring(numB))</span>
+  end
+<span class="nc">  if numA % 1 ~= 0 or numB % 1 ~= 0 then</span>
+<span class="nc">    error(&quot;Non-integer string provided to safeAdd&quot;)</span>
+  end
+  -- Convert to bint
+<span class="nc">  local intA = bint(a)</span>
+<span class="nc">  local intB = bint(b)</span>
+  -- Overflow check
+<span class="nc">  if (intA &gt; 0 and intB &gt; bint.__sub(bint.maxinteger(), intA)) then</span>
 <span class="nc">    error(&quot;Overflow detected in safeAdd&quot;)</span>
   end
-
-<span class="nc">  return tostring(result)</span>
+  -- Underflow check
+<span class="nc">  if (intA &lt; 0 and intB &lt; bint.__sub(bint.mininteger(), intA)) then</span>
+<span class="nc">    error(&quot;Underflow detected in safeAdd&quot;)</span>
+  end
+  -- Return result
+<span class="nc">  local result = tostring(bint.__add(intA, intB))</span>
+<span class="nc">  return result</span>
 end
 
 --- Safely subtracts b from a using bint, with underflow detection.
@@ -702,15 +714,27 @@ end
 --- @param b string A string representing an integer value.
 --- @return string The difference (a - b) as a string.
 <span class="fc" data-hits="1">function sharedUtils.safeSub(a, b)</span>
-<span class="nc">  local aInt = bint(a)</span>
-<span class="nc">  local bInt = bint(b)</span>
-
-  -- Underflow check: b must be &lt;= a
-<span class="nc">  if not bint.__le(bInt, aInt) then</span>
+  -- Check if both a and b are valid numeric strings and integers
+<span class="nc">  local numA, numB = tonumber(a), tonumber(b)</span>
+<span class="nc">  if not numA or not numB then</span>
+<span class="nc">    error(&quot;Non-numeric string provided to safeSub&quot;)</span>
+  end
+<span class="nc">  if numA % 1 ~= 0 or numB % 1 ~= 0 then</span>
+<span class="nc">    error(&quot;Non-integer string provided to safeSub&quot;)</span>
+  end
+  -- Convert to bint
+<span class="nc">  local intA = bint(a)</span>
+<span class="nc">  local intB = bint(b)</span>
+  -- Overflow check
+<span class="nc">  if (intB &lt; 0 and intA &gt; bint.__add(bint.maxinteger(), intB)) then</span>
+<span class="nc">    error(&quot;Overflow detected in safeSub&quot;)</span>
+  end
+  -- Underflow check
+<span class="nc">  if (intB &gt; 0 and intA &lt; bint.__add(bint.mininteger(), intB)) then</span>
 <span class="nc">    error(&quot;Underflow detected in safeSub&quot;)</span>
   end
-
-<span class="nc">  local result = bint.__sub(aInt, bInt)</span>
+  -- Return result
+<span class="nc">  local result = bint.__sub(intA, intB)</span>
 <span class="nc">  return tostring(result)</span>
 end
 
@@ -723,11 +747,11 @@ end
             src/marketModules/sharedValidation.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 24.49%"></span>
-                  <span><strong>24.49%</strong> Coverage</span>
+                  <span class="bg" style="width: 18.37%"></span>
+                  <span><strong>18.37%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>12</strong> Hits</span>
-               <span class="miss"><strong>37</strong> Missed</span>
+               <span class="hits"><strong>9</strong> Hits</span>
+               <span class="miss"><strong>40</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -746,11 +770,11 @@ See market.lua for full license details.
 --- @param tagName string The name of the tag being validated
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
 <span class="fc" data-hits="1">function sharedValidation.validateAddress(address, tagName)</span>
-<span class="fc" data-hits="1">  if type(address) ~= &#39;string&#39; then</span>
+<span class="nc">  if type(address) ~= &#39;string&#39; then</span>
 <span class="nc">    return false, tagName .. &#39; is required and must be a string!&#39;</span>
   end
-<span class="fc" data-hits="1">  if not sharedUtils.isValidArweaveAddress(address) then</span>
-<span class="fc" data-hits="1">    return false, tagName .. &#39; must be a valid Arweave address!&#39;</span>
+<span class="nc">  if not sharedUtils.isValidArweaveAddress(address) then</span>
+<span class="nc">    return false, tagName .. &#39; must be a valid Arweave address!&#39;</span>
   end
 <span class="nc">  return true</span>
 end
@@ -845,7 +869,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-04-01 17:55:07
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-04-02 14:01:11
    </footer>
 
    <script type="text/javascript">

@@ -69,6 +69,8 @@ end
 local function tryGetPositionBalance(market, id, expectedBalance)
   local res = Outcome.marketPositionBalance(market, id)
   if not res or res.Balance ~= expectedBalance then
+    print("res.Balance: " .. tostring(res.Balance))
+    print("expectedBalance: " .. tostring(expectedBalance))
     return nil, "Balance is nil or does not match expected value"
   end
   return res
