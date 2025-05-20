@@ -17,6 +17,7 @@ https://outcome.gg/tos
 ]]
 
 local spawnMarkets = require('scripts.spawnMarkets')
+local initMarkets = require('scripts.initMarkets')
 
 --[[
 =======
@@ -34,9 +35,16 @@ WRITE HANDLERS
 
 --- Spawn markets
 --- @param msg Message The message received
---- @return Message spawnedMarketsNotice The spawned markets notice
+--- @return Message spawnedMarketsScriptNotice The spawned markets notice
 Handlers.add("Spawn-Markets", {Action = "Spawn-Markets"}, function(msg)
   assert(msg.From == ao.id, "Only the server can spawn markets")
   return spawnMarkets:run(Env, msg)
 end)
 
+--- Init markets
+--- @param msg Message The message received
+--- @return Message initdMarketsScriptNotice The init markets notice
+Handlers.add("Init-Markets", {Action = "Init-Markets"}, function(msg)
+  assert(msg.From == ao.id, "Only the server can init markets")
+  return initMarkets:run(Env, msg)
+end)

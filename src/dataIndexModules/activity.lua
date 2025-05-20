@@ -86,6 +86,7 @@ end
 --- @param creatorFee number The market creator fee
 --- @param creatorFeeTarget string The market creator fee target
 --- @param question string The market question
+--- @param questionSlug string The market question slug
 --- @param rules string The market rules
 --- @param outcomeSlotCount number The market outcome slot count
 --- @param collateral string The market collateral
@@ -93,7 +94,8 @@ end
 --- @param category string The market category
 --- @param subcategory string The market subcategory
 --- @param logo string The market logo
---- @param groupId string The market group ID
+--- @param logos string The market logos
+--- @param eventId string The market event ID
 --- @param timestamp number The market timestamp
 --- @param cast boolean Whether to cast the message
 --- @param msg Message The message received
@@ -104,6 +106,7 @@ function ActivityMethods:logMarket(
   creatorFee,
   creatorFeeTarget,
   question,
+  questionSlug,
   rules,
   outcomeSlotCount,
   collateral,
@@ -111,7 +114,8 @@ function ActivityMethods:logMarket(
   category,
   subcategory,
   logo,
-  groupId,
+  logos,
+  eventId,
   timestamp,
   cast,
   msg
@@ -126,6 +130,7 @@ function ActivityMethods:logMarket(
         creator_fee,
         creator_fee_target,
         question,
+        question_slug,
         rules,
         outcome_slot_count,
         collateral,
@@ -133,13 +138,14 @@ function ActivityMethods:logMarket(
         category,
         subcategory,
         logo,
-        group_id,
+        logos,
+        event_id,
         timestamp
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, groupId, timestamp
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, questionSlug, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, logos, eventId, timestamp
   )
-  -- Send noticeif cast is true
+  -- Send notice if cast is true
   if cast then
     return self.logMarketNotice(
       msg.From,
@@ -148,6 +154,7 @@ function ActivityMethods:logMarket(
       creatorFee,
       creatorFeeTarget,
       question,
+      questionSlug,
       rules,
       outcomeSlotCount,
       collateral,
@@ -155,7 +162,8 @@ function ActivityMethods:logMarket(
       category,
       subcategory,
       logo,
-      groupId,
+      logos,
+      eventId,
       msg
     )
   end

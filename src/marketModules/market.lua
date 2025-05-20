@@ -148,7 +148,7 @@ ACTIVITY LOGS
 
 local function logFunding(dataIndex, user, onBehalfOf, operation, collateral, quantity, msg)
   return msg.forward(dataIndex, {
-    Action = "Log-Funding",
+    Action = "Log-Funding-Notice",
     User = user,
     OnBehalfOf = onBehalfOf,
     Operation = operation,
@@ -159,7 +159,7 @@ end
 
 local function logPrediction(dataIndex, user, onBehalfOf, operation, collateral, quantity, outcome, shares, price, msg)
   return msg.forward(dataIndex, {
-    Action = "Log-Prediction",
+    Action = "Log-Prediction-Notice",
     User = user,
     OnBehalfOf = onBehalfOf,
     Operation = operation,
@@ -173,7 +173,7 @@ end
 
 local function logProbabilities(dataIndex, probabilities, msg)
   return msg.forward(dataIndex, {
-    Action = "Log-Probabilities",
+    Action = "Log-Probabilities-Notice",
     Probabilities = json.encode(probabilities)
   })
 end
@@ -196,6 +196,10 @@ function MarketMethods:addFunding(msg)
   self.cpmm:addFunding(onBehalfOf, msg.Tags.Quantity, distribution, cast, sendInterim, msg)
   -- Log funding update to data index
   logFunding(self.dataIndex, msg.Tags.Sender, onBehalfOf, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
+  -- Log initial probability
+  if distribution then
+    logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
+  end
 end
 
 --- Remove funding

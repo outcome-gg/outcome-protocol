@@ -170,6 +170,21 @@ function cpmmValidation.calcSellAmount(msg, validPositionIds)
   return sharedValidation.validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
 end
 
+--- Validates calc return amount
+--- @param msg Message The message to be validated
+--- @param validPositionIds table<string> The array of valid position IDs
+--- @return boolean, string|nil
+function cpmmValidation.calcReturnAmount(msg, validPositionIds)
+  -- Check that PositionId is valid
+  local success, err = sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+  if not success then
+    return false, err
+  end
+
+  -- Check that OutcomeTokensToSell is a positive integer
+  return sharedValidation.validatePositiveInteger(msg.Tags.OutcomeTokensToSell, "OutcomeTokensToSell")
+end
+
 --- Validates fees withdrawable
 --- @param msg Message The message to be validated
 --- @return boolean, string|nil

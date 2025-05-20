@@ -60,6 +60,7 @@ MARKETS = [[
     creator_fee NUMBER NOT NULL,
     creator_fee_target TEXT NOT NULL,
     question TEXT NOT NULL,
+    question_slug TEXT NOT NULL,
     rules TEXT NOT NULL,
     outcome_slot_count NUMBER NOT NULL,
     collateral TEXT NOT NULL,
@@ -103,7 +104,7 @@ FUNDINGS = [[
     user TEXT NOT NULL,
     operation TEXT NOT NULL CHECK (operation IN ('add', 'remove')),
     collateral TEXT NOT NULL,
-    amount NUMBER NOT NULL,
+    amount TEXT NOT NULL,
     timestamp NUMBER NOT NULL,
     FOREIGN KEY (market) REFERENCES Markets(id),
     FOREIGN KEY (user) REFERENCES Users(id)
@@ -120,7 +121,7 @@ PREDICTIONS = [[
     amount TEXT NOT NULL,
     outcome TEXT NOT NULL,
     shares TEXT NOT NULL,
-    price REAL NOT NULL,
+    price TEXT NOT NULL,
     timestamp NUMBER NOT NULL,
     FOREIGN KEY (market) REFERENCES Markets(id),
     FOREIGN KEY (user) REFERENCES Users(id)
@@ -142,7 +143,7 @@ PROBABILITIES = [[
     id TEXT PRIMARY KEY,
     set_id TEXT NOT NULL,
     outcome TEXT NOT NULL,
-    probability REAL NOT NULL,
+    probability TEXT NOT NULL,
     FOREIGN KEY (set_id) REFERENCES ProbabilitySets(id)
   );
 ]]
@@ -173,11 +174,23 @@ end
 local tables = initDb()
 print("tables: " .. json.encode(tables))
 
+local function toSlug(str)
+  -- Lowercase
+  str = string.lower(str)
+  -- Remove non-word characters except space and hyphen
+  str = string.gsub(str, "[^%w%s%-]", "")
+  -- Trim whitespace
+  str = string.gsub(str, "^%s*(.-)%s*$", "%1")
+  -- Replace spaces with hyphens
+  str = string.gsub(str, "%s+", "-")
+  return str
+end
+
 --- Represents the DataIndex Configuration
 --- @class DataIndexConfiguration
 --- @field configurator string The configurator
 --- @field moderators table<string> The moderators
---- @field viewers table<string> The viwers
+--- @field viewers table<string> The viewers
 
 --- Retrieve DataIndex Configuration
 --- Fetches configuration parameters from constants
@@ -188,6 +201,9 @@ local function retrieveDataIndexConfig()
     moderators = constants.moderators,
     viewers = constants.viewers
   }
+  -- add ao.id
+  table.insert(config.viewers, ao.id)
+  table.insert(config.moderators, ao.id)
   return config
 end
 
@@ -229,12 +245,14 @@ Handlers.add("Log-Market", {Action = "Log-Market-Notice"}, function(msg)
   local cast = msg.Tags.Cast == "true"
   local creatorFee = tonumber(msg.Tags.CreatorFee)
   local outcomeSlotCount = tonumber(msg.Tags.OutcomeSlotCount)
+  local questionSlug = toSlug(msg.Tags.Question)
   return DataIndex.activity:logMarket(
     msg.Tags.Market,
     msg.Tags.Creator,
     creatorFee,
     msg.Tags.CreatorFeeTarget,
     msg.Tags.Question,
+    questionSlug,
     msg.Tags.Rules,
     outcomeSlotCount,
     msg.Tags.Collateral,
@@ -242,7 +260,8 @@ Handlers.add("Log-Market", {Action = "Log-Market-Notice"}, function(msg)
     msg.Tags.Category,
     msg.Tags.Subcategory,
     msg.Tags.Logo,
-    msg.Tags.GroupId,
+    msg.Tags.Logos,
+    msg.Tags.EventId,
     os.time(),
     cast,
     msg
@@ -256,7 +275,7 @@ Handlers.add("Log-Market-Group", {Action = "Log-Market-Group-Notice"}, function(
   activityValidation.validateLogMarket(msg)
   local cast = msg.Tags.Cast == "true"
   return DataIndex.activity:logMarketGroup(
-    msg.Tags.GroupId,
+    msg.Tags.EventId,
     msg.Tags.Collateral,
     msg.Tags.Creator,
     msg.Tags.Question,

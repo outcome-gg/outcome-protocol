@@ -770,6 +770,36 @@ describe("#market #conditionalTokens #cpmmValidation", function()
     end, "PoolBalance must be greater than return amount plus fees!")
 	end)
 
+  it("should calc expected return amount", function()
+    -- add funding 
+    CPMM:addFunding(
+      msgAddFunding.Tags.Sender,
+      msgAddFunding.Tags.Quantity,
+      json.decode(msgAddFunding.Tags["X-Distribution"]),
+      false, -- cast
+      false, -- castInterim
+      msgAddFunding
+    )
+    -- calc sell amount
+    local sellAmount = ''
+    assert.has.no.errors(function()
+      sellAmount = CPMM:calcSellAmount(
+        tonumber(msgCalcSellAmount.Tags.ReturnAmount),
+        msgCalcSellAmount.Tags.PositionId
+      )
+    end)
+
+    -- calc return amount   
+    assert.has.no.errors(function()
+      returnAmount = CPMM:calcReturnAmount(
+        tonumber(sellAmount),
+        msgCalcSellAmount.Tags.PositionId
+      )
+    end)
+    -- assert return amount
+    assert.is_true(tonumber(returnAmount) == tonumber(msgCalcSellAmount.Tags.ReturnAmount))
+	end)
+
   it("should buy", function()
     -- add funding
     CPMM:addFunding(

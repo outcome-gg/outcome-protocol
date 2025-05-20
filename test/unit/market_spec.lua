@@ -778,6 +778,68 @@ describe("#market", function()
   assert.are.same(noticeBuy, notice)
  end)
 
+--  it("should buy with unbalanced distribution", function()
+--   local unbalancedDistribution = { 80, 20 }
+--   -- add funding
+--   Market.cpmm:addFunding(
+--     msgAddFunding.Tags.Sender,
+--     msgAddFunding.Tags.Quantity,
+--     unbalancedDistribution,
+--     false, -- cast
+--     false, -- castInterim
+--     msgAddFunding
+--   )
+--   -- calc buy amount
+--   local buyAmount = Market.cpmm:calcBuyAmount(
+--     tonumber(msgCalcBuyAmount.Tags.InvestmentAmount),
+--     "1" --msgCalcBuyAmount.Tags.PositionId
+--   )
+--   local probs = Market.cpmm:calcProbabilities()
+--   -- buy
+--   local notice = {}
+--   assert.has.no.errors(function()
+--     notice = Market.cpmm:buy(
+--     msgBuy.From,
+--     msgBuy.From, -- onBehalfOf is the same as sender
+--     msgBuy.Tags.InvestmentAmount,
+--     "1", --msgBuy.Tags.PositionId,
+--     msgBuy.Tags.Quantity,
+--     false, -- cast
+--     false, -- castInterim
+--     msgBuy
+--     )
+--   end)
+--   probs = Market.cpmm:calcProbabilities()
+--   -- assert state
+--   -- LP Token balances
+--   assert.are.same(msgBuy.Tags.InvestmentAmount, Market.cpmm.token.balances[msgBuy.From])
+--   -- Conditional Token Balances
+--   local fundingAmount = tonumber(msgAddFunding.Tags.Quantity)
+--   local feeAmount = math.ceil(tonumber(msgBuy.Tags.InvestmentAmount) * Market.cpmm.lpFee / 10000)
+--   local quantityMinusFees = tonumber(msgBuy.Tags.Quantity) - tonumber(feeAmount)
+--   assert.are.same({
+--     ["1"] = {
+--       [_G.ao.id] = tostring(fundingAmount + quantityMinusFees - tonumber(buyAmount)),
+--       [msgBuy.From] = buyAmount,
+--     },
+--     ["2"] = {
+--       [_G.ao.id] = tostring(fundingAmount + quantityMinusFees),
+--     },
+--   }, Market.cpmm.tokens.balancesById)
+--   -- Pool Balances
+--   local poolBalances = {
+--     tostring(fundingAmount + quantityMinusFees - tonumber(buyAmount)),
+--     tostring(fundingAmount + quantityMinusFees)
+--   }
+--  assert.are.same(poolBalances, Market.cpmm:getPoolBalances())
+--  -- @dev update expected notice
+--  noticeBuy.PositionTokensBought = buyAmount
+--  noticeBuy.FeeAmount = tostring(feeAmount)
+--  noticeBuy.OnBehalfOf = msgBuy.From
+--  -- assert notice
+--  assert.are.same(noticeBuy, notice)
+-- end)
+
  it("should fail to buy and return Collateral Tokens if invalid", function()
   -- TODO
   end)

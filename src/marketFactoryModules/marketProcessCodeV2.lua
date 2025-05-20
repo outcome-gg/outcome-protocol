@@ -2788,6 +2788,7 @@ local utils = require(".utils")
 local token = require('marketModules.token')
 local conditionalTokens = require('marketModules.conditionalTokens')
 local sharedUtils = require("marketModules.sharedUtils")
+local json = require("json")
 
 --- Represents a CPMM (Constant Product Market Maker)
 --- @class CPMM
@@ -3038,20 +3039,31 @@ end
 --- @return table<string, number> probabilities A table mapping each positionId to its probability (as a decimal percentage)
 function CPMMMethods:calcProbabilities()
   local poolBalances = self:getPoolBalances()
-  local totalBalance = "0"
+  local numOutcomes = #self.tokens.positionIds
+  local impliedWeights = {}
+  local totalWeight = bint(0)
+
+  -- For each outcome, calculate the product of all *other* balances
+  for i = 1, numOutcomes do
+    local weight = bint(1)
+    for j = 1, numOutcomes do
+      if i ~= j then
+        weight = weight * bint(poolBalances[j])
+      end
+    end
+    impliedWeights[i] = weight
+    totalWeight = totalWeight + weight
+  end
+
+  assert(totalWeight > 0, "Total weight must be non-zero")
+
+  -- Normalise the weights to produce probabilities
   local probabilities = {}
-  -- Calculate total balance
-  for i = 1, #self.tokens.positionIds do
-    totalBalance = sharedUtils.safeAdd(totalBalance, poolBalances[i])
-  end
-  assert(bint.__lt(bint(0), bint(totalBalance)), 'Total pool balance must be greater than zero!')
-  -- Calculate probabilities for each positionId
-  for i = 1, #self.tokens.positionIds do
+  for i = 1, numOutcomes do
     local positionId = self.tokens.positionIds[i]
-    local balance = bint(poolBalances[i])
-    local probability = tostring(bint.__div(balance, bint(totalBalance)))
-    probabilities[positionId] = probability
+    probabilities[positionId] = impliedWeights[i] / totalWeight
   end
+
   return probabilities
 end
 
@@ -3438,7 +3450,7 @@ ACTIVITY LOGS
 
 local function logFunding(dataIndex, user, onBehalfOf, operation, collateral, quantity, msg)
   return msg.forward(dataIndex, {
-    Action = "Log-Funding",
+    Action = "Log-Funding-Notice",
     User = user,
     OnBehalfOf = onBehalfOf,
     Operation = operation,
@@ -3449,7 +3461,7 @@ end
 
 local function logPrediction(dataIndex, user, onBehalfOf, operation, collateral, quantity, outcome, shares, price, msg)
   return msg.forward(dataIndex, {
-    Action = "Log-Prediction",
+    Action = "Log-Prediction-Notice",
     User = user,
     OnBehalfOf = onBehalfOf,
     Operation = operation,
@@ -3463,7 +3475,7 @@ end
 
 local function logProbabilities(dataIndex, probabilities, msg)
   return msg.forward(dataIndex, {
-    Action = "Log-Probabilities",
+    Action = "Log-Probabilities-Notice",
     Probabilities = json.encode(probabilities)
   })
 end
@@ -3486,6 +3498,10 @@ function MarketMethods:addFunding(msg)
   self.cpmm:addFunding(onBehalfOf, msg.Tags.Quantity, distribution, cast, sendInterim, msg)
   -- Log funding update to data index
   logFunding(self.dataIndex, msg.Tags.Sender, onBehalfOf, 'add', self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg)
+  -- Log initial probability
+  if distribution then
+    logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
+  end
 end
 
 --- Remove funding

@@ -25,6 +25,7 @@ local utils = require(".utils")
 local token = require('marketModules.token')
 local conditionalTokens = require('marketModules.conditionalTokens')
 local sharedUtils = require("marketModules.sharedUtils")
+local json = require("json")
 
 --- Represents a CPMM (Constant Product Market Maker)
 --- @class CPMM
@@ -271,24 +272,81 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
   return tostring(bint.ceil(returnAmountPlusFees + CPMMHelpers.ceildiv(endingOutcomeBalance, 1e4) - sellTokenPoolBalance))
 end
 
+--- Calc return amount from number of outcome tokens to sell
+--- @param sellAmount number The number of outcome tokens to sell
+--- @param positionId string The position ID of the outcome
+--- @return string The returnAmount in collateral tokens (net of fee)
+function CPMMMethods:calcReturnAmount(sellAmount, positionId)
+  local sell = bint(sellAmount)
+  local poolBalances = self:getPoolBalances()
+
+  -- Calculate initial product of all outcome token balances
+  local initialProd = bint(1)
+  for i = 1, #poolBalances do
+      initialProd = initialProd * poolBalances[i]
+  end
+  -- Set binary search bounds for R (sets to remove)
+  local low = bint(0)
+  local high = poolBalances[tonumber(positionId)] + sell
+  for i = 1, #poolBalances do
+      if i ~= tonumber(positionId) and poolBalances[i] < high then
+          high = poolBalances[i]
+      end
+  end
+
+  -- Binary search for the maximum R such that final product >= initial product
+  while low < high do
+      local mid = (low + high + bint(1)) // 2
+      -- Compute product after removing mid sets
+      local prod = (poolBalances[tonumber(positionId)] + sell - mid)
+      for j = 1, #poolBalances do
+          if j ~= tonumber(positionId) then
+              prod = prod * (poolBalances[j] - mid)
+          end
+      end
+      if prod >= initialProd then
+          low = mid  -- mid sets can be removed without breaking invariant
+      else
+          high = mid - bint(1)  -- mid sets too many, reduce high bound
+      end
+  end
+
+  -- Apply LP fee (basis points) to calculate net collateral output for user
+  local feeBase = bint(10000)
+  local fee = bint(self.lpFee)
+  local returnAmount = (low * (feeBase - fee)) // feeBase
+  return tostring(returnAmount)
+end
+
 --- Calc probabilities
 --- @return table<string, number> probabilities A table mapping each positionId to its probability (as a decimal percentage)
 function CPMMMethods:calcProbabilities()
   local poolBalances = self:getPoolBalances()
-  local totalBalance = "0"
+  local numOutcomes = #self.tokens.positionIds
+  local impliedWeights = {}
+  local totalWeight = bint(0)
+
+  -- For each outcome, calculate the product of all *other* balances
+  for i = 1, numOutcomes do
+    local weight = bint(1)
+    for j = 1, numOutcomes do
+      if i ~= j then
+        weight = weight * bint(poolBalances[j])
+      end
+    end
+    impliedWeights[i] = weight
+    totalWeight = totalWeight + weight
+  end
+
+  assert(totalWeight > 0, "Total weight must be non-zero")
+
+  -- Normalise the weights to produce probabilities
   local probabilities = {}
-  -- Calculate total balance
-  for i = 1, #self.tokens.positionIds do
-    totalBalance = sharedUtils.safeAdd(totalBalance, poolBalances[i])
-  end
-  assert(bint.__lt(bint(0), bint(totalBalance)), 'Total pool balance must be greater than zero!')
-  -- Calculate probabilities for each positionId
-  for i = 1, #self.tokens.positionIds do
+  for i = 1, numOutcomes do
     local positionId = self.tokens.positionIds[i]
-    local balance = bint(poolBalances[i])
-    local probability = tostring(bint.__div(balance, bint(totalBalance)))
-    probabilities[positionId] = probability
+    probabilities[positionId] = impliedWeights[i] / totalWeight
   end
+
   return probabilities
 end
 

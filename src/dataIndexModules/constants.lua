@@ -25,14 +25,14 @@ local constants = {
   maxRangeDuration = "100 years",
   defaultLimit = 50,
   defaultActivityWindow = 24,
-  configurator = "test-this-is-valid-arweave-wallet-address-1",
+  configurator = "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
   moderators = {
-    "test-this-is-valid-arweave-wallet-address-2",
-    "test-this-is-valid-arweave-wallet-address-3",
-    "test-this-is-valid-arweave-wallet-address-4",
+    "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
+    "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0"
   },
   viewers = {
     "XkVOo16KMIHK-zqlR67cuNY0ayXIkPWODWw_HXAE20I",
+    "m6W6wreOSejTb2WRHoALM6M7mw3H8D2KmFVBYC1l0O0"
   },
 }
 

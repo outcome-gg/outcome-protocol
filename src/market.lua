@@ -490,6 +490,33 @@ Handlers.add("Calc-Sell-Amount", {Action = "Calc-Sell-Amount"}, function(msg)
   Market:calcSellAmount(msg)
 end)
 
+--- Calc return amount handler
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.OutcomeTokensToSell (string): The number of outcome tokens to sell (numeric string).
+--- - msg.Tags.PositionId (string): The position ID of the outcome token to sell.
+--- @note **Emits the following notices:**
+--- **⚠️ Error Handling (Sent on failed input validation)**
+--- - `Calc-Return-Amount-Error`: **market → sender** -- Returns an error message
+--- @note **Replies with the following tags:**
+--- - ReturnAmount (string): The amount of collateral tokens to receive.
+--- - PositionId (string): The position ID of the outcome token sold.
+--- - OutcomeTokensToSell (string): The number of outcome tokens to sell.
+--- - Data (string): The ReturnAmount.
+Handlers.add("Calc-Return-Amount", {Action = "Calc-Return-Amount"}, function(msg)
+  -- Validate input
+  local success, err = cpmmValidation.calcReturnAmount(msg, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Calc-Return-Amount-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, calculate the return amount.
+  Market:calcReturnAmount(msg)
+end)
+
 --- Colleced fees handler
 --- @param msg Message The message received
 --- @note **Replies with the following tags:**

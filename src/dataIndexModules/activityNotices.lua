@@ -16,6 +16,7 @@ function ActivityNotices.logMarketNotice(
   creatorFee,
   creatorFeeTarget,
   question,
+  questionSlug,
   rules,
   outcomeSlotCount,
   collateral,
@@ -23,6 +24,8 @@ function ActivityNotices.logMarketNotice(
   category,
   subcategory,
   logo,
+  logos,
+  eventId,
   msg
 )
   return msg.reply({
@@ -33,13 +36,16 @@ function ActivityNotices.logMarketNotice(
     CreatorFee = tostring(creatorFee),
     CreatorFeeTarget = creatorFeeTarget,
     Question = question,
+    QuestionSlug = questionSlug,
     Rules = rules,
     OutcomeSlotCount = tostring(outcomeSlotCount),
     Collateral = collateral,
     ResolutionAgent = resolutionAgent,
     Category = category,
     Subcategory = subcategory,
-    Logo = logo
+    Logo = logo,
+    Logos = logos,
+    EventId = eventId
   })
 end
 

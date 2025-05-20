@@ -8,6 +8,8 @@ function SpawnMarkets:run(env, msg)
   assert(env, 'env is required')
   assert(env == "DEV" or env == "PROD", 'env must be dev or prod')
   local marketFactory = constants[env].marketFactory
+  local dataIndex = constants[env].dataIndex
+  local collateralToken = constants[env].collateralToken
   local msgIds = {}
 
   for _, market in ipairs(spawnMarketsInput) do
@@ -15,7 +17,8 @@ function SpawnMarkets:run(env, msg)
       Target = marketFactory,
       Action = "Spawn-Market",
       Tags = {
-        CollateralToken = market.collateralToken,
+        DataIndex = dataIndex,
+        CollateralToken = collateralToken,
         ResolutionAgent = market.resolutionAgent,
         Question = market.question,
         Rules = market.rules,
@@ -31,7 +34,7 @@ function SpawnMarkets:run(env, msg)
     table.insert(msgIds, msg.Id)
   end
 
-  return msg.reply({ Action = 'Spawn-Markets-Notice', Env = env, MessageIds = json.encode(msgIds) })
+  return msg.reply({ Action = 'Spawn-Markets-Script-Notice', Env = env, MessageIds = json.encode(msgIds) })
 end
 
 
