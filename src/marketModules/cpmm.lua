@@ -277,38 +277,43 @@ end
 --- @param positionId string The position ID of the outcome
 --- @return string The returnAmount in collateral tokens (net of fee)
 function CPMMMethods:calcReturnAmount(sellAmount, positionId)
+  assert(bint.__lt(0, sellAmount), 'SellAmount must be greater than zero!')
+  assert(utils.includes(positionId, self.tokens.positionIds), 'PositionId must be valid!')
+
   local sell = bint(sellAmount)
   local poolBalances = self:getPoolBalances()
+  assert(bint.__le(sell, poolBalances[tonumber(positionId)]), "Sell amount exceeds available pool balance")
 
   -- Calculate initial product of all outcome token balances
   local initialProd = bint(1)
   for i = 1, #poolBalances do
-      initialProd = initialProd * poolBalances[i]
+    initialProd = initialProd * poolBalances[i]
   end
   -- Set binary search bounds for R (sets to remove)
   local low = bint(0)
   local high = poolBalances[tonumber(positionId)] + sell
   for i = 1, #poolBalances do
-      if i ~= tonumber(positionId) and poolBalances[i] < high then
-          high = poolBalances[i]
-      end
+    if i ~= tonumber(positionId) and poolBalances[i] < high then
+      high = poolBalances[i]
+    end
   end
 
   -- Binary search for the maximum R such that final product >= initial product
   while low < high do
-      local mid = (low + high + bint(1)) // 2
-      -- Compute product after removing mid sets
-      local prod = (poolBalances[tonumber(positionId)] + sell - mid)
-      for j = 1, #poolBalances do
-          if j ~= tonumber(positionId) then
-              prod = prod * (poolBalances[j] - mid)
-          end
+    local mid = (low + high + bint(1)) // 2
+    -- Compute product after removing mid sets
+    local prod = (poolBalances[tonumber(positionId)] + sell - mid)
+    for j = 1, #poolBalances do
+      if j ~= tonumber(positionId) then
+        assert(bint.__le(mid, poolBalances[j]), "Return amount exceeds pool balance for index " .. j)
+        prod = prod * (poolBalances[j] - mid)
       end
-      if prod >= initialProd then
-          low = mid  -- mid sets can be removed without breaking invariant
-      else
-          high = mid - bint(1)  -- mid sets too many, reduce high bound
-      end
+    end
+    if prod >= initialProd then
+      low = mid  -- mid sets can be removed without breaking invariant
+    else
+      high = mid - bint(1)  -- mid sets too many, reduce high bound
+    end
   end
 
   -- Apply LP fee (basis points) to calculate net collateral output for user

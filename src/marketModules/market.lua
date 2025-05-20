@@ -269,6 +269,19 @@ function MarketMethods:calcBuyAmount(msg)
   })
 end
 
+--- Calc return amount
+--- @param msg Message The message received
+--- @return Message calcReturnAmountNotice The calc return amount notice
+function MarketMethods:calcReturnAmount(msg)
+  local returnAmount = self.cpmm:calcReturnAmount(msg.Tags.SellAmount, msg.Tags.PositionId)
+  return msg.reply({
+    ReturnAmount = returnAmount,
+    PositionId = msg.Tags.PositionId,
+    SellAmount = msg.Tags.SellAmount,
+    Data = returnAmount
+  })
+end
+
 --- Calc sell amount
 --- @param msg Message The message received
 --- @return Message calcSellAmountNotice The calc sell amount notice

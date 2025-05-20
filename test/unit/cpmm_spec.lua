@@ -780,24 +780,27 @@ describe("#market #conditionalTokens #cpmmValidation", function()
       false, -- castInterim
       msgAddFunding
     )
+    local returnAmount_ = 10
+    local newReturnAmount = nil
     -- calc sell amount
     local sellAmount = ''
     assert.has.no.errors(function()
       sellAmount = CPMM:calcSellAmount(
-        tonumber(msgCalcSellAmount.Tags.ReturnAmount),
+        returnAmount_,
         msgCalcSellAmount.Tags.PositionId
       )
     end)
 
     -- calc return amount   
     assert.has.no.errors(function()
-      returnAmount = CPMM:calcReturnAmount(
+      newReturnAmount = CPMM:calcReturnAmount(
         tonumber(sellAmount),
         msgCalcSellAmount.Tags.PositionId
       )
     end)
+    
     -- assert return amount
-    assert.is_true(tonumber(returnAmount) == tonumber(msgCalcSellAmount.Tags.ReturnAmount))
+    assert.is_true(tonumber(newReturnAmount) == returnAmount_)
 	end)
 
   it("should buy", function()

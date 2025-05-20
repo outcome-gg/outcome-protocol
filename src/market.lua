@@ -492,7 +492,7 @@ end)
 
 --- Calc return amount handler
 --- @param msg Message The message received, expected to contain:
---- - msg.Tags.OutcomeTokensToSell (string): The number of outcome tokens to sell (numeric string).
+--- - msg.Tags.SellAmount (string): The number of outcome tokens to sell (numeric string).
 --- - msg.Tags.PositionId (string): The position ID of the outcome token to sell.
 --- @note **Emits the following notices:**
 --- **⚠️ Error Handling (Sent on failed input validation)**
@@ -500,7 +500,7 @@ end)
 --- @note **Replies with the following tags:**
 --- - ReturnAmount (string): The amount of collateral tokens to receive.
 --- - PositionId (string): The position ID of the outcome token sold.
---- - OutcomeTokensToSell (string): The number of outcome tokens to sell.
+--- - SellAmount (string): The number of outcome tokens to sell.
 --- - Data (string): The ReturnAmount.
 Handlers.add("Calc-Return-Amount", {Action = "Calc-Return-Amount"}, function(msg)
   -- Validate input

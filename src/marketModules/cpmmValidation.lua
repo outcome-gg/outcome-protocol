@@ -141,7 +141,7 @@ function cpmmValidation.sell(msg, cpmm)
   local positionTokensToSell = cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
 
  -- Ensure the sell amount does not exceed the maximum allowed
- if bint(positionTokensToSell) > bint(msg.Tags.MaxPositionTokensToSell) then
+ if not bint.__le(positionTokensToSell, bint(msg.Tags.MaxPositionTokensToSell)) then
   return false, "Max position tokens to sell not sufficient!"
 end
 
@@ -181,8 +181,8 @@ function cpmmValidation.calcReturnAmount(msg, validPositionIds)
     return false, err
   end
 
-  -- Check that OutcomeTokensToSell is a positive integer
-  return sharedValidation.validatePositiveInteger(msg.Tags.OutcomeTokensToSell, "OutcomeTokensToSell")
+  -- Check that SellAmount is a positive integer
+  return sharedValidation.validatePositiveInteger(msg.Tags.SellAmount, "SellAmount")
 end
 
 --- Validates fees withdrawable

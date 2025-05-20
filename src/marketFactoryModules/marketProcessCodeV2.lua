@@ -3040,38 +3040,43 @@ end
 --- @param positionId string The position ID of the outcome
 --- @return string The returnAmount in collateral tokens (net of fee)
 function CPMMMethods:calcReturnAmount(sellAmount, positionId)
+  assert(bint.__lt(0, sellAmount), 'SellAmount must be greater than zero!')
+  assert(utils.includes(positionId, self.tokens.positionIds), 'PositionId must be valid!')
+
   local sell = bint(sellAmount)
   local poolBalances = self:getPoolBalances()
+  assert(bint.__le(sell, poolBalances[tonumber(positionId)]), "Sell amount exceeds available pool balance")
 
   -- Calculate initial product of all outcome token balances
   local initialProd = bint(1)
   for i = 1, #poolBalances do
-      initialProd = initialProd * poolBalances[i]
+    initialProd = initialProd * poolBalances[i]
   end
   -- Set binary search bounds for R (sets to remove)
   local low = bint(0)
   local high = poolBalances[tonumber(positionId)] + sell
   for i = 1, #poolBalances do
-      if i ~= tonumber(positionId) and poolBalances[i] < high then
-          high = poolBalances[i]
-      end
+    if i ~= tonumber(positionId) and poolBalances[i] < high then
+      high = poolBalances[i]
+    end
   end
 
   -- Binary search for the maximum R such that final product >= initial product
   while low < high do
-      local mid = (low + high + bint(1)) // 2
-      -- Compute product after removing mid sets
-      local prod = (poolBalances[tonumber(positionId)] + sell - mid)
-      for j = 1, #poolBalances do
-          if j ~= tonumber(positionId) then
-              prod = prod * (poolBalances[j] - mid)
-          end
+    local mid = (low + high + bint(1)) // 2
+    -- Compute product after removing mid sets
+    local prod = (poolBalances[tonumber(positionId)] + sell - mid)
+    for j = 1, #poolBalances do
+      if j ~= tonumber(positionId) then
+        assert(bint.__le(mid, poolBalances[j]), "Return amount exceeds pool balance for index " .. j)
+        prod = prod * (poolBalances[j] - mid)
       end
-      if prod >= initialProd then
-          low = mid  -- mid sets can be removed without breaking invariant
-      else
-          high = mid - bint(1)  -- mid sets too many, reduce high bound
-      end
+    end
+    if prod >= initialProd then
+      low = mid  -- mid sets can be removed without breaking invariant
+    else
+      high = mid - bint(1)  -- mid sets too many, reduce high bound
+    end
   end
 
   -- Apply LP fee (basis points) to calculate net collateral output for user
@@ -3614,6 +3619,19 @@ function MarketMethods:calcBuyAmount(msg)
     PositionId =  msg.Tags.PositionId,
     InvestmentAmount = msg.Tags.InvestmentAmount,
     Data = buyAmount
+  })
+end
+
+--- Calc return amount
+--- @param msg Message The message received
+--- @return Message calcReturnAmountNotice The calc return amount notice
+function MarketMethods:calcReturnAmount(msg)
+  local returnAmount = self.cpmm:calcReturnAmount(msg.Tags.SellAmount, msg.Tags.PositionId)
+  return msg.reply({
+    ReturnAmount = returnAmount,
+    PositionId = msg.Tags.PositionId,
+    SellAmount = msg.Tags.SellAmount,
+    Data = returnAmount
   })
 end
 
@@ -4233,7 +4251,7 @@ function cpmmValidation.sell(msg, cpmm)
   local positionTokensToSell = cpmm:calcSellAmount(msg.Tags.ReturnAmount, msg.Tags.PositionId)
 
  -- Ensure the sell amount does not exceed the maximum allowed
- if bint(positionTokensToSell) > bint(msg.Tags.MaxPositionTokensToSell) then
+ if not bint.__le(positionTokensToSell, bint(msg.Tags.MaxPositionTokensToSell)) then
   return false, "Max position tokens to sell not sufficient!"
 end
 
@@ -4273,8 +4291,8 @@ function cpmmValidation.calcReturnAmount(msg, validPositionIds)
     return false, err
   end
 
-  -- Check that OutcomeTokensToSell is a positive integer
-  return sharedValidation.validatePositiveInteger(msg.Tags.OutcomeTokensToSell, "OutcomeTokensToSell")
+  -- Check that SellAmount is a positive integer
+  return sharedValidation.validatePositiveInteger(msg.Tags.SellAmount, "SellAmount")
 end
 
 --- Validates fees withdrawable
@@ -5246,7 +5264,7 @@ end)
 
 --- Calc return amount handler
 --- @param msg Message The message received, expected to contain:
---- - msg.Tags.OutcomeTokensToSell (string): The number of outcome tokens to sell (numeric string).
+--- - msg.Tags.SellAmount (string): The number of outcome tokens to sell (numeric string).
 --- - msg.Tags.PositionId (string): The position ID of the outcome token to sell.
 --- @note **Emits the following notices:**
 --- **⚠️ Error Handling (Sent on failed input validation)**
@@ -5254,7 +5272,7 @@ end)
 --- @note **Replies with the following tags:**
 --- - ReturnAmount (string): The amount of collateral tokens to receive.
 --- - PositionId (string): The position ID of the outcome token sold.
---- - OutcomeTokensToSell (string): The number of outcome tokens to sell.
+--- - SellAmount (string): The number of outcome tokens to sell.
 --- - Data (string): The ReturnAmount.
 Handlers.add("Calc-Return-Amount", {Action = "Calc-Return-Amount"}, function(msg)
   -- Validate input
