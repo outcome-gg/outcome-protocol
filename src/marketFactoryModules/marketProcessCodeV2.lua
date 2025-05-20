@@ -3035,6 +3035,52 @@ function CPMMMethods:calcSellAmount(returnAmount, positionId)
   return tostring(bint.ceil(returnAmountPlusFees + CPMMHelpers.ceildiv(endingOutcomeBalance, 1e4) - sellTokenPoolBalance))
 end
 
+--- Calc return amount from number of outcome tokens to sell
+--- @param sellAmount number The number of outcome tokens to sell
+--- @param positionId string The position ID of the outcome
+--- @return string The returnAmount in collateral tokens (net of fee)
+function CPMMMethods:calcReturnAmount(sellAmount, positionId)
+  local sell = bint(sellAmount)
+  local poolBalances = self:getPoolBalances()
+
+  -- Calculate initial product of all outcome token balances
+  local initialProd = bint(1)
+  for i = 1, #poolBalances do
+      initialProd = initialProd * poolBalances[i]
+  end
+  -- Set binary search bounds for R (sets to remove)
+  local low = bint(0)
+  local high = poolBalances[tonumber(positionId)] + sell
+  for i = 1, #poolBalances do
+      if i ~= tonumber(positionId) and poolBalances[i] < high then
+          high = poolBalances[i]
+      end
+  end
+
+  -- Binary search for the maximum R such that final product >= initial product
+  while low < high do
+      local mid = (low + high + bint(1)) // 2
+      -- Compute product after removing mid sets
+      local prod = (poolBalances[tonumber(positionId)] + sell - mid)
+      for j = 1, #poolBalances do
+          if j ~= tonumber(positionId) then
+              prod = prod * (poolBalances[j] - mid)
+          end
+      end
+      if prod >= initialProd then
+          low = mid  -- mid sets can be removed without breaking invariant
+      else
+          high = mid - bint(1)  -- mid sets too many, reduce high bound
+      end
+  end
+
+  -- Apply LP fee (basis points) to calculate net collateral output for user
+  local feeBase = bint(10000)
+  local fee = bint(self.lpFee)
+  local returnAmount = (low * (feeBase - fee)) // feeBase
+  return tostring(returnAmount)
+end
+
 --- Calc probabilities
 --- @return table<string, number> probabilities A table mapping each positionId to its probability (as a decimal percentage)
 function CPMMMethods:calcProbabilities()
@@ -4216,6 +4262,21 @@ function cpmmValidation.calcSellAmount(msg, validPositionIds)
   return sharedValidation.validatePositiveInteger(msg.Tags.ReturnAmount, "ReturnAmount")
 end
 
+--- Validates calc return amount
+--- @param msg Message The message to be validated
+--- @param validPositionIds table<string> The array of valid position IDs
+--- @return boolean, string|nil
+function cpmmValidation.calcReturnAmount(msg, validPositionIds)
+  -- Check that PositionId is valid
+  local success, err = sharedValidation.validateItem(msg.Tags.PositionId, validPositionIds, "PositionId")
+  if not success then
+    return false, err
+  end
+
+  -- Check that OutcomeTokensToSell is a positive integer
+  return sharedValidation.validatePositiveInteger(msg.Tags.OutcomeTokensToSell, "OutcomeTokensToSell")
+end
+
 --- Validates fees withdrawable
 --- @param msg Message The message to be validated
 --- @return boolean, string|nil
@@ -5181,6 +5242,33 @@ Handlers.add("Calc-Sell-Amount", {Action = "Calc-Sell-Amount"}, function(msg)
   end
   -- If validation passes, calculate the sell amount.
   Market:calcSellAmount(msg)
+end)
+
+--- Calc return amount handler
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.OutcomeTokensToSell (string): The number of outcome tokens to sell (numeric string).
+--- - msg.Tags.PositionId (string): The position ID of the outcome token to sell.
+--- @note **Emits the following notices:**
+--- **⚠️ Error Handling (Sent on failed input validation)**
+--- - `Calc-Return-Amount-Error`: **market → sender** -- Returns an error message
+--- @note **Replies with the following tags:**
+--- - ReturnAmount (string): The amount of collateral tokens to receive.
+--- - PositionId (string): The position ID of the outcome token sold.
+--- - OutcomeTokensToSell (string): The number of outcome tokens to sell.
+--- - Data (string): The ReturnAmount.
+Handlers.add("Calc-Return-Amount", {Action = "Calc-Return-Amount"}, function(msg)
+  -- Validate input
+  local success, err = cpmmValidation.calcReturnAmount(msg, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Calc-Return-Amount-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, calculate the return amount.
+  Market:calcReturnAmount(msg)
 end)
 
 --- Colleced fees handler
