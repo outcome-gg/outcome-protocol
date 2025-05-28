@@ -282,7 +282,6 @@ function CPMMMethods:calcReturnAmount(sellAmount, positionId)
 
   local sell = bint(sellAmount)
   local poolBalances = self:getPoolBalances()
-  assert(bint.__le(sell, poolBalances[tonumber(positionId)]), "Sell amount exceeds available pool balance")
 
   -- Calculate initial product of all outcome token balances
   local initialProd = bint(1)

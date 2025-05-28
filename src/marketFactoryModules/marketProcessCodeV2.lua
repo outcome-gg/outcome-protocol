@@ -2316,7 +2316,7 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, cast, detach
     assert(bint.__lt(0, quantities[i]), 'Quantity must be greater than zero!')
     assert(self.balancesById[ ids[i] ], 'Id must exist! ' .. ids[i])
     assert(self.balancesById[ ids[i] ][from], 'Account must hold token! ' .. ids[i])
-    assert(bint.__le(quantities[i], self.balancesById[ ids[i] ][from]), 'Account must have sufficient tokens!')
+    assert(bint.__le(quantities[i], self.balancesById[ ids[i] ][from]), 'Account must have sufficient tokens! id: ' .. ids[i] .. ' account: ' .. from .. ' balance: ' .. self.balancesById[ ids[i] ][from] .. ' quantity: ' .. quantities[i])
   end
   -- burn tokens
   local remainingBalances = {}
@@ -3045,7 +3045,6 @@ function CPMMMethods:calcReturnAmount(sellAmount, positionId)
 
   local sell = bint(sellAmount)
   local poolBalances = self:getPoolBalances()
-  assert(bint.__le(sell, poolBalances[tonumber(positionId)]), "Sell amount exceeds available pool balance")
 
   -- Calculate initial product of all outcome token balances
   local initialProd = bint(1)
@@ -3173,7 +3172,11 @@ function CPMMMethods:sell(from, onBehalfOf, returnAmount, positionId, maxPositio
   -- Check user balance and transfer positionTokensToSell to process before merge.
   local balance = self.tokens:getBalance(from, nil, positionId)
   assert(bint.__le(bint(positionTokensToSell), bint(balance)), 'Insufficient balance!')
+  local poolBalanceB4 = self.tokens:getBalance(ao.id, nil, positionId)
   self.tokens:transferSingle(from, ao.id, positionId, positionTokensToSell, not sendInterim, true, msg) -- @dev `true`: sends detatched message
+  local poolBalanceAf = self.tokens:getBalance(ao.id, nil, positionId)
+  print("poolBalanceB4: " .. poolBalanceB4)
+  print("poolBalanceAf: " .. poolBalanceAf)
   -- Merge positions through all conditions (burns returnAmountPlusFees).
   self.tokens:mergePositions(ao.id, '', positionTokensToSell, true, not sendInterim, sendInterim, true, msg) -- @dev `true`: isSell, `true`: sends detatched message
   -- Returns collateral to the user / onBehalfOf address
