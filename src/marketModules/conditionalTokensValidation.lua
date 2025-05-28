@@ -95,10 +95,15 @@ end
 
 --- Validates the redeemPositions message.
 --- @param msg Message The message to be validated
+--- @param payoutDenominator number The payout denominator: 0 if unresolved 
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
-function ConditionalTokensValidation.redeemPositions(msg)
+function ConditionalTokensValidation.redeemPositions(msg, payoutDenominator)
   local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
   local success, err
+
+  if payoutDenominator == 0 then
+    return false, "Market must be resolved!"
+  end
 
   if onBehalfOf ~= msg.From then
     success, err = sharedValidation.validateAddress(onBehalfOf, 'onBehalfOf')
@@ -108,6 +113,25 @@ function ConditionalTokensValidation.redeemPositions(msg)
   return true
 end
 
+--- Validates the batchRedeemPositions message.
+--- @param msg Message The message to be validated
+--- @param resolutionAgent string The resolution agent process ID
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function ConditionalTokensValidation.batchRedeemPositions(msg, resolutionAgent, payoutDenominator, positionIds)
+  if msg.From ~= resolutionAgent then
+    return false, "Sender must be the resolution agent!"
+  end
+
+  if payoutDenominator == 0 then
+    return false, "Market must be resolved!"
+  end
+
+  if #positionIds ~= 2 then
+    return false, "Market must be binary!"
+  end
+
+  return true
+end
 
 --- Validates the reportPayouts message
 --- @param msg Message The message to be validated

@@ -82,4 +82,12 @@ function ActivityNotices.logProbabilitiesNotice(market, probabilities, msg)
   })
 end
 
+function ActivityNotices.logPayoutsNotice(market, payouts, msg)
+  return msg.reply({
+    Action = "Log-Payouts-Notice",
+    Market = market,
+    Probabilities = json.encode(payouts)
+  })
+end
+
 return ActivityNotices

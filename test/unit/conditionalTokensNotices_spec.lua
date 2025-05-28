@@ -141,4 +141,24 @@ describe("#market #conditionalTokens #conditionalTokensNotices", function()
       Data = "Successfully redeemed positions"
     }, notice)
   end)
+
+  it("should send batch redeem positions notice", function()
+    local payouts = {}
+    local netPayouts ={}
+    payouts["foo"] = 100
+    netPayouts["foo"] = 96
+    local notice = conditionalTokensNotices.batchRedeemPositionsNotice(
+      msgPayoutRedemption.Tags.CollateralToken,
+      payouts,
+      netPayouts,
+      msgPayoutRedemption
+    )
+    assert.are.same({
+      Action = 'Batch-Redeem-Positions-Notice',
+      CollateralToken = msgPayoutRedemption.Tags.CollateralToken,
+      Payouts = json.encode(payouts),
+      NetPayouts = json.encode(netPayouts),
+      Data = "Successfully batch redeemed positions"
+    }, notice)
+  end)
 end)

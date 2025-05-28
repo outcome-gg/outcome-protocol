@@ -716,6 +716,7 @@ Handlers.add("Report-Payouts", {Action = "Report-Payouts"}, function(msg)
 end)
 
 --- Redeem positions handler
+--- @notice Only callable after the market has been resolved
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the collateral tokens.
 --- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
@@ -737,7 +738,7 @@ end)
 --- - Data (string): "Successfully redeemed positions"
 Handlers.add("Redeem-Positions", {Action = "Redeem-Positions"}, function(msg)
   -- Validate input
-  local success, err = conditionalTokensValidation.redeemPositions(msg)
+  local success, err = conditionalTokensValidation.redeemPositions(msg, Market.cpmm.tokens.payoutDenominator)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -748,6 +749,39 @@ Handlers.add("Redeem-Positions", {Action = "Redeem-Positions"}, function(msg)
   end
   -- If validation passes, redeem positions.
   Market:redeemPositions(msg)
+end)
+
+--- Batch redeem positions handler
+--- @notice Only callable by the resolution agent, after the market has been resolved, for binary markets
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
+--- @note **Emits the following notices:**
+--- **⚠️ Error Handling (Sent on failed input validation)**
+--- - `Batch-Redeem-Positions-Error`: **market → sender** -- Returns an error message
+--- **✨ Interim Notices for each user (Default silenced)**
+--- - `Burn-Single-Notice`: **market → holder**    -- Burns redeemed position tokens (for each position ID held by the sender)
+--- - `Debit-Notice`: **collateral → market**     -- Transfers collateral from the market
+--- - `Credit-Notice`: **collateral → onBehalfOf**     -- Transfers collateral to onBehalfOf
+--- **✅ Success Notice**
+--- - `Batch-Redeem-Positions-Notice`: **market → holder** -- Logs the redeem positions action
+--- @note **Replies with the following tags:**
+--- - Action (string): "Batch-Redeem-Positions-Notice"
+--- - CollateralToken (string): The collateral token process ID
+--- - TotalPayout (string): The total payout amount, before fees (numeric string)
+--- - Data (string): "Successfully redeemed positions"
+Handlers.add("Batch-Redeem-Positions", {Action = "Batch-Redeem-Positions"}, function(msg)
+  -- Validate input
+  local success, err = conditionalTokensValidation.batchRedeemPositions(msg, Market.cpmm.tokens.resolutionAgent, Market.cpmm.tokens.payoutDenominator, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Batch-Redeem-Positions-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, batch redeem positions.
+  Market:batchRedeemPositions(msg)
 end)
 
 --[[

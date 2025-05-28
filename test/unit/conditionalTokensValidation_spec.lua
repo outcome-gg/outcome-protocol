@@ -17,7 +17,7 @@ _G.CPMM = {
 }
 
 local resolutionAgent, sender, quantity, payouts
-local msgMerge, msgPayouts
+local msgMerge, msgPayouts, msgBatchRedeemPositions
 
 describe("#market #conditionalTokens #conditionalTokensValidation", function()
   before_each(function()
@@ -29,6 +29,7 @@ describe("#market #conditionalTokens #conditionalTokensValidation", function()
     -- Create messages
     msgMerge = { From = sender, Tags = { Quantity = quantity } }
     msgPayouts = { From = resolutionAgent, Tags = { Payouts = json.encode(payouts) } }
+    msgBatchRedeemPositions = { From = resolutionAgent }
   end)
 
   it("should pass merge validation", function()
@@ -112,5 +113,29 @@ describe("#market #conditionalTokens #conditionalTokensValidation", function()
     local success, err = conditionalTokensValidation.reportPayouts(msgPayouts, resolutionAgent)
     assert.is_false(success)
     assert.are.equal("Payouts item must be a valid number!", err)
+  end)
+
+  it("should pass batch payouts validation", function()
+    local success, err = conditionalTokensValidation.batchRedeemPositions(msgBatchRedeemPositions, resolutionAgent, 1, {"1","2"})
+    assert.is_true(success)
+    assert.is_nil(err)
+  end)
+
+  it("should fail batch payouts validation when sender is not resolution agent", function()
+    local success, err = conditionalTokensValidation.batchRedeemPositions(msgBatchRedeemPositions, sender, 1, {"1","2"})
+    assert.is_false(success)
+    assert.are.equal("Sender must be the resolution agent!", err)
+  end)
+
+  it("should fail batch payouts validation when market is not resolved", function()
+    local success, err = conditionalTokensValidation.batchRedeemPositions(msgBatchRedeemPositions, resolutionAgent, 0, {"1","2"})
+    assert.is_false(success)
+    assert.are.equal("Market must be resolved!", err)
+  end)
+
+  it("should fail batch payouts validation when market is not binary", function()
+    local success, err = conditionalTokensValidation.batchRedeemPositions(msgBatchRedeemPositions, resolutionAgent, 1, {"1","2","3"})
+    assert.is_false(success)
+    assert.are.equal("Market must be binary!", err)
   end)
 end)

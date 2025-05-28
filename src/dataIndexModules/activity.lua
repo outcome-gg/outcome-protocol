@@ -254,11 +254,49 @@ function ActivityMethods:logProbabilities(probabilities, timestamp, cast, msg)
       probability
     )
   end
-  -- Send noticeif cast is true
+  -- Send notice if cast is true
   if cast then
     return self.logProbabilitiesNotice(msg.From, probabilities, msg)
   end
 end
+
+
+--- Log payouts
+--- @param payouts table A table where payouts[user] = amount
+--- @param timestamp string The payout timestamp
+--- @param cast boolean Whether to cast a notice
+--- @param msg Message The message received (contains Id and From)
+function ActivityMethods:logPayouts(payouts, timestamp, cast, msg)
+  for user, amount in pairs(payouts) do
+    -- Ensure user exists
+    local userExists = #self.dbAdmin:safeExec("SELECT * FROM Users WHERE id = ?;", true, user)
+    if userExists == 0 then
+      self.dbAdmin:safeExec("INSERT INTO Users (id) VALUES (?, ?);", false, user, timestamp)
+    end
+
+    -- Construct unique payout ID
+    local payoutId = string.format("%s_%s", msg.Id, user)
+
+    -- Insert payout record
+    self.dbAdmin:safeExec(
+      [[
+        INSERT INTO Payouts (id, user, market, amount, timestamp)
+        VALUES (?, ?, ?, ?, ?);
+      ]],
+      true,
+      payoutId,
+      user,
+      msg.From,
+      amount,
+      timestamp
+    )
+  end
+  -- Send notice if cast is true
+  if cast and self.logPayoutNotice then
+    self.logPayoutNotice(msg.From, payouts, msg)
+  end
+end
+
 
 --[[
 ============

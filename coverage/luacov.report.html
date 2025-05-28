@@ -316,16 +316,16 @@
 </head>
 <body onload="initialize()">
    <main>
-      <div class="file warning total">
+      <div class="file danger total">
          <h1 class="title">
             Code coverage report
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 40.19%"></span>
-                  <span><strong>40.19%</strong> Coverage</span>
+                  <span class="bg" style="width: 32.74%"></span>
+                  <span><strong>32.74%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>84</strong> Hits</span>
-               <span class="miss"><strong>125</strong> Missed</span>
+               <span class="hits"><strong>74</strong> Hits</span>
+               <span class="miss"><strong>152</strong> Missed</span>
             </span>
          </h1>
       </div>
@@ -335,10 +335,10 @@
             src/marketModules/conditionalTokensNotices.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 95.12%"></span>
-                  <span><strong>95.12%</strong> Coverage</span>
+                  <span class="bg" style="width: 95.83%"></span>
+                  <span><strong>95.83%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>39</strong> Hits</span>
+               <span class="hits"><strong>46</strong> Hits</span>
                <span class="miss"><strong>2</strong> Missed</span>
             </span>
          </h2>
@@ -434,20 +434,36 @@ end
   })
 end
 
+--- Batch redeem positions notice
+--- @param collateralToken string The address of the collateral token
+--- @param userPayouts table The user payouts
+--- @param userPayoutsMinusFees table The user payouts minus fees
+--- @param msg Message The message received
+--- @return Message The payout redemption notice
+<span class="fc" data-hits="1">function ConditionalTokensNotices.batchRedeemPositionsNotice(collateralToken, userPayouts, userPayoutsMinusFees, msg)</span>
+<span class="fc" data-hits="2">  return msg.reply({</span>
+<span class="fc" data-hits="1">    Action = &quot;Batch-Redeem-Positions-Notice&quot;,</span>
+<span class="fc" data-hits="1">    CollateralToken = collateralToken,</span>
+<span class="fc" data-hits="1">    Payouts = json.encode(userPayouts),</span>
+<span class="fc" data-hits="1">    NetPayouts = json.encode(userPayoutsMinusFees),</span>
+<span class="fc" data-hits="1">    Data = &quot;Successfully batch redeemed positions&quot;</span>
+  })
+end
+
 <span class="fc" data-hits="1">return ConditionalTokensNotices</span>
 </pre>
       </div>
 
-      <div class="hidden file warning" id="src-marketmodules-conditionaltokensvalidation">
+      <div class="hidden file danger" id="src-marketmodules-conditionaltokensvalidation">
          <h2 class="title">
             src/marketModules/conditionalTokensValidation.lua
             <span class="stats">
                <span class="cov">
-                  <span class="bg" style="width: 50.94%"></span>
-                  <span><strong>50.94%</strong> Coverage</span>
+                  <span class="bg" style="width: 15.87%"></span>
+                  <span><strong>15.87%</strong> Coverage</span>
                </span>
-               <span class="hits"><strong>27</strong> Hits</span>
-               <span class="miss"><strong>26</strong> Missed</span>
+               <span class="hits"><strong>10</strong> Hits</span>
+               <span class="miss"><strong>53</strong> Missed</span>
             </span>
          </h2>
          <pre class="prettyprint lang-lua linenums">--[[
@@ -467,22 +483,22 @@ See conditionalTokens.lua for full license details.
 --- @param quantity any The quantity to be validated
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
 local function validateQuantity(quantity)
-<span class="fc" data-hits="3">  if type(quantity) ~= &#39;string&#39; then</span>
-<span class="fc" data-hits="1">    return false, &#39;Quantity is required and must be a string!&#39;</span>
+<span class="nc">  if type(quantity) ~= &#39;string&#39; then</span>
+<span class="nc">    return false, &#39;Quantity is required and must be a string!&#39;</span>
   end
 
-<span class="fc" data-hits="2">  local num = tonumber(quantity)</span>
-<span class="fc" data-hits="2">  if not num then</span>
-<span class="fc" data-hits="1">    return false, &#39;Quantity must be a valid number!&#39;</span>
+<span class="nc">  local num = tonumber(quantity)</span>
+<span class="nc">  if not num then</span>
+<span class="nc">    return false, &#39;Quantity must be a valid number!&#39;</span>
   end
-<span class="fc" data-hits="1">  if num &lt;= 0 then</span>
+<span class="nc">  if num &lt;= 0 then</span>
 <span class="nc">    return false, &#39;Quantity must be greater than zero!&#39;</span>
   end
-<span class="fc" data-hits="1">  if num % 1 ~= 0 then</span>
+<span class="nc">  if num % 1 ~= 0 then</span>
 <span class="nc">    return false, &#39;Quantity must be an integer!&#39;</span>
   end
 
-<span class="fc" data-hits="1">  return true</span>
+<span class="nc">  return true</span>
 end
 
 --- Validates payouts
@@ -514,43 +530,48 @@ end
 --- @param cpmm CPMM The CPMM instance for checking token balances
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
 <span class="fc" data-hits="1">function ConditionalTokensValidation.mergePositions(msg, cpmm)</span>
-<span class="fc" data-hits="3">  local onBehalfOf = msg.Tags[&#39;OnBehalfOf&#39;] or msg.From</span>
+<span class="nc">  local onBehalfOf = msg.Tags[&#39;OnBehalfOf&#39;] or msg.From</span>
   local success, err
 
-<span class="fc" data-hits="3">  if onBehalfOf ~= msg.From then</span>
+<span class="nc">  if onBehalfOf ~= msg.From then</span>
 <span class="nc">    success, err = sharedValidation.validateAddress(onBehalfOf, &#39;onBehalfOf&#39;)</span>
 <span class="nc">    if not success then return false, err end</span>
   end
 
-<span class="fc" data-hits="3">  success, err = validateQuantity(msg.Tags.Quantity)</span>
-<span class="fc" data-hits="3">  if not success then return false, err end</span>
+<span class="nc">  success, err = validateQuantity(msg.Tags.Quantity)</span>
+<span class="nc">  if not success then return false, err end</span>
 
   -- Check user balances for each position
-<span class="fc" data-hits="4">  for i = 1, #cpmm.tokens.positionIds do</span>
-<span class="fc" data-hits="3">    local positionId = cpmm.tokens.positionIds[i]</span>
+<span class="nc">  for i = 1, #cpmm.tokens.positionIds do</span>
+<span class="nc">    local positionId = cpmm.tokens.positionIds[i]</span>
 
-<span class="fc" data-hits="3">    if not cpmm.tokens.balancesById[positionId] then</span>
+<span class="nc">    if not cpmm.tokens.balancesById[positionId] then</span>
 <span class="nc">      return false, &quot;Invalid position! PositionId: &quot; .. positionId</span>
     end
 
-<span class="fc" data-hits="3">    if not cpmm.tokens.balancesById[positionId][onBehalfOf] then</span>
+<span class="nc">    if not cpmm.tokens.balancesById[positionId][onBehalfOf] then</span>
 <span class="nc">      return false, &quot;Invalid user position! PositionId: &quot; .. positionId</span>
     end
 
-<span class="fc" data-hits="3">    if bint(cpmm.tokens.balancesById[positionId][onBehalfOf]) &lt; bint(msg.Tags.Quantity) then</span>
+<span class="nc">    if bint(cpmm.tokens.balancesById[positionId][onBehalfOf]) &lt; bint(msg.Tags.Quantity) then</span>
 <span class="nc">      return false, &quot;Insufficient tokens! PositionId: &quot; .. positionId</span>
     end
   end
 
-<span class="fc" data-hits="1">  return true</span>
+<span class="nc">  return true</span>
 end
 
 --- Validates the redeemPositions message.
 --- @param msg Message The message to be validated
+--- @param payoutDenominator number The payout denominator: 0 if unresolved 
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
-<span class="fc" data-hits="1">function ConditionalTokensValidation.redeemPositions(msg)</span>
+<span class="fc" data-hits="1">function ConditionalTokensValidation.redeemPositions(msg, payoutDenominator)</span>
 <span class="nc">  local onBehalfOf = msg.Tags[&#39;OnBehalfOf&#39;] or msg.From</span>
   local success, err
+
+<span class="nc">  if payoutDenominator == 0 then</span>
+<span class="nc">    return false, &quot;Market must be resolved!&quot;</span>
+  end
 
 <span class="nc">  if onBehalfOf ~= msg.From then</span>
 <span class="nc">    success, err = sharedValidation.validateAddress(onBehalfOf, &#39;onBehalfOf&#39;)</span>
@@ -560,6 +581,25 @@ end
 <span class="nc">  return true</span>
 end
 
+--- Validates the batchRedeemPositions message.
+--- @param msg Message The message to be validated
+--- @param resolutionAgent string The resolution agent process ID
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+<span class="fc" data-hits="1">function ConditionalTokensValidation.batchRedeemPositions(msg, resolutionAgent, payoutDenominator, positionIds)</span>
+<span class="nc">  if msg.From ~= resolutionAgent then</span>
+<span class="nc">    return false, &quot;Sender must be the resolution agent!&quot;</span>
+  end
+
+<span class="nc">  if payoutDenominator == 0 then</span>
+<span class="nc">    return false, &quot;Market must be resolved!&quot;</span>
+  end
+
+<span class="nc">  if #positionIds ~= 2 then</span>
+<span class="nc">    return false, &quot;Market must be binary!&quot;</span>
+  end
+
+<span class="nc">  return true</span>
+end
 
 --- Validates the reportPayouts message
 --- @param msg Message The message to be validated
@@ -869,7 +909,7 @@ end
 
    </main>
    <footer>
-        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-05-20 17:51:07
+        Code coverage generated by <a href="https://lunarmodules.github.io/luacov/" target="_blank">LuaCov</a> at 2025-05-28 16:49:17
    </footer>
 
    <script type="text/javascript">

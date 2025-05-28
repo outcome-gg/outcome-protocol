@@ -27,6 +27,7 @@ local msgSplitPosition = {}
 local msgMergePositions = {}
 local msgReportPayouts = {}
 local msgRedeemPositions = {}
+local msgBatchRedeemPositions = {}
 local msg = {}
 
 local function getTagValue(tags, targetName)
@@ -111,6 +112,12 @@ describe("#market #conditionalTokens", function()
     }
     -- create a message object
     msgRedeemPositions = {
+      From = sender,
+      reply = function(message) return message end,
+      forward = function(target, message) return message end
+    }
+    -- create a message object
+    msgBatchRedeemPositions = {
       From = sender,
       reply = function(message) return message end,
       forward = function(target, message) return message end
@@ -445,6 +452,43 @@ describe("#market #conditionalTokens", function()
     assert.are.equals("Redeem-Positions-Notice", notice.Action)
     assert.are.equals(quantity, notice.GrossPayout)
     assert.are.equals(tostring(math.floor(tonumber(quantity) * 0.94)), notice.NetPayout) -- 6 = math.ceil(2.5) + math.ceil(2.5)
+	end)
+
+  it("should batch redeem positions", function()
+    -- split position
+    ConditionalTokens:splitPosition(
+      msgSplitPosition.From,
+      msgSplitPosition.Tags.CollateralToken,
+      msgSplitPosition.Tags.Quantity,
+      false, -- cast
+      false, -- sendInterim
+      false, -- detached
+      msgSplitPosition
+    )
+    -- report payouts
+    ConditionalTokens:reportPayouts(
+      msgReportPayouts.Tags.Payouts,
+      msgReportPayouts
+    )
+    -- redeem positions
+    local payoutsMinusFees = ConditionalTokens:batchRedeemPositions(
+      false, -- cast
+      false, -- sendInterim
+      msgBatchRedeemPositions
+    )
+    -- asert state change
+    assert.are.same({
+      [positionIds[1]] = {
+        [ msgSplitPosition.From] = '0'
+      },
+      [positionIds[2]] = {
+        [ msgSplitPosition.From] = '0'
+      },
+      [positionIds[3]] = {
+        [ msgSplitPosition.From] = '0'
+      },
+    }, ConditionalTokens.balancesById)
+    assert.are.equals(tostring(math.floor(tonumber(quantity) * 0.94)), payoutsMinusFees[sender]) -- 6 = math.ceil(2.5) + math.ceil(2.5)
 	end)
 
   it("should fail to redeem positions (not reported)", function()

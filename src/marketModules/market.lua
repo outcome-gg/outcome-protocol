@@ -178,6 +178,13 @@ local function logProbabilities(dataIndex, probabilities, msg)
   })
 end
 
+local function logPayouts(dataIndex, userPayoutsMinusFees, msg)
+  return msg.forward(dataIndex, {
+    Action = "Log-Payouts-Notice",
+    PayoutsMinusFees = json.encode(userPayoutsMinusFees)
+  })
+end
+
 --[[
 ==================
 CPMM WRITE METHODS
@@ -405,6 +412,14 @@ end
 function MarketMethods:redeemPositions(msg)
   local onBehalfOf = msg.Tags["OnBehalfOf"] or msg.From
   self.cpmm.tokens:redeemPositions(onBehalfOf, msg.Tags.Cast, msg.Tags.SendInterim, msg)
+end
+
+--- Batch redeem positions
+--- @param msg Message The message received
+function MarketMethods:batchRedeemPositions(msg)
+  local userPayoutsMinusFees = self.cpmm.tokens:batchRedeemPositions(msg.Tags.Cast, msg.Tags.SendInterim, msg)
+  -- Log payouts to data index
+  logPayouts(self.dataIndex, userPayoutsMinusFees, msg)
 end
 
 --[[

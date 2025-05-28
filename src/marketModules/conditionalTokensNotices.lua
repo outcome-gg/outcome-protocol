@@ -90,4 +90,20 @@ function ConditionalTokensNotices.redeemPositionsNotice(collateralToken, payout,
   })
 end
 
+--- Batch redeem positions notice
+--- @param collateralToken string The address of the collateral token
+--- @param userPayouts table The user payouts
+--- @param userPayoutsMinusFees table The user payouts minus fees
+--- @param msg Message The message received
+--- @return Message The payout redemption notice
+function ConditionalTokensNotices.batchRedeemPositionsNotice(collateralToken, userPayouts, userPayoutsMinusFees, msg)
+  return msg.reply({
+    Action = "Batch-Redeem-Positions-Notice",
+    CollateralToken = collateralToken,
+    Payouts = json.encode(userPayouts),
+    NetPayouts = json.encode(userPayoutsMinusFees),
+    Data = "Successfully batch redeemed positions"
+  })
+end
+
 return ConditionalTokensNotices

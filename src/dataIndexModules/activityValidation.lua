@@ -54,4 +54,11 @@ function ActivityValidation.validateLogProbabilities(msg)
   assert(sharedUtils.isValidKeyValueJSON(msg.Tags.Probabilities), "Probabilities must be valid JSON!")
 end
 
+--- Validate log payouts
+--- @param msg Message The message received
+function ActivityValidation.validateLogPayouts(msg)
+  assert(type(msg.Tags.Payouts) == "string", "Payouts is required!")
+  assert(sharedUtils.isValidKeyValueJSON(msg.Tags.Payouts), "Payouts must be valid JSON!")
+end
+
 return ActivityValidation

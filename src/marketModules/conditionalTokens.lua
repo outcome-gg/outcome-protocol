@@ -21,8 +21,10 @@ local ConditionalTokensMethods = {}
 local ConditionalTokensNotices = require('marketModules.conditionalTokensNotices')
 local SemiFungibleTokens = require('marketModules.semiFungibleTokens')
 local bint = require('.bint')(256)
+local utils = require('.utils')
 local ao = ao or require('.ao')
 local sharedUtils = require("marketModules.sharedUtils")
+local json = require("json")
 
 --- Represents ConditionalTokens
 --- @class ConditionalTokens
@@ -219,6 +221,77 @@ function ConditionalTokensMethods:redeemPositions(onBehalfOf, cast, sendInterim,
   end
   -- Send notice.
   if not cast then return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, onBehalfOf, msg) end
+end
+
+--- Batch redeem positions
+--- Transfers any payout minus fees to the message sender
+--- @param cast boolean The cast is set to true to silence the notice
+--- @param sendInterim boolean If true, sends intermediate notices
+--- @param msg Message The message received
+--- @return table The user payouts minus fees
+function ConditionalTokensMethods:batchRedeemPositions(cast, sendInterim, msg)
+  local den = self.payoutDenominator
+  assert(den > 0, "market not resolved")
+  assert(self.payoutNumerators and #self.payoutNumerators > 0, "market not initialized")
+
+  local userPayouts = {}
+  local userPayoutsMinusFees = {}
+
+  -- Get users
+  local usersWithBalanceInPosition1 = self.balancesById[self.positionIds[1]]
+  local usersWithBalanceInPosition2 = self.balancesById[self.positionIds[2]]
+
+  -- Concatenate the tables
+  ---@diagnostic disable-next-line: missing-parameter
+  local usersWithBalance = utils.concat(utils.keys(usersWithBalanceInPosition1))(utils.keys(usersWithBalanceInPosition2))
+
+  -- Use reduce to build a table of unique values
+  ---@diagnostic disable-next-line: missing-parameter
+  local uniqueUsersWithBalance = utils.reduce(function(acc, v)
+    if not acc._seen[v] then
+      acc._seen[v] = true
+      table.insert(acc.result, v)
+    end
+    return acc
+  end)({ _seen = {}, result = {} })(usersWithBalance)
+
+  -- Extract the final result
+  local users = uniqueUsersWithBalance.result
+
+  for j = 1, #users do
+    local user = users[j]
+    -- Same as Redeem Positions, with `msg.From` and `onBehalfOf` replaced by `user`
+    local totalPayout = 0
+    local totalPayoutMinusFee = "0"
+    for i = 1, #self.positionIds do
+      local positionId = self.positionIds[i]
+      local payoutNumerator = self.payoutNumerators[tonumber(positionId)]
+
+      -- Get the stake to redeem.
+      if not self.balancesById[positionId] then self.balancesById[positionId] = {} end
+      if not self.balancesById[positionId][user] then self.balancesById[positionId][user] = "0" end
+      local payoutStake = self.balancesById[positionId][user]
+      if bint.__lt(0, bint(payoutStake)) then
+        -- Calculate the payout and burn position.
+        totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
+        self:burn(user, positionId, payoutStake, not sendInterim, true, msg) -- @dev `true`: sends detatched message
+      end
+    end
+    -- Return total payout minus take fee.
+    if totalPayout > 0 then
+      totalPayout = math.floor(totalPayout)
+      totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, user, totalPayout, not sendInterim)
+    end
+
+    -- Assign to tables
+    userPayouts[user] = totalPayout
+    userPayoutsMinusFees[user] = totalPayoutMinusFee
+  end
+
+  -- Send notice.
+  if not cast then self.batchRedeemPositionsNotice(self.collateralToken, userPayouts, userPayoutsMinusFees, msg) end
+
+  return userPayoutsMinusFees
 end
 
 --- Return total payout minus take fee

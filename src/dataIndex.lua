@@ -148,6 +148,18 @@ PROBABILITIES = [[
   );
 ]]
 
+PAYOUTS = [[
+  CREATE TABLE IF NOT EXISTS Payouts (
+    id TEXT PRIMARY KEY,
+    user TEXT NOT NULL,
+    market TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    timestamp NUMBER NOT NULL,
+    FOREIGN KEY (user) REFERENCES Users(id),
+    FOREIGN KEY (market) REFERENCES Markets(id)
+  );
+]]
+
 --[[
 ==========
 DATA INDEX
@@ -327,6 +339,16 @@ Handlers.add("Log-Probabilities", {Action = "Log-Probabilities-Notice"}, functio
   local cast = msg.Tags.Cast == "true"
   local probabilities = json.decode(msg.Tags.Probabilities)
   return DataIndex.activity:logProbabilities(probabilities, os.time(), cast, msg)
+end)
+
+--- Log payouts handler
+--- @param msg Message The message received
+--- @return Message|nil logPayoutsNotice The log payouts notice or nil if cast is false
+Handlers.add("Log-Payouts", {Action = "Log-Payouts-Notice"}, function(msg)
+  activityValidation.validateLogPayouts(msg)
+  local cast = msg.Tags.Cast == "true"
+  local payouts = json.decode(msg.Tags.PayoutsMinusFees)
+  return DataIndex.activity:logPayouts(payouts, os.time(), cast, msg)
 end)
 
 
