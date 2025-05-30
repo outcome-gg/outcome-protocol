@@ -11,6 +11,7 @@ local json = require('json')
 --- Create event notice
 --- @param collateral string The collateral token address
 --- @param dataIndex string The data index address
+--- @param chatroom string The chatroom address
 --- @param denomination number The denomination
 --- @param outcomeSlotCount string The number of outcome slots
 --- @param question string The event title
@@ -23,12 +24,13 @@ local json = require('json')
 --- @param creator string The creator address
 --- @param msg Message The message received
 --- @return Message createEventNotice The create event notice
-function MarketFactoryNotices.createEventNotice(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, creator, msg)
+function MarketFactoryNotices.createEventNotice(collateral, dataIndex, chatroom, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, creator, msg)
   return msg.reply({
     Action = "Create-Event-Notice",
     EventId = msg.Id,
     Collateral = collateral,
     DataIndex = dataIndex,
+    Chatroom = chatroom,
     Denomination = tostring(denomination),
     OutcomeSlotCount = outcomeSlotCount,
     Question = question,
@@ -46,6 +48,7 @@ end
 --- @param resolutionAgent string The resolution agent address
 --- @param collateralToken string The collateral token address
 --- @param dataIndex string The data index address
+--- @param chatroom string The chatroom address
 --- @param denomination number The denomination
 --- @param outcomeSlotCount number The number of outcome slots
 --- @param question string The market question
@@ -66,6 +69,7 @@ function MarketFactoryNotices.spawnMarketNotice(
   resolutionAgent,
   collateralToken,
   dataIndex,
+  chatroom,
   denomination,
   outcomeSlotCount,
   question,
@@ -87,6 +91,7 @@ function MarketFactoryNotices.spawnMarketNotice(
     ResolutionAgent = resolutionAgent,
     CollateralToken = collateralToken,
     DataIndex = dataIndex,
+    Chatroom = chatroom,
     Denomination = tostring(denomination),
     OutcomeSlotCount = tostring(outcomeSlotCount),
     Question = question,

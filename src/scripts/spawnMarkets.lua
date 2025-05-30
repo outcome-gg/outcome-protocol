@@ -9,6 +9,7 @@ function SpawnMarkets:run(env, msg)
   assert(env == "DEV" or env == "PROD", 'env must be dev or prod')
   local marketFactory = constants[env].marketFactory
   local dataIndex = constants[env].dataIndex
+  local chatroom = constants[env].chatroom
   local collateralToken = constants[env].collateralToken
   local msgIds = {}
 
@@ -18,6 +19,7 @@ function SpawnMarkets:run(env, msg)
       Action = "Spawn-Market",
       Tags = {
         DataIndex = dataIndex,
+        Chatroom = chatroom,
         CollateralToken = collateralToken,
         ResolutionAgent = market.resolutionAgent,
         Question = market.question,

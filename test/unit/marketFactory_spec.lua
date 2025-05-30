@@ -7,6 +7,7 @@ local sender = ""
 local collateralToken = ""
 local resolutionAgent = ""
 local dataIndex = ""
+local chatroom = ""
 local question = ""
 local outcomeSlotCount = ""
 local creatorFee = ""
@@ -34,10 +35,11 @@ describe("#marketFactory", function()
     collateralToken = 'test-this-is-valid-arweave-wallet-address-1'
     resolutionAgent = 'test-this-is-valid-arweave-wallet-address-2'
     dataIndex = 'test-this-is-valid-arweave-wallet-address-3'
+    chatroom = 'test-this-is-valid-arweave-wallet-address-4'
     question = 'test question'
     outcomeSlotCount = "2"
     creatorFee = "100"
-    creatorFeeTarget = 'test-this-is-valid-arweave-wallet-address-4'
+    creatorFeeTarget = 'test-this-is-valid-arweave-wallet-address-5'
     -- create a market factory object
     FACTORY = marketFactory.new(
       constants.dev.configurator,
@@ -73,6 +75,7 @@ describe("#marketFactory", function()
         ["Action"] = "Create-Market-Group",
         ["Collateral"] = collateralToken,
         ["DataIndex"] = dataIndex,
+        ["Chatroom"] = chatroom,
         ["Question"] = question,
         ["Rules"] = "test rules",
         ["OutcomeSlotCount"] = outcomeSlotCount,
@@ -95,6 +98,7 @@ describe("#marketFactory", function()
         ["CollateralToken"] = collateralToken,
         ["ResolutionAgent"] = resolutionAgent,
         ["DataIndex"] = dataIndex,
+        ["Chatroom"] = chatroom,
         ["Question"] = question,
         ["Rules"] = "test rules",
         ["OutcomeSlotCount"] = outcomeSlotCount,
@@ -157,6 +161,7 @@ describe("#marketFactory", function()
       notice = FACTORY:createEvent(
         msgCreateMarketGroup.Tags["Collateral"],
         msgCreateMarketGroup.Tags["DataIndex"],
+        msgCreateMarketGroup.Tags["Chatroom"],
         msgCreateMarketGroup.Tags["OutcomeSlotCount"],
         msgCreateMarketGroup.Tags["Question"],
         msgCreateMarketGroup.Tags["Rules"],
@@ -174,6 +179,7 @@ describe("#marketFactory", function()
       EventId = msgCreateMarketGroup.Id,
       Collateral = msgCreateMarketGroup.Tags["Collateral"],
       DataIndex = msgCreateMarketGroup.Tags["DataIndex"],
+      Chatroom = msgCreateMarketGroup.Tags["Chatroom"],
       Creator = msgCreateMarketGroup.From,
       Question = msgCreateMarketGroup.Tags["Question"],
       Denomination = "9",
@@ -196,6 +202,7 @@ describe("#marketFactory", function()
         msgSpawnMarket.Tags["CollateralToken"],
         msgSpawnMarket.Tags["ResolutionAgent"],
         msgSpawnMarket.Tags["DataIndex"],
+        msgSpawnMarket.Tags["Chatroom"],
         msgSpawnMarket.Tags["OutcomeSlotCount"],
         msgSpawnMarket.Tags["Question"],
         msgSpawnMarket.Tags["Rules"],
@@ -218,6 +225,7 @@ describe("#marketFactory", function()
       ResolutionAgent = msgSpawnMarket.Tags["ResolutionAgent"],
       CollateralToken = msgSpawnMarket.Tags["CollateralToken"],
       DataIndex = msgSpawnMarket.Tags["DataIndex"],
+      Chatroom = msgSpawnMarket.Tags["Chatroom"],
       Denomination = "9",
       OutcomeSlotCount = msgSpawnMarket.Tags["OutcomeSlotCount"],
       Question = msgSpawnMarket.Tags["Question"],
@@ -255,6 +263,7 @@ describe("#marketFactory", function()
       collateralToken = collateralToken,
       resolutionAgent = resolutionAgent,
       dataIndex = dataIndex,
+      chatroom = chatroom,
       category = "",
       subcategory = "",
       logo = "",
@@ -338,6 +347,7 @@ describe("#marketFactory", function()
     FACTORY:createEvent(
       msgCreateMarketGroup.Tags["Collateral"],
       msgCreateMarketGroup.Tags["DataIndex"],
+      msgCreateMarketGroup.Tags["Chatroom"],
       msgCreateMarketGroup.Tags["OutcomeSlotCount"],
       msgCreateMarketGroup.Tags["Question"],
       msgCreateMarketGroup.Tags["Rules"],

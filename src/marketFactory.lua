@@ -168,6 +168,7 @@ end)
 --- - msg.Tags.CollateralToken (string): The collateral token for the event.
 --- - msg.Tags.ResolutionAgent (string): The resolution agent for the event.
 --- - msg.Tags.DataIndex (string): The data index for the event.
+--- - msg.Tags.Chatroom (string): The chatroom for the event.
 --- - msg.Tags.CreatorFee (numberic string): The fee for the creator of the event in basis points.
 --- - msg.Tags.CreatorFeeTarget (string): The target for the creator fee.
 --- - msg.Tags.OutcomeSlotCount (numeric string): The number of possible outcomes for the event.
@@ -203,6 +204,7 @@ Handlers.add("Spawn-Market", {Action="Spawn-Market"}, function(msg)
     msg.Tags["CollateralToken"],
     msg.Tags["ResolutionAgent"],
     msg.Tags["DataIndex"],
+    msg.Tags["Chatroom"],
     tonumber(msg.Tags["OutcomeSlotCount"]),
     msg.Tags["Question"],
     msg.Tags["Rules"],

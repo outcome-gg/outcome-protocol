@@ -62,21 +62,22 @@ WRITE METHODS
 --- @param category string The group category
 --- @param subcategory string The group subcategory
 --- @param logo string The group logo
+--- @param chatroom string The group chatroom
 --- @param timestamp number The group timestamp
 --- @param cast boolean Whether to cast the message
 --- @param msg Message The message received
 --- @return Message|nil logMarketGroupNotice The log group notice or nil if cast is false
-function ActivityMethods:logMarketGroup(groupId, collateral, creator, question, rules, category, subcategory, logo, timestamp, cast, msg)
+function ActivityMethods:logMarketGroup(groupId, collateral, creator, question, rules, category, subcategory, logo, chatroom, timestamp, cast, msg)
   -- Insert group
   self.dbAdmin:safeExec(
     [[
-      INSERT INTO Groups (id, collateral, creator, question, rules, category, subcategory, logo, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-    ]], false, groupId, collateral, creator, question, rules, category, subcategory, logo, timestamp
+      INSERT INTO Groups (id, collateral, creator, question, rules, category, subcategory, logo, chatroom, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    ]], false, groupId, collateral, creator, question, rules, category, subcategory, logo, chatroom, timestamp
   )
   -- Send noticeif cast is true
   if cast then
-    return self.logMarketGroupNotice(msg.From, groupId, collateral, creator, question, rules, category, subcategory, logo, msg)
+    return self.logMarketGroupNotice(msg.From, groupId, collateral, creator, question, rules, category, subcategory, logo, chatroom, msg)
   end
 end
 
@@ -95,6 +96,7 @@ end
 --- @param subcategory string The market subcategory
 --- @param logo string The market logo
 --- @param logos string The market logos
+--- @param chatroom string The market chatroom
 --- @param eventId string The market event ID
 --- @param timestamp number The market timestamp
 --- @param cast boolean Whether to cast the message
@@ -116,6 +118,7 @@ function ActivityMethods:logMarket(
   logo,
   logos,
   eventId,
+  chatroom,
   timestamp,
   cast,
   msg
@@ -140,10 +143,11 @@ function ActivityMethods:logMarket(
         logo,
         logos,
         event_id,
+        chatroom,
         timestamp
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, questionSlug, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, logos, eventId, timestamp
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, questionSlug, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, logos, eventId, chatroom, timestamp
   )
   -- Send notice if cast is true
   if cast then
@@ -164,6 +168,7 @@ function ActivityMethods:logMarket(
       logo,
       logos,
       eventId,
+      chatroom,
       msg
     )
   end

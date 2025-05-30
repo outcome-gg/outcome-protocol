@@ -167,6 +167,7 @@ ACTIVITY LOGS
 
 local function logMarket(
   dataIndex,
+  chatroom,
   market,
   collateralToken,
   resolutionAgent,
@@ -190,6 +191,7 @@ local function logMarket(
   local notice = {
     Action = "Log-Market-Notice",
     Market = market,
+    Chatroom = chatroom,
     Collateral = collateralToken,
     ResolutionAgent = resolutionAgent,
     Denomination = tostring(denomination),
@@ -213,11 +215,12 @@ local function logMarket(
   msg.forward(creator, notice)
 end
 
-local function logEvent(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, creator, msg)
+local function logEvent(collateral, dataIndex, chatroom, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, creator, msg)
   -- create notice
   local notice = {
     Action = "Log-Event-Notice",
     EventId = msg.Id,
+    Chatroom = chatroom,
     Collateral = collateral,
     Denomination = tostring(denomination),
     OutcomeSlotCount = outcomeSlotCount,
@@ -245,6 +248,7 @@ WRITE METHODS
 --- Create Event
 --- @param collateral string The collateral token process ID
 --- @param dataIndex string The data index process ID (where to send logs)
+--- @param chatroom string The chatroom process ID (where to send messages)
 --- @param outcomeSlotCount number The number of outcome slots
 --- @param question string The question to be answered
 --- @param rules string|nil The rules of the event
@@ -255,7 +259,7 @@ WRITE METHODS
 --- @param endTime string|nil The end time of the event as a Unix timestamp in milliseconds, or nil
 --- @param msg Message The message received
 --- @return Message The create event message
-function MarketFactoryMethods:createEvent(collateral, dataIndex, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, msg)
+function MarketFactoryMethods:createEvent(collateral, dataIndex, chatroom, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, msg)
   -- set defaults
   rules = rules or ""
   category = category or ""
@@ -274,15 +278,16 @@ function MarketFactoryMethods:createEvent(collateral, dataIndex, outcomeSlotCoun
   -- retrieve denomination
   local denomination = self.listedCollateralTokens[collateral].denomination
   -- log event
-  logEvent(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, msg.From, msg)
+  logEvent(collateral, dataIndex, chatroom, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, msg.From, msg)
   -- send notice
-  return self.createEventNotice(collateral, dataIndex, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, msg.From, msg)
+  return self.createEventNotice(collateral, dataIndex, chatroom, denomination, outcomeSlotCount, question, rules, category, subcategory, logo, startTime, endTime, msg.From, msg)
 end
 
 --- Spawn market
 --- @param collateralToken string The collateral token process ID
 --- @param resolutionAgent string The resolution agent process ID (assigned to report the market result)
 --- @param dataIndex string The data index process ID (where to send logs)
+--- @param chatroom string The chatroom process ID (where to send messages)
 --- @param outcomeSlotCount number The number of outcome slots
 --- @param question string The question to be answered by the resolutionAgent
 --- @param rules string The rules of the market
@@ -302,6 +307,7 @@ function MarketFactoryMethods:spawnMarket(
   collateralToken,
   resolutionAgent,
   dataIndex,
+  chatroom,
   outcomeSlotCount,
   question,
   rules,
@@ -384,6 +390,7 @@ function MarketFactoryMethods:spawnMarket(
     collateralToken = collateralToken,
     resolutionAgent = resolutionAgent,
     dataIndex = dataIndex,
+    chatroom = chatroom,
     denomination = denomination,
     outcomeSlotCount = outcomeSlotCount,
     question = question,
@@ -405,6 +412,7 @@ function MarketFactoryMethods:spawnMarket(
     resolutionAgent,
     collateralToken,
     dataIndex,
+    chatroom,
     denomination,
     outcomeSlotCount,
     question,
@@ -450,6 +458,7 @@ function MarketFactoryMethods:initMarket(msg)
     local marketConfig = self.messageToMarketConfigMapping[messageId]
     logMarket(
       marketConfig.dataIndex,
+      marketConfig.chatroom,
       processId,
       marketConfig.collateralToken,
       marketConfig.resolutionAgent,

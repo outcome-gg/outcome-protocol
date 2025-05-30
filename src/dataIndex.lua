@@ -70,6 +70,7 @@ MARKETS = [[
     logo TEXT NOT NULL,
     logos TEXT NOT NULL,
     event_id TEXT NOT NULL,
+    chatroom TEXT NOT NULL,
     timestamp NUMBER NOT NULL
   );
 ]]
@@ -275,6 +276,7 @@ Handlers.add("Log-Market", {Action = "Log-Market-Notice"}, function(msg)
     msg.Tags.Logo,
     msg.Tags.Logos,
     msg.Tags.EventId,
+    msg.Tags.Chatroom,
     os.time(),
     cast,
     msg
@@ -297,6 +299,7 @@ Handlers.add("Log-Market-Group", {Action = "Log-Market-Group-Notice"}, function(
     msg.Tags.Category,
     msg.Tags.Subcategory,
     msg.Tags.Logo,
+    msg.Tags.Chatroom,
     os.time(),
     cast,
     msg

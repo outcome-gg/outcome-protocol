@@ -10,6 +10,7 @@ local constants = {}
 constants.DEV = {
   marketFactory = "8IiQgsFhOyzPaZTM59rBpg4Srrre04PouJMG3BefOAo",
   dataIndex = "zwOmUkKe2SulEQm3NzWJ04Y_dDao4KgFBfJRHPh3T8c",
+  chatroom = "SESpmote0u38lPYt7-SfaNhXWD3qCHCSgODYCADvyLQ",
   collateralToken = "jAyJBNpuSXmhn9lMMfwDR60TfIPANXI6r-f3n9zucYU"
 }
 

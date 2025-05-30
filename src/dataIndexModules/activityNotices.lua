@@ -26,6 +26,7 @@ function ActivityNotices.logMarketNotice(
   logo,
   logos,
   eventId,
+  chatroom,
   msg
 )
   return msg.reply({
@@ -45,7 +46,8 @@ function ActivityNotices.logMarketNotice(
     Subcategory = subcategory,
     Logo = logo,
     Logos = logos,
-    EventId = eventId
+    EventId = eventId,
+    Chatroom = chatroom
   })
 end
 

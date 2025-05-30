@@ -138,6 +138,9 @@ function marketFactoryValidation.spawnMarket(listedCollateralTokens, allowedCrea
   success, err = sharedValidation.validateAddress(msg.Tags.DataIndex, "DataIndex")
   if not success then return false, err end
 
+  success, err = sharedValidation.validateAddress(msg.Tags.Chatroom, "Chatroom")
+  if not success then return false, err end
+
   success, err = sharedValidation.validatePositiveInteger(msg.Tags.OutcomeSlotCount, "OutcomeSlotCount")
   if not success then return false, err end
 
