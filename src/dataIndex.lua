@@ -180,6 +180,7 @@ local function initDb()
   Db:exec(PREDICTIONS)
   Db:exec(PROBABILITY_SETS)
   Db:exec(PROBABILITIES)
+  Db:exec(PAYOUTS)
   return DbAdmin:tables()
 end
 

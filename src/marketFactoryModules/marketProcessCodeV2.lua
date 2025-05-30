@@ -1939,6 +1939,22 @@ function ConditionalTokensNotices.redeemPositionsNotice(collateralToken, payout,
   })
 end
 
+--- Batch redeem positions notice
+--- @param collateralToken string The address of the collateral token
+--- @param userPayouts table The user payouts
+--- @param userPayoutsMinusFees table The user payouts minus fees
+--- @param msg Message The message received
+--- @return Message The payout redemption notice
+function ConditionalTokensNotices.batchRedeemPositionsNotice(collateralToken, userPayouts, userPayoutsMinusFees, msg)
+  return msg.reply({
+    Action = "Batch-Redeem-Positions-Notice",
+    CollateralToken = collateralToken,
+    Payouts = json.encode(userPayouts),
+    NetPayouts = json.encode(userPayoutsMinusFees),
+    Data = "Successfully batch redeemed positions"
+  })
+end
+
 return ConditionalTokensNotices
 
 end
@@ -2316,7 +2332,7 @@ function SemiFungibleTokensMethods:batchBurn(from, ids, quantities, cast, detach
     assert(bint.__lt(0, quantities[i]), 'Quantity must be greater than zero!')
     assert(self.balancesById[ ids[i] ], 'Id must exist! ' .. ids[i])
     assert(self.balancesById[ ids[i] ][from], 'Account must hold token! ' .. ids[i])
-    assert(bint.__le(quantities[i], self.balancesById[ ids[i] ][from]), 'Account must have sufficient tokens! id: ' .. ids[i] .. ' account: ' .. from .. ' balance: ' .. self.balancesById[ ids[i] ][from] .. ' quantity: ' .. quantities[i])
+    assert(bint.__le(quantities[i], self.balancesById[ ids[i] ][from]), 'Account must have sufficient tokens!')
   end
   -- burn tokens
   local remainingBalances = {}
@@ -2511,8 +2527,10 @@ local ConditionalTokensMethods = {}
 local ConditionalTokensNotices = require('marketModules.conditionalTokensNotices')
 local SemiFungibleTokens = require('marketModules.semiFungibleTokens')
 local bint = require('.bint')(256)
+local utils = require('.utils')
 local ao = ao or require('.ao')
 local sharedUtils = require("marketModules.sharedUtils")
+local json = require("json")
 
 --- Represents ConditionalTokens
 --- @class ConditionalTokens
@@ -2709,6 +2727,77 @@ function ConditionalTokensMethods:redeemPositions(onBehalfOf, cast, sendInterim,
   end
   -- Send notice.
   if not cast then return self.redeemPositionsNotice(self.collateralToken, totalPayout, totalPayoutMinusFee, onBehalfOf, msg) end
+end
+
+--- Batch redeem positions
+--- Transfers any payout minus fees to the message sender
+--- @param cast boolean The cast is set to true to silence the notice
+--- @param sendInterim boolean If true, sends intermediate notices
+--- @param msg Message The message received
+--- @return table The user payouts minus fees
+function ConditionalTokensMethods:batchRedeemPositions(cast, sendInterim, msg)
+  local den = self.payoutDenominator
+  assert(den > 0, "market not resolved")
+  assert(self.payoutNumerators and #self.payoutNumerators > 0, "market not initialized")
+
+  local userPayouts = {}
+  local userPayoutsMinusFees = {}
+
+  -- Get users
+  local usersWithBalanceInPosition1 = self.balancesById[self.positionIds[1]]
+  local usersWithBalanceInPosition2 = self.balancesById[self.positionIds[2]]
+
+  -- Concatenate the tables
+  ---@diagnostic disable-next-line: missing-parameter
+  local usersWithBalance = utils.concat(utils.keys(usersWithBalanceInPosition1))(utils.keys(usersWithBalanceInPosition2))
+
+  -- Use reduce to build a table of unique values
+  ---@diagnostic disable-next-line: missing-parameter
+  local uniqueUsersWithBalance = utils.reduce(function(acc, v)
+    if not acc._seen[v] then
+      acc._seen[v] = true
+      table.insert(acc.result, v)
+    end
+    return acc
+  end)({ _seen = {}, result = {} })(usersWithBalance)
+
+  -- Extract the final result
+  local users = uniqueUsersWithBalance.result
+
+  for j = 1, #users do
+    local user = users[j]
+    -- Same as Redeem Positions, with `msg.From` and `onBehalfOf` replaced by `user`
+    local totalPayout = 0
+    local totalPayoutMinusFee = "0"
+    for i = 1, #self.positionIds do
+      local positionId = self.positionIds[i]
+      local payoutNumerator = self.payoutNumerators[tonumber(positionId)]
+
+      -- Get the stake to redeem.
+      if not self.balancesById[positionId] then self.balancesById[positionId] = {} end
+      if not self.balancesById[positionId][user] then self.balancesById[positionId][user] = "0" end
+      local payoutStake = self.balancesById[positionId][user]
+      if bint.__lt(0, bint(payoutStake)) then
+        -- Calculate the payout and burn position.
+        totalPayout = math.floor(totalPayout + (payoutStake * payoutNumerator) / den)
+        self:burn(user, positionId, payoutStake, not sendInterim, true, msg) -- @dev `true`: sends detatched message
+      end
+    end
+    -- Return total payout minus take fee.
+    if totalPayout > 0 then
+      totalPayout = math.floor(totalPayout)
+      totalPayoutMinusFee = self:returnTotalPayoutMinusTakeFee(self.collateralToken, user, totalPayout, not sendInterim)
+    end
+
+    -- Assign to tables
+    userPayouts[user] = totalPayout
+    userPayoutsMinusFees[user] = totalPayoutMinusFee
+  end
+
+  -- Send notice.
+  if not cast then self.batchRedeemPositionsNotice(self.collateralToken, userPayouts, userPayoutsMinusFees, msg) end
+
+  return userPayoutsMinusFees
 end
 
 --- Return total payout minus take fee
@@ -3172,11 +3261,7 @@ function CPMMMethods:sell(from, onBehalfOf, returnAmount, positionId, maxPositio
   -- Check user balance and transfer positionTokensToSell to process before merge.
   local balance = self.tokens:getBalance(from, nil, positionId)
   assert(bint.__le(bint(positionTokensToSell), bint(balance)), 'Insufficient balance!')
-  local poolBalanceB4 = self.tokens:getBalance(ao.id, nil, positionId)
   self.tokens:transferSingle(from, ao.id, positionId, positionTokensToSell, not sendInterim, true, msg) -- @dev `true`: sends detatched message
-  local poolBalanceAf = self.tokens:getBalance(ao.id, nil, positionId)
-  print("poolBalanceB4: " .. poolBalanceB4)
-  print("poolBalanceAf: " .. poolBalanceAf)
   -- Merge positions through all conditions (burns returnAmountPlusFees).
   self.tokens:mergePositions(ao.id, '', positionTokensToSell, true, not sendInterim, sendInterim, true, msg) -- @dev `true`: isSell, `true`: sends detatched message
   -- Returns collateral to the user / onBehalfOf address
@@ -3534,6 +3619,13 @@ local function logProbabilities(dataIndex, probabilities, msg)
   })
 end
 
+local function logPayouts(dataIndex, userPayoutsMinusFees, msg)
+  return msg.forward(dataIndex, {
+    Action = "Log-Payouts-Notice",
+    PayoutsMinusFees = json.encode(userPayoutsMinusFees)
+  })
+end
+
 --[[
 ==================
 CPMM WRITE METHODS
@@ -3761,6 +3853,14 @@ end
 function MarketMethods:redeemPositions(msg)
   local onBehalfOf = msg.Tags["OnBehalfOf"] or msg.From
   self.cpmm.tokens:redeemPositions(onBehalfOf, msg.Tags.Cast, msg.Tags.SendInterim, msg)
+end
+
+--- Batch redeem positions
+--- @param msg Message The message received
+function MarketMethods:batchRedeemPositions(msg)
+  local userPayoutsMinusFees = self.cpmm.tokens:batchRedeemPositions(msg.Tags.Cast, msg.Tags.SendInterim, msg)
+  -- Log payouts to data index
+  logPayouts(self.dataIndex, userPayoutsMinusFees, msg)
 end
 
 --[[
@@ -4741,10 +4841,15 @@ end
 
 --- Validates the redeemPositions message.
 --- @param msg Message The message to be validated
+--- @param payoutDenominator number The payout denominator: 0 if unresolved 
 --- @return boolean, string|nil Returns true on success, or false and an error message on failure
-function ConditionalTokensValidation.redeemPositions(msg)
+function ConditionalTokensValidation.redeemPositions(msg, payoutDenominator)
   local onBehalfOf = msg.Tags['OnBehalfOf'] or msg.From
   local success, err
+
+  if payoutDenominator == 0 then
+    return false, "Market must be resolved!"
+  end
 
   if onBehalfOf ~= msg.From then
     success, err = sharedValidation.validateAddress(onBehalfOf, 'onBehalfOf')
@@ -4754,6 +4859,25 @@ function ConditionalTokensValidation.redeemPositions(msg)
   return true
 end
 
+--- Validates the batchRedeemPositions message.
+--- @param msg Message The message to be validated
+--- @param resolutionAgent string The resolution agent process ID
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function ConditionalTokensValidation.batchRedeemPositions(msg, resolutionAgent, payoutDenominator, positionIds)
+  if msg.From ~= resolutionAgent then
+    return false, "Sender must be the resolution agent!"
+  end
+
+  if payoutDenominator == 0 then
+    return false, "Market must be resolved!"
+  end
+
+  if #positionIds ~= 2 then
+    return false, "Market must be binary!"
+  end
+
+  return true
+end
 
 --- Validates the reportPayouts message
 --- @param msg Message The message to be validated
@@ -5491,6 +5615,7 @@ Handlers.add("Report-Payouts", {Action = "Report-Payouts"}, function(msg)
 end)
 
 --- Redeem positions handler
+--- @notice Only callable after the market has been resolved
 --- @param msg Message The message received, expected to contain:
 --- - msg.Tags.OnBehalfOf (string, optional): The address of the account to receive the collateral tokens.
 --- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
@@ -5512,7 +5637,7 @@ end)
 --- - Data (string): "Successfully redeemed positions"
 Handlers.add("Redeem-Positions", {Action = "Redeem-Positions"}, function(msg)
   -- Validate input
-  local success, err = conditionalTokensValidation.redeemPositions(msg)
+  local success, err = conditionalTokensValidation.redeemPositions(msg, Market.cpmm.tokens.payoutDenominator)
   -- If validation fails, provide error response.
   if not success then
     msg.reply({
@@ -5523,6 +5648,39 @@ Handlers.add("Redeem-Positions", {Action = "Redeem-Positions"}, function(msg)
   end
   -- If validation passes, redeem positions.
   Market:redeemPositions(msg)
+end)
+
+--- Batch redeem positions handler
+--- @notice Only callable by the resolution agent, after the market has been resolved, for binary markets
+--- @param msg Message The message received, expected to contain:
+--- - msg.Tags.SendInterim (boolean, optional): The sendInterim is set to send interim notices (default `nil`to silience).
+--- @note **Emits the following notices:**
+--- **⚠️ Error Handling (Sent on failed input validation)**
+--- - `Batch-Redeem-Positions-Error`: **market → sender** -- Returns an error message
+--- **✨ Interim Notices for each user (Default silenced)**
+--- - `Burn-Single-Notice`: **market → holder**    -- Burns redeemed position tokens (for each position ID held by the sender)
+--- - `Debit-Notice`: **collateral → market**     -- Transfers collateral from the market
+--- - `Credit-Notice`: **collateral → onBehalfOf**     -- Transfers collateral to onBehalfOf
+--- **✅ Success Notice**
+--- - `Batch-Redeem-Positions-Notice`: **market → holder** -- Logs the redeem positions action
+--- @note **Replies with the following tags:**
+--- - Action (string): "Batch-Redeem-Positions-Notice"
+--- - CollateralToken (string): The collateral token process ID
+--- - TotalPayout (string): The total payout amount, before fees (numeric string)
+--- - Data (string): "Successfully redeemed positions"
+Handlers.add("Batch-Redeem-Positions", {Action = "Batch-Redeem-Positions"}, function(msg)
+  -- Validate input
+  local success, err = conditionalTokensValidation.batchRedeemPositions(msg, Market.cpmm.tokens.resolutionAgent, Market.cpmm.tokens.payoutDenominator, Market.cpmm.tokens.positionIds)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Batch-Redeem-Positions-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, batch redeem positions.
+  Market:batchRedeemPositions(msg)
 end)
 
 --[[
