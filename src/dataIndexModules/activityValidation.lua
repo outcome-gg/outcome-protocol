@@ -23,6 +23,8 @@ function ActivityValidation.validateLogMarket(msg)
   assert(type(msg.Tags.Category) == "string", "Category is required!")
   assert(type(msg.Tags.Subcategory) == "string", "Subcategory is required!")
   assert(type(msg.Tags.Logo) == "string", "Logo is required!")
+  assert(type(msg.Tags.StartTime) == "string", "StartTime is required!")
+  assert(type(msg.Tags.EndTime) == "string", "EndTime is required!")
 end
 
 --- Validate log funding

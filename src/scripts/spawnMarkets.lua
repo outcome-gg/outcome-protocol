@@ -30,6 +30,8 @@ function SpawnMarkets:run(env, msg)
         Category = market.category,
         Subcategory = market.subcategory,
         Logo = market.logo,
+        StartTime = tostring(os.time()),
+        EndTime = tostring(os.time() + 30 * 24 * 60 * 60 * 1000), -- 30 days from now
       }
     })
 

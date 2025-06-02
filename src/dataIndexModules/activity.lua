@@ -96,8 +96,10 @@ end
 --- @param subcategory string The market subcategory
 --- @param logo string The market logo
 --- @param logos string The market logos
---- @param chatroom string The market chatroom
 --- @param eventId string The market event ID
+--- @param chatroom string The market chatroom
+--- @param startTime string The market start time
+--- @param endTime string The market end time
 --- @param timestamp number The market timestamp
 --- @param cast boolean Whether to cast the message
 --- @param msg Message The message received
@@ -119,6 +121,8 @@ function ActivityMethods:logMarket(
   logos,
   eventId,
   chatroom,
+  startTime,
+  endTime,
   timestamp,
   cast,
   msg
@@ -144,10 +148,12 @@ function ActivityMethods:logMarket(
         logos,
         event_id,
         chatroom,
+        start_time,
+        end_time,
         timestamp
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, questionSlug, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, logos, eventId, chatroom, timestamp
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+    ]], false, market, "open", creator, creatorFee, creatorFeeTarget, question, questionSlug, rules, outcomeSlotCount, collateral, resolutionAgent, category, subcategory, logo, logos, eventId, chatroom, startTime, endTime, timestamp
   )
   -- Send notice if cast is true
   if cast then
@@ -169,6 +175,8 @@ function ActivityMethods:logMarket(
       logos,
       eventId,
       chatroom,
+      startTime,
+      endTime,
       msg
     )
   end

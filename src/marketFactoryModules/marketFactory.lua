@@ -203,8 +203,8 @@ local function logMarket(
     Logo = logo,
     Logos = json.encode(logos),
     EventId = eventId,
-    StartTime = startTime,
-    EndTime = endTime,
+    StartTime = tostring(startTime),
+    EndTime = tostring(endTime),
     Creator = creator,
     CreatorFee = tostring(creatorFee),
     CreatorFeeTarget = creatorFeeTarget
