@@ -18,4 +18,13 @@ function ChatroomNotices.broadcastNotice(market, user, parentId, body, msg)
   })
 end
 
+function ChatroomNotices.likeNotice(messageId, user, action, msg)
+  return msg.reply({
+    Action = "Like-Notice",
+    MessageId = messageId,
+    User = user,
+    Data = action
+  })
+end
+
 return ChatroomNotices

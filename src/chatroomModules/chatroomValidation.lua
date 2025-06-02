@@ -34,11 +34,18 @@ function ChatroomValidation.validateBroadcast(msg)
     return false, "Data cannot be empty!"
   end
 
-  if #msg.Data > 280 then
-    return false, "Data cannot be longer than 280 characters!"
+  if #msg.Data > 5000 then
+    return false, "Data cannot be longer than 5000 characters!"
   end
 
   return sharedValidation.validateAddress(msg.Tags.Market, "Market")
+end
+
+--- Validates a like
+--- @param msg Message The message received
+--- @return boolean, string|nil Returns true on success, or false and an error message on failure
+function ChatroomValidation.validateLike(msg)
+  return sharedValidation.validateAddress(msg.Tags.MessageId, "MessageId")
 end
 
 --- Validate query

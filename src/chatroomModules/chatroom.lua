@@ -105,6 +105,53 @@ function ChatroomMethods:broadcast(market, user, body, timestamp, parentId, cast
   end
 end
 
+--- Like
+--- @param messageId string Broadcast message ID
+--- @param user string
+--- @param timestamp string
+--- @param cast boolean
+--- @param msg Message
+function ChatroomMethods:like(messageId, user, timestamp, cast, msg)
+  local action = ""
+  -- Ensure message exists
+  local messages = self.dbAdmin:safeExec("SELECT * FROM Messages WHERE id = ?;", true, messageId)
+  if #messages == 0 then
+    return msg.reply({ Action = "Like-Error", Data = "Message doesn't exist" })
+  end
+
+  -- Ensure user or create new user entry
+  local users = self.dbAdmin:safeExec("SELECT * FROM Users WHERE id = ?;", true, user)
+  if #users == 0 then
+    self.dbAdmin:safeExec("INSERT INTO Users (id, timestamp) VALUES (?, ?);", false, user, timestamp)
+  end
+
+  -- Check if user has already liked the message
+  local likes = self.dbAdmin:safeExec(
+    "SELECT * FROM MessageLikes WHERE message_id = ? AND user LIKE ?;",
+    true, messageId, user
+  )
+
+  -- If user has already liked the message, remove the like
+  if #likes > 0 then
+    self.dbAdmin:safeExec(
+      "DELETE FROM MessageLikes WHERE message_id = ? AND user LIKE ?;",
+      false, messageId, user
+    )
+    action = "unlike"
+  else
+    -- If user hasn't liked the message, insert a new like
+    self.dbAdmin:safeExec(
+      "INSERT INTO MessageLikes (message_id, user, timestamp) VALUES (?, ?, ?);",
+      false, messageId, user, timestamp
+    )
+    action = "like"
+  end
+
+  if cast then
+    return self.likeNotice(messageId, user, action, msg)
+  end
+end
+
 --[[
 ============
 READ METHODS

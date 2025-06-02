@@ -52,6 +52,17 @@ MESSAGES = [[
   );
 ]]
 
+MESSAGE_LIKES = [[
+  CREATE TABLE IF NOT EXISTS MessageLikes (
+    message_id TEXT NOT NULL,
+    user TEXT NOT NULL,
+    timestamp NUMBER NOT NULL,
+    PRIMARY KEY (message_id, user),
+    FOREIGN KEY (message_id) REFERENCES Messages(id),
+    FOREIGN KEY (user) REFERENCES Users(id)
+  );
+]]
+
 --[[
 ========
 CHATROOM
@@ -66,6 +77,7 @@ DbAdmin = require('chatroomModules.dbAdmin').new(Db)
 local function initDb()
   Db:exec(USERS)
   Db:exec(MESSAGES)
+  Db:exec(MESSAGE_LIKES)
   return DbAdmin:tables()
 end
 
@@ -142,6 +154,24 @@ Handlers.add("Broadcast", {Action = "Broadcast"}, function(msg)
   local body = tostring(msg.Data)
   local parentId = msg.Tags.ParentId or ""
   return Chatroom:broadcast(msg.Tags.Market, msg.From, body, os.time(), parentId, cast, msg)
+end)
+
+--- Like handler
+--- @param msg Message The message received
+Handlers.add("Like", {Action = "Like"}, function(msg)
+  -- Validate input
+  local success, err = chatroomValidation.validateLike(msg)
+  -- If validation fails, provide error response.
+  if not success then
+    msg.reply({
+      Action = "Like-Error",
+      Error = err
+    })
+    return
+  end
+  -- If validation passes, like the message.
+  local cast = msg.Tags.Cast == "true"
+  return Chatroom:like(msg.Tags.MessageId, msg.From, os.time(), cast, msg)
 end)
 
 --[[
