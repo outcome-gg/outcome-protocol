@@ -178,6 +178,14 @@ local function logProbabilities(dataIndex, probabilities, msg)
   })
 end
 
+local function logPayout(dataIndex, user, userPayoutsMinusFees, msg)
+  return msg.forward(dataIndex, {
+    Action = "Log-Payout-Notice",
+    User = user,
+    PayoutMinusFees = json.encode(userPayoutsMinusFees)
+  })
+end
+
 local function logPayouts(dataIndex, userPayoutsMinusFees, msg)
   return msg.forward(dataIndex, {
     Action = "Log-Payouts-Notice",
@@ -231,7 +239,7 @@ function MarketMethods:buy(msg)
   -- Buy position tokens from the CPMM
   self.cpmm:buy(msg.Tags.Sender, onBehalfOf, msg.Tags.Quantity, msg.Tags['X-PositionId'], tonumber(msg.Tags['X-MinPositionTokensToBuy']), cast, sendInterim, msg)
   -- Log prediction and probability update to data index
-  local price = tostring(bint.__div(bint(positionTokensToBuy), bint(msg.Tags.Quantity)))
+  local price = tostring(bint.__div(bint(msg.Tags.Quantity), bint(positionTokensToBuy)))
   logPrediction(self.dataIndex, msg.Tags.Sender, onBehalfOf, "buy", self.cpmm.tokens.collateralToken, msg.Tags.Quantity, msg.Tags['X-PositionId'], positionTokensToBuy, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
 end
@@ -244,7 +252,7 @@ function MarketMethods:sell(msg)
   -- Sell position tokens to the CPMM
   self.cpmm:sell(msg.From, onBehalfOf, msg.Tags.ReturnAmount, msg.Tags.PositionId, msg.Tags.MaxPositionTokensToSell, msg.Tags.Cast, msg.Tags.SendInterim, msg)
   -- Log prediction and probability update to data index
-  local price = tostring(bint.__div(positionTokensToSell, bint(msg.Tags.ReturnAmount)))
+  local price = tostring(bint.__div(bint(msg.Tags.ReturnAmount), positionTokensToSell))
   logPrediction(self.dataIndex, msg.From, onBehalfOf, "sell", self.cpmm.tokens.collateralToken, msg.Tags.ReturnAmount, msg.Tags.PositionId, positionTokensToSell, price, msg)
   logProbabilities(self.dataIndex, self.cpmm:calcProbabilities(), msg)
 end
@@ -411,7 +419,9 @@ end
 --- @param msg Message The message received
 function MarketMethods:redeemPositions(msg)
   local onBehalfOf = msg.Tags["OnBehalfOf"] or msg.From
-  self.cpmm.tokens:redeemPositions(onBehalfOf, msg.Tags.Cast, msg.Tags.SendInterim, msg)
+  local userPayoutMinusFees = self.cpmm.tokens:redeemPositions(onBehalfOf, msg.Tags.Cast, msg.Tags.SendInterim, msg)
+  -- Log payout to data index
+  logPayout(self.dataIndex, userPayoutMinusFees, msg)
 end
 
 --- Batch redeem positions
