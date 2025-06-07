@@ -48,3 +48,8 @@ Handlers.add("Init-Markets", {Action = "Init-Markets"}, function(msg)
   assert(msg.From == ao.id, "Only the server can init markets")
   return initMarkets:run(Env, msg)
 end)
+
+Scripts = {
+  SpawnMarkets = spawnMarkets,
+  InitMarkets = initMarkets,
+}
